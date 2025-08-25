@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Mail, Lock, User as UserIcon, Dumbbell, Ruler, Calendar, MapPin, Medal } from 'lucide-react-native';
+import { Mail, Lock, User as UserIcon, Dumbbell, Ruler, Calendar, MapPin, Medal, Quote } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -16,6 +16,7 @@ export default function SignupAthleteScreen() {
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [sport, setSport] = useState<string>('');
   const [position, setPosition] = useState<string>('');
+  const [bio, setBio] = useState<string>('');
   const [height, setHeight] = useState<string>('');
   const [weight, setWeight] = useState<string>('');
   const [dateOfBirth, setDateOfBirth] = useState<string>('');
@@ -35,6 +36,7 @@ export default function SignupAthleteScreen() {
     if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     if (!sport.trim()) newErrors.sport = 'Sport is required';
     if (!position.trim()) newErrors.position = 'Primary position is required';
+    if (!bio.trim()) newErrors.bio = 'Bio is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -57,9 +59,10 @@ export default function SignupAthleteScreen() {
       const profileUpdates = {
         sport,
         position,
+        bio,
         location: location || undefined,
         achievements: achArray,
-        stats: {},
+        stats: { height, weight, dateOfBirth },
       } as const;
       const upd = await updateProfile({ ...profileUpdates });
       if (upd.error) {
@@ -97,6 +100,8 @@ export default function SignupAthleteScreen() {
 
             <Input label="Primary Sport" placeholder="e.g., Football" value={sport} onChangeText={setSport} error={errors.sport} icon={<Dumbbell size={20} color={theme.colors.textSecondary} />} testID="athlete-sport" />
             <Input label="Primary Position" placeholder="e.g., Striker" value={position} onChangeText={setPosition} error={errors.position} icon={<Medal size={20} color={theme.colors.textSecondary} />} testID="athlete-position" />
+
+            <Input label="Bio" placeholder="Tell us about yourself" value={bio} onChangeText={setBio} error={errors.bio} multiline icon={<Quote size={20} color={theme.colors.textSecondary} />} testID="athlete-bio" />
 
             <Input label="Height" placeholder="e.g., 180 cm" value={height} onChangeText={setHeight} icon={<Ruler size={20} color={theme.colors.textSecondary} />} testID="athlete-height" />
             <Input label="Weight" placeholder="e.g., 75 kg" value={weight} onChangeText={setWeight} icon={<Ruler size={20} color={theme.colors.textSecondary} />} testID="athlete-weight" />

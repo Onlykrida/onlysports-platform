@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Mail, Lock, User as UserIcon } from 'lucide-react-native';
+import { Mail, Lock, User as UserIcon, Dumbbell, Quote, Medal } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -20,12 +20,15 @@ import { UserRole } from '@/types';
 
 export default function SignupScreen() {
   const { role } = useLocalSearchParams<{ role: UserRole }>();
-  const { signup } = useAuth();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { signup, updateProfile } = useAuth();
+  const [name, setName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [sport, setSport] = useState<string>('');
+  const [bio, setBio] = useState<string>('');
+  const [achievements, setAchievements] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
@@ -65,6 +68,22 @@ export default function SignupScreen() {
       if (result.error) {
         setErrors({ general: result.error });
       } else {
+        const achArray = achievements
+          .split('\n')
+          .map((a) => a.trim())
+          .filter((a) => a)
+          .map((a, idx) => ({ id: `${idx}`, title: a, description: '', date: new Date().toISOString() }));
+        const updates: any = {};
+        if (sport.trim()) updates.sport = sport.trim();
+        if (bio.trim()) updates.bio = bio.trim();
+        if (achArray.length) updates.achievements = achArray;
+        if (Object.keys(updates).length) {
+          const upd = await updateProfile(updates);
+          if (upd.error) {
+            setErrors({ general: upd.error });
+            return;
+          }
+        }
         router.replace('/(tabs)/(home)');
       }
     } catch (error) {
@@ -110,6 +129,7 @@ export default function SignupScreen() {
               onChangeText={setName}
               error={errors.name}
               icon={<UserIcon size={20} color={theme.colors.textSecondary} />}
+              testID="signup-name"
             />
 
             <Input
@@ -120,6 +140,7 @@ export default function SignupScreen() {
               type="email"
               error={errors.email}
               icon={<Mail size={20} color={theme.colors.textSecondary} />}
+              testID="signup-email"
             />
 
             <Input
@@ -130,6 +151,7 @@ export default function SignupScreen() {
               type="password"
               error={errors.password}
               icon={<Lock size={20} color={theme.colors.textSecondary} />}
+              testID="signup-password"
             />
 
             <Input
@@ -140,6 +162,36 @@ export default function SignupScreen() {
               type="password"
               error={errors.confirmPassword}
               icon={<Lock size={20} color={theme.colors.textSecondary} />}
+              testID="signup-confirm"
+            />
+
+            <Input
+              label="Primary Sport (optional)"
+              placeholder="e.g., Football"
+              value={sport}
+              onChangeText={setSport}
+              icon={<Dumbbell size={20} color={theme.colors.textSecondary} />}
+              testID="signup-sport"
+            />
+
+            <Input
+              label="Bio (optional)"
+              placeholder="Tell us about yourself"
+              value={bio}
+              onChangeText={setBio}
+              multiline
+              icon={<Quote size={20} color={theme.colors.textSecondary} />}
+              testID="signup-bio"
+            />
+
+            <Input
+              label="Achievements (optional)"
+              placeholder={'One per line'}
+              value={achievements}
+              onChangeText={setAchievements}
+              multiline
+              icon={<Medal size={20} color={theme.colors.textSecondary} />}
+              testID="signup-achievements"
             />
           </View>
 
