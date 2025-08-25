@@ -137,7 +137,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error loading profile:', {
@@ -145,66 +145,41 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           message: error.message,
           details: error.details
         });
-        
-        // PGRST116 means no rows returned (profile doesn't exist)
-        if (error.code === 'PGRST116') {
-          console.log('No profile found for user, attempting to create profile...');
-          
-          // Try to create the profile automatically
-          try {
-            const { data: newProfile, error: createError } = await supabase
-              .from('profiles')
-              .insert({
-                id: supabaseUser.id,
-                email: supabaseUser.email || '',
-                name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-                role: 'athlete',
-                verified: false,
-              })
-              .select()
-              .single();
+        // Other database errors - still create basic user to avoid infinite loading
+        console.error('Database error loading profile, creating fallback user:', error.message);
+        const basicUser: User = {
+          id: supabaseUser.id,
+          email: supabaseUser.email || '',
+          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+          role: 'athlete' as UserRole,
+          avatar: supabaseUser.user_metadata?.avatar_url,
+          bio: undefined,
+          location: undefined,
+          verified: false,
+          sport: undefined,
+          position: undefined,
+          achievements: [],
+          stats: {},
+          createdAt: new Date(supabaseUser.created_at),
+        };
+        setUser(basicUser);
+      } else if (!profile) {
+        console.log('No profile found for user, attempting to create profile...');
+        try {
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: supabaseUser.id,
+              email: supabaseUser.email || '',
+              name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+              role: 'athlete',
+              verified: false,
+            })
+            .select()
+            .single();
 
-            if (createError) {
-              console.error('Failed to create profile:', createError);
-              // Fallback to basic user object
-              const basicUser: User = {
-                id: supabaseUser.id,
-                email: supabaseUser.email || '',
-                name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-                role: 'athlete' as UserRole,
-                avatar: supabaseUser.user_metadata?.avatar_url,
-                bio: undefined,
-                location: undefined,
-                verified: false,
-                sport: undefined,
-                position: undefined,
-                achievements: [],
-                stats: {},
-                createdAt: new Date(supabaseUser.created_at),
-              };
-              setUser(basicUser);
-            } else if (newProfile) {
-              console.log('Profile created successfully:', newProfile);
-              const user: User = {
-                id: newProfile.id,
-                email: newProfile.email,
-                name: newProfile.name,
-                role: newProfile.role as UserRole,
-                avatar: newProfile.avatar,
-                bio: newProfile.bio,
-                location: newProfile.location,
-                verified: newProfile.verified,
-                sport: newProfile.sport,
-                position: newProfile.position,
-                achievements: newProfile.achievements || [],
-                stats: newProfile.stats || {},
-                createdAt: new Date(newProfile.created_at),
-              };
-              setUser(user);
-            }
-          } catch (createError) {
-            console.error('Exception creating profile:', createError);
-            // Fallback to basic user object
+          if (createError) {
+            console.error('Failed to create profile:', createError);
             const basicUser: User = {
               id: supabaseUser.id,
               email: supabaseUser.email || '',
@@ -221,10 +196,27 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
               createdAt: new Date(supabaseUser.created_at),
             };
             setUser(basicUser);
+          } else if (newProfile) {
+            console.log('Profile created successfully:', newProfile);
+            const user: User = {
+              id: newProfile.id,
+              email: newProfile.email,
+              name: newProfile.name,
+              role: newProfile.role as UserRole,
+              avatar: newProfile.avatar,
+              bio: newProfile.bio,
+              location: newProfile.location,
+              verified: newProfile.verified,
+              sport: newProfile.sport,
+              position: newProfile.position,
+              achievements: newProfile.achievements || [],
+              stats: newProfile.stats || {},
+              createdAt: new Date(newProfile.created_at),
+            };
+            setUser(user);
           }
-        } else {
-          // Other database errors - still create basic user to avoid infinite loading
-          console.error('Database error loading profile, creating fallback user:', error.message);
+        } catch (createError) {
+          console.error('Exception creating profile:', createError);
           const basicUser: User = {
             id: supabaseUser.id,
             email: supabaseUser.email || '',
