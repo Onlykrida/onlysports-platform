@@ -1,5 +1,6 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 import { Post } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
@@ -182,12 +183,43 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     }
   }, [user]);
 
+  // Upload media to Supabase Storage and return a public URL
+  const uploadMediaIfNeeded = useCallback(async (uri?: string, mType?: 'image' | 'video'): Promise<string | undefined> => {
+    if (!uri || !mType) return undefined;
+    if (!isSupabaseConfigured) return uri;
+
+    try {
+      console.log('Posts: starting media upload', { uri, mType, platform: Platform.OS });
+      const filenameFromUri = uri.split('?')[0]?.split('/').pop() ?? `media-${Date.now()}`;
+      const extGuess = filenameFromUri.includes('.') ? filenameFromUri.split('.').pop() as string : (mType === 'image' ? 'jpg' : 'mp4');
+      const contentType = mType === 'image' ? `image/${extGuess === 'jpg' ? 'jpeg' : extGuess}` : `video/${extGuess}`;
+      const path = `posts/${user?.id}/${Date.now()}-${filenameFromUri}`;
+
+      const resp = await fetch(uri);
+      const blob = await resp.blob();
+      console.log('Posts: fetched blob for upload', { size: (blob as any).size, type: (blob as any).type || contentType });
+
+      const { error: uploadError } = await supabase.storage.from('posts').upload(path, blob, { contentType, upsert: false });
+      if (uploadError) {
+        console.error('Posts: storage upload failed, fallback to direct URI', uploadError);
+        return uri;
+      }
+
+      const { data: pub } = supabase.storage.from('posts').getPublicUrl(path);
+      const publicUrl: string | undefined = (pub && (pub as any).publicUrl) || undefined;
+      console.log('Posts: uploaded media public URL', publicUrl);
+      return publicUrl ?? uri;
+    } catch (e) {
+      console.error('Posts: upload exception, using direct URI', e);
+      return uri;
+    }
+  }, [user]);
+
   // Create a new post
   const createPost = useCallback(async (content: string, mediaUrl?: string, mediaType?: 'image' | 'video') => {
     if (!user) return { error: 'User not authenticated' };
     
     if (!isSupabaseConfigured) {
-      // Add to mock data when database is not configured
       const newPost: Post = {
         id: Date.now().toString(),
         userId: user.id,
@@ -205,27 +237,27 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         isLiked: false,
         createdAt: new Date(),
       };
-      
       setPosts(prevPosts => [newPost, ...prevPosts]);
       return {};
     }
 
     try {
-      // Ensure user profile exists before creating post
       const profileExists = await ensureUserProfile();
       if (!profileExists) {
         return { error: 'Failed to create user profile. Please try again.' };
       }
 
+      const uploadedUrl = await uploadMediaIfNeeded(mediaUrl, mediaType ?? undefined);
+
       const { error } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
-          title: content.substring(0, 100), // Use first 100 chars as title
+          title: content.substring(0, 100),
           description: content,
-          image_url: mediaType === 'image' ? mediaUrl : undefined,
-          video_url: mediaType === 'video' ? mediaUrl : undefined,
-          type: 'highlight', // Default type
+          image_url: mediaType === 'image' ? uploadedUrl : undefined,
+          video_url: mediaType === 'video' ? uploadedUrl : undefined,
+          type: 'highlight',
         });
 
       if (error) {
@@ -234,14 +266,13 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         return { error: msg };
       }
 
-      // Refresh posts to show the new one
       await loadPosts();
       return {};
     } catch (error) {
       console.error('Failed to create post:', getErrorMessage(error), error);
       return { error: 'Failed to create post. Please try again.' };
     }
-  }, [user, loadPosts, ensureUserProfile]);
+  }, [user, loadPosts, ensureUserProfile, uploadMediaIfNeeded]);
 
   // Like/unlike a post
   const likePost = useCallback(async (postId: string) => {

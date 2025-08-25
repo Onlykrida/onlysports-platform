@@ -128,7 +128,7 @@ export interface Follow {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'follow' | 'like' | 'comment' | 'post' | 'opportunity';
+  type: 'follow' | 'like' | 'comment' | 'post' | 'opportunity' | 'message';
   title: string;
   message: string;
   data?: any;

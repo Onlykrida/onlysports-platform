@@ -60,6 +60,34 @@ export const [NotificationProvider, useNotifications] = createContextHook<Notifi
     loadNotifications();
   }, [loadNotifications]);
 
+  // Real-time subscription for notifications
+  useEffect(() => {
+    if (!user || !isSupabaseConfigured) return;
+
+    const channel = supabase
+      .channel('notifications_changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload: any) => {
+        const n = payload.new as { id: string; user_id: string; type: string; title: string; message: string; data?: any; read: boolean; created_at: string };
+        if (n.user_id !== user.id) return;
+        const notif: Notification = {
+          id: n.id,
+          userId: n.user_id,
+          type: n.type as Notification['type'],
+          title: n.title,
+          message: n.message,
+          data: n.data,
+          read: n.read,
+          createdAt: new Date(n.created_at),
+        };
+        setNotifications(prev => [notif, ...prev]);
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user]);
+
   const markAsRead = useCallback(async (notificationId: string) => {
     if (!isSupabaseConfigured) return;
 

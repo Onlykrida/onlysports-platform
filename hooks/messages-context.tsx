@@ -2,6 +2,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
+import { useNotifications } from './notifications-context';
 
 export interface Message {
   id: string;
@@ -38,6 +39,7 @@ interface MessagesState {
 
 export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(() => {
   const { user } = useAuth();
+  const { createNotification } = useNotifications();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<{ [conversationId: string]: Message[] }>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -169,6 +171,9 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
         return { error: error.message };
       }
 
+      // Create a real-time notification for the receiver
+      await createNotification(receiverId, 'message', 'New message', content.substring(0, 80));
+
       // Refresh messages for this conversation
       await loadMessages(receiverId);
       await loadConversations();
@@ -178,7 +183,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
       console.error('Failed to send message:', error);
       return { error: 'Failed to send message' };
     }
-  }, [user, loadMessages, loadConversations]);
+  }, [user, loadMessages, loadConversations, createNotification]);
 
   const markAsRead = useCallback(async (conversationId: string) => {
     if (!user || !isSupabaseConfigured) return;
@@ -217,6 +222,40 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
     if (user) {
       loadConversations();
     }
+  }, [user, loadConversations]);
+
+  // Real-time updates for messages
+  useEffect(() => {
+    if (!user || !isSupabaseConfigured) return;
+
+    const channel = supabase
+      .channel('messages_changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload: any) => {
+        const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; read: boolean; created_at: string };
+        const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+
+        // Update messages list for that conversation
+        setMessages(prev => {
+          const prevList = prev[otherId] || [];
+          const nextItem: Message = {
+            id: msg.id,
+            senderId: msg.sender_id,
+            receiverId: msg.receiver_id,
+            content: msg.content,
+            read: msg.read,
+            createdAt: new Date(msg.created_at),
+          };
+          return { ...prev, [otherId]: [...prevList, nextItem] };
+        });
+
+        // Refresh conversations to update last message and unread count
+        loadConversations();
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, [user, loadConversations]);
 
   return useMemo(() => ({
