@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -68,7 +68,7 @@ export default function DiscoverScreen() {
       setIsLoadingUsers(true);
       if (!isSupabaseConfigured) {
         console.log('Discover: using cached users only');
-        setUsers(cachedUsers.filter(u => u.id !== currentUser?.id));
+        setUsers(cachedUsers);
         return;
       }
 
@@ -84,15 +84,19 @@ export default function DiscoverScreen() {
     }
   }, [currentUser?.id, getErrorMessage, cachedUsers, refreshUsers]);
 
+  const didLoadRef = useRef<boolean>(false);
+
   useEffect(() => {
+    if (didLoadRef.current) return;
+    didLoadRef.current = true;
     console.log('Discover: trigger initial loadUsers');
     loadUsers();
   }, [loadUsers]);
 
   useEffect(() => {
     console.log('Discover: sync local users with cachedUsers', { cachedCount: cachedUsers.length });
-    setUsers(cachedUsers.filter(u => u.id !== currentUser?.id));
-  }, [cachedUsers, currentUser?.id]);
+    setUsers(cachedUsers);
+  }, [cachedUsers]);
 
   const filteredUsers = useMemo(() => users.filter(user => {
     const q = localSearchQuery.toLowerCase();
