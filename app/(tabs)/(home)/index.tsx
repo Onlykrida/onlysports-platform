@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
   MessageSquare, 
   Send, 
   Star, 
-  Trash2, 
+  MoreVertical,
   Trophy,
   Target,
   Award,
@@ -29,6 +29,9 @@ import { usePosts } from '@/hooks/posts-context';
 import { useAuth } from '@/hooks/auth-context';
 import CommentsModal from '@/components/CommentsModal';
 import ShareModal from '@/components/ShareModal';
+import PostActionsMenu from '@/components/PostActionsMenu';
+import EditPostModal from '@/components/EditPostModal';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const { width } = Dimensions.get('window');
 
@@ -65,20 +68,23 @@ const getRoleBadgeColor = (role: string) => {
 };
 
 export default function HomeScreen() {
-  const { posts, isLoading, refreshPosts, likePost, deletePost } = usePosts();
+  const { posts, isLoading, refreshPosts, likePost, deletePost, updatePost } = usePosts();
   const { user } = useAuth();
   const [commentsModalVisible, setCommentsModalVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [editVisible, setEditVisible] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
   
   console.log('HomeScreen render - posts:', posts.length, 'isLoading:', isLoading, 'user:', user?.name);
 
-  const handleDeletePost = async (postId: string) => {
+  const handleDeletePost = useCallback(async (postId: string) => {
     const result = await deletePost(postId);
     if (result.error) {
       console.error('Failed to delete post:', result.error);
     }
-  };
+  }, [deletePost]);
 
   const handleUserPress = (userId: string) => {
     if (userId === user?.id) {
@@ -98,8 +104,13 @@ export default function HomeScreen() {
     setShareModalVisible(true);
   };
 
+  const openMenu = useCallback((post: Post) => {
+    setSelectedPost(post);
+    setMenuVisible(true);
+  }, []);
+
   const renderPost = ({ item }: { item: Post }) => (
-    <View style={styles.postContainer}>
+    <View style={styles.postContainer} testID={`post-${item.id}`}>
       <View style={styles.postHeader}>
         <TouchableOpacity style={styles.userInfo} onPress={() => handleUserPress(item.userId)}>
           <View style={styles.avatarContainer}>
@@ -124,10 +135,11 @@ export default function HomeScreen() {
         <View style={styles.headerActions}>
           {user?.id === item.userId && (
             <TouchableOpacity 
-              onPress={() => handleDeletePost(item.id)}
-              style={styles.deleteButton}
+              onPress={() => openMenu(item)}
+              style={styles.menuButton}
+              testID={`post-menu-${item.id}`}
             >
-              <Trash2 size={18} color={theme.colors.textSecondary} />
+              <MoreVertical size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           )}
           <TouchableOpacity style={styles.saveButton}>
@@ -256,6 +268,56 @@ export default function HomeScreen() {
           post={selectedPost}
         />
       )}
+
+      {/* Post Actions Menu */}
+      {selectedPost && (
+        <PostActionsMenu
+          visible={menuVisible}
+          onClose={() => setMenuVisible(false)}
+          onEdit={() => {
+            setMenuVisible(false);
+            setEditVisible(true);
+          }}
+          onDelete={() => {
+            setMenuVisible(false);
+            setConfirmVisible(true);
+          }}
+        />
+      )}
+
+      {/* Edit Post Modal */}
+      {selectedPost && (
+        <EditPostModal
+          visible={editVisible}
+          onClose={() => setEditVisible(false)}
+          initialContent={selectedPost.content}
+          onSave={async (newContent: string) => {
+            setEditVisible(false);
+            const res = await updatePost(selectedPost.id, { content: newContent });
+            if (res.error) {
+              console.error('Failed to update post:', res.error);
+            }
+          }}
+        />
+      )}
+
+      {/* Confirm Delete */}
+      {selectedPost && (
+        <ConfirmDialog
+          visible={confirmVisible}
+          title="Delete post?"
+          message="This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          destructive
+          onCancel={() => setConfirmVisible(false)}
+          onConfirm={async () => {
+            setConfirmVisible(false);
+            await handleDeletePost(selectedPost.id);
+            setSelectedPost(null);
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -293,7 +355,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: theme.spacing.sm,
   },
-  deleteButton: {
+  menuButton: {
     padding: theme.spacing.xs,
   },
   saveButton: {

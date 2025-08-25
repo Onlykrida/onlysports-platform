@@ -28,6 +28,10 @@ interface PostsState {
   createPost: (content: string, mediaUrl?: string, mediaType?: 'image' | 'video') => Promise<{ error?: string }>;
   likePost: (postId: string) => Promise<void>;
   deletePost: (postId: string) => Promise<{ error?: string }>;
+  updatePost: (
+    postId: string,
+    updates: { content?: string; mediaUrl?: string; mediaType?: 'image' | 'video' | null }
+  ) => Promise<{ error?: string }>;
 }
 
 export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
@@ -342,6 +346,90 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     }
   }, [user, posts]);
 
+  // Update a post
+  const updatePost = useCallback(async (
+    postId: string,
+    updates: { content?: string; mediaUrl?: string; mediaType?: 'image' | 'video' | null }
+  ) => {
+    if (!user) return { error: 'User not authenticated' };
+
+    if (!isSupabaseConfigured) {
+      setPosts(prev =>
+        prev.map(p =>
+          p.id === postId
+            ? {
+                ...p,
+                content: updates.content ?? p.content,
+                media:
+                  updates.mediaType === null
+                    ? undefined
+                    : updates.mediaUrl && updates.mediaType
+                    ? { type: updates.mediaType, url: updates.mediaUrl }
+                    : p.media,
+              }
+            : p,
+        ),
+      );
+      return {};
+    }
+
+    try {
+      let uploadedUrl: string | undefined = updates.mediaUrl;
+      if (updates.mediaUrl && updates.mediaType && updates.mediaType !== null) {
+        uploadedUrl = await uploadMediaIfNeeded(updates.mediaUrl, updates.mediaType);
+      }
+
+      const payload: Record<string, any> = {};
+      if (typeof updates.content === 'string') {
+        payload.description = updates.content;
+        payload.title = updates.content.substring(0, 100);
+      }
+      if (updates.mediaType === null) {
+        payload.image_url = null;
+        payload.video_url = null;
+      } else if (updates.mediaType === 'image') {
+        payload.image_url = uploadedUrl;
+        payload.video_url = null;
+      } else if (updates.mediaType === 'video') {
+        payload.video_url = uploadedUrl;
+        payload.image_url = null;
+      }
+
+      const { error } = await supabase
+        .from('posts')
+        .update(payload)
+        .eq('id', postId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        const msg = getErrorMessage(error);
+        console.error('Error updating post:', msg, error);
+        return { error: msg };
+      }
+
+      setPosts(prev =>
+        prev.map(p =>
+          p.id === postId
+            ? {
+                ...p,
+                content: typeof updates.content === 'string' ? updates.content : p.content,
+                media:
+                  updates.mediaType === null
+                    ? undefined
+                    : updates.mediaUrl && updates.mediaType
+                    ? { type: updates.mediaType, url: uploadedUrl ?? updates.mediaUrl }
+                    : p.media,
+              }
+            : p,
+        ),
+      );
+      return {};
+    } catch (error) {
+      console.error('Failed to update post:', getErrorMessage(error), error);
+      return { error: 'Failed to update post. Please try again.' };
+    }
+  }, [user, uploadMediaIfNeeded]);
+
   // Delete a post
   const deletePost = useCallback(async (postId: string) => {
     if (!user) return { error: 'User not authenticated' };
@@ -412,5 +500,6 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     createPost,
     likePost,
     deletePost,
-  }), [posts, isLoading, refreshPosts, createPost, likePost, deletePost]);
+    updatePost,
+  }), [posts, isLoading, refreshPosts, createPost, likePost, deletePost, updatePost]);
 });
