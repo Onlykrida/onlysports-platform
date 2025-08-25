@@ -25,6 +25,7 @@ import {
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
 import { Post } from '@/types';
+import { useScouting } from '@/hooks/scouting-context';
 import { usePosts } from '@/hooks/posts-context';
 import { useAuth } from '@/hooks/auth-context';
 import CommentsModal from '@/components/CommentsModal';
@@ -69,6 +70,7 @@ const getRoleBadgeColor = (role: string) => {
 
 export default function HomeScreen() {
   const { posts, isLoading, refreshPosts, likePost, deletePost, updatePost } = usePosts();
+  const { topRecommendations } = useScouting();
   const { user } = useAuth();
   const [commentsModalVisible, setCommentsModalVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
@@ -109,6 +111,17 @@ export default function HomeScreen() {
     setMenuVisible(true);
   }, []);
 
+  const renderBadge = (role: string, fit?: number) => {
+    if (role.toLowerCase() !== 'athlete' || typeof fit !== 'number') return null;
+    const label = fit >= 90 ? 'Top Prospect' : fit >= 80 ? 'High Potential' : fit >= 70 ? "Scout's Pick" : null;
+    if (!label) return null;
+    return (
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>{label}</Text>
+      </View>
+    );
+  };
+
   const renderPost = ({ item }: { item: Post }) => (
     <View style={styles.postContainer} testID={`post-${item.id}`}>
       <View style={styles.postHeader}>
@@ -132,6 +145,7 @@ export default function HomeScreen() {
             </View>
           </View>
         </TouchableOpacity>
+        {renderBadge(item.userRole, topRecommendations[user?.id ?? '']?.find(r => r.player_id === item.userId)?.fit_score)}
         <View style={styles.headerActions}>
           {user?.id === item.userId && (
             <TouchableOpacity 
@@ -481,6 +495,18 @@ const styles = StyleSheet.create({
   },
   likedText: {
     color: theme.colors.white,
+  },
+  badge: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+  },
+  badgeText: {
+    color: theme.colors.white,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.bold,
   },
   separator: {
     height: theme.spacing.lg,

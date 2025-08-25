@@ -11,6 +11,7 @@ import { NotificationProvider } from "@/hooks/notifications-context";
 import { MessagesProvider } from "@/hooks/messages-context";
 import { UsersProvider } from "@/hooks/users-context";
 import { View, ActivityIndicator } from "react-native";
+import { ScoutingProvider } from "@/hooks/scouting-context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
 
@@ -60,7 +61,9 @@ export default function RootLayout() {
                 <UsersProvider>
                   <PostsProvider>
                     <GestureHandlerRootView style={{ flex: 1 }}>
-                      <RootLayoutNav />
+                      <ScoutingProvider>
+                        <RootLayoutNav />
+                      </ScoutingProvider>
                     </GestureHandlerRootView>
                   </PostsProvider>
                 </UsersProvider>

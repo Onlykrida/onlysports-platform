@@ -11,7 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, Edit3, Award, BarChart3, LogOut, Plus, Grid, List, Camera } from 'lucide-react-native';
+import { Settings, Edit3, Award, BarChart3, LogOut, Plus, Grid, List, Camera, Sparkles, BadgeCheck } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';
@@ -20,11 +20,15 @@ import { mockAthletes } from '@/mocks/data';
 import { Button } from '@/components/Button';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { useScouting, AIRecommendationRow } from '@/hooks/scouting-context';
 
 export default function ProfileScreen() {
   const { user, logout, updateProfile } = useAuth();
   const { followers, following, getFollowersCount, getFollowingCount } = useFollow();
   const { posts } = usePosts();
+  const { getInterestedForPlayer, getTopForScout } = useScouting();
+  const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
+  const [topPlayers, setTopPlayers] = useState<{ playerId: string; name: string; avatar?: string; position?: string; score: number }[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
   const [coverPhoto, setCoverPhoto] = useState<string>('https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200');
@@ -54,6 +58,35 @@ export default function ProfileScreen() {
   React.useEffect(() => {
     loadCounts();
   }, [user, posts, followers, following]);
+
+  React.useEffect(() => {
+    const run = async () => {
+      if (!user) return;
+      if (user.role === 'athlete') {
+        try {
+          const res = await getInterestedForPlayer(user.id, 70);
+          setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
+        } catch (e) {
+          console.log('Profile: interested scouts load failed', e);
+        }
+      } else if (user.role === 'scout') {
+        try {
+          const recs = await getTopForScout(user.id, 10);
+          const players = recs.map((r) => ({
+            playerId: r.player_id,
+            name: (mockAthletes.find(a => a.id === r.player_id)?.name) || 'Player',
+            avatar: mockAthletes.find(a => a.id === r.player_id)?.avatar,
+            position: mockAthletes.find(a => a.id === r.player_id)?.position,
+            score: r.fit_score,
+          }));
+          setTopPlayers(players);
+        } catch (e) {
+          console.log('Profile: top players load failed', e);
+        }
+      }
+    };
+    void run();
+  }, [user, getInterestedForPlayer, getTopForScout]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -218,6 +251,54 @@ export default function ProfileScreen() {
             </View>
           )}
         </View>
+
+        {user.role === 'athlete' && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <BadgeCheck size={20} color={theme.colors.success} />
+              <Text style={styles.sectionTitle}>Scouts Interested in You</Text>
+            </View>
+            {interested.length > 0 ? (
+              interested.slice(0, 5).map((it, idx) => (
+                <View key={`${it.scoutName}-${idx}`} style={styles.achievementItem} testID={`interested-scout-${idx}`}>
+                  <Sparkles size={18} color={theme.colors.warning} />
+                  <View style={styles.achievementInfo}>
+                    <Text style={styles.achievementTitle}>{it.scoutName}</Text>
+                    <Text style={styles.achievementDescription}>Fit score {it.score}%</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No scouts yet</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {user.role === 'scout' && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <BadgeCheck size={20} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>Recommended Players</Text>
+            </View>
+            {topPlayers.length > 0 ? (
+              topPlayers.map((p, idx) => (
+                <TouchableOpacity key={`${p.playerId}-${idx}`} style={styles.achievementItem} onPress={() => router.push(`/user/${p.playerId}`)}>
+                  <Image source={{ uri: p.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face' }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+                  <View style={styles.achievementInfo}>
+                    <Text style={styles.achievementTitle}>{p.name}</Text>
+                    <Text style={styles.achievementDescription}>{p.position || 'Athlete'} • {p.score}% fit</Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No recommendations yet</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>

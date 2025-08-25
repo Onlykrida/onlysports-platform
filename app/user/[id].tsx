@@ -27,6 +27,7 @@ import {
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { User, Post } from '@/types';
+import { useScouting } from '@/hooks/scouting-context';
 import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';
 import { usePosts } from '@/hooks/posts-context';
@@ -76,6 +77,8 @@ export default function UserProfileScreen() {
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
+  const { getInterestedForPlayer } = useScouting();
+  const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
   const loadUserProfile = async () => {
@@ -138,6 +141,19 @@ export default function UserProfileScreen() {
   useEffect(() => {
     loadUserProfile();
   }, [id, posts]);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!id) return;
+      try {
+        const res = await getInterestedForPlayer(id, 70);
+        setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
+      } catch (e) {
+        console.log('UserProfile: interested load failed', e);
+      }
+    };
+    void run();
+  }, [id, getInterestedForPlayer]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -276,6 +292,26 @@ export default function UserProfileScreen() {
           <Text style={styles.bio}>{profileUser.bio || 'No bio available'}</Text>
           <Text style={styles.location}>{profileUser.location || 'Location not set'}</Text>
         </View>
+
+        {/* Interested Scouts for athletes */}
+        {profileUser.role === 'athlete' && (
+          <View style={styles.postsSection}>
+            <View style={styles.postsHeader}>
+              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser.name}</Text>
+            </View>
+            {interested.length > 0 ? (
+              interested.slice(0, 5).map((it, idx) => (
+                <View key={`${it.scoutName}-${idx}`} style={styles.postItem}>
+                  <Text style={styles.postText}>{it.scoutName} • {it.score}% fit</Text>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No interested scouts yet</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Stats */}
         <View style={styles.statsContainer}>
