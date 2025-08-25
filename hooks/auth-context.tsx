@@ -341,7 +341,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     try {
       setIsLoading(true);
       
-      // Sign up the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -353,10 +352,9 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       }
 
       if (authData.user && authData.session) {
-        // Wait a bit to ensure the session is fully established
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setSession(authData.session);
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Create profile with retry logic
         console.log('Creating profile for user:', authData.user.id);
         let retryCount = 0;
         const maxRetries = 3;
@@ -384,13 +382,11 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
                 retry: retryCount + 1
               });
               
-              // If it's a duplicate key error, the profile already exists
               if (profileError.code === '23505') {
                 console.log('Profile already exists, continuing...');
                 break;
               }
               
-              // If it's a foreign key constraint error, wait and retry
               if (profileError.code === '23503' && retryCount < maxRetries - 1) {
                 console.log(`Foreign key constraint error, retrying in ${(retryCount + 1) * 1000}ms...`);
                 await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
@@ -398,7 +394,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
                 continue;
               }
               
-              // If it's a permission error and we haven't retried much, try again
               if (profileError.code === '42501' && retryCount < maxRetries - 1) {
                 console.log(`Permission denied, retrying in ${(retryCount + 1) * 1000}ms...`);
                 await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
@@ -406,7 +401,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
                 continue;
               }
               
-              // Other errors
               let errorMessage = 'Failed to create profile. Please try again.';
               
               if (profileError.code === '42P01') {
@@ -434,6 +428,8 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
             await new Promise(resolve => setTimeout(resolve, (retryCount) * 1000));
           }
         }
+
+        await loadUserProfile(authData.user);
       }
 
       return {};
@@ -459,7 +455,19 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   }, []);
 
   const updateProfile = useCallback(async (updates: Partial<User>) => {
-    if (!user) return { error: 'No user logged in' };
+    const ensureUserId = async (): Promise<string | null> => {
+      if (user?.id) return user.id;
+      try {
+        const { data } = await supabase.auth.getSession();
+        const uid = data?.session?.user?.id ?? null;
+        return uid;
+      } catch {
+        return null;
+      }
+    };
+
+    const userId = await ensureUserId();
+    if (!userId) return { error: 'No user logged in' };
     
     if (!isSupabaseConfigured) {
       return { 
@@ -468,28 +476,37 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     }
     
     try {
+      const payload = {
+        name: updates.name,
+        bio: updates.bio,
+        location: updates.location,
+        avatar: updates.avatar,
+        sport: updates.sport,
+        position: updates.position,
+        achievements: updates.achievements,
+        stats: updates.stats,
+      } as const;
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          name: updates.name,
-          bio: updates.bio,
-          location: updates.location,
-          avatar: updates.avatar,
-          sport: updates.sport,
-          position: updates.position,
-          achievements: updates.achievements,
-          stats: updates.stats,
-        })
-        .eq('id', user.id);
+        .update(payload)
+        .eq('id', userId);
 
       if (error) {
         console.error('Profile update error:', error);
         return { error: error.message };
       }
 
-      // Update local state
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
+      if (user && user.id === userId) {
+        const updatedUser = { ...user, ...updates };
+        setUser(updatedUser);
+      } else {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const supaUser = sessionData?.session?.user ?? null;
+        if (supaUser) {
+          await loadUserProfile(supaUser);
+        }
+      }
       
       return {};
     } catch (error) {
