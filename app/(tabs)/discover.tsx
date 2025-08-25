@@ -73,8 +73,7 @@ export default function DiscoverScreen() {
       }
 
       await refreshUsers();
-      setUsers(cachedUsers.filter(u => u.id !== currentUser?.id));
-      console.log('Discover: loaded users from UsersProvider', cachedUsers.length);
+      console.log('Discover: refreshUsers requested');
     } catch (error) {
       const msg = getErrorMessage(error);
       console.error('Failed to load users:', msg, error);
@@ -89,6 +88,11 @@ export default function DiscoverScreen() {
     console.log('Discover: trigger initial loadUsers');
     loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    console.log('Discover: sync local users with cachedUsers', { cachedCount: cachedUsers.length });
+    setUsers(cachedUsers.filter(u => u.id !== currentUser?.id));
+  }, [cachedUsers, currentUser?.id]);
 
   const filteredUsers = useMemo(() => users.filter(user => {
     const q = localSearchQuery.toLowerCase();
