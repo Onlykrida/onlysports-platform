@@ -1,0 +1,582 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Stack, useLocalSearchParams, router } from 'expo-router';
+import { 
+  ArrowLeft, 
+  MessageCircle, 
+  UserPlus, 
+  UserMinus, 
+  Trophy,
+  Target,
+  Award,
+  Flame,
+  Star,
+  Grid,
+  List
+} from 'lucide-react-native';
+import { theme } from '@/constants/theme';
+import { User, Post } from '@/types';
+import { useAuth } from '@/hooks/auth-context';
+import { useFollow } from '@/hooks/follow-context';
+import { usePosts } from '@/hooks/posts-context';
+import { supabase, isSupabaseConfigured } from '@/constants/supabase';
+import { Button } from '@/components/Button';
+
+const getRoleIcon = (role: string) => {
+  switch (role.toLowerCase()) {
+    case 'athlete':
+      return <Trophy size={14} color={theme.colors.primary} />;
+    case 'coach':
+      return <Target size={14} color={theme.colors.success} />;
+    case 'scout':
+      return <Award size={14} color={theme.colors.warning} />;
+    case 'team':
+      return <Flame size={14} color={theme.colors.danger} />;
+    default:
+      return <Star size={14} color={theme.colors.textSecondary} />;
+  }
+};
+
+const getRoleBadgeColor = (role: string) => {
+  switch (role.toLowerCase()) {
+    case 'athlete':
+      return theme.colors.primary;
+    case 'coach':
+      return theme.colors.success;
+    case 'scout':
+      return theme.colors.warning;
+    case 'team':
+      return theme.colors.danger;
+    default:
+      return theme.colors.textSecondary;
+  }
+};
+
+export default function UserProfileScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { user: currentUser } = useAuth();
+  const { followUser, unfollowUser, isFollowing, getFollowersCount, getFollowingCount } = useFollow();
+  const { posts } = usePosts();
+  
+  const [profileUser, setProfileUser] = useState<User | null>(null);
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+
+  const loadUserProfile = async () => {
+    if (!id || !isSupabaseConfigured) return;
+
+    try {
+      setIsLoading(true);
+      
+      // Load user profile
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (userError) {
+        console.error('Error loading user profile:', userError);
+        Alert.alert('Error', 'Failed to load user profile');
+        return;
+      }
+
+      if (userData) {
+        const user: User = {
+          id: userData.id,
+          email: userData.email,
+          name: userData.name,
+          role: userData.role,
+          avatar: userData.avatar,
+          bio: userData.bio,
+          location: userData.location,
+          verified: userData.verified,
+          sport: userData.sport,
+          position: userData.position,
+          achievements: userData.achievements || [],
+          stats: userData.stats || {},
+          createdAt: new Date(userData.created_at),
+        };
+        setProfileUser(user);
+
+        // Load follow counts
+        const [followersCountResult, followingCountResult] = await Promise.all([
+          getFollowersCount(id),
+          getFollowingCount(id)
+        ]);
+        setFollowersCount(followersCountResult);
+        setFollowingCount(followingCountResult);
+      }
+
+      // Load user posts
+      const filteredPosts = posts.filter(post => post.userId === id);
+      setUserPosts(filteredPosts);
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+      Alert.alert('Error', 'Failed to load user profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUserProfile();
+  }, [id, posts]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadUserProfile();
+    setRefreshing(false);
+  };
+
+  const handleFollow = async () => {
+    if (!profileUser || !currentUser) return;
+    
+    setIsFollowLoading(true);
+    try {
+      if (isFollowing(profileUser.id)) {
+        const result = await unfollowUser(profileUser.id);
+        if (result.error) {
+          Alert.alert('Error', result.error);
+        } else {
+          setFollowersCount(prev => prev - 1);
+        }
+      } else {
+        const result = await followUser(profileUser.id);
+        if (result.error) {
+          Alert.alert('Error', result.error);
+        } else {
+          setFollowersCount(prev => prev + 1);
+        }
+      }
+    } catch (error) {
+      console.error('Follow action failed:', error);
+      Alert.alert('Error', 'Failed to update follow status');
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
+
+  const handleMessage = () => {
+    if (!profileUser) return;
+    router.push(`/chat/${profileUser.id}`);
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen 
+          options={{
+            title: 'Profile',
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+                <ArrowLeft size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!profileUser) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen 
+          options={{
+            title: 'Profile',
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+                <ArrowLeft size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>User not found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const isOwnProfile = currentUser?.id === profileUser.id;
+  const userIsFollowing = isFollowing(profileUser.id);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Stack.Screen 
+        options={{
+          title: profileUser.name,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+              <ArrowLeft size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Cover Photo */}
+        <View style={styles.coverContainer}>
+          <Image
+            source={{ uri: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200' }}
+            style={styles.coverImage}
+          />
+        </View>
+
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <View style={styles.avatarContainer}>
+            <Image 
+              source={{ 
+                uri: profileUser.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face' 
+              }} 
+              style={styles.avatar} 
+            />
+            <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(profileUser.role) }]}>
+              {getRoleIcon(profileUser.role)}
+            </View>
+          </View>
+        </View>
+
+        {/* User Info */}
+        <View style={styles.infoSection}>
+          <View style={styles.nameSection}>
+            <Text style={styles.name}>{profileUser.name}</Text>
+            {profileUser.verified && <Text style={styles.verified}>✓</Text>}
+          </View>
+          <Text style={styles.role}>
+            {profileUser.sport || 'Athlete'} • {profileUser.position || 'Player'}
+          </Text>
+          <Text style={styles.bio}>{profileUser.bio || 'No bio available'}</Text>
+          <Text style={styles.location}>{profileUser.location || 'Location not set'}</Text>
+        </View>
+
+        {/* Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{followersCount}</Text>
+            <Text style={styles.statLabel}>Followers</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{followingCount}</Text>
+            <Text style={styles.statLabel}>Following</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{userPosts.length}</Text>
+            <Text style={styles.statLabel}>Posts</Text>
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        {!isOwnProfile && (
+          <View style={styles.actionButtons}>
+            <Button
+              title={userIsFollowing ? 'Unfollow' : 'Follow'}
+              onPress={handleFollow}
+              variant={userIsFollowing ? 'outline' : 'primary'}
+              icon={userIsFollowing ? 
+                <UserMinus size={16} color={theme.colors.primary} /> : 
+                <UserPlus size={16} color={theme.colors.white} />
+              }
+              style={styles.actionButton}
+              loading={isFollowLoading}
+            />
+            <Button
+              title="Message"
+              onPress={handleMessage}
+              variant="outline"
+              icon={<MessageCircle size={16} color={theme.colors.primary} />}
+              style={styles.actionButton}
+            />
+          </View>
+        )}
+
+        {/* Posts Section */}
+        <View style={styles.postsSection}>
+          <View style={styles.postsHeader}>
+            <Text style={styles.sectionTitle}>Posts</Text>
+            <View style={styles.postsActions}>
+              <TouchableOpacity 
+                style={[styles.viewModeButton, postsViewMode === 'grid' && styles.activeViewMode]}
+                onPress={() => setPostsViewMode('grid')}
+              >
+                <Grid size={16} color={postsViewMode === 'grid' ? theme.colors.primary : theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.viewModeButton, postsViewMode === 'list' && styles.activeViewMode]}
+                onPress={() => setPostsViewMode('list')}
+              >
+                <List size={16} color={postsViewMode === 'list' ? theme.colors.primary : theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          {userPosts.length > 0 ? (
+            <View style={styles.postsGrid}>
+              {userPosts.map((post) => (
+                <TouchableOpacity key={post.id} style={styles.postItem}>
+                  {post.media ? (
+                    <Image source={{ uri: post.media.url }} style={styles.postImage} />
+                  ) : (
+                    <View style={styles.postTextContainer}>
+                      <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
+                    </View>
+                  )}
+                  <View style={styles.postOverlay}>
+                    <Text style={styles.postLikes}>{post.likes} ⚡</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No posts yet</Text>
+              <Text style={styles.emptyStateSubtext}>
+                {isOwnProfile ? 'Share your achievements and highlights' : `${profileUser.name} hasn't posted anything yet`}
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  headerButton: {
+    padding: theme.spacing.sm,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.xl,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xl,
+  },
+  loadingText: {
+    marginTop: theme.spacing.lg,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.fontWeight.medium,
+  },
+  errorText: {
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.danger,
+    fontWeight: theme.fontWeight.medium,
+  },
+  coverContainer: {
+    height: 150,
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  profileSection: {
+    alignItems: 'center',
+    marginTop: -40,
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 4,
+    borderColor: theme.colors.white,
+  },
+  roleBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.white,
+  },
+  infoSection: {
+    alignItems: 'center',
+    padding: theme.spacing.md,
+  },
+  nameSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  name: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  verified: {
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.secondary,
+  },
+  role: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.primary,
+    marginTop: theme.spacing.xs,
+  },
+  bio: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    lineHeight: 20,
+  },
+  location: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.border,
+    marginHorizontal: theme.spacing.md,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  statLabel: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  actionButton: {
+    flex: 1,
+  },
+  postsSection: {
+    padding: theme.spacing.md,
+  },
+  postsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  sectionTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+  },
+  postsActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  viewModeButton: {
+    padding: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+  },
+  activeViewMode: {
+    backgroundColor: theme.colors.primary + '20',
+  },
+  postsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+  },
+  postItem: {
+    width: '32%',
+    aspectRatio: 1,
+    borderRadius: theme.borderRadius.md,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  postImage: {
+    width: '100%',
+    height: '100%',
+  },
+  postTextContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.sm,
+    justifyContent: 'center',
+  },
+  postText: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.text,
+    textAlign: 'center',
+  },
+  postOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    padding: theme.spacing.xs,
+  },
+  postLikes: {
+    color: theme.colors.white,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+  },
+  emptyStateText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.fontWeight.medium,
+  },
+  emptyStateSubtext: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+});
