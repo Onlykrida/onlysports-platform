@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -15,11 +15,20 @@ import { Opportunity } from '@/types';
 
 export default function OpportunitiesScreen() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [showing, setShowing] = useState<'all' | 'paid' | 'unpaid'>('all');
   const opportunities = mockOpportunities;
 
-  const filteredOpportunities = selectedType
-    ? opportunities.filter(opp => opp.type === selectedType)
-    : opportunities;
+  const filteredOpportunities = useMemo(() => {
+    console.log('[Opportunities] filtering with', { selectedType, showing });
+    let list = selectedType ? opportunities.filter((opp) => opp.type === selectedType) : opportunities;
+    if (showing !== 'all') {
+      list = list.filter((opp) => {
+        const hasComp = Boolean(opp.compensation && opp.compensation.trim().length > 0);
+        return showing === 'paid' ? hasComp : !hasComp;
+      });
+    }
+    return list;
+  }, [opportunities, selectedType, showing]);
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -31,7 +40,7 @@ export default function OpportunitiesScreen() {
     }
   };
 
-  const renderOpportunity = ({ item }: { item: Opportunity }) => (
+  const renderOpportunity = useCallback(({ item }: { item: Opportunity }) => (
     <TouchableOpacity style={styles.opportunityCard}>
       <View style={[styles.typeTag, { backgroundColor: getTypeColor(item.type) }]}>
         <Text style={styles.typeText}>{item.type.toUpperCase()}</Text>
@@ -80,7 +89,7 @@ export default function OpportunitiesScreen() {
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
-  );
+  ), []);
 
   const types = [
     { id: 'tryout', label: 'Tryouts' },
@@ -89,46 +98,64 @@ export default function OpportunitiesScreen() {
     { id: 'job', label: 'Jobs' },
   ];
 
-  return (
-    <SafeAreaView style={styles.container}>
+  const ListHeader = useMemo(() => (
+    <View>
       <View style={styles.header}>
-        <Text style={styles.title}>Opportunities</Text>
+        <Text style={styles.title} testID="opportunities-title">Opportunities</Text>
         <Text style={styles.subtitle}>Find your next big break</Text>
       </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterContainer}
-        contentContainerStyle={styles.filterContent}
-      >
-        <TouchableOpacity
-          style={[styles.filterChip, !selectedType && styles.filterChipActive]}
-          onPress={() => setSelectedType(null)}
+      <View style={styles.filtersWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterContainer}
+          contentContainerStyle={styles.filterContent}
         >
-          <Text style={[styles.filterText, !selectedType && styles.filterTextActive]}>
-            All
-          </Text>
-        </TouchableOpacity>
-        {types.map((type) => (
           <TouchableOpacity
-            key={type.id}
-            style={[styles.filterChip, selectedType === type.id && styles.filterChipActive]}
-            onPress={() => setSelectedType(type.id)}
+            testID="chip-all-types"
+            style={[styles.filterChip, !selectedType && styles.filterChipActive]}
+            onPress={() => setSelectedType(null)}
           >
-            <Text style={[styles.filterText, selectedType === type.id && styles.filterTextActive]}>
-              {type.label}
-            </Text>
+            <Text style={[styles.filterText, !selectedType && styles.filterTextActive]}>All</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          {types.map((type) => (
+            <TouchableOpacity
+              testID={`chip-${type.id}`}
+              key={type.id}
+              style={[styles.filterChip, selectedType === type.id && styles.filterChipActive]}
+              onPress={() => setSelectedType(type.id)}
+            >
+              <Text style={[styles.filterText, selectedType === type.id && styles.filterTextActive]}>{type.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        <View style={styles.segmentedRow}>
+          {(['all','paid','unpaid'] as const).map((key) => (
+            <TouchableOpacity
+              key={key}
+              testID={`chip-${key}`}
+              style={[styles.segmentItem, showing === key && styles.segmentItemActive]}
+              onPress={() => setShowing(key)}
+            >
+              <Text style={[styles.segmentText, showing === key && styles.segmentTextActive]}>{key === 'all' ? 'All' : key === 'paid' ? 'Paid' : 'Unpaid'}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </View>
+  ), [selectedType, showing]);
 
+  return (
+    <SafeAreaView style={styles.container}>
       <FlatList
         data={filteredOpportunities}
         renderItem={renderOpportunity}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListHeaderComponent={ListHeader}
+        stickyHeaderIndices={[0]}
+        testID="opportunities-list"
       />
     </SafeAreaView>
   );
@@ -154,6 +181,11 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.xs,
+  },
+  filtersWrap: {
+    backgroundColor: theme.colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   filterContainer: {
     backgroundColor: theme.colors.white,
@@ -184,6 +216,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: theme.spacing.md,
+    paddingTop: 0,
   },
   opportunityCard: {
     backgroundColor: theme.colors.white,
@@ -274,5 +307,31 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: theme.spacing.sm,
+  },
+  segmentedRow: {
+    flexDirection: 'row',
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.white,
+  },
+  segmentItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
+  },
+  segmentItemActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  segmentText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
+    fontWeight: theme.fontWeight.medium,
+  },
+  segmentTextActive: {
+    color: theme.colors.white,
   },
 });
