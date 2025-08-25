@@ -49,22 +49,42 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         return;
       }
 
-      const { data: postsData, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles!posts_user_id_fkey (
-            id,
-            name,
-            avatar,
-            role
-          )
-        `)
-        .order('created_at', { ascending: false });
+      let postsData: any[] | null = null;
+      let lastError: any = null;
 
-      if (error) {
-        const msg = getErrorMessage(error);
-        console.error('Error loading posts from database:', msg, error);
+      const profileFieldSets = [
+        ['id', 'name', 'avatar', 'role'],
+        ['id', 'full_name', 'avatar', 'role'],
+        ['id', 'username', 'avatar', 'role'],
+        ['id', 'email', 'avatar', 'role'],
+      ];
+
+      for (const fields of profileFieldSets) {
+        try {
+          const selectStr = `*, profiles!posts_user_id_fkey (${fields.join(',')})`;
+          console.log('Trying select with fields:', fields.join(','));
+          const { data, error } = await supabase
+            .from('posts')
+            .select(selectStr)
+            .order('created_at', { ascending: false });
+
+          if (!error) {
+            postsData = data as any[];
+            lastError = null;
+            break;
+          }
+
+          lastError = error;
+          console.warn('Select attempt failed with fields', fields.join(','), '->', getErrorMessage(error));
+        } catch (err) {
+          lastError = err;
+          console.warn('Select attempt threw with fields', fields.join(','), '->', getErrorMessage(err));
+        }
+      }
+
+      if (lastError) {
+        const msg = getErrorMessage(lastError);
+        console.error('Error loading posts from database:', msg, lastError);
         const sortedMockPosts = mockPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         console.log('Falling back to mock posts:', sortedMockPosts.length, 'posts');
         setPosts(sortedMockPosts);
@@ -87,13 +107,15 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       
       // Transform database posts to our Post interface
       const transformedPosts: Post[] = postsData?.map((post: any) => {
-        console.log('Transforming post:', post.id, 'by user:', post.profiles?.name);
+        const profile = post.profiles ?? {};
+        const resolvedName = profile.name ?? profile.full_name ?? profile.username ?? profile.email ?? 'Unknown User';
+        console.log('Transforming post:', post.id, 'by user:', resolvedName);
         return {
           id: post.id,
           userId: post.user_id,
-          userName: post.profiles?.name || 'Unknown User',
-          userAvatar: post.profiles?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
-          userRole: post.profiles?.role || 'athlete',
+          userName: resolvedName,
+          userAvatar: profile.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+          userRole: profile.role || 'athlete',
           content: post.description || post.title,
           media: post.image_url || post.video_url ? {
             type: post.video_url ? 'video' : 'image',
@@ -102,7 +124,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           } : undefined,
           likes: post.likes_count || 0,
           comments: post.comments_count || 0,
-          shares: 0, // Not implemented in database yet
+          shares: 0,
           isLiked: userLikes.includes(post.id),
           createdAt: new Date(post.created_at),
         };
@@ -138,16 +160,6 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           .insert({
             id: user.id,
             email: user.email,
-            name: user.name,
-            role: user.role,
-            avatar: user.avatar,
-            bio: user.bio,
-            location: user.location,
-            verified: user.verified || false,
-            sport: user.sport,
-            position: user.position,
-            achievements: user.achievements || [],
-            stats: user.stats || {},
           });
         
         if (createError) {
