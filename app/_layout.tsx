@@ -10,6 +10,7 @@ import { FollowProvider } from "@/hooks/follow-context";
 import { NotificationProvider } from "@/hooks/notifications-context";
 import { MessagesProvider } from "@/hooks/messages-context";
 import { View, ActivityIndicator } from "react-native";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -49,6 +50,7 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>
       <AuthProvider>
         <SearchProvider>
           <FollowProvider>
@@ -64,6 +66,7 @@ export default function RootLayout() {
           </FollowProvider>
         </SearchProvider>
       </AuthProvider>
+      </ErrorBoundary>
     </QueryClientProvider>
   );
 }
