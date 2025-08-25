@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { User, Trophy, Users, Building2, Heart } from 'lucide-react-native';
+import { User, Trophy, Users, Building2, Heart, Dumbbell } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { Button } from '@/components/Button';
 import { UserRole } from '@/types';
@@ -47,6 +47,13 @@ const roles: RoleOption[] = [
     color: theme.colors.secondary,
   },
   {
+    id: 'trainer',
+    title: 'Gym Trainer',
+    description: 'Coach athletes in strength and conditioning',
+    icon: <Dumbbell size={32} color={theme.colors.white} />,
+    color: theme.colors.warning ?? theme.colors.secondary,
+  },
+  {
     id: 'team',
     title: 'Team/Club',
     description: 'Build your roster and manage your organization',
@@ -67,10 +74,15 @@ export default function RoleSelectionScreen() {
 
   const handleContinue = () => {
     if (selectedRole) {
-      router.push({
-        pathname: '/(auth)/signup',
-        params: { role: selectedRole },
-      });
+      const routeMap: Record<UserRole, string> = {
+        athlete: '/(auth)/signup-athlete',
+        coach: '/(auth)/signup-coach',
+        scout: '/(auth)/signup-scout',
+        team: '/(auth)/signup-team',
+        fan: '/(auth)/signup',
+        trainer: '/(auth)/signup-trainer',
+      };
+      router.push({ pathname: routeMap[selectedRole] as any, params: { role: selectedRole } });
     }
   };
 

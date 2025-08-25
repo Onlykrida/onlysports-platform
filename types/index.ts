@@ -1,4 +1,4 @@
-export type UserRole = 'athlete' | 'coach' | 'scout' | 'team' | 'fan';
+export type UserRole = 'athlete' | 'coach' | 'scout' | 'team' | 'fan' | 'trainer';
 
 export interface User {
   id: string;
