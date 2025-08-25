@@ -21,6 +21,7 @@ import { useFollow } from '@/hooks/follow-context';
 import { useNotifications } from '@/hooks/notifications-context';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from '@/hooks/auth-context';
+import { useUsers } from '@/hooks/users-context';
 
 export default function DiscoverScreen() {
   const [localSearchQuery, setLocalSearchQuery] = useState<string>('');
@@ -57,81 +58,23 @@ export default function DiscoverScreen() {
     }
   }, []);
 
+  const { users: cachedUsers, isLoading: usersIsLoading, refreshUsers } = useUsers();
+
   const loadUsers = useCallback(async () => {
     console.log('Discover: loadUsers start', { isSupabaseConfigured, currentUserId: currentUser?.id });
     setUsersError(null);
 
-    if (!isSupabaseConfigured) {
-      console.log('Discover: Supabase not configured. Skipping remote fetch.');
-      setIsLoadingUsers(false);
-      return;
-    }
-
     try {
       setIsLoadingUsers(true);
-      let query = supabase
-        .from('profiles')
-        .select('id, name, email, role, avatar, sport, bio, location, verified');
-
-      if (currentUser?.id) {
-        query = query.neq('id', currentUser.id);
-      }
-
-      const { data: profiles, error } = await query.limit(50);
-
-      if (error) {
-        const msg = getErrorMessage(error);
-        console.error('Error loading users:', msg, error);
-        // Specific handling for invalid UUID input when currentUser is not available
-        if (typeof msg === 'string' && msg.includes('invalid input syntax for type uuid')) {
-          console.warn('Ignoring invalid UUID filter; retrying without current user exclusion.');
-          const retry = await supabase
-            .from('profiles')
-            .select('id, name, email, role, avatar, sport, bio, location, verified')
-            .limit(50);
-          if (!retry.error) {
-            const userListRetry: User[] = (retry.data ?? []).map((profile: any) => ({
-              id: profile.id,
-              name: profile.name,
-              email: profile.email,
-              role: profile.role,
-              avatar: profile.avatar,
-              sport: profile.sport,
-              bio: profile.bio,
-              location: profile.location,
-              verified: profile.verified,
-              position: undefined,
-              achievements: [],
-              stats: {},
-              createdAt: new Date(),
-            }));
-            setUsers(userListRetry);
-            return;
-          }
-        }
-        setUsersError(msg);
-        setUsers([]);
+      if (!isSupabaseConfigured) {
+        console.log('Discover: using cached users only');
+        setUsers(cachedUsers.filter(u => u.id !== currentUser?.id));
         return;
       }
 
-      const userList: User[] = (profiles ?? []).map((profile: any) => ({
-        id: profile.id,
-        name: profile.name,
-        email: profile.email,
-        role: profile.role,
-        avatar: profile.avatar,
-        sport: profile.sport,
-        bio: profile.bio,
-        location: profile.location,
-        verified: profile.verified,
-        position: undefined,
-        achievements: [],
-        stats: {},
-        createdAt: new Date(),
-      }));
-
-      console.log('Discover: loaded users count', userList.length);
-      setUsers(userList);
+      await refreshUsers();
+      setUsers(cachedUsers.filter(u => u.id !== currentUser?.id));
+      console.log('Discover: loaded users from UsersProvider', cachedUsers.length);
     } catch (error) {
       const msg = getErrorMessage(error);
       console.error('Failed to load users:', msg, error);
@@ -140,7 +83,7 @@ export default function DiscoverScreen() {
     } finally {
       setIsLoadingUsers(false);
     }
-  }, [currentUser?.id, getErrorMessage]);
+  }, [currentUser?.id, getErrorMessage, cachedUsers, refreshUsers, isSupabaseConfigured]);
 
   useEffect(() => {
     console.log('Discover: trigger initial loadUsers');
@@ -431,7 +374,7 @@ export default function DiscoverScreen() {
             ))}
           </ScrollView>
 
-          {isLoadingUsers ? (
+          {isLoadingUsers || usersIsLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={theme.colors.primary} />
               <Text style={styles.loadingText}>Loading users...</Text>
