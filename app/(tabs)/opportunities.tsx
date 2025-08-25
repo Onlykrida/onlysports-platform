@@ -98,7 +98,7 @@ export default function OpportunitiesScreen() {
     { id: 'job', label: 'Jobs' },
   ];
 
-  const ListHeader = useMemo(() => (
+  const FiltersBar = useMemo(() => (
     <View>
       <View style={styles.header}>
         <Text style={styles.title} testID="opportunities-title">Opportunities</Text>
@@ -147,14 +147,13 @@ export default function OpportunitiesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {FiltersBar}
       <FlatList
         data={filteredOpportunities}
         renderItem={renderOpportunity}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListHeaderComponent={ListHeader}
-        stickyHeaderIndices={[0]}
         testID="opportunities-list"
       />
     </SafeAreaView>
@@ -186,6 +185,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.white,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   filterContainer: {
     backgroundColor: theme.colors.white,
