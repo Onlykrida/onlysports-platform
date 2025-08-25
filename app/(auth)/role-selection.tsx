@@ -68,7 +68,7 @@ export default function RoleSelectionScreen() {
   const handleContinue = () => {
     if (selectedRole) {
       router.push({
-        pathname: '/signup',
+        pathname: '/(auth)/signup',
         params: { role: selectedRole },
       });
     }
@@ -127,7 +127,7 @@ export default function RoleSelectionScreen() {
             size="large"
           />
           <TouchableOpacity
-            onPress={() => router.push('/login')}
+            onPress={() => router.push('/(auth)/login')}
             style={styles.loginLink}
           >
             <Text style={styles.loginText}>

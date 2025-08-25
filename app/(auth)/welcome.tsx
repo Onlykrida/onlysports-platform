@@ -93,7 +93,7 @@ export default function WelcomeScreen() {
                 <Pressable
                   onPressIn={onPressIn}
                   onPressOut={onPressOut}
-                  onPress={() => router.push('/role-selection')}
+                  onPress={() => router.push('/(auth)/role-selection')}
                   accessibilityRole="button"
                   testID="cta-join"
                 >
@@ -109,7 +109,7 @@ export default function WelcomeScreen() {
               </Animated.View>
 
               <Pressable
-                onPress={() => router.push('/login')}
+                onPress={() => router.push('/(auth)/login')}
                 accessibilityRole="button"
                 testID="cta-login"
                 style={styles.loginWrapper}
