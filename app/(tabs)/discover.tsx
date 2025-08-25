@@ -82,7 +82,7 @@ export default function DiscoverScreen() {
     } finally {
       setIsLoadingUsers(false);
     }
-  }, [currentUser?.id, getErrorMessage, cachedUsers, refreshUsers, isSupabaseConfigured]);
+  }, [currentUser?.id, getErrorMessage, cachedUsers, refreshUsers]);
 
   useEffect(() => {
     console.log('Discover: trigger initial loadUsers');
@@ -101,6 +101,10 @@ export default function DiscoverScreen() {
     const matchesSport = !selectedSport || user.sport === selectedSport;
     return matchesSearch && matchesSport;
   }), [users, localSearchQuery, selectedSport]);
+
+  const isInitialLoading = useMemo(() => {
+    return (isLoadingUsers || usersIsLoading) && users.length === 0 && !usersError;
+  }, [isLoadingUsers, usersIsLoading, users.length, usersError]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -378,7 +382,7 @@ export default function DiscoverScreen() {
             ))}
           </ScrollView>
 
-          {isLoadingUsers || usersIsLoading ? (
+          {isInitialLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={theme.colors.primary} />
               <Text style={styles.loadingText}>Loading users...</Text>
@@ -399,7 +403,7 @@ export default function DiscoverScreen() {
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.listContent}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
-              refreshing={isLoadingUsers}
+              refreshing={filteredUsers.length > 0 ? (isLoadingUsers || usersIsLoading) : false}
               onRefresh={loadUsers}
             />
           ) : (
