@@ -69,15 +69,46 @@ export default function DiscoverScreen() {
 
     try {
       setIsLoadingUsers(true);
-      const { data: profiles, error } = await supabase
+      let query = supabase
         .from('profiles')
-        .select('id, name, email, role, avatar, sport, bio, location, verified')
-        .neq('id', currentUser?.id ?? '')
-        .limit(50);
+        .select('id, name, email, role, avatar, sport, bio, location, verified');
+
+      if (currentUser?.id) {
+        query = query.neq('id', currentUser.id);
+      }
+
+      const { data: profiles, error } = await query.limit(50);
 
       if (error) {
         const msg = getErrorMessage(error);
         console.error('Error loading users:', msg, error);
+        // Specific handling for invalid UUID input when currentUser is not available
+        if (typeof msg === 'string' && msg.includes('invalid input syntax for type uuid')) {
+          console.warn('Ignoring invalid UUID filter; retrying without current user exclusion.');
+          const retry = await supabase
+            .from('profiles')
+            .select('id, name, email, role, avatar, sport, bio, location, verified')
+            .limit(50);
+          if (!retry.error) {
+            const userListRetry: User[] = (retry.data ?? []).map((profile: any) => ({
+              id: profile.id,
+              name: profile.name,
+              email: profile.email,
+              role: profile.role,
+              avatar: profile.avatar,
+              sport: profile.sport,
+              bio: profile.bio,
+              location: profile.location,
+              verified: profile.verified,
+              position: undefined,
+              achievements: [],
+              stats: {},
+              createdAt: new Date(),
+            }));
+            setUsers(userListRetry);
+            return;
+          }
+        }
         setUsersError(msg);
         setUsers([]);
         return;
