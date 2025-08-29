@@ -476,20 +476,20 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
-    const subscription = supabase
-      .channel('posts_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'posts' },
-        (payload: any) => {
-          console.log('Posts change detected:', payload);
-          // Refresh posts when changes occur
-          loadPosts();
-        }
-      )
+    const channel = supabase
+      .channel('posts_and_profiles_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, (payload: any) => {
+        console.log('Posts change detected:', payload);
+        loadPosts();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {
+        console.log('Profile change detected (reload posts to refresh author meta):', payload?.new?.id || payload?.old?.id);
+        loadPosts();
+      })
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      channel.unsubscribe();
     };
   }, [loadPosts]);
 

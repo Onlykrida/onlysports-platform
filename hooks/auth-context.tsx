@@ -473,24 +473,55 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
 
     const userId = await ensureUserId();
     if (!userId) return { error: 'No user logged in' };
-    
+
     if (!isSupabaseConfigured) {
-      return { 
-        error: 'Database not configured. Please set up your Supabase credentials in the .env file.' 
+      return {
+        error: 'Database not configured. Please set up your Supabase credentials in the .env file.'
       };
     }
-    
+
     try {
-      const payload = {
+      let avatarUrl: string | undefined = updates.avatar;
+      const shouldUploadAvatar = typeof updates.avatar === 'string' && updates.avatar.length > 0 && !/^https?:\/\//i.test(updates.avatar);
+      if (shouldUploadAvatar) {
+        try {
+          const filenameFromUri = updates.avatar!.split('?')[0]?.split('/').pop() ?? `avatar-${Date.now()}.jpg`;
+          const ext = filenameFromUri.includes('.') ? (filenameFromUri.split('.').pop() as string) : 'jpg';
+          const contentType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+          const path = `avatars/${userId}/${Date.now()}-${filenameFromUri}`;
+          const resp = await fetch(updates.avatar!);
+          const blob = await resp.blob();
+          const { error: uploadError } = await supabase.storage.from('avatars').upload(path, blob, { contentType, upsert: false });
+          if (!uploadError) {
+            const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+            const publicUrl: string | undefined = (pub && (pub as any).publicUrl) || undefined;
+            avatarUrl = publicUrl ?? updates.avatar;
+          } else {
+            avatarUrl = updates.avatar;
+          }
+        } catch (e) {
+          avatarUrl = updates.avatar;
+        }
+      }
+
+      const payload: Record<string, any> = {
         name: updates.name,
         bio: updates.bio,
         location: updates.location,
-        avatar: updates.avatar,
+        avatar: avatarUrl,
         sport: updates.sport,
         position: updates.position,
         achievements: updates.achievements,
         stats: updates.stats,
-      } as const;
+        role: updates.role,
+      };
+
+      Object.keys(payload).forEach((k) => {
+        const key = k as keyof typeof payload;
+        if (typeof payload[key] === 'undefined') {
+          delete payload[key];
+        }
+      });
 
       const { error } = await supabase
         .from('profiles')
@@ -503,7 +534,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       }
 
       if (user && user.id === userId) {
-        const updatedUser = { ...user, ...updates };
+        const updatedUser = { ...user, ...updates, avatar: avatarUrl ?? updates.avatar };
         setUser(updatedUser);
       } else {
         const { data: sessionData } = await supabase.auth.getSession();
@@ -512,12 +543,12 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           await loadUserProfile(supaUser);
         }
       }
-      
+
       return {};
     } catch (error) {
       console.error('Profile update failed:', error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
+      const errorMessage = error instanceof Error
+        ? error.message
         : 'Failed to update profile. Please try again.';
       return { error: errorMessage };
     }

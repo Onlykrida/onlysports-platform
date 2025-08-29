@@ -224,17 +224,16 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
     }
   }, [user, loadConversations]);
 
-  // Real-time updates for messages
+  // Real-time updates for messages and profile changes impacting conversations
   useEffect(() => {
     if (!user || !isSupabaseConfigured) return;
 
     const channel = supabase
-      .channel('messages_changes')
+      .channel('messages_and_profiles_changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload: any) => {
         const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; read: boolean; created_at: string };
         const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
 
-        // Update messages list for that conversation
         setMessages(prev => {
           const prevList = prev[otherId] || [];
           const nextItem: Message = {
@@ -248,7 +247,10 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
           return { ...prev, [otherId]: [...prevList, nextItem] };
         });
 
-        // Refresh conversations to update last message and unread count
+        loadConversations();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (_payload: any) => {
+        // When any profile changes, refresh conversations to get latest names/avatars
         loadConversations();
       })
       .subscribe();

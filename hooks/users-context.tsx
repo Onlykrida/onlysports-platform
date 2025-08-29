@@ -102,6 +102,46 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
   }, [loadFromStorage, loadFromRemote, persist]);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    const channel = supabase
+      .channel('profiles_changes_users')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {
+        try {
+          const row = (payload.new ?? payload.old) as any;
+          if (!row) return;
+          const updated: User = {
+            id: row.id,
+            email: row.email,
+            name: row.name,
+            role: row.role,
+            avatar: row.avatar ?? undefined,
+            bio: row.bio ?? undefined,
+            location: row.location ?? undefined,
+            verified: row.verified ?? false,
+            sport: row.sport ?? undefined,
+            position: row.position ?? undefined,
+            achievements: row.achievements ?? [],
+            stats: row.stats ?? {},
+            createdAt: new Date(row.created_at ?? Date.now()),
+          };
+          setUsers((prev) => {
+            const exists = prev.some((u) => u.id === updated.id);
+            const list = exists ? prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u)) : [updated, ...prev];
+            void persist(list);
+            return list;
+          });
+        } catch (e) {
+          console.log('UsersProvider: profiles change handling failed', e);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [persist]);
+
+  useEffect(() => {
     if (authUser) {
       setUsers((prev) => {
         const existing = prev.find((u) => u.id === authUser.id);
