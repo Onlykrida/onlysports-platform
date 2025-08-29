@@ -110,6 +110,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   const loadUserProfile = async (supabaseUser: SupabaseUser) => {
     try {
       console.log('Loading profile for user:', supabaseUser.id);
+      const defaultRole: UserRole = (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
       
       if (!isSupabaseConfigured) {
         console.log('Supabase not configured, creating basic user object');
@@ -117,7 +118,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           id: supabaseUser.id,
           email: supabaseUser.email || '',
           name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-          role: 'athlete' as UserRole,
+          role: defaultRole,
           avatar: supabaseUser.user_metadata?.avatar_url,
           bio: undefined,
           location: undefined,
@@ -151,7 +152,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           id: supabaseUser.id,
           email: supabaseUser.email || '',
           name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-          role: 'athlete' as UserRole,
+          role: defaultRole,
           avatar: supabaseUser.user_metadata?.avatar_url,
           bio: undefined,
           location: undefined,
@@ -172,7 +173,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
               id: supabaseUser.id,
               email: supabaseUser.email || '',
               name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-              role: 'athlete',
+              role: defaultRole,
               verified: false,
             })
             .select()
@@ -184,7 +185,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
               id: supabaseUser.id,
               email: supabaseUser.email || '',
               name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-              role: 'athlete' as UserRole,
+              role: defaultRole,
               avatar: supabaseUser.user_metadata?.avatar_url,
               bio: undefined,
               location: undefined,
@@ -221,7 +222,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
             id: supabaseUser.id,
             email: supabaseUser.email || '',
             name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-            role: 'athlete' as UserRole,
+            role: defaultRole,
             avatar: supabaseUser.user_metadata?.avatar_url,
             bio: undefined,
             location: undefined,
@@ -259,7 +260,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           id: supabaseUser.id,
           email: supabaseUser.email || '',
           name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-          role: 'athlete' as UserRole,
+          role: defaultRole,
           avatar: supabaseUser.user_metadata?.avatar_url,
           bio: undefined,
           location: undefined,
@@ -283,7 +284,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         id: supabaseUser.id,
         email: supabaseUser.email || '',
         name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-        role: 'athlete' as UserRole,
+        role: defaultRole,
         avatar: supabaseUser.user_metadata?.avatar_url,
         bio: undefined,
         location: undefined,
