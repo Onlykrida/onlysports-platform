@@ -4,6 +4,8 @@ import { User, UserRole } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { router } from 'expo-router';
+import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
 
 interface AuthState {
   user: User | null;
@@ -483,25 +485,58 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
 
     try {
       let avatarUrl: string | undefined = updates.avatar;
-      const shouldUploadAvatar = typeof updates.avatar === 'string' && updates.avatar.length > 0 && !/^https?:\/\//i.test(updates.avatar);
-      if (shouldUploadAvatar) {
+      const inputAvatar: string | undefined = typeof updates.avatar === 'string' ? updates.avatar : undefined;
+      const isHttp = !!inputAvatar && /^https?:\/\//i.test(inputAvatar);
+      const isData = !!inputAvatar && /^data:/i.test(inputAvatar);
+      const isLocal = !!inputAvatar && /^(file:\/\/|content:\/\/)/i.test(inputAvatar);
+
+      const shouldTryUpload = !!inputAvatar && (isHttp || isData || isLocal);
+
+      const uriToBlob = async (uri: string, mimeGuess: string): Promise<Blob> => {
+        if (/^https?:\/\//i.test(uri) || /^data:/i.test(uri)) {
+          const r = await fetch(uri);
+          return await r.blob();
+        }
+        if (/^(file:\/\/|content:\/\/)/i.test(uri)) {
+          try {
+            const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+            const dataUrl = `data:${mimeGuess};base64,${base64}`;
+            const r = await fetch(dataUrl);
+            return await r.blob();
+          } catch (readErr) {
+            throw readErr as Error;
+          }
+        }
+        throw new Error('Unsupported URI scheme');
+      };
+
+      if (shouldTryUpload) {
         try {
-          const filenameFromUri = updates.avatar!.split('?')[0]?.split('/').pop() ?? `avatar-${Date.now()}.jpg`;
+          const filenameFromUri = inputAvatar!.split('?')[0]?.split('/').pop() ?? `avatar-${Date.now()}.jpg`;
           const ext = filenameFromUri.includes('.') ? (filenameFromUri.split('.').pop() as string) : 'jpg';
-          const contentType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+          const guessedType = ext.toLowerCase() === 'jpg' || ext.toLowerCase() === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
+          const contentType = guessedType;
           const path = `avatars/${userId}/${Date.now()}-${filenameFromUri}`;
-          const resp = await fetch(updates.avatar!);
-          const blob = await resp.blob();
-          const { error: uploadError } = await supabase.storage.from('avatars').upload(path, blob, { contentType, upsert: false });
+
+          const blob = await uriToBlob(inputAvatar!, contentType);
+
+          const { error: uploadError } = await supabase
+            .storage
+            .from('avatars')
+            .upload(path, blob, { contentType, upsert: false });
+
           if (!uploadError) {
             const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
             const publicUrl: string | undefined = (pub && (pub as any).publicUrl) || undefined;
-            avatarUrl = publicUrl ?? updates.avatar;
+            avatarUrl = publicUrl ?? inputAvatar;
+            console.log('Avatar uploaded to storage successfully:', { path, publicUrl });
           } else {
-            avatarUrl = updates.avatar;
+            console.warn('Storage upload failed, falling back to direct URI', uploadError);
+            avatarUrl = inputAvatar;
           }
         } catch (e) {
-          avatarUrl = updates.avatar;
+          console.warn('Avatar upload exception, falling back to direct URI', e);
+          avatarUrl = inputAvatar;
         }
       }
 
