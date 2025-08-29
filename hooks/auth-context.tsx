@@ -344,6 +344,9 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: { name, role },
+        },
       });
 
       if (authError) {
@@ -430,8 +433,10 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         }
 
         await loadUserProfile(authData.user);
+        return {};
       }
 
+      console.log('Signup completed without session (likely email verification required).');
       return {};
     } catch (error) {
       console.error('Signup failed:', error);

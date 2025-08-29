@@ -20,7 +20,7 @@ import { UserRole } from '@/types';
 
 export default function SignupScreen() {
   const { role } = useLocalSearchParams<{ role: UserRole }>();
-  const { signup, updateProfile } = useAuth();
+  const { signup, updateProfile, session } = useAuth();
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -68,12 +68,16 @@ export default function SignupScreen() {
       if (result.error) {
         setErrors({ general: result.error });
       } else {
+        if (!session) {
+          setErrors({ general: 'Please verify your email and sign in to complete your profile.' });
+          return;
+        }
         const achArray = achievements
           .split('\n')
           .map((a) => a.trim())
           .filter((a) => a)
           .map((a, idx) => ({ id: `${idx}`, title: a, description: '', date: new Date().toISOString() }));
-        const updates: any = {};
+        const updates: Record<string, any> = {};
         if (sport.trim()) updates.sport = sport.trim();
         if (bio.trim()) updates.bio = bio.trim();
         if (achArray.length) updates.achievements = achArray;
