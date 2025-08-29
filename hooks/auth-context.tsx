@@ -13,7 +13,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<{ error?: string }>;
   signup: (email: string, password: string, name: string, role: UserRole) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
-  updateProfile: (updates: Partial<User>) => Promise<{ error?: string }>;
+  updateProfile: (updates: Partial<User>) => Promise<{ error?: string }>; 
 }
 
 export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
@@ -108,9 +108,9 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   }, []);
 
   const loadUserProfile = async (supabaseUser: SupabaseUser) => {
+    const defaultRole: UserRole = (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
     try {
       console.log('Loading profile for user:', supabaseUser.id);
-      const defaultRole: UserRole = (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
       
       if (!isSupabaseConfigured) {
         console.log('Supabase not configured, creating basic user object');
