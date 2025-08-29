@@ -2,6 +2,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserRole } from '@/types';
+import { mockUsers } from '@/mocks/data';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from '@/hooks/auth-context';
 
@@ -36,9 +37,12 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
         const parsed = JSON.parse(json) as User[];
         const revived = parsed.map((u) => ({ ...u, createdAt: new Date(u.createdAt) }));
         setUsers(revived);
+        return revived;
       }
+      return null;
     } catch (e) {
       console.log('UsersProvider: loadFromStorage failed', e);
+      return null;
     }
   }, []);
 
@@ -84,12 +88,18 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
   }, [persist]);
 
   useEffect(() => {
-    loadFromStorage().then(() => {
+    loadFromStorage().then((loaded) => {
+      if (!loaded && !isSupabaseConfigured) {
+        console.log('UsersProvider: seeding mock users (20)');
+        setUsers(mockUsers);
+        void persist(mockUsers);
+        return;
+      }
       if (isSupabaseConfigured) {
         void loadFromRemote();
       }
     });
-  }, [loadFromStorage, loadFromRemote]);
+  }, [loadFromStorage, loadFromRemote, persist]);
 
   useEffect(() => {
     if (authUser) {
