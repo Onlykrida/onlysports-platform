@@ -5,7 +5,7 @@ export const theme = {
     backgroundDeep: '#0A0A0A', // Deep black for depth
     surface: '#1E1E1E', // Dark surface cards
     surfaceLight: '#2A2A2A', // Lighter surface elements
-    cardBackground: '#E0E0E0', // Platinum Grey for card backgrounds
+    cardBackground: '#1E1E1E', // Dark card background for better contrast
     
     // Primary Sport Colors (Energetic + Bold)
     primary: '#007BFF', // Electric Blue - energetic, professional, fresh
@@ -22,8 +22,8 @@ export const theme = {
     text: '#FFFFFF', // Bold white for headings on dark backgrounds
     textSecondary: '#B0B0B0', // Light grey for body text (Poppins/Inter/Roboto)
     textMuted: '#6C6C6C', // Muted grey for labels/secondary info
-    textOnCard: '#121212', // Dark text for light card backgrounds
-    textOnLight: '#121212', // Dark text for light backgrounds
+    textOnCard: '#FFFFFF', // White text for dark card backgrounds
+    textOnLight: '#FFFFFF', // White text for dark backgrounds
     textOnDark: '#FFFFFF', // White text for dark backgrounds
     textPrimary: '#FFFFFF', // Primary text color for dark theme
     textLight: '#E0E0E0', // Light text for better contrast
@@ -43,6 +43,7 @@ export const theme = {
     // Card and surface colors for better contrast
     cardBg: '#1E1E1E', // Dark card background
     surfaceDark: '#2A2A2A', // Darker surface for better contrast
+    inputBackground: '#2A2A2A', // Dark input background
     
     // Sporty gradients (Dynamic background gradients)
     gradient: {
