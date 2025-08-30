@@ -414,12 +414,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         }
       }
 
-      // Refresh the post data to get the updated like count from the database
-      // This ensures we have the correct count even if there were concurrent likes
-      setTimeout(() => {
-        console.log('Refreshing posts to sync like counts');
-        loadPosts();
-      }, 500);
+      // The real-time subscription will handle updating the like counts automatically
+      // No need to manually refresh posts here
       
     } catch (error) {
       console.error('Failed to toggle post like:', getErrorMessage(error), error);
@@ -437,7 +433,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         })
       );
     }
-  }, [user, posts, createNotification, loadPosts]);
+  }, [user, posts, createNotification]);
 
   // Update a post
   const updatePost = useCallback(async (
