@@ -414,8 +414,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         }
       }
 
-      // The real-time subscription will handle updating the like counts automatically
-      // No need to manually refresh posts here
+      // Don't reload posts immediately - let the optimistic update persist
+      // The real-time subscription will eventually sync the correct counts
       
     } catch (error) {
       console.error('Failed to toggle post like:', getErrorMessage(error), error);
@@ -569,15 +569,13 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       .channel('posts_and_profiles_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, (payload: any) => {
         console.log('Posts change detected:', payload);
-        loadPosts();
+        // Only reload if it's not a like count update (which we handle optimistically)
+        if (payload.eventType !== 'UPDATE' || !payload.new?.likes_count) {
+          loadPosts();
+        }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {
         console.log('Profile change detected (reload posts to refresh author meta):', payload?.new?.id || payload?.old?.id);
-        loadPosts();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, (payload: any) => {
-        console.log('Likes change detected:', payload);
-        // Reload posts to get updated like counts and user like status
         loadPosts();
       })
       .subscribe();

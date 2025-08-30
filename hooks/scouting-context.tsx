@@ -156,16 +156,26 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
 
   const upsertRecommendations = useCallback(async (recs: AIRecommendationRow[]) => {
     if (!isSupabaseConfigured || recs.length === 0) return;
-    const payload = recs.map((r) => ({
-      scout_id: r.scout_id,
-      player_id: r.player_id,
-      fit_score: r.fit_score,
-      breakdown: r.breakdown,
-      notes: r.notes ?? null,
-    }));
-    const { error } = await supabase.from('ai_recommendations').upsert(payload, { onConflict: 'scout_id,player_id' });
-    if (error) {
-      console.log('ScoutingProvider: upsertRecommendations error', error);
+    
+    try {
+      const payload = recs.map((r) => ({
+        scout_id: r.scout_id,
+        player_id: r.player_id,
+        fit_score: r.fit_score,
+        breakdown: r.breakdown,
+        notes: r.notes ?? null,
+      }));
+      const { error } = await supabase.from('ai_recommendations').upsert(payload, { onConflict: 'scout_id,player_id' });
+      if (error) {
+        // If table doesn't exist, skip silently
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+          console.log('ScoutingProvider: ai_recommendations table not found, skipping upsert');
+          return;
+        }
+        console.log('ScoutingProvider: upsertRecommendations error', error);
+      }
+    } catch (e) {
+      console.log('ScoutingProvider: upsertRecommendations exception', e);
     }
   }, []);
 
@@ -209,48 +219,75 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
       return topRecommendations[scoutId].slice(0, limit);
     }
     if (!isSupabaseConfigured) return [];
-    const { data, error } = await supabase
-      .from('ai_recommendations')
-      .select('*')
-      .eq('scout_id', scoutId)
-      .order('fit_score', { ascending: false })
-      .limit(limit);
-    if (error) {
-      console.log('ScoutingProvider: getTopForScout error', error);
+    
+    try {
+      const { data, error } = await supabase
+        .from('ai_recommendations')
+        .select('*')
+        .eq('scout_id', scoutId)
+        .order('fit_score', { ascending: false })
+        .limit(limit);
+      
+      if (error) {
+        // If table doesn't exist, return empty array instead of logging error
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+          console.log('ScoutingProvider: ai_recommendations table not found, returning empty results');
+          return [];
+        }
+        console.log('ScoutingProvider: getTopForScout error', error);
+        return [];
+      }
+      
+      const recs = (data ?? []) as unknown as AIRecommendationRow[];
+      setTopRecommendations((prev) => ({ ...prev, [scoutId]: recs }));
+      void persistCache({ ...topRecommendations, [scoutId]: recs }, interestedScouts);
+      return recs;
+    } catch (e) {
+      console.log('ScoutingProvider: getTopForScout exception', e);
       return [];
     }
-    const recs = (data ?? []) as unknown as AIRecommendationRow[];
-    setTopRecommendations((prev) => ({ ...prev, [scoutId]: recs }));
-    void persistCache({ ...topRecommendations, [scoutId]: recs }, interestedScouts);
-    return recs;
   }, [topRecommendations, persistCache, interestedScouts]);
 
   const getInterestedForPlayer = useCallback(async (playerId: string, threshold: number = 70) => {
     if (!isSupabaseConfigured) return [];
-    const { data, error } = await supabase
-      .from('ai_recommendations')
-      .select('*')
-      .eq('player_id', playerId)
-      .gte('fit_score', threshold)
-      .order('fit_score', { ascending: false })
-      .limit(50);
-    if (error) {
-      console.log('ScoutingProvider: getInterestedForPlayer error', error);
+    
+    // Check if ai_recommendations table exists first
+    try {
+      const { data, error } = await supabase
+        .from('ai_recommendations')
+        .select('*')
+        .eq('player_id', playerId)
+        .gte('fit_score', threshold)
+        .order('fit_score', { ascending: false })
+        .limit(50);
+      
+      if (error) {
+        // If table doesn't exist, return empty array instead of logging error
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+          console.log('ScoutingProvider: ai_recommendations table not found, returning empty results');
+          return [];
+        }
+        console.log('ScoutingProvider: getInterestedForPlayer error', error);
+        return [];
+      }
+      
+      const recs = (data ?? []) as unknown as AIRecommendationRow[];
+      const map: { scout: User; rec: AIRecommendationRow }[] = recs
+        .map((r) => ({
+          scout: users.find((u) => u.id === r.scout_id && u.role === 'scout') as User,
+          rec: r,
+        }))
+        .filter((x) => !!x.scout);
+      setInterestedScouts((prev) => {
+        const next = { ...prev, [playerId]: map };
+        void persistCache(topRecommendations, next);
+        return next;
+      });
+      return map;
+    } catch (e) {
+      console.log('ScoutingProvider: getInterestedForPlayer exception', e);
       return [];
     }
-    const recs = (data ?? []) as unknown as AIRecommendationRow[];
-    const map: { scout: User; rec: AIRecommendationRow }[] = recs
-      .map((r) => ({
-        scout: users.find((u) => u.id === r.scout_id && u.role === 'scout') as User,
-        rec: r,
-      }))
-      .filter((x) => !!x.scout);
-    setInterestedScouts((prev) => {
-      const next = { ...prev, [playerId]: map };
-      void persistCache(topRecommendations, next);
-      return next;
-    });
-    return map;
   }, [users, topRecommendations, persistCache]);
 
   const refresh = useCallback(async () => {
