@@ -50,11 +50,11 @@ export default function SignupCoachScreen() {
         sport, 
         bio, 
         location: location || undefined, 
-        stats: { experience },
+        stats: {},
         roleSpecificData: {
-          experience,
+          experience: experience || undefined,
           philosophy: philosophy || undefined,
-          teamHistory: teamHistory ? teamHistory.split(',').map(t => t.trim()) : [],
+          teamHistory: teamHistory ? teamHistory.split(',').map(t => t.trim()).filter(t => t) : [],
         },
       });
       if (upd.error) {

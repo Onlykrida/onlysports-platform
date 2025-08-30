@@ -16,6 +16,9 @@ export default function SignupTeamScreen() {
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [sport, setSport] = useState<string>('');
   const [league, setLeague] = useState<string>('');
+  const [founded, setFounded] = useState<string>('');
+  const [homeVenue, setHomeVenue] = useState<string>('');
+  const [bio, setBio] = useState<string>('');
   const [location, setLocation] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -29,6 +32,7 @@ export default function SignupTeamScreen() {
     else if (password.length < 6) newErrors.password = 'At least 6 characters';
     if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     if (!sport.trim()) newErrors.sport = 'Sport is required';
+    if (!bio.trim()) newErrors.bio = 'Team description is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -42,7 +46,17 @@ export default function SignupTeamScreen() {
         setErrors({ general: result.error });
         return;
       }
-      const upd = await updateProfile({ sport, bio: league || undefined, location: location || undefined });
+      const upd = await updateProfile({ 
+        sport, 
+        bio, 
+        location: location || undefined,
+        stats: {},
+        roleSpecificData: {
+          league: league || undefined,
+          founded: founded || undefined,
+          homeVenue: homeVenue || undefined,
+        },
+      });
       if (upd.error) {
         setErrors({ general: upd.error });
         return;
@@ -76,9 +90,13 @@ export default function SignupTeamScreen() {
             <Input label="Password" placeholder="Create a password" value={password} onChangeText={setPassword} type="password" error={errors.password} icon={<Lock size={20} color={theme.colors.textSecondary} />} />
             <Input label="Confirm Password" placeholder="Re-enter password" value={confirmPassword} onChangeText={setConfirmPassword} type="password" error={errors.confirmPassword} icon={<Lock size={20} color={theme.colors.textSecondary} />} />
 
-            <Input label="Sport" placeholder="e.g., Cricket" value={sport} onChangeText={setSport} error={errors.sport} icon={<Trophy size={20} color={theme.colors.textSecondary} />} />
-            <Input label="League/Competition" placeholder="e.g., ISL" value={league} onChangeText={setLeague} icon={<Users size={20} color={theme.colors.textSecondary} />} />
-            <Input label="City, Country" placeholder="e.g., Pune, IN" value={location} onChangeText={setLocation} icon={<MapPin size={20} color={theme.colors.textSecondary} />} />
+            <Input label="Team Description" placeholder="Tell us about your team/club" value={bio} onChangeText={setBio} error={errors.bio} multiline icon={<Building2 size={20} color={theme.colors.textSecondary} />} testID="team-bio" />
+            
+            <Input label="Sport" placeholder="e.g., Cricket" value={sport} onChangeText={setSport} error={errors.sport} icon={<Trophy size={20} color={theme.colors.textSecondary} />} testID="team-sport" />
+            <Input label="League/Competition" placeholder="e.g., ISL" value={league} onChangeText={setLeague} icon={<Users size={20} color={theme.colors.textSecondary} />} testID="team-league" />
+            <Input label="Founded Year" placeholder="e.g., 2010" value={founded} onChangeText={setFounded} icon={<Trophy size={20} color={theme.colors.textSecondary} />} testID="team-founded" />
+            <Input label="Home Venue" placeholder="e.g., Stadium Name" value={homeVenue} onChangeText={setHomeVenue} icon={<Building2 size={20} color={theme.colors.textSecondary} />} testID="team-venue" />
+            <Input label="City, Country" placeholder="e.g., Pune, IN" value={location} onChangeText={setLocation} icon={<MapPin size={20} color={theme.colors.textSecondary} />} testID="team-location" />
           </View>
 
           <View style={styles.footer}>

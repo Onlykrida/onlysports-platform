@@ -110,8 +110,8 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   }, []);
 
   const loadUserProfile = async (supabaseUser: SupabaseUser) => {
-    const defaultRole: UserRole = (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
     try {
+      const defaultRole: UserRole = (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
       console.log('Loading profile for user:', supabaseUser.id);
       
       if (!isSupabaseConfigured) {
@@ -198,6 +198,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
               position: undefined,
               achievements: [],
               stats: {},
+              roleSpecificData: {},
               createdAt: new Date(supabaseUser.created_at),
             };
             setUser(basicUser);
@@ -236,6 +237,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
             position: undefined,
             achievements: [],
             stats: {},
+            roleSpecificData: {},
             createdAt: new Date(supabaseUser.created_at),
           };
           setUser(basicUser);
@@ -287,6 +289,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       });
       
       // Create fallback user to prevent infinite loading
+      const defaultRole: UserRole = (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
       const basicUser: User = {
         id: supabaseUser.id,
         email: supabaseUser.email || '',
@@ -300,6 +303,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         position: undefined,
         achievements: [],
         stats: {},
+        roleSpecificData: {},
         createdAt: new Date(supabaseUser.created_at),
       };
       setUser(basicUser);

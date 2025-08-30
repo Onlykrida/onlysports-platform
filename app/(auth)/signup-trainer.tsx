@@ -14,6 +14,7 @@ export default function SignupTrainerScreen() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [sport, setSport] = useState<string>('');
   const [specialties, setSpecialties] = useState<string>('');
   const [certifications, setCertifications] = useState<string>('');
   const [location, setLocation] = useState<string>('');
@@ -30,6 +31,7 @@ export default function SignupTrainerScreen() {
     else if (password.length < 6) newErrors.password = 'At least 6 characters';
     if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     if (!bio.trim()) newErrors.bio = 'Bio is required';
+    if (!sport.trim()) newErrors.sport = 'Primary sport/focus is required';
     if (!specialties.trim()) newErrors.specialties = 'Specialties are required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -45,11 +47,13 @@ export default function SignupTrainerScreen() {
         return;
       }
       const upd = await updateProfile({ 
+        sport,
         bio, 
         location: location || undefined,
+        stats: {},
         roleSpecificData: {
-          specialties: specialties ? specialties.split(',').map(s => s.trim()) : [],
-          certifications: certifications ? certifications.split(',').map(c => c.trim()) : [],
+          specialties: specialties ? specialties.split(',').map(s => s.trim()).filter(s => s) : [],
+          certifications: certifications ? certifications.split(',').map(c => c.trim()).filter(c => c) : [],
         },
       });
       if (upd.error) {
@@ -87,6 +91,7 @@ export default function SignupTrainerScreen() {
 
             <Input label="Bio" placeholder="Tell us about your training background" value={bio} onChangeText={setBio} error={errors.bio} multiline icon={<Quote size={20} color={theme.colors.textSecondary} />} testID="trainer-bio" />
             
+            <Input label="Primary Sport/Focus" placeholder="e.g., Strength Training, Conditioning" value={sport} onChangeText={setSport} error={errors.sport} icon={<Dumbbell size={20} color={theme.colors.textSecondary} />} testID="trainer-sport" />
             <Input label="Specialties" placeholder="e.g., Strength Training, Conditioning, Sports Rehab" value={specialties} onChangeText={setSpecialties} error={errors.specialties} icon={<Dumbbell size={20} color={theme.colors.textSecondary} />} testID="trainer-specialties" />
             <Input label="Certifications" placeholder="e.g., ACE, NSCA, ACSM (comma separated)" value={certifications} onChangeText={setCertifications} icon={<Award size={20} color={theme.colors.textSecondary} />} testID="trainer-certs" />
             <Input label="City, Country" placeholder="e.g., Bengaluru, IN" value={location} onChangeText={setLocation} icon={<MapPin size={20} color={theme.colors.textSecondary} />} testID="trainer-location" />

@@ -53,8 +53,8 @@ export default function SignupScoutScreen() {
         location: location || undefined,
         roleSpecificData: {
           organization: organization || undefined,
-          scoutingRegions: regions ? regions.split(',').map(r => r.trim()) : [],
-          athleteLevels: athleteLevels ? athleteLevels.split(',').map(l => l.trim()) : [],
+          scoutingRegions: regions ? regions.split(',').map(r => r.trim()).filter(r => r) : [],
+          athleteLevels: athleteLevels ? athleteLevels.split(',').map(l => l.trim()).filter(l => l) : [],
           lookingFor: lookingFor || undefined,
         },
       });

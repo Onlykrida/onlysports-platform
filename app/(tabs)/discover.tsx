@@ -350,7 +350,7 @@ export default function DiscoverScreen() {
     <SafeAreaView style={styles.container} testID="discover-screen">
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Discover Athletes</Text>
+          <Text style={styles.title}>Discover People</Text>
           <TouchableOpacity 
             style={styles.notificationButton}
             onPress={() => router.push('/notifications')}
@@ -369,7 +369,7 @@ export default function DiscoverScreen() {
           <Search size={20} color={theme.colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search athletes, sports..."
+            placeholder="Search people, sports..."
             value={localSearchQuery}
             onChangeText={setLocalSearchQuery}
             onSubmitEditing={handleSearchSubmit}
@@ -511,7 +511,7 @@ export default function DiscoverScreen() {
               <Search size={48} color={theme.colors.textSecondary} />
               <Text style={styles.noUsersTitle}>No users found</Text>
               <Text style={styles.noUsersMessage}>
-                {selectedSport ? `No users found for ${selectedSport}` : 'No users available at the moment'}
+                {selectedSport ? `No users found for ${selectedSport}` : selectedRole ? `No ${selectedRole}s found` : 'No users available at the moment'}
               </Text>
               <TouchableOpacity style={styles.refreshButton} onPress={loadUsers} testID="discover-refresh-button">
                 <Text style={styles.refreshButtonText}>Refresh</Text>
