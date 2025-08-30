@@ -182,14 +182,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: theme.spacing.md,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.md,
     borderWidth: 2,
     borderColor: theme.colors.border,
     gap: theme.spacing.md,
   },
   roleCardSelected: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surfaceLight,
+    ...theme.shadow.electric,
   },
   iconContainer: {
     width: 56,
@@ -217,10 +218,12 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.borderLight,
+    backgroundColor: 'transparent',
   },
   radioSelected: {
     borderColor: 'transparent',
+    borderWidth: 3,
   },
   footer: {
     marginTop: theme.spacing.xl,
