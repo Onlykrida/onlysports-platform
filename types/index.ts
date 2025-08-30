@@ -127,6 +127,7 @@ export interface Opportunity {
   location: string;
   deadline: string;
   requirements?: string[];
+  paid: boolean;
   createdAt: Date;
   updatedAt: Date;
   // Populated fields

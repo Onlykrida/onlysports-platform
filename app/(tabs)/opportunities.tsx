@@ -20,6 +20,7 @@ export default function OpportunitiesScreen() {
   const { opportunities, isLoading, applyToOpportunity, refreshOpportunities } = useOpportunities();
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
 
   const filteredOpportunities = useMemo(() => {
@@ -33,13 +34,21 @@ export default function OpportunitiesScreen() {
       list = list.filter((opp) => opp.sport.toLowerCase() === selectedSport.toLowerCase());
     }
     
+    if (selectedPayment) {
+      if (selectedPayment === 'paid') {
+        list = list.filter((opp) => opp.paid === true);
+      } else if (selectedPayment === 'unpaid') {
+        list = list.filter((opp) => opp.paid === false);
+      }
+    }
+    
     // Show only opportunities for athletes (scouts/coaches can see all)
     if (user?.role === 'athlete') {
       list = list.filter((opp) => !opp.hasApplied);
     }
     
     return list;
-  }, [opportunities, selectedType, selectedSport, user]);
+  }, [opportunities, selectedType, selectedSport, selectedPayment, user]);
 
   const sports = useMemo(() => {
     const uniqueSports = [...new Set(opportunities.map(opp => opp.sport))];
@@ -112,6 +121,12 @@ export default function OpportunitiesScreen() {
           <View style={styles.detailItem}>
             <Calendar size={14} color={theme.colors.textSecondary} />
             <Text style={styles.detailText}>Deadline: {new Date(item.deadline).toLocaleDateString()}</Text>
+          </View>
+          <View style={styles.detailItem}>
+            <DollarSign size={14} color={item.paid ? theme.colors.success : theme.colors.textSecondary} />
+            <Text style={[styles.detailText, { color: item.paid ? theme.colors.success : theme.colors.textSecondary }]}>
+              {item.paid ? 'Paid' : 'Unpaid'}
+            </Text>
           </View>
         </View>
 
@@ -235,9 +250,38 @@ export default function OpportunitiesScreen() {
             ))}
           </ScrollView>
         )}
+        
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterContainer}
+          contentContainerStyle={styles.filterContent}
+        >
+          <TouchableOpacity
+            testID="chip-all-payment"
+            style={[styles.filterChip, !selectedPayment && styles.filterChipActive]}
+            onPress={() => setSelectedPayment(null)}
+          >
+            <Text style={[styles.filterText, !selectedPayment && styles.filterTextActive]}>All</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            testID="chip-paid"
+            style={[styles.filterChip, selectedPayment === 'paid' && styles.filterChipActive]}
+            onPress={() => setSelectedPayment('paid')}
+          >
+            <Text style={[styles.filterText, selectedPayment === 'paid' && styles.filterTextActive]}>Paid</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            testID="chip-unpaid"
+            style={[styles.filterChip, selectedPayment === 'unpaid' && styles.filterChipActive]}
+            onPress={() => setSelectedPayment('unpaid')}
+          >
+            <Text style={[styles.filterText, selectedPayment === 'unpaid' && styles.filterTextActive]}>Unpaid</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     </View>
-  ), [selectedType, selectedSport, user, sports, types]);
+  ), [selectedType, selectedSport, selectedPayment, user, sports, types]);
 
   if (isLoading) {
     return (

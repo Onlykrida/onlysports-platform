@@ -14,6 +14,7 @@ export interface Opportunity {
   location: string;
   deadline: string;
   requirements?: string[];
+  paid: boolean;
   createdAt: Date;
   updatedAt: Date;
   // Populated fields
@@ -84,6 +85,7 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
         location: opp.location,
         deadline: opp.deadline,
         requirements: opp.requirements,
+        paid: opp.paid || false,
         createdAt: new Date(opp.created_at),
         updatedAt: new Date(opp.updated_at),
         teamName: opp.team?.name,
@@ -153,6 +155,7 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
           location: opportunityData.location,
           deadline: opportunityData.deadline,
           requirements: opportunityData.requirements,
+          paid: opportunityData.paid,
         });
 
       if (error) {
