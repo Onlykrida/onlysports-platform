@@ -145,7 +145,7 @@ export default function HomeScreen() {
             </View>
           </View>
         </TouchableOpacity>
-        {renderBadge(item.userRole, topRecommendations[user?.id ?? '']?.find(r => r.player_id === item.userId)?.fit_score)}
+        {renderBadge(item.userRole, topRecommendations[user?.id ?? '']?.find(r => r.player_id === item.userId)?.fit_score) || null}
         <View style={styles.headerActions}>
           {user?.id === item.userId && (
             <TouchableOpacity 
