@@ -55,8 +55,8 @@ export default function RootLayout() {
       <ErrorBoundary>
       <AuthProvider>
         <SearchProvider>
-          <FollowProvider>
-            <NotificationProvider>
+          <NotificationProvider>
+            <FollowProvider>
               <MessagesProvider>
                 <UsersProvider>
                   <PostsProvider>
@@ -68,8 +68,8 @@ export default function RootLayout() {
                   </PostsProvider>
                 </UsersProvider>
               </MessagesProvider>
-            </NotificationProvider>
-          </FollowProvider>
+            </FollowProvider>
+          </NotificationProvider>
         </SearchProvider>
       </AuthProvider>
       </ErrorBoundary>
