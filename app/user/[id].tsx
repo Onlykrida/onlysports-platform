@@ -90,7 +90,7 @@ export default function UserProfileScreen() {
       // Load user profile
       const { data: userData, error: userError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at')
         .eq('id', id)
         .single();
 
@@ -114,6 +114,7 @@ export default function UserProfileScreen() {
           position: userData.position,
           achievements: userData.achievements || [],
           stats: userData.stats || {},
+          roleSpecificData: userData.role_specific_data || {},
           createdAt: new Date(userData.created_at),
         };
         setProfileUser(user);
@@ -238,6 +239,179 @@ export default function UserProfileScreen() {
   const isOwnProfile = currentUser?.id === profileUser.id;
   const userIsFollowing = isFollowing(profileUser.id);
 
+  const renderRoleSpecificInfo = (user: User) => {
+    if (!user) return null;
+
+    const renderStatsSection = () => {
+      if (!user.stats || Object.keys(user.stats).length === 0) return null;
+      
+      return (
+        <View style={styles.roleSpecificSection}>
+          <Text style={styles.roleSpecificTitle}>Stats</Text>
+          <View style={styles.roleSpecificGrid}>
+            {Object.entries(user.stats).map(([key, value]) => (
+              <View key={key} style={styles.roleSpecificStatItem}>
+                <Text style={styles.roleSpecificStatValue}>{value}</Text>
+                <Text style={styles.roleSpecificStatLabel}>{key}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      );
+    };
+
+    const renderAchievements = () => {
+      if (!user.achievements || user.achievements.length === 0) return null;
+      
+      return (
+        <View style={styles.roleSpecificSection}>
+          <Text style={styles.roleSpecificTitle}>Achievements</Text>
+          {user.achievements.slice(0, 3).map((achievement) => (
+            <View key={achievement.id} style={styles.achievementItem}>
+              <Text style={styles.achievementIcon}>{achievement.icon || '🏆'}</Text>
+              <View style={styles.achievementInfo}>
+                <Text style={styles.achievementTitle}>{achievement.title}</Text>
+                <Text style={styles.achievementDescription}>{achievement.description}</Text>
+                <Text style={styles.achievementDate}>{achievement.date}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      );
+    };
+
+    const renderRoleSpecificData = () => {
+      if (!user.roleSpecificData) return null;
+
+      switch (user.role) {
+        case 'athlete':
+          const athleteData = user.roleSpecificData;
+          return (
+            <View style={styles.roleSpecificSection}>
+              <Text style={styles.roleSpecificTitle}>Athlete Details</Text>
+              <View style={styles.roleSpecificContent}>
+                {athleteData.height && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Height:</Text>
+                    <Text style={styles.roleSpecificValue}>{athleteData.height}</Text>
+                  </View>
+                )}
+                {athleteData.weight && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Weight:</Text>
+                    <Text style={styles.roleSpecificValue}>{athleteData.weight}</Text>
+                  </View>
+                )}
+                {athleteData.currentTeam && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Current Team:</Text>
+                    <Text style={styles.roleSpecificValue}>{athleteData.currentTeam}</Text>
+                  </View>
+                )}
+                {athleteData.careerGoals && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Career Goals:</Text>
+                    <Text style={styles.roleSpecificValue}>{athleteData.careerGoals}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          );
+        case 'scout':
+          const scoutData = user.roleSpecificData;
+          return (
+            <View style={styles.roleSpecificSection}>
+              <Text style={styles.roleSpecificTitle}>Scout Details</Text>
+              <View style={styles.roleSpecificContent}>
+                {scoutData.organization && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Organization:</Text>
+                    <Text style={styles.roleSpecificValue}>{scoutData.organization}</Text>
+                  </View>
+                )}
+                {scoutData.scoutingRegions && scoutData.scoutingRegions.length > 0 && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Scouting Regions:</Text>
+                    <Text style={styles.roleSpecificValue}>{scoutData.scoutingRegions.join(', ')}</Text>
+                  </View>
+                )}
+                {scoutData.athleteLevels && scoutData.athleteLevels.length > 0 && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Athlete Levels:</Text>
+                    <Text style={styles.roleSpecificValue}>{scoutData.athleteLevels.join(', ')}</Text>
+                  </View>
+                )}
+                {scoutData.lookingFor && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Looking For:</Text>
+                    <Text style={styles.roleSpecificValue}>{scoutData.lookingFor}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          );
+        case 'coach':
+          const coachData = user.roleSpecificData;
+          return (
+            <View style={styles.roleSpecificSection}>
+              <Text style={styles.roleSpecificTitle}>Coach Details</Text>
+              <View style={styles.roleSpecificContent}>
+                {coachData.experience && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Experience:</Text>
+                    <Text style={styles.roleSpecificValue}>{coachData.experience}</Text>
+                  </View>
+                )}
+                {coachData.philosophy && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Philosophy:</Text>
+                    <Text style={styles.roleSpecificValue}>{coachData.philosophy}</Text>
+                  </View>
+                )}
+                {coachData.teamHistory && coachData.teamHistory.length > 0 && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Team History:</Text>
+                    <Text style={styles.roleSpecificValue}>{coachData.teamHistory.join(', ')}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          );
+        case 'trainer':
+          const trainerData = user.roleSpecificData;
+          return (
+            <View style={styles.roleSpecificSection}>
+              <Text style={styles.roleSpecificTitle}>Trainer Details</Text>
+              <View style={styles.roleSpecificContent}>
+                {trainerData.specialties && trainerData.specialties.length > 0 && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Specialties:</Text>
+                    <Text style={styles.roleSpecificValue}>{trainerData.specialties.join(', ')}</Text>
+                  </View>
+                )}
+                {trainerData.certifications && trainerData.certifications.length > 0 && (
+                  <View style={styles.roleSpecificItem}>
+                    <Text style={styles.roleSpecificLabel}>Certifications:</Text>
+                    <Text style={styles.roleSpecificValue}>{trainerData.certifications.join(', ')}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          );
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <View style={styles.roleSpecificContainer}>
+        {renderRoleSpecificData()}
+        {renderStatsSection()}
+        {renderAchievements()}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen 
@@ -312,6 +486,9 @@ export default function UserProfileScreen() {
             )}
           </View>
         )}
+
+        {/* Role-specific Information */}
+        {renderRoleSpecificInfo(profileUser)}
 
         {/* Stats */}
         <View style={styles.statsContainer}>
@@ -614,5 +791,91 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  roleSpecificContainer: {
+    paddingHorizontal: theme.spacing.md,
+  },
+  roleSpecificSection: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  roleSpecificTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+  },
+  roleSpecificContent: {
+    gap: theme.spacing.sm,
+  },
+  roleSpecificItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: theme.spacing.xs,
+  },
+  roleSpecificLabel: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.fontWeight.medium,
+    flex: 1,
+  },
+  roleSpecificValue: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
+    flex: 2,
+    textAlign: 'right',
+  },
+  roleSpecificGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.md,
+  },
+  roleSpecificStatItem: {
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  roleSpecificStatValue: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.primary,
+  },
+  roleSpecificStatLabel: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
+  },
+  achievementItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.sm,
+    marginBottom: theme.spacing.sm,
+  },
+  achievementIcon: {
+    fontSize: theme.fontSize.lg,
+    marginRight: theme.spacing.sm,
+  },
+  achievementInfo: {
+    flex: 1,
+  },
+  achievementTitle: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+  },
+  achievementDescription: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
+  achievementDate: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.primary,
+    marginTop: theme.spacing.xs,
   },
 });
