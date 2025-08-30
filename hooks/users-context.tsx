@@ -15,7 +15,7 @@ interface UsersState {
   clearAll: () => Promise<void>;
 }
 
-const STORAGE_KEY = 'users_cache_v1';
+const STORAGE_KEY = 'users_cache_v2'; // Updated to clear old duplicates
 
 export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
   const [users, setUsers] = useState<User[]>([]);
@@ -52,7 +52,7 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, created_at')
+        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at')
         .limit(200);
       if (error) {
         console.log('UsersProvider: remote load error', error);
@@ -71,12 +71,21 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
         position: p.position ?? undefined,
         achievements: p.achievements ?? [],
         stats: p.stats ?? {},
+        roleSpecificData: p.role_specific_data ?? {},
         createdAt: new Date(p.created_at ?? Date.now()),
       }));
       setUsers((prev) => {
         const map = new Map<string, User>();
-        [...prev, ...remoteUsers].forEach((u) => map.set(u.id, u));
+        // First add remote users (they are more up-to-date)
+        remoteUsers.forEach((u) => map.set(u.id, u));
+        // Then add cached users only if they don't exist in remote
+        prev.forEach((u) => {
+          if (!map.has(u.id)) {
+            map.set(u.id, u);
+          }
+        });
         const merged = Array.from(map.values());
+        console.log('UsersProvider: merged users count:', merged.length, 'remote:', remoteUsers.length, 'cached:', prev.length);
         void persist(merged);
         return merged;
       });
@@ -136,6 +145,7 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
             position: row.position ?? undefined,
             achievements: row.achievements ?? [],
             stats: row.stats ?? {},
+            roleSpecificData: row.role_specific_data ?? {},
             createdAt: new Date(row.created_at ?? Date.now()),
           };
           setUsers((prev) => {

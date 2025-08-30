@@ -99,16 +99,28 @@ export default function DiscoverScreen() {
     setUsers(cachedUsers);
   }, [cachedUsers]);
 
-  const filteredUsers = useMemo(() => users.filter(user => {
-    const q = localSearchQuery.toLowerCase();
-    const matchesSearch = user.name.toLowerCase().includes(q) ||
-      (user.sport ? user.sport.toLowerCase().includes(q) : false) ||
-      (user.bio ? user.bio.toLowerCase().includes(q) : false) ||
-      user.role.toLowerCase().includes(q);
-    const matchesSport = !selectedSport || user.sport === selectedSport;
-    const matchesRole = !selectedRole || user.role === selectedRole;
-    return matchesSearch && matchesSport && matchesRole;
-  }), [users, localSearchQuery, selectedSport, selectedRole]);
+  const filteredUsers = useMemo(() => {
+    // First deduplicate users by ID and exclude current user
+    const uniqueUsers = users.reduce((acc, user) => {
+      if (!acc.has(user.id) && user.id !== currentUser?.id) {
+        acc.set(user.id, user);
+      }
+      return acc;
+    }, new Map<string, User>());
+    
+    const deduplicatedUsers = Array.from(uniqueUsers.values());
+    
+    return deduplicatedUsers.filter(user => {
+      const q = localSearchQuery.toLowerCase();
+      const matchesSearch = user.name.toLowerCase().includes(q) ||
+        (user.sport ? user.sport.toLowerCase().includes(q) : false) ||
+        (user.bio ? user.bio.toLowerCase().includes(q) : false) ||
+        user.role.toLowerCase().includes(q);
+      const matchesSport = !selectedSport || user.sport === selectedSport;
+      const matchesRole = !selectedRole || user.role === selectedRole;
+      return matchesSearch && matchesSport && matchesRole;
+    });
+  }, [users, localSearchQuery, selectedSport, selectedRole, currentUser?.id]);
 
   const isInitialLoading = useMemo(() => {
     return (isLoadingUsers || usersIsLoading) && users.length === 0 && !usersError;
