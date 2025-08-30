@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
   },
   subtitle: {
     fontSize: theme.fontSize.md,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
     minHeight: 120,
     marginBottom: theme.spacing.md,
   },
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   mediaButtonText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
   },
   tips: {
     backgroundColor: theme.colors.surface,
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnDark,
     marginBottom: theme.spacing.sm,
   },
   tip: {
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   },
   videoText: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.text,
+    color: theme.colors.textOnDark,
     fontWeight: theme.fontWeight.medium,
   },
   loadingContainer: {

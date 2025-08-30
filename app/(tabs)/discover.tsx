@@ -420,7 +420,7 @@ export default function DiscoverScreen() {
             style={styles.notificationButton}
             onPress={() => router.push('/notifications')}
           >
-            <Bell size={24} color={theme.colors.text} />
+            <Bell size={24} color={theme.colors.textOnLight} />
             {unreadCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationBadgeText}>
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
   },
   notificationButton: {
     position: 'relative',
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: theme.spacing.sm,
     fontSize: theme.fontSize.md,
-    color: theme.colors.text,
+    color: theme.colors.textOnDark,
   },
   clearButton: {
     padding: theme.spacing.xs,
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
     fontWeight: theme.fontWeight.medium,
   },
   filterChipTextActive: {
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
   noUsersTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnDark,
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },
@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
   },
   verified: {
     fontSize: theme.fontSize.sm,
@@ -869,7 +869,7 @@ const styles = StyleSheet.create({
   searchResultName: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
   },
   searchResultSubtitle: {
     fontSize: theme.fontSize.sm,
@@ -888,7 +888,7 @@ const styles = StyleSheet.create({
   noResultsTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },
@@ -903,7 +903,7 @@ const styles = StyleSheet.create({
   recentSearchesTitle: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
     marginBottom: theme.spacing.md,
   },
   recentSearchItem: {
@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   clearFiltersButtonText: {
-    color: theme.colors.text,
+    color: theme.colors.textOnDark,
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
   },

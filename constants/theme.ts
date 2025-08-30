@@ -19,10 +19,12 @@ export const theme = {
     orange: '#FF6F00', // Orange - energy and excitement
     
     // Text colors (Clean and readable)
-    text: '#FFFFFF', // Bold white for headings (Oswald/Bebas Neue style)
+    text: '#FFFFFF', // Bold white for headings on dark backgrounds
     textSecondary: '#B0B0B0', // Light grey for body text (Poppins/Inter/Roboto)
     textMuted: '#6C6C6C', // Muted grey for labels/secondary info
     textOnCard: '#121212', // Dark text for light card backgrounds
+    textOnLight: '#121212', // Dark text for light backgrounds
+    textOnDark: '#FFFFFF', // White text for dark backgrounds
     
     // Status colors
     success: '#00D26A', // Neon Green for success states

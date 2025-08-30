@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
   },
   searchContainer: {
     paddingHorizontal: theme.spacing.md,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: theme.fontSize.md,
-    color: theme.colors.text,
+    color: theme.colors.textOnDark,
   },
   listContent: {
     paddingVertical: theme.spacing.sm,
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   participantName: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
   },
   participantRole: {
     fontSize: theme.fontSize.xs,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   unreadMessage: {
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
     fontWeight: theme.fontWeight.medium,
   },
   loadingContainer: {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnDark,
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },

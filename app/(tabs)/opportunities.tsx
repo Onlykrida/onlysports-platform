@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
   },
   subtitle: {
     fontSize: theme.fontSize.md,
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
     fontWeight: theme.fontWeight.medium,
   },
   filterTextActive: {
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   opportunityTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
     marginBottom: theme.spacing.xs,
   },
   organization: {
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   requirementsTitle: {
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
     marginBottom: theme.spacing.xs,
   },
   requirement: {
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   viewButtonText: {
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnLight,
   },
   loadingContainer: {
     flex: 1,
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.textOnDark,
   },
   emptySubtext: {
     fontSize: theme.fontSize.md,
