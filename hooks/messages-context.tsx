@@ -13,6 +13,7 @@ export interface Message {
   postId?: string;
   status: 'sent' | 'delivered' | 'read';
   createdAt: Date;
+  updatedAt: Date;
   senderName?: string;
   senderAvatar?: string;
 }
@@ -141,6 +142,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
         mediaUrl: msg.media_url,
         status: msg.status,
         createdAt: new Date(msg.created_at),
+        updatedAt: new Date(msg.updated_at || msg.created_at),
         senderName: msg.sender?.name,
         senderAvatar: msg.sender?.avatar,
       })) || [];
@@ -184,7 +186,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
             'message',
             'New Message',
             `${user.name} sent you a message`,
-            { senderId: user.id, content: content.substring(0, 50) }
+            { senderId: user.id, content: content.substring(0, 50), messageId: null }
           );
         } catch (notificationError) {
           console.error('Failed to send message notification:', notificationError);
@@ -248,7 +250,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
     const channel = supabase
       .channel('messages_and_profiles_changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload: any) => {
-        const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; media_url?: string; status: string; created_at: string };
+        const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; media_url?: string; status: string; created_at: string; updated_at?: string };
         
         // Only process messages involving current user
         if (msg.sender_id !== user.id && msg.receiver_id !== user.id) return;
@@ -265,6 +267,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
             mediaUrl: msg.media_url,
             status: msg.status as Message['status'],
             createdAt: new Date(msg.created_at),
+            updatedAt: new Date(msg.updated_at || msg.created_at),
           };
           return { ...prev, [otherId]: [...prevList, nextItem] };
         });
@@ -272,7 +275,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
         loadConversations();
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload: any) => {
-        const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; media_url?: string; status: string; created_at: string };
+        const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; media_url?: string; status: string; created_at: string; updated_at?: string };
         
         // Only process messages involving current user
         if (msg.sender_id !== user.id && msg.receiver_id !== user.id) return;
@@ -288,6 +291,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
                   content: msg.content,
                   mediaUrl: msg.media_url,
                   status: msg.status as Message['status'],
+                  updatedAt: new Date(msg.updated_at || msg.created_at),
                 }
               : message
           );

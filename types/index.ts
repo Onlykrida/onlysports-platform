@@ -122,7 +122,7 @@ export interface Opportunity {
   teamId: string;
   title: string;
   description: string;
-  type: 'tryout' | 'tournament' | 'sponsorship' | 'scholarship';
+  type: 'tryout' | 'tournament' | 'sponsorship' | 'scholarship' | 'job' | 'camp';
   sport: string;
   location: string;
   deadline: string;
@@ -142,7 +142,9 @@ export interface Application {
   opportunityId: string;
   athleteId: string;
   status: 'pending' | 'accepted' | 'rejected';
+  coverLetter?: string;
   createdAt: Date;
+  updatedAt: Date;
   // Populated fields
   athleteName?: string;
   athleteAvatar?: string;
@@ -175,7 +177,7 @@ export interface Follow {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'follow' | 'like' | 'comment' | 'post' | 'opportunity' | 'message' | 'connection_request' | 'connection_accepted' | 'profile_view' | 'mention' | 'system';
+  type: 'follow' | 'like' | 'comment' | 'post' | 'opportunity' | 'message' | 'connection_request' | 'connection_accepted' | 'profile_view' | 'mention' | 'system' | 'application';
   title: string;
   message: string;
   data?: any;
@@ -192,6 +194,7 @@ export interface Message {
   postId?: string;
   status: 'sent' | 'delivered' | 'read';
   createdAt: Date;
+  updatedAt: Date;
   senderName?: string;
   senderAvatar?: string;
 }

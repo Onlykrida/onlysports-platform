@@ -9,7 +9,7 @@ export interface Opportunity {
   teamId: string;
   title: string;
   description: string;
-  type: 'tryout' | 'tournament' | 'sponsorship' | 'scholarship';
+  type: 'tryout' | 'tournament' | 'sponsorship' | 'scholarship' | 'job' | 'camp';
   sport: string;
   location: string;
   deadline: string;
@@ -29,7 +29,9 @@ export interface Application {
   opportunityId: string;
   athleteId: string;
   status: 'pending' | 'accepted' | 'rejected';
+  coverLetter?: string;
   createdAt: Date;
+  updatedAt: Date;
   // Populated fields
   athleteName?: string;
   athleteAvatar?: string;
@@ -127,6 +129,7 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
         athleteId: app.athlete_id,
         status: app.status,
         createdAt: new Date(app.created_at),
+        updatedAt: new Date(app.updated_at || app.created_at),
         athleteName: app.athlete?.name,
         athleteAvatar: app.athlete?.avatar,
         opportunityTitle: app.opportunity?.title,
@@ -195,6 +198,7 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
           opportunity_id: opportunityId,
           athlete_id: user.id,
           status: 'pending',
+          cover_letter: null,
         });
 
       if (error) {
