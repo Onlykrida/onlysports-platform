@@ -188,37 +188,156 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     }
   }, [user]);
 
+  // Check if storage bucket is properly configured
+  const checkStorageBucket = useCallback(async (): Promise<boolean> => {
+    if (!isSupabaseConfigured) return false;
+    
+    try {
+      console.log('Posts: Checking storage bucket configuration...');
+      
+      // Try to list buckets to see if 'posts' bucket exists
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        console.error('Posts: Failed to list buckets:', bucketsError);
+        return false;
+      }
+      
+      const postsBucket = buckets?.find((bucket: any) => bucket.id === 'posts');
+      if (!postsBucket) {
+        console.error('Posts: "posts" bucket does not exist. Please create it in your Supabase dashboard.');
+        console.error('Posts: Go to Storage > Create bucket > Name: "posts" > Public: ON');
+        return false;
+      }
+      
+      console.log('Posts: Storage bucket found:', postsBucket);
+      
+      if (!postsBucket.public) {
+        console.warn('Posts: "posts" bucket is not public. Media may not be visible to other users.');
+        console.warn('Posts: Go to Storage > posts bucket settings > Toggle "Public bucket" ON');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Posts: Error checking storage bucket:', error);
+      return false;
+    }
+  }, []);
+
   // Upload media to Supabase Storage and return a public URL
   const uploadMediaIfNeeded = useCallback(async (uri?: string, mType?: 'image' | 'video'): Promise<string | undefined> => {
     if (!uri || !mType) return undefined;
-    if (!isSupabaseConfigured) return uri;
+    if (!isSupabaseConfigured) {
+      console.log('Posts: Supabase not configured, using direct URI');
+      return uri;
+    }
+
+    if (!user?.id) {
+      console.error('Posts: No user ID available for upload');
+      return uri;
+    }
 
     try {
-      console.log('Posts: starting media upload', { uri, mType, platform: Platform.OS });
-      const filenameFromUri = uri.split('?')[0]?.split('/').pop() ?? `media-${Date.now()}`;
-      const extGuess = filenameFromUri.includes('.') ? filenameFromUri.split('.').pop() as string : (mType === 'image' ? 'jpg' : 'mp4');
-      const contentType = mType === 'image' ? `image/${extGuess === 'jpg' ? 'jpeg' : extGuess}` : `video/${extGuess}`;
-      const path = `posts/${user?.id}/${Date.now()}-${filenameFromUri}`;
+      console.log('Posts: starting media upload', { uri, mType, platform: Platform.OS, userId: user.id });
+      
+      // Check storage bucket configuration first
+      const bucketConfigured = await checkStorageBucket();
+      if (!bucketConfigured) {
+        console.warn('Posts: Storage bucket not properly configured, using direct URI');
+        return uri;
+      }
+      
+      // Generate a unique filename
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2, 15);
+      const extension = mType === 'image' ? 'jpg' : 'mp4';
+      const filename = `${timestamp}-${randomId}.${extension}`;
+      const path = `posts/${user.id}/${filename}`;
+      
+      console.log('Posts: upload path:', path);
 
-      const resp = await fetch(uri);
-      const blob = await resp.blob();
-      console.log('Posts: fetched blob for upload', { size: (blob as any).size, type: (blob as any).type || contentType });
+      // Fetch the file and create blob
+      console.log('Posts: fetching file from URI...');
+      const response = await fetch(uri);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      console.log('Posts: blob created', { 
+        size: blob.size, 
+        type: blob.type,
+        sizeInMB: (blob.size / (1024 * 1024)).toFixed(2)
+      });
 
-      const { error: uploadError } = await supabase.storage.from('posts').upload(path, blob, { contentType, upsert: false });
+      if (blob.size === 0) {
+        throw new Error('Blob is empty');
+      }
+
+      // Set content type based on media type
+      const contentType = mType === 'image' ? 'image/jpeg' : 'video/mp4';
+      console.log('Posts: uploading with content type:', contentType);
+
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('posts')
+        .upload(path, blob, { 
+          contentType,
+          upsert: false,
+          cacheControl: '3600'
+        });
+
       if (uploadError) {
-        console.error('Posts: storage upload failed, fallback to direct URI', uploadError);
+        console.error('Posts: storage upload failed', {
+          error: uploadError,
+          message: uploadError.message,
+          statusCode: uploadError.statusCode
+        });
+        
+        // Check if it's a bucket configuration issue
+        if (uploadError.message?.includes('bucket') || uploadError.message?.includes('policy')) {
+          console.error('Posts: This appears to be a storage bucket configuration issue.');
+          console.error('Posts: Please run the storage setup SQL script in your Supabase dashboard.');
+        }
+        
+        return uri; // Fallback to direct URI
+      }
+
+      console.log('Posts: upload successful', uploadData);
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('posts')
+        .getPublicUrl(path);
+
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) {
+        console.error('Posts: failed to get public URL');
         return uri;
       }
 
-      const { data: pub } = supabase.storage.from('posts').getPublicUrl(path);
-      const publicUrl: string | undefined = (pub && (pub as any).publicUrl) || undefined;
-      console.log('Posts: uploaded media public URL', publicUrl);
-      return publicUrl ?? uri;
-    } catch (e) {
-      console.error('Posts: upload exception, using direct URI', e);
-      return uri;
+      console.log('Posts: public URL generated:', publicUrl);
+      return publicUrl;
+      
+    } catch (error) {
+      console.error('Posts: upload exception', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      // Provide more specific error information
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          console.error('Posts: Failed to fetch the media file. This might be a network issue or the file might not be accessible.');
+        } else if (error.message.includes('blob')) {
+          console.error('Posts: Failed to create blob from the media file.');
+        }
+      }
+      
+      return uri; // Fallback to direct URI
     }
-  }, [user]);
+  }, [user, checkStorageBucket]);
 
   // Create a new post
   const createPost = useCallback(async (content: string, mediaUrl?: string, mediaType?: 'image' | 'video') => {
