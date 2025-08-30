@@ -4,7 +4,7 @@ import { User, UserRole } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { router } from 'expo-router';
-import { Platform } from 'react-native';
+
 import * as FileSystem from 'expo-file-system';
 
 interface AuthState {
@@ -372,6 +372,18 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         
         while (retryCount < maxRetries) {
           try {
+            // Check if profile already exists first
+            const { data: existingProfile } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', authData.user.id)
+              .maybeSingle();
+            
+            if (existingProfile) {
+              console.log('Profile already exists, skipping creation');
+              break;
+            }
+            
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .insert({
@@ -394,7 +406,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
               });
               
               if (profileError.code === '23505') {
-                console.log('Profile already exists, continuing...');
+                console.log('Profile already exists (duplicate key), continuing...');
                 break;
               }
               
