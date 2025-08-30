@@ -239,175 +239,58 @@ export default function UserProfileScreen() {
   const isOwnProfile = currentUser?.id === profileUser.id;
   const userIsFollowing = isFollowing(profileUser.id);
 
-  const renderRoleSpecificInfo = (user: User) => {
-    if (!user) return null;
+  const renderRoleSpecificDetails = (user: User) => {
+    if (!user?.roleSpecificData) return null;
 
-    const renderStatsSection = () => {
-      if (!user.stats || Object.keys(user.stats).length === 0) return null;
-      
-      return (
-        <View style={styles.roleSpecificSection}>
-          <Text style={styles.roleSpecificTitle}>Stats</Text>
-          <View style={styles.roleSpecificGrid}>
-            {Object.entries(user.stats).map(([key, value]) => (
-              <View key={key} style={styles.roleSpecificStatItem}>
-                <Text style={styles.roleSpecificStatValue}>{value}</Text>
-                <Text style={styles.roleSpecificStatLabel}>{key}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      );
-    };
+    const data = user.roleSpecificData;
+    const details: { label: string; value: string; icon: string }[] = [];
 
-    const renderAchievements = () => {
-      if (!user.achievements || user.achievements.length === 0) return null;
-      
-      return (
-        <View style={styles.roleSpecificSection}>
-          <Text style={styles.roleSpecificTitle}>Achievements</Text>
-          {user.achievements.slice(0, 3).map((achievement) => (
-            <View key={achievement.id} style={styles.achievementItem}>
-              <Text style={styles.achievementIcon}>{achievement.icon || '🏆'}</Text>
-              <View style={styles.achievementInfo}>
-                <Text style={styles.achievementTitle}>{achievement.title}</Text>
-                <Text style={styles.achievementDescription}>{achievement.description}</Text>
-                <Text style={styles.achievementDate}>{achievement.date}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      );
-    };
-
-    const renderRoleSpecificData = () => {
-      if (!user.roleSpecificData) return null;
-
-      switch (user.role) {
-        case 'athlete':
-          const athleteData = user.roleSpecificData;
-          return (
-            <View style={styles.roleSpecificSection}>
-              <Text style={styles.roleSpecificTitle}>Athlete Details</Text>
-              <View style={styles.roleSpecificContent}>
-                {athleteData.height && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Height:</Text>
-                    <Text style={styles.roleSpecificValue}>{athleteData.height}</Text>
-                  </View>
-                )}
-                {athleteData.weight && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Weight:</Text>
-                    <Text style={styles.roleSpecificValue}>{athleteData.weight}</Text>
-                  </View>
-                )}
-                {athleteData.currentTeam && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Current Team:</Text>
-                    <Text style={styles.roleSpecificValue}>{athleteData.currentTeam}</Text>
-                  </View>
-                )}
-                {athleteData.careerGoals && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Career Goals:</Text>
-                    <Text style={styles.roleSpecificValue}>{athleteData.careerGoals}</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          );
-        case 'scout':
-          const scoutData = user.roleSpecificData;
-          return (
-            <View style={styles.roleSpecificSection}>
-              <Text style={styles.roleSpecificTitle}>Scout Details</Text>
-              <View style={styles.roleSpecificContent}>
-                {scoutData.organization && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Organization:</Text>
-                    <Text style={styles.roleSpecificValue}>{scoutData.organization}</Text>
-                  </View>
-                )}
-                {scoutData.scoutingRegions && scoutData.scoutingRegions.length > 0 && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Scouting Regions:</Text>
-                    <Text style={styles.roleSpecificValue}>{scoutData.scoutingRegions.join(', ')}</Text>
-                  </View>
-                )}
-                {scoutData.athleteLevels && scoutData.athleteLevels.length > 0 && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Athlete Levels:</Text>
-                    <Text style={styles.roleSpecificValue}>{scoutData.athleteLevels.join(', ')}</Text>
-                  </View>
-                )}
-                {scoutData.lookingFor && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Looking For:</Text>
-                    <Text style={styles.roleSpecificValue}>{scoutData.lookingFor}</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          );
-        case 'coach':
-          const coachData = user.roleSpecificData;
-          return (
-            <View style={styles.roleSpecificSection}>
-              <Text style={styles.roleSpecificTitle}>Coach Details</Text>
-              <View style={styles.roleSpecificContent}>
-                {coachData.experience && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Experience:</Text>
-                    <Text style={styles.roleSpecificValue}>{coachData.experience}</Text>
-                  </View>
-                )}
-                {coachData.philosophy && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Philosophy:</Text>
-                    <Text style={styles.roleSpecificValue}>{coachData.philosophy}</Text>
-                  </View>
-                )}
-                {coachData.teamHistory && coachData.teamHistory.length > 0 && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Team History:</Text>
-                    <Text style={styles.roleSpecificValue}>{coachData.teamHistory.join(', ')}</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          );
-        case 'trainer':
-          const trainerData = user.roleSpecificData;
-          return (
-            <View style={styles.roleSpecificSection}>
-              <Text style={styles.roleSpecificTitle}>Trainer Details</Text>
-              <View style={styles.roleSpecificContent}>
-                {trainerData.specialties && trainerData.specialties.length > 0 && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Specialties:</Text>
-                    <Text style={styles.roleSpecificValue}>{trainerData.specialties.join(', ')}</Text>
-                  </View>
-                )}
-                {trainerData.certifications && trainerData.certifications.length > 0 && (
-                  <View style={styles.roleSpecificItem}>
-                    <Text style={styles.roleSpecificLabel}>Certifications:</Text>
-                    <Text style={styles.roleSpecificValue}>{trainerData.certifications.join(', ')}</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          );
-        default:
-          return null;
-      }
-    };
+    switch (user.role) {
+      case 'athlete':
+        if (data.height) details.push({ label: 'Height', value: data.height, icon: '📏' });
+        if (data.weight) details.push({ label: 'Weight', value: data.weight, icon: '⚖️' });
+        if (data.dateOfBirth) details.push({ label: 'Date of Birth', value: data.dateOfBirth, icon: '🎂' });
+        if (data.currentTeam) details.push({ label: 'Current Team', value: data.currentTeam, icon: '🏆' });
+        if (data.careerGoals) details.push({ label: 'Career Goals', value: data.careerGoals, icon: '🎯' });
+        break;
+      case 'scout':
+        if (data.organization) details.push({ label: 'Organization', value: data.organization, icon: '🏢' });
+        if (data.scoutingRegions && data.scoutingRegions.length > 0) {
+          details.push({ label: 'Scouting Regions', value: data.scoutingRegions.join(', '), icon: '🌍' });
+        }
+        if (data.athleteLevels && data.athleteLevels.length > 0) {
+          details.push({ label: 'Athlete Levels', value: data.athleteLevels.join(', '), icon: '👥' });
+        }
+        if (data.lookingFor) details.push({ label: 'Looking For', value: data.lookingFor, icon: '🔍' });
+        break;
+      case 'coach':
+        if (data.experience) details.push({ label: 'Experience', value: data.experience, icon: '⏱️' });
+        if (data.philosophy) details.push({ label: 'Philosophy', value: data.philosophy, icon: '💭' });
+        if (data.teamHistory && data.teamHistory.length > 0) {
+          details.push({ label: 'Team History', value: data.teamHistory.join(', '), icon: '🏆' });
+        }
+        break;
+      case 'trainer':
+        if (data.specialties && data.specialties.length > 0) {
+          details.push({ label: 'Specialties', value: data.specialties.join(', '), icon: '💪' });
+        }
+        if (data.certifications && data.certifications.length > 0) {
+          details.push({ label: 'Certifications', value: data.certifications.join(', '), icon: '🎓' });
+        }
+        break;
+    }
 
     return (
-      <View style={styles.roleSpecificContainer}>
-        {renderRoleSpecificData()}
-        {renderStatsSection()}
-        {renderAchievements()}
+      <View style={styles.roleDetailsContainer}>
+        {details.map((detail, index) => (
+          <View key={index} style={styles.roleDetailItem}>
+            <Text style={styles.roleDetailIcon}>{detail.icon}</Text>
+            <View style={styles.roleDetailInfo}>
+              <Text style={styles.roleDetailLabel}>{detail.label}</Text>
+              <Text style={styles.roleDetailValue}>{detail.value}</Text>
+            </View>
+          </View>
+        ))}
       </View>
     );
   };
@@ -467,29 +350,6 @@ export default function UserProfileScreen() {
           <Text style={styles.location}>{profileUser.location || 'Location not set'}</Text>
         </View>
 
-        {/* Interested Scouts for athletes */}
-        {profileUser.role === 'athlete' && (
-          <View style={styles.postsSection}>
-            <View style={styles.postsHeader}>
-              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser.name}</Text>
-            </View>
-            {interested.length > 0 ? (
-              interested.slice(0, 5).map((it, idx) => (
-                <View key={`${it.scoutName}-${idx}`} style={styles.postItem}>
-                  <Text style={styles.postText}>{it.scoutName} • {it.score}% fit</Text>
-                </View>
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No interested scouts yet</Text>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Role-specific Information */}
-        {renderRoleSpecificInfo(profileUser)}
-
         {/* Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
@@ -505,6 +365,88 @@ export default function UserProfileScreen() {
             <Text style={styles.statLabel}>Posts</Text>
           </View>
         </View>
+
+        {/* Achievements Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Trophy size={20} color={theme.colors.primary} />
+            <Text style={styles.sectionTitle}>Achievements</Text>
+          </View>
+          {profileUser.achievements && profileUser.achievements.length > 0 ? (
+            profileUser.achievements.map((achievement, index) => (
+              <View key={achievement.id || index} style={styles.achievementItem}>
+                <Text style={styles.achievementIcon}>{achievement.icon || '🏆'}</Text>
+                <View style={styles.achievementInfo}>
+                  <Text style={styles.achievementTitle}>{achievement.title}</Text>
+                  <Text style={styles.achievementDescription}>{achievement.description}</Text>
+                  <Text style={styles.achievementDate}>{achievement.date}</Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No achievements yet</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Role-specific Information */}
+        {profileUser.roleSpecificData && Object.keys(profileUser.roleSpecificData).length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Award size={20} color={theme.colors.secondary} />
+              <Text style={styles.sectionTitle}>{profileUser.role.charAt(0).toUpperCase() + profileUser.role.slice(1)} Details</Text>
+            </View>
+            {renderRoleSpecificDetails(profileUser)}
+          </View>
+        )}
+
+        {/* Stats Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Target size={20} color={theme.colors.primary} />
+            <Text style={styles.sectionTitle}>Stats</Text>
+          </View>
+          <View style={styles.statsGrid}>
+            {profileUser.stats && Object.keys(profileUser.stats).length > 0 ? (
+              Object.entries(profileUser.stats).map(([key, value]) => (
+                <View key={key} style={styles.statCard}>
+                  <Text style={styles.statCardValue}>{String(value)}</Text>
+                  <Text style={styles.statCardLabel}>{key}</Text>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No stats available</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Interested Scouts for athletes */}
+        {profileUser.role === 'athlete' && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Flame size={20} color={theme.colors.success} />
+              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser.name}</Text>
+            </View>
+            {interested.length > 0 ? (
+              interested.slice(0, 5).map((it, idx) => (
+                <View key={`${it.scoutName}-${idx}`} style={styles.achievementItem}>
+                  <Star size={18} color={theme.colors.warning} />
+                  <View style={styles.achievementInfo}>
+                    <Text style={styles.achievementTitle}>{it.scoutName}</Text>
+                    <Text style={styles.achievementDescription}>Fit score {it.score}%</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No interested scouts yet</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Action Buttons */}
         {!isOwnProfile && (
@@ -792,90 +734,94 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  roleSpecificContainer: {
-    paddingHorizontal: theme.spacing.md,
-  },
-  roleSpecificSection: {
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.borderRadius.md,
+  section: {
     padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
   },
-  roleSpecificTitle: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
-  },
-  roleSpecificContent: {
-    gap: theme.spacing.sm,
-  },
-  roleSpecificItem: {
+  sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingVertical: theme.spacing.xs,
-  },
-  roleSpecificLabel: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    fontWeight: theme.fontWeight.medium,
-    flex: 1,
-  },
-  roleSpecificValue: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
-    flex: 2,
-    textAlign: 'right',
-  },
-  roleSpecificGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.md,
-  },
-  roleSpecificStatItem: {
     alignItems: 'center',
-    minWidth: 80,
-  },
-  roleSpecificStatValue: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.primary,
-  },
-  roleSpecificStatLabel: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
-    textAlign: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
   achievementItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    padding: theme.spacing.sm,
+    gap: theme.spacing.md,
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.sm,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.sm,
   },
   achievementIcon: {
-    fontSize: theme.fontSize.lg,
-    marginRight: theme.spacing.sm,
+    fontSize: 24,
   },
   achievementInfo: {
     flex: 1,
   },
   achievementTitle: {
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.text,
   },
   achievementDescription: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  achievementDate: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.xs,
   },
-  achievementDate: {
-    fontSize: theme.fontSize.xs,
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  statCardValue: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.bold,
     color: theme.colors.primary,
+  },
+  statCardLabel: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
     marginTop: theme.spacing.xs,
+  },
+  roleDetailsContainer: {
+    gap: theme.spacing.sm,
+  },
+  roleDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+  },
+  roleDetailIcon: {
+    fontSize: 20,
+  },
+  roleDetailInfo: {
+    flex: 1,
+  },
+  roleDetailLabel: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+    marginBottom: 2,
+  },
+  roleDetailValue: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    lineHeight: 18,
   },
 });
