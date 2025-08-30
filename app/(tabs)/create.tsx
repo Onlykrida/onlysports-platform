@@ -249,14 +249,14 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: theme.spacing.md,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
   title: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
   },
   subtitle: {
     fontSize: theme.fontSize.md,
@@ -264,14 +264,16 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs,
   },
   contentContainer: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.cardBg,
     margin: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   textInput: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
     minHeight: 120,
     marginBottom: theme.spacing.md,
   },
@@ -305,7 +307,7 @@ const styles = StyleSheet.create({
   },
   mediaButtonText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textOnLight,
+    color: theme.colors.textSecondary,
   },
   tips: {
     backgroundColor: theme.colors.surface,

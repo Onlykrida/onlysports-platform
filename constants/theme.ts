@@ -25,6 +25,8 @@ export const theme = {
     textOnCard: '#121212', // Dark text for light card backgrounds
     textOnLight: '#121212', // Dark text for light backgrounds
     textOnDark: '#FFFFFF', // White text for dark backgrounds
+    textPrimary: '#FFFFFF', // Primary text color for dark theme
+    textLight: '#E0E0E0', // Light text for better contrast
     
     // Status colors
     success: '#00D26A', // Neon Green for success states
@@ -37,6 +39,10 @@ export const theme = {
     black: '#000000',
     border: '#2A2A2A',
     borderLight: '#3A3A3A',
+    
+    // Card and surface colors for better contrast
+    cardBg: '#1E1E1E', // Dark card background
+    surfaceDark: '#2A2A2A', // Darker surface for better contrast
     
     // Sporty gradients (Dynamic background gradients)
     gradient: {

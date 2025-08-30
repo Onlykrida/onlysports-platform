@@ -420,7 +420,7 @@ export default function DiscoverScreen() {
             style={styles.notificationButton}
             onPress={() => router.push('/notifications')}
           >
-            <Bell size={24} color={theme.colors.textOnLight} />
+            <Bell size={24} color={theme.colors.text} />
             {unreadCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationBadgeText}>
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   header: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     padding: theme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
   },
   notificationButton: {
     position: 'relative',
@@ -695,13 +695,13 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xs,
   },
   roleFilter: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     maxHeight: 60,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
   sportsFilter: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     maxHeight: 60,
   },
   filterContent: {
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textOnLight,
+    color: theme.colors.textSecondary,
     fontWeight: theme.fontWeight.medium,
   },
   filterChipTextActive: {
@@ -773,11 +773,13 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.medium,
   },
   userCard: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     flexDirection: 'row',
     gap: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   userImage: {
     width: 80,
@@ -795,7 +797,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
   },
   verified: {
     fontSize: theme.fontSize.sm,
@@ -831,7 +833,7 @@ const styles = StyleSheet.create({
   },
   searchResultsContainer: {
     flex: 1,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.background,
   },
   searchLoadingContainer: {
     flexDirection: 'row',
@@ -869,7 +871,7 @@ const styles = StyleSheet.create({
   searchResultName: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
   },
   searchResultSubtitle: {
     fontSize: theme.fontSize.sm,
@@ -888,7 +890,7 @@ const styles = StyleSheet.create({
   noResultsTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },
@@ -903,7 +905,7 @@ const styles = StyleSheet.create({
   recentSearchesTitle: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
     marginBottom: theme.spacing.md,
   },
   recentSearchItem: {

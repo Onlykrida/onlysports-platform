@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notificationItem: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.cardBg,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
     flexDirection: 'row',

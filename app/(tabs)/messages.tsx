@@ -172,19 +172,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
   headerTitle: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
   },
   searchContainer: {
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
   },
   searchInputContainer: {
     flexDirection: 'row',
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.cardBg,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   participantName: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
   },
   participantRole: {
     fontSize: theme.fontSize.xs,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   unreadMessage: {
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
     fontWeight: theme.fontWeight.medium,
   },
   loadingContainer: {

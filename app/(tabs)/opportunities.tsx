@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   header: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     padding: theme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
   },
   subtitle: {
     fontSize: theme.fontSize.md,
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs,
   },
   filtersWrap: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
     shadowColor: '#000',
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   filterContainer: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     maxHeight: 60,
   },
   filterContent: {
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textOnLight,
+    color: theme.colors.textSecondary,
     fontWeight: theme.fontWeight.medium,
   },
   filterTextActive: {
@@ -381,9 +381,11 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   opportunityCard: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   typeTag: {
     alignSelf: 'flex-start',
@@ -400,7 +402,7 @@ const styles = StyleSheet.create({
   opportunityTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
   organization: {
@@ -433,7 +435,7 @@ const styles = StyleSheet.create({
   requirementsTitle: {
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
   requirement: {
@@ -475,7 +477,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingBottom: theme.spacing.sm,
     gap: theme.spacing.sm,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
   },
   segmentItem: {
     flex: 1,
@@ -548,7 +550,7 @@ const styles = StyleSheet.create({
   viewButtonText: {
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnLight,
+    color: theme.colors.text,
   },
   loadingContainer: {
     flex: 1,
