@@ -110,8 +110,11 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         userLikes = likesData?.map((like: any) => like.post_id) || [];
       }
       
-      // Transform database posts to our Post interface
-      const transformedPosts: Post[] = postsData?.map((post: any) => {
+      // Transform database posts to our Post interface, filtering out posts from deleted users
+      const transformedPosts: Post[] = postsData?.filter((post: any) => {
+        // Filter out posts where the profile is null (user was deleted)
+        return post.profiles !== null;
+      }).map((post: any) => {
         const profile = post.profiles ?? {};
         const resolvedName = profile.name ?? profile.full_name ?? profile.username ?? profile.email ?? 'Unknown User';
         console.log('Transforming post:', post.id, 'by user:', resolvedName);
@@ -576,6 +579,15 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {
         console.log('Profile change detected (reload posts to refresh author meta):', payload?.new?.id || payload?.old?.id);
+        if (payload.eventType === 'DELETE') {
+          // When a user is deleted, remove their posts from the local state immediately
+          const deletedUserId = payload.old?.id;
+          if (deletedUserId) {
+            console.log('User deleted, removing their posts from local state:', deletedUserId);
+            setPosts(prevPosts => prevPosts.filter(post => post.userId !== deletedUserId));
+          }
+        }
+        // Always reload to get the latest data
         loadPosts();
       })
       .subscribe();

@@ -15,7 +15,8 @@ interface AuthState {
   login: (email: string, password: string) => Promise<{ error?: string }>;
   signup: (email: string, password: string, name: string, role: UserRole) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
-  updateProfile: (updates: Partial<User>) => Promise<{ error?: string }>; 
+  updateProfile: (updates: Partial<User>) => Promise<{ error?: string }>;
+  deleteAccount: () => Promise<{ error?: string }>;
 }
 
 export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
@@ -612,6 +613,55 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     }
   }, [user]);
 
+  const deleteAccount = useCallback(async () => {
+    if (!user || !session) {
+      return { error: 'No user logged in' };
+    }
+
+    if (!isSupabaseConfigured) {
+      return {
+        error: 'Database not configured. Please set up your Supabase credentials in the .env file.'
+      };
+    }
+
+    try {
+      console.log('Deleting user account:', user.id);
+      
+      // First delete the profile (this will cascade delete all related data)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+
+      if (profileError) {
+        console.error('Error deleting profile:', profileError);
+        return { error: 'Failed to delete profile. Please try again.' };
+      }
+
+      // Then delete the auth user (this should happen automatically with CASCADE, but let's be explicit)
+      const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
+      
+      if (authError) {
+        console.error('Error deleting auth user:', authError);
+        // Profile is already deleted, so we should still sign out
+      }
+
+      // Sign out the user
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      
+      console.log('Account deleted successfully');
+      return {};
+    } catch (error) {
+      console.error('Account deletion failed:', error);
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Failed to delete account. Please try again.';
+      return { error: errorMessage };
+    }
+  }, [user, session]);
+
   return useMemo(() => ({
     user,
     session,
@@ -621,5 +671,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     signup,
     logout,
     updateProfile,
-  }), [user, session, isLoading, login, signup, logout, updateProfile]);
+    deleteAccount,
+  }), [user, session, isLoading, login, signup, logout, updateProfile, deleteAccount]);
 });

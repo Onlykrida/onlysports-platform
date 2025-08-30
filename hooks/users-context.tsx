@@ -107,6 +107,20 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
       .channel('profiles_changes_users')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {
         try {
+          if (payload.eventType === 'DELETE') {
+            // Handle user deletion
+            const deletedUserId = payload.old?.id;
+            if (deletedUserId) {
+              console.log('UsersProvider: User deleted, removing from cache:', deletedUserId);
+              setUsers((prev) => {
+                const filtered = prev.filter((u) => u.id !== deletedUserId);
+                void persist(filtered);
+                return filtered;
+              });
+            }
+            return;
+          }
+          
           const row = (payload.new ?? payload.old) as any;
           if (!row) return;
           const updated: User = {
