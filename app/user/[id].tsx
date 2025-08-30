@@ -344,7 +344,7 @@ export default function UserProfileScreen() {
             {profileUser.verified && <Text style={styles.verified}>✓</Text>}
           </View>
           <Text style={styles.role}>
-            {profileUser.sport || 'Athlete'} • {profileUser.position || 'Player'}
+            {profileUser.sport || 'Sport'} • {profileUser.role.charAt(0).toUpperCase() + profileUser.role.slice(1)}
           </Text>
           <Text style={styles.bio}>{profileUser.bio || 'No bio available'}</Text>
           <Text style={styles.location}>{profileUser.location || 'Location not set'}</Text>
