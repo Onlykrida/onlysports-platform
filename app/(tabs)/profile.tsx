@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 4,
-    borderColor: theme.colors.white,
+    borderColor: theme.colors.primary,
   },
   editButton: {
     position: 'absolute',
@@ -497,8 +497,10 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
+    fontWeight: theme.fontWeight.black,
     color: theme.colors.text,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
   verified: {
     fontSize: theme.fontSize.lg,
@@ -508,6 +510,9 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     color: theme.colors.primary,
     marginTop: theme.spacing.xs,
+    fontWeight: theme.fontWeight.bold,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
   bio: {
     fontSize: theme.fontSize.sm,
@@ -536,13 +541,16 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.primary,
   },
   statLabel: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    color: theme.colors.textMuted,
     marginTop: theme.spacing.xs,
+    fontWeight: theme.fontWeight.bold,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
   section: {
     padding: theme.spacing.md,
@@ -555,8 +563,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.semibold,
+    fontWeight: theme.fontWeight.black,
     color: theme.colors.text,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
   achievementItem: {
     flexDirection: 'row',
@@ -564,8 +574,10 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
     backgroundColor: theme.colors.surface,
     padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.lg,
     marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   achievementIcon: {
     fontSize: 24,
@@ -575,7 +587,7 @@ const styles = StyleSheet.create({
   },
   achievementTitle: {
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.semibold,
+    fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
   },
   achievementDescription: {
@@ -638,16 +650,19 @@ const styles = StyleSheet.create({
   },
   createPostButton: {
     marginTop: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
     backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.lg,
+    ...theme.shadow.glow,
   },
   createPostText: {
-    color: theme.colors.white,
+    color: theme.colors.black,
     fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
+    fontWeight: theme.fontWeight.black,
     textAlign: 'center',
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
   emptyStateSubtext: {
     fontSize: theme.fontSize.xs,

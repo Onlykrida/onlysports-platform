@@ -16,15 +16,25 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarInactiveTintColor: theme.colors.textMuted,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: theme.colors.white,
-          borderTopWidth: 1,
-          borderTopColor: theme.colors.border,
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
+          backgroundColor: theme.colors.surface,
+          borderTopWidth: 2,
+          borderTopColor: theme.colors.primary,
+          paddingBottom: 8,
+          paddingTop: 8,
+          height: 70,
+          ...theme.shadow.glow,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: theme.fontWeight.bold,
+          textTransform: 'uppercase' as const,
+          letterSpacing: 0.5,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 4,
         },
       }}
     >
@@ -66,20 +76,21 @@ export default function TabLayout() {
               {unreadMessagesCount > 0 && (
                 <View style={{
                   position: 'absolute',
-                  top: -2,
-                  right: -2,
-                  backgroundColor: theme.colors.danger,
-                  borderRadius: 10,
-                  minWidth: 20,
-                  height: 20,
+                  top: -4,
+                  right: -4,
+                  backgroundColor: theme.colors.accent,
+                  borderRadius: 12,
+                  minWidth: 22,
+                  height: 22,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  paddingHorizontal: 4,
+                  paddingHorizontal: 6,
+                  ...theme.shadow.fire,
                 }}>
                   <Text style={{
                     color: theme.colors.white,
                     fontSize: 10,
-                    fontWeight: 'bold',
+                    fontWeight: theme.fontWeight.black,
                   }}>
                     {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                   </Text>
@@ -99,20 +110,21 @@ export default function TabLayout() {
               {unreadCount > 0 && (
                 <View style={{
                   position: 'absolute',
-                  top: -2,
-                  right: -2,
-                  backgroundColor: theme.colors.danger,
-                  borderRadius: 10,
-                  minWidth: 20,
-                  height: 20,
+                  top: -4,
+                  right: -4,
+                  backgroundColor: theme.colors.accent,
+                  borderRadius: 12,
+                  minWidth: 22,
+                  height: 22,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  paddingHorizontal: 4,
+                  paddingHorizontal: 6,
+                  ...theme.shadow.fire,
                 }}>
                   <Text style={{
                     color: theme.colors.white,
                     fontSize: 10,
-                    fontWeight: 'bold',
+                    fontWeight: theme.fontWeight.black,
                   }}>
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </Text>

@@ -62,7 +62,7 @@ export default function RootLayout() {
                 <OpportunitiesProvider>
                   <UsersProvider>
                     <PostsProvider>
-                      <GestureHandlerRootView style={{ flex: 1 }}>
+                      <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.colors.background }}>
                         <ScoutingProvider>
                           <RootLayoutNav />
                         </ScoutingProvider>

@@ -76,43 +76,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.lg, // More rounded for sporty look
     gap: theme.spacing.sm,
   },
   primary: {
     backgroundColor: theme.colors.primary,
+    ...theme.shadow.glow, // Neon glow effect
   },
   secondary: {
     backgroundColor: theme.colors.secondary,
+    ...theme.shadow.electric, // Electric blue glow
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: theme.colors.primary,
+    ...theme.shadow.glow,
   },
   ghost: {
-    backgroundColor: 'transparent',
+    backgroundColor: theme.colors.surface,
   },
   small: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-  },
-  medium: {
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
+    minHeight: 40,
   },
-  large: {
+  medium: {
     paddingHorizontal: theme.spacing.xl,
     paddingVertical: theme.spacing.lg,
+    minHeight: 48,
+  },
+  large: {
+    paddingHorizontal: theme.spacing.xxl,
+    paddingVertical: theme.spacing.xl,
+    minHeight: 56,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   text: {
-    fontWeight: theme.fontWeight.semibold,
+    fontWeight: theme.fontWeight.bold,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
   primaryText: {
-    color: theme.colors.white,
+    color: theme.colors.black, // Black text on neon green
   },
   secondaryText: {
     color: theme.colors.white,
@@ -121,7 +129,7 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
   },
   ghostText: {
-    color: theme.colors.primary,
+    color: theme.colors.text,
   },
   smallText: {
     fontSize: theme.fontSize.sm,
