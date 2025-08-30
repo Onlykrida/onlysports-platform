@@ -280,29 +280,61 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
   // Like/unlike a post
   const likePost = useCallback(async (postId: string) => {
-    if (!user || !isSupabaseConfigured) {
+    if (!user) {
+      console.log('User not authenticated, cannot like post');
+      return;
+    }
+
+    const post = posts.find(p => p.id === postId);
+    if (!post) {
+      console.log('Post not found:', postId);
+      return;
+    }
+
+    console.log('Toggling like for post:', postId, 'current isLiked:', post.isLiked, 'current likes:', post.likes);
+
+    if (!isSupabaseConfigured) {
       // Optimistically update the UI for mock data
       setPosts(prevPosts => 
-        prevPosts.map(post => {
-          if (post.id === postId) {
+        prevPosts.map(p => {
+          if (p.id === postId) {
+            const newIsLiked = !p.isLiked;
+            const newLikes = newIsLiked ? p.likes + 1 : p.likes - 1;
+            console.log('Mock data update - newIsLiked:', newIsLiked, 'newLikes:', newLikes);
             return {
-              ...post,
-              isLiked: !post.isLiked,
-              likes: post.isLiked ? post.likes - 1 : post.likes + 1,
+              ...p,
+              isLiked: newIsLiked,
+              likes: Math.max(0, newLikes), // Ensure likes never go below 0
             };
           }
-          return post;
+          return p;
         })
       );
       return;
     }
 
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
+    // Optimistically update UI first for better UX
+    const wasLiked = post.isLiked;
+    const newIsLiked = !wasLiked;
+    const optimisticLikes = newIsLiked ? post.likes + 1 : Math.max(0, post.likes - 1);
+    
+    setPosts(prevPosts => 
+      prevPosts.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            isLiked: newIsLiked,
+            likes: optimisticLikes,
+          };
+        }
+        return p;
+      })
+    );
 
     try {
-      if (post.isLiked) {
+      if (wasLiked) {
         // Unlike post
+        console.log('Unliking post:', postId);
         const { error } = await supabase
           .from('likes')
           .delete()
@@ -311,10 +343,25 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
         if (error) {
           console.error('Error unliking post:', getErrorMessage(error), error);
+          // Revert optimistic update on error
+          setPosts(prevPosts => 
+            prevPosts.map(p => {
+              if (p.id === postId) {
+                return {
+                  ...p,
+                  isLiked: wasLiked,
+                  likes: post.likes,
+                };
+              }
+              return p;
+            })
+          );
           return;
         }
+        console.log('Successfully unliked post');
       } else {
         // Like post
+        console.log('Liking post:', postId);
         const { error } = await supabase
           .from('likes')
           .insert({
@@ -324,27 +371,73 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
         if (error) {
           console.error('Error liking post:', getErrorMessage(error), error);
+          // Revert optimistic update on error
+          setPosts(prevPosts => 
+            prevPosts.map(p => {
+              if (p.id === postId) {
+                return {
+                  ...p,
+                  isLiked: wasLiked,
+                  likes: post.likes,
+                };
+              }
+              return p;
+            })
+          );
           return;
+        }
+        
+        console.log('Successfully liked post');
+        
+        // Send notification to post author (only if it's not the user's own post)
+        if (post.userId !== user.id) {
+          console.log('Sending like notification to:', post.userId);
+          try {
+            await createNotification(
+              post.userId,
+              'like',
+              'New Like!',
+              `${user.name || 'Someone'} liked your post: "${post.content.substring(0, 50)}${post.content.length > 50 ? '...' : ''}"`,
+              {
+                postId: postId,
+                likedBy: user.id,
+                likedByName: user.name,
+              }
+            );
+            console.log('Like notification sent successfully');
+          } catch (notificationError) {
+            console.error('Failed to send like notification:', getErrorMessage(notificationError), notificationError);
+            // Don't revert the like if notification fails
+          }
+        } else {
+          console.log('Not sending notification - user liked their own post');
         }
       }
 
-      // Update local state optimistically
+      // Refresh the post data to get the updated like count from the database
+      // This ensures we have the correct count even if there were concurrent likes
+      setTimeout(() => {
+        console.log('Refreshing posts to sync like counts');
+        loadPosts();
+      }, 500);
+      
+    } catch (error) {
+      console.error('Failed to toggle post like:', getErrorMessage(error), error);
+      // Revert optimistic update on error
       setPosts(prevPosts => 
         prevPosts.map(p => {
           if (p.id === postId) {
             return {
               ...p,
-              isLiked: !p.isLiked,
-              likes: p.isLiked ? p.likes - 1 : p.likes + 1,
+              isLiked: wasLiked,
+              likes: post.likes,
             };
           }
           return p;
         })
       );
-    } catch (error) {
-      console.error('Failed to toggle post like:', getErrorMessage(error), error);
     }
-  }, [user, posts]);
+  }, [user, posts, createNotification, loadPosts]);
 
   // Update a post
   const updatePost = useCallback(async (
@@ -484,6 +577,11 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {
         console.log('Profile change detected (reload posts to refresh author meta):', payload?.new?.id || payload?.old?.id);
+        loadPosts();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, (payload: any) => {
+        console.log('Likes change detected:', payload);
+        // Reload posts to get updated like counts and user like status
         loadPosts();
       })
       .subscribe();
