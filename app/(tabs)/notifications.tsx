@@ -222,7 +222,7 @@ export default function NotificationsTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
   unreadNotification: {
-    backgroundColor: theme.colors.primaryLight,
+    backgroundColor: theme.colors.primary + '10',
     borderLeftWidth: 3,
     borderLeftColor: theme.colors.primary,
   },

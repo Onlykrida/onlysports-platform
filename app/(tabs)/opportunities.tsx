@@ -321,7 +321,7 @@ export default function OpportunitiesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
   },
   header: {
     backgroundColor: theme.colors.white,
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnDark,
+    color: theme.colors.text,
   },
   emptySubtext: {
     fontSize: theme.fontSize.md,

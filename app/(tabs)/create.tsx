@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnDark,
+    color: theme.colors.text,
     marginBottom: theme.spacing.sm,
   },
   tip: {
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   },
   videoText: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.textOnDark,
+    color: theme.colors.text,
     fontWeight: theme.fontWeight.medium,
   },
   loadingContainer: {

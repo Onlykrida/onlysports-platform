@@ -164,7 +164,7 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: theme.fontSize.md,
-    color: theme.colors.textOnDark,
+    color: theme.colors.text,
   },
   listContent: {
     paddingVertical: theme.spacing.sm,
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnDark,
+    color: theme.colors.text,
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },

@@ -630,7 +630,7 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
   },
   header: {
     backgroundColor: theme.colors.white,
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: theme.spacing.sm,
     fontSize: theme.fontSize.md,
-    color: theme.colors.textOnDark,
+    color: theme.colors.text,
   },
   clearButton: {
     padding: theme.spacing.xs,
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
   noUsersTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textOnDark,
+    color: theme.colors.text,
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },
@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   clearFiltersButtonText: {
-    color: theme.colors.textOnDark,
+    color: theme.colors.text,
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
   },
