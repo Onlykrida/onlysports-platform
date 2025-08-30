@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Bell } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
@@ -11,6 +11,16 @@ function HeaderTitle() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Image 
+          source={{ uri: 'https://r2-pub.rork.com/generated-images/ad75ea0e-6774-4791-b63d-3c24452a4a85.png' }}
+          style={{ 
+            width: 32, 
+            height: 32, 
+            marginRight: 8,
+            borderRadius: 6
+          }}
+          resizeMode="contain"
+        />
         <Text style={{ 
           fontSize: 20, 
           fontWeight: 'bold', 

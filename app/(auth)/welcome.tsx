@@ -8,6 +8,7 @@ import {
   Platform,
   Animated,
   Pressable,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -52,10 +53,19 @@ export default function WelcomeScreen() {
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.content}>
             <View style={styles.header}>
-              <Text accessibilityRole="header" testID="title-shadow" style={styles.logoShadow}>
-                OnlySports
-              </Text>
-              <Text testID="title" style={styles.logo}>OnlySports</Text>
+              <View style={styles.logoContainer}>
+                <Image 
+                  source={{ uri: 'https://r2-pub.rork.com/generated-images/ad75ea0e-6774-4791-b63d-3c24452a4a85.png' }}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
+                <View style={styles.logoTextContainer}>
+                  <Text accessibilityRole="header" testID="title-shadow" style={styles.logoShadow}>
+                    OnlySports
+                  </Text>
+                  <Text testID="title" style={styles.logo}>OnlySports</Text>
+                </View>
+              </View>
               <Text testID="tagline" style={styles.tagline}>
                 Where Athletes Get Discovered. Where Scouts Find Talent.
               </Text>
@@ -158,6 +168,19 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
   },
   header: { alignItems: 'center', marginTop: height * 0.08 },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  logoImage: {
+    width: 64,
+    height: 64,
+    marginRight: theme.spacing.md,
+  },
+  logoTextContainer: {
+    position: 'relative',
+  },
   logoShadow: {
     position: 'absolute',
     top: 0,
@@ -173,7 +196,6 @@ const styles = StyleSheet.create({
     fontSize: 46,
     fontWeight: theme.fontWeight.extrabold as any,
     color: theme.colors.white,
-    marginBottom: theme.spacing.xs,
   },
   tagline: {
     fontSize: theme.fontSize.md,
