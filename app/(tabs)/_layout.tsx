@@ -1,12 +1,14 @@
 import { Tabs } from "expo-router";
-import { Home, Search, Briefcase, User, PlusCircle, MessageCircle } from "lucide-react-native";
+import { Home, Search, Briefcase, User, PlusCircle, MessageCircle, Bell } from "lucide-react-native";
 import React from "react";
 import { View, Text } from "react-native";
 import { theme } from "@/constants/theme";
 import { useMessages } from "@/hooks/messages-context";
+import { useNotifications } from "@/hooks/notifications-context";
 
 export default function TabLayout() {
   const { conversations } = useMessages();
+  const { unreadCount } = useNotifications();
   
   const unreadMessagesCount = conversations.reduce((total, conv) => total + conv.unreadCount, 0);
 
@@ -80,6 +82,39 @@ export default function TabLayout() {
                     fontWeight: 'bold',
                   }}>
                     {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Notifications",
+          tabBarIcon: ({ color }) => (
+            <View style={{ position: 'relative' }}>
+              <Bell size={24} color={color} />
+              {unreadCount > 0 && (
+                <View style={{
+                  position: 'absolute',
+                  top: -2,
+                  right: -2,
+                  backgroundColor: theme.colors.danger,
+                  borderRadius: 10,
+                  minWidth: 20,
+                  height: 20,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingHorizontal: 4,
+                }}>
+                  <Text style={{
+                    color: theme.colors.white,
+                    fontSize: 10,
+                    fontWeight: 'bold',
+                  }}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
                   </Text>
                 </View>
               )}

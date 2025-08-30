@@ -2,7 +2,6 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
-import { useNotifications } from './notifications-context';
 
 export interface Message {
   id: string;
@@ -39,7 +38,6 @@ interface MessagesState {
 
 export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(() => {
   const { user } = useAuth();
-  const { createNotification } = useNotifications();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<{ [conversationId: string]: Message[] }>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -171,8 +169,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
         return { error: error.message };
       }
 
-      // Create a real-time notification for the receiver
-      await createNotification(receiverId, 'message', 'New message', content.substring(0, 80));
+      // Notification will be sent automatically by database trigger
 
       // Refresh messages for this conversation
       await loadMessages(receiverId);
@@ -183,7 +180,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
       console.error('Failed to send message:', error);
       return { error: 'Failed to send message' };
     }
-  }, [user, loadMessages, loadConversations, createNotification]);
+  }, [user, loadMessages, loadConversations]);
 
   const markAsRead = useCallback(async (conversationId: string) => {
     if (!user || !isSupabaseConfigured) return;

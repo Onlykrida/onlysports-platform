@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
 import { 
   Heart, 
   MessageCircle, 
@@ -27,6 +26,7 @@ import {
 import { theme } from '@/constants/theme';
 import { Notification } from '@/types';
 import { useNotifications } from '@/hooks/notifications-context';
+import { router } from 'expo-router';
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -69,7 +69,38 @@ const formatTimeAgo = (date: Date) => {
   return date.toLocaleDateString();
 };
 
-export default function NotificationsScreen() {
+const handleNotificationPress = (notification: Notification) => {
+  // Handle navigation based on notification type
+  switch (notification.type) {
+    case 'like':
+    case 'comment':
+    case 'post':
+      if (notification.data?.postId) {
+        router.push(`/post/${notification.data.postId}`);
+      }
+      break;
+    case 'follow':
+    case 'connection_request':
+    case 'connection_accepted':
+    case 'profile_view':
+      if (notification.data?.followerId || notification.data?.userId) {
+        router.push(`/user/${notification.data.followerId || notification.data.userId}`);
+      }
+      break;
+    case 'message':
+      if (notification.data?.senderId) {
+        router.push(`/chat/${notification.data.senderId}`);
+      }
+      break;
+    case 'opportunity':
+      router.push('/opportunities');
+      break;
+    default:
+      break;
+  }
+};
+
+export default function NotificationsTab() {
   const {
     notifications,
     isLoading,
@@ -82,7 +113,12 @@ export default function NotificationsScreen() {
   const renderNotification = ({ item }: { item: Notification }) => (
     <TouchableOpacity
       style={[styles.notificationItem, !item.read && styles.unreadNotification]}
-      onPress={() => !item.read && markAsRead(item.id)}
+      onPress={() => {
+        if (!item.read) {
+          markAsRead(item.id);
+        }
+        handleNotificationPress(item);
+      }}
     >
       <View style={styles.notificationIcon}>
         {getNotificationIcon(item.type)}
@@ -100,14 +136,20 @@ export default function NotificationsScreen() {
         {!item.read && (
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => markAsRead(item.id)}
+            onPress={(e) => {
+              e.stopPropagation();
+              markAsRead(item.id);
+            }}
           >
             <Check size={16} color={theme.colors.primary} />
           </TouchableOpacity>
         )}
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => deleteNotification(item.id)}
+          onPress={(e) => {
+            e.stopPropagation();
+            deleteNotification(item.id);
+          }}
         >
           <Trash2 size={16} color={theme.colors.textSecondary} />
         </TouchableOpacity>
@@ -120,20 +162,29 @@ export default function NotificationsScreen() {
       <Bell size={48} color={theme.colors.textSecondary} />
       <Text style={styles.emptyTitle}>No notifications yet</Text>
       <Text style={styles.emptyMessage}>
-        You&apos;ll see notifications here when people interact with your content
+        You'll see notifications here when people interact with your content
       </Text>
+    </View>
+  );
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>Notifications</Text>
+      {notifications.some(n => !n.read) && (
+        <TouchableOpacity
+          onPress={markAllAsRead}
+          style={styles.markAllButton}
+        >
+          <Text style={styles.markAllButtonText}>Mark all read</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
   if (isLoading && notifications.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <Stack.Screen
-          options={{
-            title: 'Notifications',
-            headerShown: true,
-          }}
-        />
+        {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={styles.loadingText}>Loading notifications...</Text>
@@ -144,25 +195,11 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: 'Notifications',
-          headerShown: true,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={markAllAsRead}
-              style={styles.headerButton}
-            >
-              <Text style={styles.headerButtonText}>Mark all read</Text>
-            </TouchableOpacity>
-          ),
-        }}
-      />
-      
       <FlatList
         data={notifications}
         renderItem={renderNotification}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderHeader}
         contentContainerStyle={[
           styles.listContent,
           notifications.length === 0 && styles.emptyListContent
@@ -187,6 +224,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.surface,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  headerTitle: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  markAllButton: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+  },
+  markAllButtonText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.medium,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -197,17 +258,8 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     color: theme.colors.textSecondary,
   },
-  headerButton: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-  },
-  headerButtonText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.primary,
-    fontWeight: theme.fontWeight.medium,
-  },
   listContent: {
-    paddingVertical: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
   },
   emptyListContent: {
     flex: 1,

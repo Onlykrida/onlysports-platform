@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { User } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
+import { useNotifications } from './notifications-context';
 
 interface FollowState {
   followers: User[];
@@ -21,6 +22,7 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
   const [following, setFollowing] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { user } = useAuth();
+  const { createNotification } = useNotifications();
 
   const loadFollows = useCallback(async () => {
     if (!user || !isSupabaseConfigured) return;
@@ -151,6 +153,26 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
       }
 
       console.log('Successfully followed user:', userId);
+      
+      // Send follow notification (this will be handled by the database trigger)
+      // But we can also send it manually if needed
+      try {
+        await createNotification(
+          userId,
+          'follow',
+          'New Follower!',
+          `${user.name || 'Someone'} started following you`,
+          {
+            followerId: user.id,
+            followerName: user.name,
+          }
+        );
+        console.log('Follow notification sent successfully');
+      } catch (notificationError) {
+        console.error('Failed to send follow notification:', notificationError);
+        // Don't fail the follow if notification fails
+      }
+      
       // Refresh follows
       await loadFollows();
       return {};
@@ -158,7 +180,7 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
       console.error('Follow failed:', error);
       return { error: 'Failed to follow user' };
     }
-  }, [user, loadFollows, isFollowing]);
+  }, [user, loadFollows, isFollowing, createNotification]);
 
   const unfollowUser = useCallback(async (userId: string) => {
     if (!user || !isSupabaseConfigured) {

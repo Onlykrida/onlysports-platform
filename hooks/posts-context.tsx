@@ -4,7 +4,6 @@ import { Platform } from 'react-native';
 import { Post } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
-import { useNotifications } from './notifications-context';
 import { mockPosts } from '@/mocks/data';
 
 function getErrorMessage(error: unknown): string {
@@ -38,7 +37,6 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const { createNotification } = useNotifications();
 
   // Load posts from database or use mock data
   const loadPosts = useCallback(async () => {
@@ -392,29 +390,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         
         console.log('Successfully liked post');
         
-        // Send notification to post author (only if it's not the user's own post)
-        if (post.userId !== user.id) {
-          console.log('Sending like notification to:', post.userId);
-          try {
-            await createNotification(
-              post.userId,
-              'like',
-              'New Like!',
-              `${user.name || 'Someone'} liked your post: "${post.content.substring(0, 50)}${post.content.length > 50 ? '...' : ''}"`,
-              {
-                postId: postId,
-                likedBy: user.id,
-                likedByName: user.name,
-              }
-            );
-            console.log('Like notification sent successfully');
-          } catch (notificationError) {
-            console.error('Failed to send like notification:', getErrorMessage(notificationError), notificationError);
-            // Don't revert the like if notification fails
-          }
-        } else {
-          console.log('Not sending notification - user liked their own post');
-        }
+        // Notification will be sent automatically by database trigger
       }
 
       // Don't reload posts immediately - let the optimistic update persist
@@ -436,7 +412,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         })
       );
     }
-  }, [user, posts, createNotification]);
+  }, [user, posts]);
 
   // Update a post
   const updatePost = useCallback(async (

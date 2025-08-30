@@ -159,7 +159,7 @@ export interface Follow {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'follow' | 'like' | 'comment' | 'post' | 'opportunity' | 'message';
+  type: 'follow' | 'like' | 'comment' | 'post' | 'opportunity' | 'message' | 'connection_request' | 'connection_accepted' | 'profile_view' | 'mention' | 'system';
   title: string;
   message: string;
   data?: any;
