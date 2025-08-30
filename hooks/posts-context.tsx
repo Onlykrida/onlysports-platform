@@ -548,9 +548,40 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       .channel('posts_and_profiles_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, (payload: any) => {
         console.log('Posts change detected:', payload);
-        // Only reload if it's not a like count update (which we handle optimistically)
-        if (payload.eventType !== 'UPDATE' || !payload.new?.likes_count) {
-          loadPosts();
+        // Reload posts for any post changes except optimistic like updates
+        loadPosts();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, (payload: any) => {
+        console.log('Likes change detected:', payload);
+        // When likes change, update the specific post's like count and status
+        if (payload.eventType === 'INSERT' && payload.new) {
+          const { post_id, user_id } = payload.new;
+          setPosts(prevPosts => 
+            prevPosts.map(p => {
+              if (p.id === post_id) {
+                return {
+                  ...p,
+                  likes: p.likes + 1,
+                  isLiked: user_id === user?.id ? true : p.isLiked,
+                };
+              }
+              return p;
+            })
+          );
+        } else if (payload.eventType === 'DELETE' && payload.old) {
+          const { post_id, user_id } = payload.old;
+          setPosts(prevPosts => 
+            prevPosts.map(p => {
+              if (p.id === post_id) {
+                return {
+                  ...p,
+                  likes: Math.max(0, p.likes - 1),
+                  isLiked: user_id === user?.id ? false : p.isLiked,
+                };
+              }
+              return p;
+            })
+          );
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {

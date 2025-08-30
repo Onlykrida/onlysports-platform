@@ -22,7 +22,8 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
   const [following, setFollowing] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { user } = useAuth();
-  const { createNotification } = useNotifications();
+  const notificationsContext = useNotifications();
+  const createNotification = notificationsContext?.createNotification;
 
   const loadFollows = useCallback(async () => {
     if (!user || !isSupabaseConfigured) return;
@@ -156,21 +157,25 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
       
       // Send follow notification (this will be handled by the database trigger)
       // But we can also send it manually if needed
-      try {
-        await createNotification(
-          userId,
-          'follow',
-          'New Follower!',
-          `${user.name || 'Someone'} started following you`,
-          {
-            followerId: user.id,
-            followerName: user.name,
-          }
-        );
-        console.log('Follow notification sent successfully');
-      } catch (notificationError) {
-        console.error('Failed to send follow notification:', notificationError);
-        // Don't fail the follow if notification fails
+      if (createNotification) {
+        try {
+          await createNotification(
+            userId,
+            'follow',
+            'New Follower!',
+            `${user.name || 'Someone'} started following you`,
+            {
+              followerId: user.id,
+              followerName: user.name,
+            }
+          );
+          console.log('Follow notification sent successfully');
+        } catch (notificationError) {
+          console.error('Failed to send follow notification:', notificationError);
+          // Don't fail the follow if notification fails
+        }
+      } else {
+        console.log('Notification system not available, skipping follow notification');
       }
       
       // Refresh follows
