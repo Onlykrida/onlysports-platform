@@ -129,6 +129,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           position: undefined,
           achievements: [],
           stats: {},
+          roleSpecificData: {},
           createdAt: new Date(supabaseUser.created_at),
         };
         setUser(basicUser);
@@ -163,6 +164,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           position: undefined,
           achievements: [],
           stats: {},
+          roleSpecificData: {},
           createdAt: new Date(supabaseUser.created_at),
         };
         setUser(basicUser);
@@ -214,6 +216,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
               position: newProfile.position,
               achievements: newProfile.achievements || [],
               stats: newProfile.stats || {},
+              roleSpecificData: newProfile.role_specific_data || {},
               createdAt: new Date(newProfile.created_at),
             };
             setUser(user);
@@ -252,6 +255,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           position: profile.position,
           achievements: profile.achievements || [],
           stats: profile.stats || {},
+          roleSpecificData: profile.role_specific_data || {},
           createdAt: new Date(profile.created_at),
         };
         setUser(user);
@@ -271,6 +275,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           position: undefined,
           achievements: [],
           stats: {},
+          roleSpecificData: {},
           createdAt: new Date(supabaseUser.created_at),
         };
         setUser(basicUser);
@@ -550,6 +555,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         achievements: updates.achievements,
         stats: updates.stats,
         role: updates.role,
+        role_specific_data: updates.roleSpecificData,
       };
 
       Object.keys(payload).forEach((k) => {

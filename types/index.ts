@@ -17,6 +17,37 @@ export interface User {
   followersCount?: number;
   followingCount?: number;
   isFollowing?: boolean;
+  // Role-specific fields
+  roleSpecificData?: RoleSpecificData;
+}
+
+export interface RoleSpecificData {
+  // Athlete specific
+  height?: string;
+  weight?: string;
+  dateOfBirth?: string;
+  careerGoals?: string;
+  currentTeam?: string;
+  
+  // Scout specific
+  organization?: string;
+  scoutingRegions?: string[];
+  athleteLevels?: string[];
+  lookingFor?: string;
+  
+  // Coach specific
+  experience?: string;
+  philosophy?: string;
+  teamHistory?: string[];
+  
+  // Trainer specific
+  specialties?: string[];
+  certifications?: string[];
+  
+  // Team specific
+  league?: string;
+  founded?: string;
+  homeVenue?: string;
 }
 
 export interface AthleteProfile extends User {

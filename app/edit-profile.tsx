@@ -49,6 +49,7 @@ export default function EditProfileScreen() {
     stats: user?.stats || {},
     avatar: user?.avatar || '',
     coverPhoto: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200',
+    roleSpecificData: user?.roleSpecificData || {},
   });
 
   const [newAchievement, setNewAchievement] = useState({
@@ -126,7 +127,10 @@ export default function EditProfileScreen() {
 
     setIsLoading(true);
     try {
-      const result = await updateProfile(formData);
+      const result = await updateProfile({
+        ...formData,
+        roleSpecificData: formData.roleSpecificData
+      });
       if (result.error) {
         Alert.alert('Error', result.error);
       } else {
@@ -193,6 +197,132 @@ export default function EditProfileScreen() {
     const newStats = { ...formData.stats };
     delete newStats[key];
     setFormData(prev => ({ ...prev, stats: newStats }));
+  };
+
+  const updateRoleSpecificData = (key: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      roleSpecificData: {
+        ...prev.roleSpecificData,
+        [key]: value
+      }
+    }));
+  };
+
+  const renderRoleSpecificFields = () => {
+    if (!user?.role) return null;
+
+    switch (user.role) {
+      case 'athlete':
+        return (
+          <>
+            <Input
+              label="Height"
+              value={formData.roleSpecificData?.height || ''}
+              onChangeText={(text) => updateRoleSpecificData('height', text)}
+              placeholder="e.g., 180 cm"
+            />
+            <Input
+              label="Weight"
+              value={formData.roleSpecificData?.weight || ''}
+              onChangeText={(text) => updateRoleSpecificData('weight', text)}
+              placeholder="e.g., 75 kg"
+            />
+            <Input
+              label="Date of Birth"
+              value={formData.roleSpecificData?.dateOfBirth || ''}
+              onChangeText={(text) => updateRoleSpecificData('dateOfBirth', text)}
+              placeholder="YYYY-MM-DD"
+            />
+            <Input
+              label="Career Goals"
+              value={formData.roleSpecificData?.careerGoals || ''}
+              onChangeText={(text) => updateRoleSpecificData('careerGoals', text)}
+              placeholder="Your athletic aspirations"
+              multiline
+            />
+            <Input
+              label="Current Team/Club"
+              value={formData.roleSpecificData?.currentTeam || ''}
+              onChangeText={(text) => updateRoleSpecificData('currentTeam', text)}
+              placeholder="e.g., Mumbai FC Academy"
+            />
+          </>
+        );
+      case 'scout':
+        return (
+          <>
+            <Input
+              label="Organization"
+              value={formData.roleSpecificData?.organization || ''}
+              onChangeText={(text) => updateRoleSpecificData('organization', text)}
+              placeholder="Team/Agency/Club name"
+            />
+            <Input
+              label="Scouting Regions"
+              value={formData.roleSpecificData?.scoutingRegions?.join(', ') || ''}
+              onChangeText={(text) => updateRoleSpecificData('scoutingRegions', text.split(',').map(r => r.trim()))}
+              placeholder="e.g., South Asia, Europe"
+            />
+            <Input
+              label="Athlete Levels"
+              value={formData.roleSpecificData?.athleteLevels?.join(', ') || ''}
+              onChangeText={(text) => updateRoleSpecificData('athleteLevels', text.split(',').map(l => l.trim()))}
+              placeholder="e.g., High School, College"
+            />
+            <Input
+              label="What You're Looking For"
+              value={formData.roleSpecificData?.lookingFor || ''}
+              onChangeText={(text) => updateRoleSpecificData('lookingFor', text)}
+              placeholder="Describe ideal athlete qualities"
+              multiline
+            />
+          </>
+        );
+      case 'coach':
+        return (
+          <>
+            <Input
+              label="Years of Experience"
+              value={formData.roleSpecificData?.experience || ''}
+              onChangeText={(text) => updateRoleSpecificData('experience', text)}
+              placeholder="e.g., 8 years"
+            />
+            <Input
+              label="Coaching Philosophy"
+              value={formData.roleSpecificData?.philosophy || ''}
+              onChangeText={(text) => updateRoleSpecificData('philosophy', text)}
+              placeholder="Your coaching approach"
+              multiline
+            />
+            <Input
+              label="Team History"
+              value={formData.roleSpecificData?.teamHistory?.join(', ') || ''}
+              onChangeText={(text) => updateRoleSpecificData('teamHistory', text.split(',').map(t => t.trim()))}
+              placeholder="Previous teams coached"
+            />
+          </>
+        );
+      case 'trainer':
+        return (
+          <>
+            <Input
+              label="Specialties"
+              value={formData.roleSpecificData?.specialties?.join(', ') || ''}
+              onChangeText={(text) => updateRoleSpecificData('specialties', text.split(',').map(s => s.trim()))}
+              placeholder="e.g., Strength Training, Conditioning"
+            />
+            <Input
+              label="Certifications"
+              value={formData.roleSpecificData?.certifications?.join(', ') || ''}
+              onChangeText={(text) => updateRoleSpecificData('certifications', text.split(',').map(c => c.trim()))}
+              placeholder="e.g., ACE, NSCA, ACSM"
+            />
+          </>
+        );
+      default:
+        return null;
+    }
   };
 
   const availablePositions = formData.sport ? (POSITIONS[formData.sport as keyof typeof POSITIONS] || POSITIONS.Other) : POSITIONS.Other;
@@ -274,6 +404,14 @@ export default function EditProfileScreen() {
             placeholder="City, State/Country"
           />
         </View>
+
+        {/* Role-Specific Fields */}
+        {user?.role && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{user.role.charAt(0).toUpperCase() + user.role.slice(1)} Information</Text>
+            {renderRoleSpecificFields()}
+          </View>
+        )}
 
         {/* Sport & Position */}
         <View style={styles.section}>

@@ -26,6 +26,7 @@ import { useUsers } from '@/hooks/users-context';
 export default function DiscoverScreen() {
   const [localSearchQuery, setLocalSearchQuery] = useState<string>('');
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState<boolean>(true);
   const [showSearchResults, setShowSearchResults] = useState<boolean>(false);
@@ -101,10 +102,13 @@ export default function DiscoverScreen() {
   const filteredUsers = useMemo(() => users.filter(user => {
     const q = localSearchQuery.toLowerCase();
     const matchesSearch = user.name.toLowerCase().includes(q) ||
-      (user.sport ? user.sport.toLowerCase().includes(q) : false);
+      (user.sport ? user.sport.toLowerCase().includes(q) : false) ||
+      (user.bio ? user.bio.toLowerCase().includes(q) : false) ||
+      user.role.toLowerCase().includes(q);
     const matchesSport = !selectedSport || user.sport === selectedSport;
-    return matchesSearch && matchesSport;
-  }), [users, localSearchQuery, selectedSport]);
+    const matchesRole = !selectedRole || user.role === selectedRole;
+    return matchesSearch && matchesSport && matchesRole;
+  }), [users, localSearchQuery, selectedSport, selectedRole]);
 
   const isInitialLoading = useMemo(() => {
     return (isLoadingUsers || usersIsLoading) && users.length === 0 && !usersError;
@@ -156,7 +160,10 @@ export default function DiscoverScreen() {
           <Text style={styles.userName}>{item.name}</Text>
           {item.verified && <Text style={styles.verified}>✓</Text>}
         </View>
-        <Text style={styles.userRole}>{item.role}{item.sport ? ` • ${item.sport}` : ''}</Text>
+        <Text style={styles.userRole}>{item.role.charAt(0).toUpperCase() + item.role.slice(1)}{item.sport ? ` • ${item.sport}` : ''}</Text>
+        {item.position && (
+          <Text style={styles.userPosition}>{item.position}</Text>
+        )}
         {item.location && (
           <View style={styles.userStats}>
             <View style={styles.statItem}>
@@ -168,6 +175,7 @@ export default function DiscoverScreen() {
         {item.bio && (
           <Text style={styles.userBio} numberOfLines={2}>{item.bio}</Text>
         )}
+        {renderRoleSpecificInfo(item)}
         <View style={styles.userActions}>
           <TouchableOpacity
             style={styles.messageButtonSmall}
@@ -279,6 +287,65 @@ export default function DiscoverScreen() {
     </TouchableOpacity>
   ), [searchUsers]);
 
+  const renderRoleSpecificInfo = (user: User) => {
+    if (!user.roleSpecificData) return null;
+
+    switch (user.role) {
+      case 'athlete':
+        const athleteData = user.roleSpecificData;
+        return (
+          <View style={styles.roleSpecificInfo}>
+            {athleteData.currentTeam && (
+              <Text style={styles.roleSpecificText}>🏆 {athleteData.currentTeam}</Text>
+            )}
+            {(athleteData.height || athleteData.weight) && (
+              <Text style={styles.roleSpecificText}>
+                📏 {[athleteData.height, athleteData.weight].filter(Boolean).join(' • ')}
+              </Text>
+            )}
+          </View>
+        );
+      case 'scout':
+        const scoutData = user.roleSpecificData;
+        return (
+          <View style={styles.roleSpecificInfo}>
+            {scoutData.organization && (
+              <Text style={styles.roleSpecificText}>🏢 {scoutData.organization}</Text>
+            )}
+            {scoutData.scoutingRegions && scoutData.scoutingRegions.length > 0 && (
+              <Text style={styles.roleSpecificText}>🌍 {scoutData.scoutingRegions.slice(0, 2).join(', ')}</Text>
+            )}
+          </View>
+        );
+      case 'coach':
+        const coachData = user.roleSpecificData;
+        return (
+          <View style={styles.roleSpecificInfo}>
+            {coachData.experience && (
+              <Text style={styles.roleSpecificText}>⏱️ {coachData.experience} experience</Text>
+            )}
+            {coachData.teamHistory && coachData.teamHistory.length > 0 && (
+              <Text style={styles.roleSpecificText}>🏆 {coachData.teamHistory[0]}</Text>
+            )}
+          </View>
+        );
+      case 'trainer':
+        const trainerData = user.roleSpecificData;
+        return (
+          <View style={styles.roleSpecificInfo}>
+            {trainerData.specialties && trainerData.specialties.length > 0 && (
+              <Text style={styles.roleSpecificText}>💪 {trainerData.specialties.slice(0, 2).join(', ')}</Text>
+            )}
+            {trainerData.certifications && trainerData.certifications.length > 0 && (
+              <Text style={styles.roleSpecificText}>🎓 {trainerData.certifications.slice(0, 2).join(', ')}</Text>
+            )}
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} testID="discover-screen">
       <View style={styles.header}>
@@ -359,27 +426,56 @@ export default function DiscoverScreen() {
         </View>
       ) : (
         <>
+          {/* Role Filter */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.roleFilter}
+            contentContainerStyle={styles.filterContent}
+          >
+            <TouchableOpacity
+              style={[styles.filterChip, !selectedRole && styles.filterChipActive]}
+              onPress={() => setSelectedRole(null)}
+            >
+              <Text style={[styles.filterChipText, !selectedRole && styles.filterChipTextActive]}>
+                All Roles
+              </Text>
+            </TouchableOpacity>
+            {['athlete', 'scout', 'coach', 'trainer'].map((role) => (
+              <TouchableOpacity
+                key={role}
+                style={[styles.filterChip, selectedRole === role && styles.filterChipActive]}
+                onPress={() => setSelectedRole(role)}
+              >
+                <Text style={[styles.filterChipText, selectedRole === role && styles.filterChipTextActive]}>
+                  {role.charAt(0).toUpperCase() + role.slice(1)}s
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Sports Filter */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.sportsFilter}
-            contentContainerStyle={styles.sportsFilterContent}
+            contentContainerStyle={styles.filterContent}
           >
             <TouchableOpacity
-              style={[styles.sportChip, !selectedSport && styles.sportChipActive]}
+              style={[styles.filterChip, !selectedSport && styles.filterChipActive]}
               onPress={() => setSelectedSport(null)}
             >
-              <Text style={[styles.sportChipText, !selectedSport && styles.sportChipTextActive]}>
+              <Text style={[styles.filterChipText, !selectedSport && styles.filterChipTextActive]}>
                 All Sports
               </Text>
             </TouchableOpacity>
             {sports.map((sport) => (
               <TouchableOpacity
                 key={sport}
-                style={[styles.sportChip, selectedSport === sport && styles.sportChipActive]}
+                style={[styles.filterChip, selectedSport === sport && styles.filterChipActive]}
                 onPress={() => setSelectedSport(sport)}
               >
-                <Text style={[styles.sportChipText, selectedSport === sport && styles.sportChipTextActive]}>
+                <Text style={[styles.filterChipText, selectedSport === sport && styles.filterChipTextActive]}>
                   {sport}
                 </Text>
               </TouchableOpacity>
@@ -495,31 +591,37 @@ const styles = StyleSheet.create({
   filterButton: {
     padding: theme.spacing.xs,
   },
+  roleFilter: {
+    backgroundColor: theme.colors.white,
+    maxHeight: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
   sportsFilter: {
     backgroundColor: theme.colors.white,
     maxHeight: 60,
   },
-  sportsFilterContent: {
+  filterContent: {
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     gap: theme.spacing.sm,
   },
-  sportChip: {
+  filterChip: {
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.full,
     backgroundColor: theme.colors.surface,
     marginRight: theme.spacing.sm,
   },
-  sportChipActive: {
+  filterChipActive: {
     backgroundColor: theme.colors.primary,
   },
-  sportChipText: {
+  filterChipText: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.text,
     fontWeight: theme.fontWeight.medium,
   },
-  sportChipTextActive: {
+  filterChipTextActive: {
     color: theme.colors.white,
   },
   listContent: {
@@ -760,5 +862,18 @@ const styles = StyleSheet.create({
   },
   messageButton: {
     padding: theme.spacing.sm,
+  },
+  userPosition: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.secondary,
+    marginTop: 2,
+  },
+  roleSpecificInfo: {
+    marginTop: theme.spacing.xs,
+    gap: 2,
+  },
+  roleSpecificText: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
   },
 });

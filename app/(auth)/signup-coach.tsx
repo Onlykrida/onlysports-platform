@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Mail, Lock, User as UserIcon, Users, ClipboardList, MapPin } from 'lucide-react-native';
+import { Mail, Lock, User as UserIcon, Users, ClipboardList, MapPin, Trophy, Quote } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -18,6 +18,8 @@ export default function SignupCoachScreen() {
   const [experience, setExperience] = useState<string>('');
   const [philosophy, setPhilosophy] = useState<string>('');
   const [location, setLocation] = useState<string>('');
+  const [teamHistory, setTeamHistory] = useState<string>('');
+  const [bio, setBio] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -30,6 +32,7 @@ export default function SignupCoachScreen() {
     else if (password.length < 6) newErrors.password = 'At least 6 characters';
     if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     if (!sport.trim()) newErrors.sport = 'Sport is required';
+    if (!bio.trim()) newErrors.bio = 'Bio is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -43,7 +46,17 @@ export default function SignupCoachScreen() {
         setErrors({ general: result.error });
         return;
       }
-      const upd = await updateProfile({ sport, bio: philosophy || undefined, location: location || undefined, stats: { experience } });
+      const upd = await updateProfile({ 
+        sport, 
+        bio, 
+        location: location || undefined, 
+        stats: { experience },
+        roleSpecificData: {
+          experience,
+          philosophy: philosophy || undefined,
+          teamHistory: teamHistory ? teamHistory.split(',').map(t => t.trim()) : [],
+        },
+      });
       if (upd.error) {
         setErrors({ general: upd.error });
         return;
@@ -77,10 +90,13 @@ export default function SignupCoachScreen() {
             <Input label="Password" placeholder="Create a password" value={password} onChangeText={setPassword} type="password" error={errors.password} icon={<Lock size={20} color={theme.colors.textSecondary} />} />
             <Input label="Confirm Password" placeholder="Re-enter password" value={confirmPassword} onChangeText={setConfirmPassword} type="password" error={errors.confirmPassword} icon={<Lock size={20} color={theme.colors.textSecondary} />} />
 
-            <Input label="Primary Sport" placeholder="e.g., Football" value={sport} onChangeText={setSport} error={errors.sport} icon={<Users size={20} color={theme.colors.textSecondary} />} />
-            <Input label="Years of Experience" placeholder="e.g., 8" value={experience} onChangeText={setExperience} icon={<ClipboardList size={20} color={theme.colors.textSecondary} />} />
-            <Input label="Coaching Philosophy" placeholder="Your approach" value={philosophy} onChangeText={setPhilosophy} multiline icon={<ClipboardList size={20} color={theme.colors.textSecondary} />} />
-            <Input label="City, Country" placeholder="e.g., Delhi, IN" value={location} onChangeText={setLocation} icon={<MapPin size={20} color={theme.colors.textSecondary} />} />
+            <Input label="Bio" placeholder="Tell us about your coaching background" value={bio} onChangeText={setBio} error={errors.bio} multiline icon={<Quote size={20} color={theme.colors.textSecondary} />} testID="coach-bio" />
+            
+            <Input label="Primary Sport" placeholder="e.g., Football, Basketball" value={sport} onChangeText={setSport} error={errors.sport} icon={<Users size={20} color={theme.colors.textSecondary} />} testID="coach-sport" />
+            <Input label="Years of Experience" placeholder="e.g., 8 years" value={experience} onChangeText={setExperience} icon={<ClipboardList size={20} color={theme.colors.textSecondary} />} testID="coach-experience" />
+            <Input label="Coaching Philosophy" placeholder="Describe your coaching approach and style" value={philosophy} onChangeText={setPhilosophy} multiline icon={<Quote size={20} color={theme.colors.textSecondary} />} testID="coach-philosophy" />
+            <Input label="Team History" placeholder="Previous teams coached (comma separated)" value={teamHistory} onChangeText={setTeamHistory} icon={<Trophy size={20} color={theme.colors.textSecondary} />} testID="coach-teams" />
+            <Input label="City, Country" placeholder="e.g., Delhi, IN" value={location} onChangeText={setLocation} icon={<MapPin size={20} color={theme.colors.textSecondary} />} testID="coach-location" />
           </View>
 
           <View style={styles.footer}>

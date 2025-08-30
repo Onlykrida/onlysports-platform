@@ -22,6 +22,8 @@ export default function SignupAthleteScreen() {
   const [dateOfBirth, setDateOfBirth] = useState<string>('');
   const [location, setLocation] = useState<string>('');
   const [achievements, setAchievements] = useState<string>('');
+  const [careerGoals, setCareerGoals] = useState<string>('');
+  const [currentTeam, setCurrentTeam] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -63,6 +65,13 @@ export default function SignupAthleteScreen() {
         location: location || undefined,
         achievements: achArray,
         stats: { height, weight, dateOfBirth },
+        roleSpecificData: {
+          height,
+          weight,
+          dateOfBirth,
+          careerGoals: careerGoals || undefined,
+          currentTeam: currentTeam || undefined,
+        },
       } as const;
       const upd = await updateProfile({ ...profileUpdates });
       if (upd.error) {
@@ -108,6 +117,8 @@ export default function SignupAthleteScreen() {
             <Input label="Date of Birth" placeholder="YYYY-MM-DD" value={dateOfBirth} onChangeText={setDateOfBirth} icon={<Calendar size={20} color={theme.colors.textSecondary} />} testID="athlete-dob" />
             <Input label="City, Country" placeholder="e.g., Mumbai, IN" value={location} onChangeText={setLocation} icon={<MapPin size={20} color={theme.colors.textSecondary} />} testID="athlete-location" />
             <Input label="Achievements" placeholder={'List your achievements (one per line)'} value={achievements} onChangeText={setAchievements} multiline icon={<Medal size={20} color={theme.colors.textSecondary} />} testID="athlete-achievements" />
+            <Input label="Career Goals" placeholder="What are your athletic aspirations?" value={careerGoals} onChangeText={setCareerGoals} multiline icon={<Quote size={20} color={theme.colors.textSecondary} />} testID="athlete-goals" />
+            <Input label="Current Team/Club" placeholder="e.g., Mumbai FC Academy" value={currentTeam} onChangeText={setCurrentTeam} icon={<UserIcon size={20} color={theme.colors.textSecondary} />} testID="athlete-team" />
           </View>
 
           <View style={styles.footer}>

@@ -139,6 +139,62 @@ export default function ProfileScreen() {
     }
   };
 
+  const renderRoleSpecificDetails = () => {
+    if (!user?.roleSpecificData) return null;
+
+    const data = user.roleSpecificData;
+    const details: { label: string; value: string; icon: string }[] = [];
+
+    switch (user.role) {
+      case 'athlete':
+        if (data.height) details.push({ label: 'Height', value: data.height, icon: '📏' });
+        if (data.weight) details.push({ label: 'Weight', value: data.weight, icon: '⚖️' });
+        if (data.dateOfBirth) details.push({ label: 'Date of Birth', value: data.dateOfBirth, icon: '🎂' });
+        if (data.currentTeam) details.push({ label: 'Current Team', value: data.currentTeam, icon: '🏆' });
+        if (data.careerGoals) details.push({ label: 'Career Goals', value: data.careerGoals, icon: '🎯' });
+        break;
+      case 'scout':
+        if (data.organization) details.push({ label: 'Organization', value: data.organization, icon: '🏢' });
+        if (data.scoutingRegions && data.scoutingRegions.length > 0) {
+          details.push({ label: 'Scouting Regions', value: data.scoutingRegions.join(', '), icon: '🌍' });
+        }
+        if (data.athleteLevels && data.athleteLevels.length > 0) {
+          details.push({ label: 'Athlete Levels', value: data.athleteLevels.join(', '), icon: '👥' });
+        }
+        if (data.lookingFor) details.push({ label: 'Looking For', value: data.lookingFor, icon: '🔍' });
+        break;
+      case 'coach':
+        if (data.experience) details.push({ label: 'Experience', value: data.experience, icon: '⏱️' });
+        if (data.philosophy) details.push({ label: 'Philosophy', value: data.philosophy, icon: '💭' });
+        if (data.teamHistory && data.teamHistory.length > 0) {
+          details.push({ label: 'Team History', value: data.teamHistory.join(', '), icon: '🏆' });
+        }
+        break;
+      case 'trainer':
+        if (data.specialties && data.specialties.length > 0) {
+          details.push({ label: 'Specialties', value: data.specialties.join(', '), icon: '💪' });
+        }
+        if (data.certifications && data.certifications.length > 0) {
+          details.push({ label: 'Certifications', value: data.certifications.join(', '), icon: '🎓' });
+        }
+        break;
+    }
+
+    return (
+      <View style={styles.roleDetailsContainer}>
+        {details.map((detail, index) => (
+          <View key={index} style={styles.roleDetailItem}>
+            <Text style={styles.roleDetailIcon}>{detail.icon}</Text>
+            <View style={styles.roleDetailInfo}>
+              <Text style={styles.roleDetailLabel}>{detail.label}</Text>
+              <Text style={styles.roleDetailValue}>{detail.value}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   const pickCoverImage = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -209,7 +265,7 @@ export default function ProfileScreen() {
             <Text style={styles.name}>{user.name}</Text>
             {user.verified && <Text style={styles.verified}>✓</Text>}
           </View>
-          <Text style={styles.role}>{user.sport || 'Athlete'} • {user.position || 'Player'}</Text>
+          <Text style={styles.role}>{user.role.charAt(0).toUpperCase() + user.role.slice(1)}{user.sport ? ` • ${user.sport}` : ''}{user.position ? ` • ${user.position}` : ''}</Text>
           <Text style={styles.bio}>{user.bio || 'No bio available'}</Text>
           <Text style={styles.location}>{user.location || 'Location not set'}</Text>
         </View>
@@ -297,6 +353,17 @@ export default function ProfileScreen() {
                 <Text style={styles.emptyStateText}>No recommendations yet</Text>
               </View>
             )}
+          </View>
+        )}
+
+        {/* Role-Specific Information */}
+        {user.roleSpecificData && Object.keys(user.roleSpecificData).length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <BadgeCheck size={20} color={theme.colors.secondary} />
+              <Text style={styles.sectionTitle}>{user.role.charAt(0).toUpperCase() + user.role.slice(1)} Details</Text>
+            </View>
+            {renderRoleSpecificDetails()}
           </View>
         )}
 
@@ -629,6 +696,34 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
+  },
+  roleDetailsContainer: {
+    gap: theme.spacing.sm,
+  },
+  roleDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+  },
+  roleDetailIcon: {
+    fontSize: 20,
+  },
+  roleDetailInfo: {
+    flex: 1,
+  },
+  roleDetailLabel: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+    marginBottom: 2,
+  },
+  roleDetailValue: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    lineHeight: 18,
   },
   avatarContainer: {
     position: 'relative',
