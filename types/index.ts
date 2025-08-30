@@ -119,18 +119,33 @@ export interface Post {
 
 export interface Opportunity {
   id: string;
+  teamId: string;
   title: string;
-  organization: string;
-  type: 'tryout' | 'tournament' | 'sponsorship' | 'job';
+  description: string;
+  type: 'tryout' | 'tournament' | 'sponsorship' | 'scholarship';
   sport: string;
   location: string;
   deadline: string;
-  description: string;
   requirements?: string[];
-  compensation?: string;
-  applicants: number;
-  postedBy: string;
-  postedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  // Populated fields
+  teamName?: string;
+  teamAvatar?: string;
+  applicationsCount?: number;
+  hasApplied?: boolean;
+}
+
+export interface Application {
+  id: string;
+  opportunityId: string;
+  athleteId: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: Date;
+  // Populated fields
+  athleteName?: string;
+  athleteAvatar?: string;
+  opportunityTitle?: string;
 }
 
 export interface TeamProfile {
@@ -165,6 +180,30 @@ export interface Notification {
   data?: any;
   read: boolean;
   createdAt: Date;
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  mediaUrl?: string;
+  postId?: string;
+  status: 'sent' | 'delivered' | 'read';
+  createdAt: Date;
+  senderName?: string;
+  senderAvatar?: string;
+}
+
+export interface Conversation {
+  id: string;
+  participantId: string;
+  participantName: string;
+  participantAvatar?: string;
+  participantRole?: string;
+  lastMessage?: string;
+  lastMessageTime?: Date;
+  unreadCount: number;
 }
 
 export interface SearchResult {

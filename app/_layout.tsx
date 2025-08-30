@@ -10,6 +10,7 @@ import { FollowProvider } from "@/hooks/follow-context";
 import { NotificationProvider } from "@/hooks/notifications-context";
 import { MessagesProvider } from "@/hooks/messages-context";
 import { UsersProvider } from "@/hooks/users-context";
+import { OpportunitiesProvider } from "@/hooks/opportunities-context";
 import { View, ActivityIndicator } from "react-native";
 import { ScoutingProvider } from "@/hooks/scouting-context";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -58,15 +59,17 @@ export default function RootLayout() {
           <NotificationProvider>
             <FollowProvider>
               <MessagesProvider>
-                <UsersProvider>
-                  <PostsProvider>
-                    <GestureHandlerRootView style={{ flex: 1 }}>
-                      <ScoutingProvider>
-                        <RootLayoutNav />
-                      </ScoutingProvider>
-                    </GestureHandlerRootView>
-                  </PostsProvider>
-                </UsersProvider>
+                <OpportunitiesProvider>
+                  <UsersProvider>
+                    <PostsProvider>
+                      <GestureHandlerRootView style={{ flex: 1 }}>
+                        <ScoutingProvider>
+                          <RootLayoutNav />
+                        </ScoutingProvider>
+                      </GestureHandlerRootView>
+                    </PostsProvider>
+                  </UsersProvider>
+                </OpportunitiesProvider>
               </MessagesProvider>
             </FollowProvider>
           </NotificationProvider>

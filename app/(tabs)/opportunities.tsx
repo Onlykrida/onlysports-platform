@@ -6,29 +6,73 @@ import {
   FlatList,
   TouchableOpacity,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Calendar, MapPin, Users, DollarSign } from 'lucide-react-native';
+import { Calendar, MapPin, Users, DollarSign, Plus } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
-import { mockOpportunities } from '@/mocks/data';
-import { Opportunity } from '@/types';
+import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
+import { useAuth } from '@/hooks/auth-context';
 
 export default function OpportunitiesScreen() {
+  const { user } = useAuth();
+  const { opportunities, isLoading, applyToOpportunity, refreshOpportunities } = useOpportunities();
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [showing, setShowing] = useState<'all' | 'paid' | 'unpaid'>('all');
-  const opportunities = mockOpportunities;
+  const [selectedSport, setSelectedSport] = useState<string | null>(null);
+  const [applyingTo, setApplyingTo] = useState<string | null>(null);
 
   const filteredOpportunities = useMemo(() => {
-    console.log('[Opportunities] filtering with', { selectedType, showing });
-    let list = selectedType ? opportunities.filter((opp) => opp.type === selectedType) : opportunities;
-    if (showing !== 'all') {
-      list = list.filter((opp) => {
-        const hasComp = Boolean(opp.compensation && opp.compensation.trim().length > 0);
-        return showing === 'paid' ? hasComp : !hasComp;
-      });
+    let list = opportunities;
+    
+    if (selectedType) {
+      list = list.filter((opp) => opp.type === selectedType);
     }
+    
+    if (selectedSport) {
+      list = list.filter((opp) => opp.sport.toLowerCase() === selectedSport.toLowerCase());
+    }
+    
+    // Show only opportunities for athletes (scouts/coaches can see all)
+    if (user?.role === 'athlete') {
+      list = list.filter((opp) => !opp.hasApplied);
+    }
+    
     return list;
-  }, [opportunities, selectedType, showing]);
+  }, [opportunities, selectedType, selectedSport, user]);
+
+  const sports = useMemo(() => {
+    const uniqueSports = [...new Set(opportunities.map(opp => opp.sport))];
+    return uniqueSports.map(sport => ({ id: sport.toLowerCase(), label: sport }));
+  }, [opportunities]);
+
+  const handleApply = useCallback(async (opportunityId: string) => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to apply');
+      return;
+    }
+
+    if (user.role !== 'athlete') {
+      Alert.alert('Error', 'Only athletes can apply to opportunities');
+      return;
+    }
+
+    setApplyingTo(opportunityId);
+    
+    try {
+      const { error } = await applyToOpportunity(opportunityId);
+      
+      if (error) {
+        Alert.alert('Error', error);
+      } else {
+        Alert.alert('Success', 'Your application has been submitted!');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to submit application');
+    } finally {
+      setApplyingTo(null);
+    }
+  }, [user, applyToOpportunity]);
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -40,69 +84,106 @@ export default function OpportunitiesScreen() {
     }
   };
 
-  const renderOpportunity = useCallback(({ item }: { item: Opportunity }) => (
-    <TouchableOpacity style={styles.opportunityCard}>
-      <View style={[styles.typeTag, { backgroundColor: getTypeColor(item.type) }]}>
-        <Text style={styles.typeText}>{item.type.toUpperCase()}</Text>
-      </View>
-
-      <Text style={styles.opportunityTitle}>{item.title}</Text>
-      <Text style={styles.organization}>{item.organization}</Text>
-
-      <Text style={styles.description} numberOfLines={3}>
-        {item.description}
-      </Text>
-
-      <View style={styles.details}>
-        <View style={styles.detailItem}>
-          <MapPin size={14} color={theme.colors.textSecondary} />
-          <Text style={styles.detailText}>{item.location}</Text>
+  const renderOpportunity = useCallback(({ item }: { item: Opportunity }) => {
+    const isApplying = applyingTo === item.id;
+    const canApply = user?.role === 'athlete' && !item.hasApplied;
+    
+    return (
+      <TouchableOpacity style={styles.opportunityCard}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.typeTag, { backgroundColor: getTypeColor(item.type) }]}>
+            <Text style={styles.typeText}>{item.type.toUpperCase()}</Text>
+          </View>
+          <Text style={styles.sportTag}>{item.sport}</Text>
         </View>
-        <View style={styles.detailItem}>
-          <Calendar size={14} color={theme.colors.textSecondary} />
-          <Text style={styles.detailText}>Deadline: {item.deadline}</Text>
-        </View>
-        {item.compensation && (
+
+        <Text style={styles.opportunityTitle}>{item.title}</Text>
+        <Text style={styles.organization}>{item.teamName || 'Unknown Team'}</Text>
+
+        <Text style={styles.description} numberOfLines={3}>
+          {item.description}
+        </Text>
+
+        <View style={styles.details}>
           <View style={styles.detailItem}>
-            <DollarSign size={14} color={theme.colors.success} />
-            <Text style={styles.detailText}>{item.compensation}</Text>
+            <MapPin size={14} color={theme.colors.textSecondary} />
+            <Text style={styles.detailText}>{item.location}</Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Calendar size={14} color={theme.colors.textSecondary} />
+            <Text style={styles.detailText}>Deadline: {new Date(item.deadline).toLocaleDateString()}</Text>
+          </View>
+        </View>
+
+        {item.requirements && item.requirements.length > 0 && (
+          <View style={styles.requirements}>
+            <Text style={styles.requirementsTitle}>Requirements:</Text>
+            {item.requirements.slice(0, 2).map((req, index) => (
+              <Text key={index} style={styles.requirement}>• {req}</Text>
+            ))}
+            {item.requirements.length > 2 && (
+              <Text style={styles.requirement}>• +{item.requirements.length - 2} more</Text>
+            )}
           </View>
         )}
-      </View>
 
-      {item.requirements && (
-        <View style={styles.requirements}>
-          <Text style={styles.requirementsTitle}>Requirements:</Text>
-          {item.requirements.slice(0, 2).map((req, index) => (
-            <Text key={index} style={styles.requirement}>• {req}</Text>
-          ))}
+        <View style={styles.footer}>
+          <View style={styles.applicants}>
+            <Users size={14} color={theme.colors.textSecondary} />
+            <Text style={styles.applicantsText}>{item.applicationsCount || 0} applicants</Text>
+          </View>
+          
+          {canApply && (
+            <TouchableOpacity 
+              style={[styles.applyButton, isApplying && styles.applyButtonDisabled]}
+              onPress={() => handleApply(item.id)}
+              disabled={isApplying}
+            >
+              {isApplying ? (
+                <ActivityIndicator size="small" color={theme.colors.white} />
+              ) : (
+                <Text style={styles.applyButtonText}>Apply Now</Text>
+              )}
+            </TouchableOpacity>
+          )}
+          
+          {item.hasApplied && (
+            <View style={styles.appliedButton}>
+              <Text style={styles.appliedButtonText}>Applied</Text>
+            </View>
+          )}
+          
+          {user?.role !== 'athlete' && (
+            <View style={styles.viewButton}>
+              <Text style={styles.viewButtonText}>View Details</Text>
+            </View>
+          )}
         </View>
-      )}
-
-      <View style={styles.footer}>
-        <View style={styles.applicants}>
-          <Users size={14} color={theme.colors.textSecondary} />
-          <Text style={styles.applicantsText}>{item.applicants} applicants</Text>
-        </View>
-        <TouchableOpacity style={styles.applyButton}>
-          <Text style={styles.applyButtonText}>Apply Now</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  ), []);
+      </TouchableOpacity>
+    );
+  }, [applyingTo, user, handleApply, getTypeColor]);
 
   const types = [
     { id: 'tryout', label: 'Tryouts' },
     { id: 'tournament', label: 'Tournaments' },
     { id: 'sponsorship', label: 'Sponsorships' },
-    { id: 'job', label: 'Jobs' },
+    { id: 'scholarship', label: 'Scholarships' },
   ];
 
   const FiltersBar = useMemo(() => (
     <View>
       <View style={styles.header}>
-        <Text style={styles.title} testID="opportunities-title">Opportunities</Text>
-        <Text style={styles.subtitle}>Find your next big break</Text>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.title} testID="opportunities-title">Opportunities</Text>
+            <Text style={styles.subtitle}>Find your next big break</Text>
+          </View>
+          {(user?.role === 'coach' || user?.role === 'scout' || user?.role === 'team') && (
+            <TouchableOpacity style={styles.createButton}>
+              <Plus size={20} color={theme.colors.white} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       <View style={styles.filtersWrap}>
         <ScrollView
@@ -116,7 +197,7 @@ export default function OpportunitiesScreen() {
             style={[styles.filterChip, !selectedType && styles.filterChipActive]}
             onPress={() => setSelectedType(null)}
           >
-            <Text style={[styles.filterText, !selectedType && styles.filterTextActive]}>All</Text>
+            <Text style={[styles.filterText, !selectedType && styles.filterTextActive]}>All Types</Text>
           </TouchableOpacity>
           {types.map((type) => (
             <TouchableOpacity
@@ -129,21 +210,46 @@ export default function OpportunitiesScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
-        <View style={styles.segmentedRow}>
-          {(['all','paid','unpaid'] as const).map((key) => (
+        
+        {sports.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterContainer}
+            contentContainerStyle={styles.filterContent}
+          >
             <TouchableOpacity
-              key={key}
-              testID={`chip-${key}`}
-              style={[styles.segmentItem, showing === key && styles.segmentItemActive]}
-              onPress={() => setShowing(key)}
+              style={[styles.filterChip, !selectedSport && styles.filterChipActive]}
+              onPress={() => setSelectedSport(null)}
             >
-              <Text style={[styles.segmentText, showing === key && styles.segmentTextActive]}>{key === 'all' ? 'All' : key === 'paid' ? 'Paid' : 'Unpaid'}</Text>
+              <Text style={[styles.filterText, !selectedSport && styles.filterTextActive]}>All Sports</Text>
             </TouchableOpacity>
-          ))}
-        </View>
+            {sports.map((sport) => (
+              <TouchableOpacity
+                key={sport.id}
+                style={[styles.filterChip, selectedSport === sport.id && styles.filterChipActive]}
+                onPress={() => setSelectedSport(sport.id)}
+              >
+                <Text style={[styles.filterText, selectedSport === sport.id && styles.filterTextActive]}>{sport.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
       </View>
     </View>
-  ), [selectedType, showing]);
+  ), [selectedType, selectedSport, user, sports, types]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {FiltersBar}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading opportunities...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -155,6 +261,14 @@ export default function OpportunitiesScreen() {
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         testID="opportunities-list"
+        onRefresh={refreshOpportunities}
+        refreshing={isLoading}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No opportunities found</Text>
+            <Text style={styles.emptySubtext}>Try adjusting your filters or check back later</Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );
@@ -337,5 +451,86 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: theme.colors.white,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  createButton: {
+    backgroundColor: theme.colors.primary,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  sportTag: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.sm,
+  },
+  applyButtonDisabled: {
+    opacity: 0.6,
+  },
+  appliedButton: {
+    backgroundColor: theme.colors.success,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+  },
+  appliedButtonText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.white,
+  },
+  viewButton: {
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  viewButtonText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  loadingText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xl * 2,
+    gap: theme.spacing.sm,
+  },
+  emptyText: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+  },
+  emptySubtext: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
   },
 });

@@ -2,14 +2,16 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
+import { useNotifications } from './notifications-context';
 
 export interface Message {
   id: string;
   senderId: string;
   receiverId: string;
   content: string;
+  mediaUrl?: string;
   postId?: string;
-  read: boolean;
+  status: 'sent' | 'delivered' | 'read';
   createdAt: Date;
   senderName?: string;
   senderAvatar?: string;
@@ -30,7 +32,7 @@ interface MessagesState {
   conversations: Conversation[];
   messages: { [conversationId: string]: Message[] };
   isLoading: boolean;
-  sendMessage: (receiverId: string, content: string, postId?: string) => Promise<{ error?: string }>;
+  sendMessage: (receiverId: string, content: string, mediaUrl?: string, postId?: string) => Promise<{ error?: string }>;
   markAsRead: (conversationId: string) => Promise<void>;
   loadMessages: (conversationId: string) => Promise<void>;
   refreshConversations: () => Promise<void>;
@@ -38,6 +40,7 @@ interface MessagesState {
 
 export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(() => {
   const { user } = useAuth();
+  const { createNotification } = useNotifications();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<{ [conversationId: string]: Message[] }>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -56,7 +59,8 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
           sender_id,
           receiver_id,
           content,
-          read,
+          media_url,
+          status,
           created_at,
           sender:profiles!messages_sender_id_fkey(name, avatar, role),
           receiver:profiles!messages_receiver_id_fkey(name, avatar, role)
@@ -91,7 +95,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
         }
         
         // Count unread messages (messages sent to current user that are unread)
-        if (!isFromUser && !msg.read) {
+        if (!isFromUser && msg.status !== 'read') {
           const conv = conversationMap.get(otherParticipantId)!;
           conv.unreadCount += 1;
         }
@@ -116,7 +120,8 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
           sender_id,
           receiver_id,
           content,
-          read,
+          media_url,
+          status,
           created_at,
           sender:profiles!messages_sender_id_fkey(name, avatar)
         `)
@@ -133,7 +138,8 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
         senderId: msg.sender_id,
         receiverId: msg.receiver_id,
         content: msg.content,
-        read: msg.read,
+        mediaUrl: msg.media_url,
+        status: msg.status,
         createdAt: new Date(msg.created_at),
         senderName: msg.sender?.name,
         senderAvatar: msg.sender?.avatar,
@@ -148,7 +154,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
     }
   }, [user]);
 
-  const sendMessage = useCallback(async (receiverId: string, content: string, postId?: string) => {
+  const sendMessage = useCallback(async (receiverId: string, content: string, mediaUrl?: string, postId?: string) => {
     if (!user || !isSupabaseConfigured) {
       return { error: 'Not authenticated or database not configured' };
     }
@@ -160,8 +166,9 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
           sender_id: user.id,
           receiver_id: receiverId,
           content,
+          media_url: mediaUrl || null,
           post_id: postId || null,
-          read: false,
+          status: 'sent',
         });
 
       if (error) {
@@ -169,7 +176,20 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
         return { error: error.message };
       }
 
-      // Notification will be sent automatically by database trigger
+      // Send notification to receiver about new message
+      if (createNotification) {
+        try {
+          await createNotification(
+            receiverId,
+            'message',
+            'New Message',
+            `${user.name} sent you a message`,
+            { senderId: user.id, content: content.substring(0, 50) }
+          );
+        } catch (notificationError) {
+          console.error('Failed to send message notification:', notificationError);
+        }
+      }
 
       // Refresh messages for this conversation
       await loadMessages(receiverId);
@@ -180,7 +200,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
       console.error('Failed to send message:', error);
       return { error: 'Failed to send message' };
     }
-  }, [user, loadMessages, loadConversations]);
+  }, [user, createNotification, loadMessages, loadConversations]);
 
   const markAsRead = useCallback(async (conversationId: string) => {
     if (!user || !isSupabaseConfigured) return;
@@ -188,10 +208,10 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
     try {
       const { error } = await supabase
         .from('messages')
-        .update({ read: true })
+        .update({ status: 'read' })
         .eq('sender_id', conversationId)
         .eq('receiver_id', user.id)
-        .eq('read', false);
+        .neq('status', 'read');
 
       if (error) {
         console.error('Error marking messages as read:', error);
@@ -228,7 +248,11 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
     const channel = supabase
       .channel('messages_and_profiles_changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload: any) => {
-        const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; read: boolean; created_at: string };
+        const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; media_url?: string; status: string; created_at: string };
+        
+        // Only process messages involving current user
+        if (msg.sender_id !== user.id && msg.receiver_id !== user.id) return;
+        
         const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
 
         setMessages(prev => {
@@ -238,10 +262,36 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
             senderId: msg.sender_id,
             receiverId: msg.receiver_id,
             content: msg.content,
-            read: msg.read,
+            mediaUrl: msg.media_url,
+            status: msg.status as Message['status'],
             createdAt: new Date(msg.created_at),
           };
           return { ...prev, [otherId]: [...prevList, nextItem] };
+        });
+
+        loadConversations();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload: any) => {
+        const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; media_url?: string; status: string; created_at: string };
+        
+        // Only process messages involving current user
+        if (msg.sender_id !== user.id && msg.receiver_id !== user.id) return;
+        
+        const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+
+        setMessages(prev => {
+          const prevList = prev[otherId] || [];
+          const updatedList = prevList.map(message => 
+            message.id === msg.id 
+              ? {
+                  ...message,
+                  content: msg.content,
+                  mediaUrl: msg.media_url,
+                  status: msg.status as Message['status'],
+                }
+              : message
+          );
+          return { ...prev, [otherId]: updatedList };
         });
 
         loadConversations();
