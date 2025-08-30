@@ -12,8 +12,8 @@ import { theme } from '@/constants/theme';
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'small' | 'medium' | 'large';
+  variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost' | 'success' | 'danger';
+  size?: 'small' | 'medium' | 'large' | 'xl';
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
@@ -38,18 +38,24 @@ export const Button: React.FC<ButtonProps> = ({
     <TouchableOpacity
       style={[
         styles.base,
-        styles[variant],
-        styles[size],
+        styles[variant as keyof typeof styles],
+        styles[size as keyof typeof styles],
         isDisabled && styles.disabled,
         style,
       ]}
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.7}
+      activeOpacity={0.8} // Slightly less opacity for better feedback
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'outline' || variant === 'ghost' ? theme.colors.primary : theme.colors.white}
+          color={
+            variant === 'outline' || variant === 'ghost' 
+              ? theme.colors.primary 
+              : variant === 'secondary' || variant === 'success'
+              ? theme.colors.black
+              : theme.colors.white
+          }
           size="small"
         />
       ) : (
@@ -58,8 +64,8 @@ export const Button: React.FC<ButtonProps> = ({
           <Text
             style={[
               styles.text,
-              styles[`${variant}Text`],
-              styles[`${size}Text`],
+              styles[`${variant}Text` as keyof typeof styles],
+              styles[`${size}Text` as keyof typeof styles],
               textStyle,
             ]}
           >
@@ -76,25 +82,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: theme.borderRadius.lg, // More rounded for sporty look
+    borderRadius: theme.borderRadius.xl, // Large, bold, rounded buttons
     gap: theme.spacing.sm,
   },
+  // Electric Blue - energetic, professional, fresh (for buttons & highlights)
   primary: {
     backgroundColor: theme.colors.primary,
-    ...theme.shadow.glow, // Neon glow effect
+    ...theme.shadow.electric, // Electric blue glow
   },
+  // Neon Green - sporty, modern, dynamic (for success states or highlights)
   secondary: {
     backgroundColor: theme.colors.secondary,
-    ...theme.shadow.electric, // Electric blue glow
+    ...theme.shadow.glow, // Neon green glow
+  },
+  // Crimson Red - passion, energy, urgency (great for CTAs or accents)
+  accent: {
+    backgroundColor: theme.colors.accent,
+    ...theme.shadow.fire, // Crimson red glow
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: theme.colors.primary,
-    ...theme.shadow.glow,
+    ...theme.shadow.electric,
   },
   ghost: {
     backgroundColor: theme.colors.surface,
+  },
+  success: {
+    backgroundColor: theme.colors.success,
+    ...theme.shadow.glow,
+  },
+  danger: {
+    backgroundColor: theme.colors.danger,
+    ...theme.shadow.fire,
   },
   small: {
     paddingHorizontal: theme.spacing.lg,
@@ -104,32 +125,46 @@ const styles = StyleSheet.create({
   medium: {
     paddingHorizontal: theme.spacing.xl,
     paddingVertical: theme.spacing.lg,
-    minHeight: 48,
+    minHeight: 52, // Larger for sporty feel
   },
   large: {
     paddingHorizontal: theme.spacing.xxl,
     paddingVertical: theme.spacing.xl,
-    minHeight: 56,
+    minHeight: 60, // Large, bold buttons
+  },
+  xl: {
+    paddingHorizontal: theme.spacing.xxl + theme.spacing.md,
+    paddingVertical: theme.spacing.xl + theme.spacing.sm,
+    minHeight: 68, // Extra large for main CTAs
   },
   disabled: {
     opacity: 0.4,
   },
   text: {
-    fontWeight: theme.fontWeight.bold,
+    fontWeight: theme.fontWeight.extrabold, // Bold sporty text
     textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
+    letterSpacing: 1, // More spacing for sporty feel
   },
   primaryText: {
-    color: theme.colors.black, // Black text on neon green
+    color: theme.colors.white, // White text on electric blue
   },
   secondaryText: {
-    color: theme.colors.white,
+    color: theme.colors.black, // Black text on neon green
+  },
+  accentText: {
+    color: theme.colors.white, // White text on crimson red
   },
   outlineText: {
     color: theme.colors.primary,
   },
   ghostText: {
     color: theme.colors.text,
+  },
+  successText: {
+    color: theme.colors.black, // Black text on neon green
+  },
+  dangerText: {
+    color: theme.colors.white, // White text on crimson red
   },
   smallText: {
     fontSize: theme.fontSize.sm,
@@ -139,5 +174,8 @@ const styles = StyleSheet.create({
   },
   largeText: {
     fontSize: theme.fontSize.lg,
+  },
+  xlText: {
+    fontSize: theme.fontSize.xl,
   },
 });

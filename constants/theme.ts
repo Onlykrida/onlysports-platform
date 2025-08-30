@@ -1,38 +1,49 @@
 export const theme = {
   colors: {
-    // Dark sporty background
-    background: '#1A1A1A', // Charcoal black
-    backgroundDeep: '#0F0F0F', // Deep black
-    surface: '#2A2A2A', // Dark surface
-    surfaceLight: '#3A3A3A', // Lighter surface
+    // Dark sporty background (Charcoal Black base)
+    background: '#121212', // Charcoal Black - power and focus
+    backgroundDeep: '#0A0A0A', // Deep black for depth
+    surface: '#1E1E1E', // Dark surface cards
+    surfaceLight: '#2A2A2A', // Lighter surface elements
+    cardBackground: '#E0E0E0', // Platinum Grey for card backgrounds
     
-    // Electric accent colors
-    primary: '#39FF14', // Neon green
-    primaryDark: '#2ECC11',
-    secondary: '#1E90FF', // Electric blue
-    accent: '#FF4500', // Fiery orange
+    // Primary Sport Colors (Energetic + Bold)
+    primary: '#007BFF', // Electric Blue - energetic, professional, fresh
+    primaryDark: '#0056B3', // Darker blue for pressed states
+    secondary: '#00D26A', // Neon Green - sporty, modern, dynamic
+    accent: '#FF3B30', // Crimson Red - passion, energy, urgency
     
-    // Text colors
-    text: '#FFFFFF', // Bold white for headings
-    textSecondary: '#B0B0B0', // Light grey for body text
-    textMuted: '#6C6C6C', // Muted grey for labels
+    // Secondary Sport Colors (Balance + Style)
+    warning: '#FFD600', // Sunburst Yellow - optimism and speed
+    info: '#00E5FF', // Cyan - freshness & tech-sporty vibe
+    orange: '#FF6F00', // Orange - energy and excitement
+    
+    // Text colors (Clean and readable)
+    text: '#FFFFFF', // Bold white for headings (Oswald/Bebas Neue style)
+    textSecondary: '#B0B0B0', // Light grey for body text (Poppins/Inter/Roboto)
+    textMuted: '#6C6C6C', // Muted grey for labels/secondary info
+    textOnCard: '#121212', // Dark text for light card backgrounds
     
     // Status colors
-    success: '#39FF14',
-    danger: '#FF4500',
-    warning: '#FFD700',
+    success: '#00D26A', // Neon Green for success states
+    danger: '#FF3B30', // Crimson Red for errors
+    successBg: '#00D26A20', // Success background with opacity
+    dangerBg: '#FF3B3020', // Danger background with opacity
     
     // Utility colors
     white: '#FFFFFF',
     black: '#000000',
-    border: '#3A3A3A',
+    border: '#2A2A2A',
+    borderLight: '#3A3A3A',
     
-    // Sporty gradients
+    // Sporty gradients (Dynamic background gradients)
     gradient: {
-      primary: ['#1A1A1A', '#1E90FF'], // Dark to electric blue
-      secondary: ['#2A2A2A', '#39FF14'], // Dark surface to neon green
-      accent: ['#FF4500', '#FFD700'], // Orange to gold
-      dark: ['#0F0F0F', '#2A2A2A'], // Deep black to charcoal
+      primary: ['#121212', '#007BFF'], // Charcoal to Electric Blue streaks
+      secondary: ['#121212', '#00D26A'], // Charcoal to Neon Green
+      accent: ['#FF3B30', '#FF6F00'], // Crimson to Orange fire
+      dark: ['#0A0A0A', '#1E1E1E'], // Deep black gradient
+      energetic: ['#007BFF', '#00E5FF'], // Electric blue to cyan
+      fire: ['#FF6F00', '#FFD600'], // Orange to yellow energy
     },
   },
   spacing: {
@@ -67,28 +78,55 @@ export const theme = {
     extrabold: '800' as const,
     black: '900' as const, // For sporty headings
   },
-  // Sporty shadows and effects
+  // Sporty shadows and effects (Micro-animations & glows)
   shadow: {
+    // Neon Green glow for success states and active elements
     glow: {
-      shadowColor: '#39FF14',
+      shadowColor: '#00D26A',
       shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.4,
+      shadowRadius: 10,
+      elevation: 10,
+    },
+    // Electric Blue glow for primary buttons and highlights
+    electric: {
+      shadowColor: '#007BFF',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.5,
+      shadowRadius: 15,
+      elevation: 15,
+    },
+    // Crimson Red glow for CTAs and urgent actions
+    fire: {
+      shadowColor: '#FF3B30',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.4,
       shadowRadius: 8,
       elevation: 8,
     },
-    electric: {
-      shadowColor: '#1E90FF',
+    // Orange glow for notifications and badges
+    notification: {
+      shadowColor: '#FF6F00',
       shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.4,
+      shadowOpacity: 0.6,
+      shadowRadius: 6,
+      elevation: 6,
+    },
+    // Cyan glow for secondary accents
+    cyan: {
+      shadowColor: '#00E5FF',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
       shadowRadius: 12,
       elevation: 12,
     },
-    fire: {
-      shadowColor: '#FF4500',
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.3,
-      shadowRadius: 6,
-      elevation: 6,
+    // Subtle card shadow
+    card: {
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 4,
     },
   },
 };

@@ -485,9 +485,9 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   likedButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary, // Electric Blue for liked state
     borderColor: theme.colors.primary,
-    ...theme.shadow.glow,
+    ...theme.shadow.electric, // Electric blue glow
   },
   actionText: {
     fontSize: theme.fontSize.sm,
@@ -497,15 +497,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   likedText: {
-    color: theme.colors.black,
+    color: theme.colors.white, // White text on electric blue
   },
   badge: {
-    backgroundColor: theme.colors.accent,
+    backgroundColor: theme.colors.accent, // Crimson Red for badges
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
     alignSelf: 'flex-start',
-    ...theme.shadow.fire,
+    ...theme.shadow.fire, // Crimson red glow
   },
   badgeText: {
     color: theme.colors.white,
@@ -548,17 +548,17 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   refreshButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary, // Electric Blue for primary actions
     paddingHorizontal: theme.spacing.xl,
     paddingVertical: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
-    ...theme.shadow.glow,
+    borderRadius: theme.borderRadius.xl, // More rounded for sporty feel
+    ...theme.shadow.electric, // Electric blue glow
   },
   refreshButtonText: {
-    color: theme.colors.black,
+    color: theme.colors.white, // White text on electric blue
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.black,
+    fontWeight: theme.fontWeight.extrabold, // Bold sporty text
     textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
+    letterSpacing: 1, // More spacing for sporty feel
   },
 });

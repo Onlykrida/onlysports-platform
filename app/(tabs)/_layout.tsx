@@ -15,26 +15,26 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarActiveTintColor: theme.colors.primary, // Electric Blue for active tabs
+        tabBarInactiveTintColor: theme.colors.textMuted, // Muted grey for inactive
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: theme.colors.surface,
+          backgroundColor: theme.colors.surface, // Dark surface
           borderTopWidth: 2,
-          borderTopColor: theme.colors.primary,
+          borderTopColor: theme.colors.primary, // Electric Blue border
           paddingBottom: 8,
           paddingTop: 8,
-          height: 70,
-          ...theme.shadow.glow,
+          height: 75, // Slightly taller for sporty feel
+          ...theme.shadow.electric, // Electric blue glow for tab bar
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: theme.fontWeight.bold,
+          fontSize: 10,
+          fontWeight: theme.fontWeight.extrabold, // Bold sporty text
           textTransform: 'uppercase' as const,
-          letterSpacing: 0.5,
+          letterSpacing: 0.8, // More spacing for sporty feel
         },
         tabBarItemStyle: {
-          paddingVertical: 4,
+          paddingVertical: 6,
         },
       }}
     >
@@ -78,14 +78,14 @@ export default function TabLayout() {
                   position: 'absolute',
                   top: -4,
                   right: -4,
-                  backgroundColor: theme.colors.accent,
+                  backgroundColor: theme.colors.orange, // Orange for notifications
                   borderRadius: 12,
                   minWidth: 22,
                   height: 22,
                   alignItems: 'center',
                   justifyContent: 'center',
                   paddingHorizontal: 6,
-                  ...theme.shadow.fire,
+                  ...theme.shadow.notification, // Orange glow for notification badges
                 }}>
                   <Text style={{
                     color: theme.colors.white,
@@ -112,14 +112,14 @@ export default function TabLayout() {
                   position: 'absolute',
                   top: -4,
                   right: -4,
-                  backgroundColor: theme.colors.accent,
+                  backgroundColor: theme.colors.orange, // Orange for notifications
                   borderRadius: 12,
                   minWidth: 22,
                   height: 22,
                   alignItems: 'center',
                   justifyContent: 'center',
                   paddingHorizontal: 6,
-                  ...theme.shadow.fire,
+                  ...theme.shadow.notification, // Orange glow for notification badges
                 }}>
                   <Text style={{
                     color: theme.colors.white,
