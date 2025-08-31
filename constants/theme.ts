@@ -1,58 +1,59 @@
 export const theme = {
   colors: {
-    // Dark sporty background (Charcoal Black base)
-    background: '#121212', // Charcoal Black - power and focus
-    backgroundDeep: '#0A0A0A', // Deep black for depth
-    surface: '#1E1E1E', // Dark surface cards
-    surfaceLight: '#2A2A2A', // Lighter surface elements
-    cardBackground: '#1E1E1E', // Dark card background for better contrast
+    // Dark sporty background (Deep Navy/Black base inspired by SportsRecruits)
+    background: '#0A0A23', // Deep Navy - professional sports platform feel
+    backgroundDeep: '#050511', // Deeper navy for depth
+    surface: '#1A1A3A', // Dark navy surface cards
+    surfaceLight: '#2A2A4A', // Lighter navy surface elements
+    cardBackground: '#1A1A3A', // Dark navy card background for better contrast
     
     // Primary Sport Colors (Energetic + Bold)
     primary: '#007BFF', // Electric Blue - energetic, professional, fresh
     primaryDark: '#0056B3', // Darker blue for pressed states
-    secondary: '#00D26A', // Neon Green - sporty, modern, dynamic
-    accent: '#FF3B30', // Crimson Red - passion, energy, urgency
+    secondary: '#39FF14', // Neon Green - sporty, modern, dynamic (brighter for visibility)
+    accent: '#FF4500', // Fiery Orange - passion, energy, urgency
     
     // Secondary Sport Colors (Balance + Style)
     warning: '#FFD600', // Sunburst Yellow - optimism and speed
-    info: '#00E5FF', // Cyan - freshness & tech-sporty vibe
+    info: '#1E90FF', // Electric Blue - freshness & tech-sporty vibe
     orange: '#FF6F00', // Orange - energy and excitement
     
-    // Text colors (Clean and readable)
-    text: '#FFFFFF', // Bold white for headings on dark backgrounds
-    textSecondary: '#B0B0B0', // Light grey for body text (Poppins/Inter/Roboto)
-    textMuted: '#6C6C6C', // Muted grey for labels/secondary info
-    textOnCard: '#FFFFFF', // White text for dark card backgrounds
+    // Text colors (Clean and readable - HIGH CONTRAST)
+    text: '#FFFFFF', // Pure white for maximum contrast on dark backgrounds
+    textSecondary: '#E0E0E0', // Very light grey for body text (better visibility)
+    textMuted: '#B0B0B0', // Light grey for labels/secondary info (improved contrast)
+    textOnCard: '#FFFFFF', // Pure white text for dark card backgrounds
     textOnLight: '#FFFFFF', // White text for dark backgrounds
     textOnDark: '#FFFFFF', // White text for dark backgrounds
     textPrimary: '#FFFFFF', // Primary text color for dark theme
-    textLight: '#E0E0E0', // Light text for better contrast
+    textLight: '#F0F0F0', // Very light text for maximum contrast
     
     // Status colors
-    success: '#00D26A', // Neon Green for success states
+    success: '#39FF14', // Bright Neon Green for success states (high visibility)
     danger: '#FF3B30', // Crimson Red for errors
-    successBg: '#00D26A20', // Success background with opacity
+    successBg: '#39FF1420', // Success background with opacity
     dangerBg: '#FF3B3020', // Danger background with opacity
     
     // Utility colors
     white: '#FFFFFF',
     black: '#000000',
-    border: '#2A2A2A',
-    borderLight: '#3A3A3A',
+    border: '#3A3A5A', // Lighter border for better visibility
+    borderLight: '#4A4A6A', // Even lighter border
     
     // Card and surface colors for better contrast
-    cardBg: '#1E1E1E', // Dark card background
-    surfaceDark: '#2A2A2A', // Darker surface for better contrast
-    inputBackground: '#2A2A2A', // Dark input background
+    cardBg: '#1A1A3A', // Dark navy card background
+    surfaceDark: '#2A2A4A', // Darker navy surface for better contrast
+    inputBackground: '#2A2A4A', // Dark navy input background
     
     // Sporty gradients (Dynamic background gradients)
     gradient: {
-      primary: ['#121212', '#007BFF'], // Charcoal to Electric Blue streaks
-      secondary: ['#121212', '#00D26A'], // Charcoal to Neon Green
-      accent: ['#FF3B30', '#FF6F00'], // Crimson to Orange fire
-      dark: ['#0A0A0A', '#1E1E1E'], // Deep black gradient
-      energetic: ['#007BFF', '#00E5FF'], // Electric blue to cyan
+      primary: ['#0A0A23', '#007BFF'], // Deep Navy to Electric Blue streaks
+      secondary: ['#0A0A23', '#39FF14'], // Deep Navy to Neon Green
+      accent: ['#FF4500', '#FF6F00'], // Fiery Orange to Orange fire
+      dark: ['#050511', '#1A1A3A'], // Deep navy gradient
+      energetic: ['#007BFF', '#1E90FF'], // Electric blue to electric blue
       fire: ['#FF6F00', '#FFD600'], // Orange to yellow energy
+      navy: ['#0A0A23', '#2A2A4A'], // Navy gradient for backgrounds
     },
   },
   spacing: {
@@ -91,7 +92,7 @@ export const theme = {
   shadow: {
     // Neon Green glow for success states and active elements
     glow: {
-      shadowColor: '#00D26A',
+      shadowColor: '#39FF14',
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: 0.4,
       shadowRadius: 10,
