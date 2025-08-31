@@ -14,6 +14,7 @@ import { Calendar, MapPin, Users, DollarSign, Plus } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
+import CreateOpportunityModal from '@/components/CreateOpportunityModal';
 
 export default function OpportunitiesScreen() {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ export default function OpportunitiesScreen() {
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const filteredOpportunities = useMemo(() => {
     let list = opportunities;
@@ -194,7 +196,10 @@ export default function OpportunitiesScreen() {
             <Text style={styles.subtitle}>Find your next big break</Text>
           </View>
           {(user?.role === 'coach' || user?.role === 'scout' || user?.role === 'team') && (
-            <TouchableOpacity style={styles.createButton}>
+            <TouchableOpacity 
+              style={styles.createButton}
+              onPress={() => setShowCreateModal(true)}
+            >
               <Plus size={20} color={theme.colors.white} />
             </TouchableOpacity>
           )}
@@ -313,6 +318,11 @@ export default function OpportunitiesScreen() {
             <Text style={styles.emptySubtext}>Try adjusting your filters or check back later</Text>
           </View>
         }
+      />
+      
+      <CreateOpportunityModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
       />
     </SafeAreaView>
   );
