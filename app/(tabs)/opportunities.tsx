@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -22,7 +23,10 @@ import {
   FileSignature,
   GraduationCap,
   ChevronRight,
-  X
+  X,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
@@ -59,6 +63,9 @@ export default function OpportunitiesScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
+  const filterHeight = useState(new Animated.Value(1))[0];
+  const filterOpacity = useState(new Animated.Value(1))[0];
   
   const [opportunityData, setOpportunityData] = useState<OpportunityData>({
     category: null,
@@ -341,7 +348,37 @@ export default function OpportunitiesScreen() {
     });
   };
 
-  const FiltersBar = useMemo(() => (
+  const toggleFilters = useCallback(() => {
+    setShowFilters(!showFilters);
+    Animated.parallel([
+      Animated.timing(filterHeight, {
+        toValue: showFilters ? 0 : 1,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(filterOpacity, {
+        toValue: showFilters ? 0 : 1,
+        duration: 300,
+        useNativeDriver: false,
+      })
+    ]).start();
+  }, [showFilters, filterHeight, filterOpacity]);
+
+  const getActiveFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedType) count++;
+    if (selectedSport) count++;
+    if (selectedPayment) count++;
+    return count;
+  }, [selectedType, selectedSport, selectedPayment]);
+
+  const FiltersBar = useMemo(() => {
+    const filterMaxHeight = filterHeight.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', '100%']
+    });
+
+    return (
     <View>
       <View style={styles.header}>
         <View style={styles.headerContent}>
@@ -349,9 +386,26 @@ export default function OpportunitiesScreen() {
             <Text style={styles.title} testID="opportunities-title">Opportunities</Text>
             <Text style={styles.subtitle}>Find your next big break</Text>
           </View>
+          <TouchableOpacity 
+            style={styles.filterToggleButton} 
+            onPress={toggleFilters}
+            testID="filter-toggle-button"
+          >
+            <SlidersHorizontal size={18} color={theme.colors.primary} />
+            {getActiveFiltersCount > 0 && (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>{getActiveFiltersCount}</Text>
+              </View>
+            )}
+            {showFilters ? (
+              <ChevronUp size={18} color={theme.colors.textSecondary} />
+            ) : (
+              <ChevronDown size={18} color={theme.colors.textSecondary} />
+            )}
+          </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.filtersWrap}>
+      <Animated.View style={[styles.filtersWrap, { maxHeight: filterMaxHeight, opacity: filterOpacity }]}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -430,9 +484,26 @@ export default function OpportunitiesScreen() {
             <Text style={[styles.filterText, selectedPayment === 'unpaid' && styles.filterTextActive]}>Unpaid</Text>
           </TouchableOpacity>
         </ScrollView>
-      </View>
+      </Animated.View>
+      {!showFilters && getActiveFiltersCount > 0 && (
+        <View style={styles.activeFiltersBar}>
+          <Text style={styles.activeFiltersText}>
+            Filters: {getActiveFiltersCount} active
+          </Text>
+          <TouchableOpacity 
+            style={styles.clearFiltersButton}
+            onPress={() => {
+              setSelectedType(null);
+              setSelectedSport(null);
+              setSelectedPayment(null);
+            }}
+          >
+            <Text style={styles.clearFiltersText}>Clear All</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
-  ), [selectedType, selectedSport, selectedPayment, user, sports, types]);
+  )}, [selectedType, selectedSport, selectedPayment, user, sports, types, showFilters, filterHeight, filterOpacity, toggleFilters, getActiveFiltersCount]);
 
   if (isLoading) {
     return (
@@ -930,6 +1001,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  filterToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.xs,
+  },
+  filterBadge: {
+    backgroundColor: theme.colors.primary,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: theme.spacing.xs,
+  },
+  filterBadgeText: {
+    color: theme.colors.white,
+    fontSize: 12,
+    fontWeight: theme.fontWeight.bold,
+  },
+  activeFiltersBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  activeFiltersText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+  },
+  clearFiltersButton: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+  },
+  clearFiltersText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.medium,
   },
   createButton: {
     backgroundColor: theme.colors.primary,
