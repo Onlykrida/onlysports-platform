@@ -519,26 +519,6 @@ export default function OpportunitiesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
-        options={{
-          headerShown: true,
-          title: 'Opportunities',
-          headerStyle: {
-            backgroundColor: theme.colors.background,
-          },
-          headerTintColor: theme.colors.text,
-          headerRight: () => (
-            (user?.role === 'coach' || user?.role === 'scout' || user?.role === 'team') ? (
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={() => setShowCategoryModal(true)}
-              >
-                <Plus size={24} color={theme.colors.primary} />
-              </TouchableOpacity>
-            ) : null
-          ),
-        }}
-      />
       {FiltersBar}
       <FlatList
         data={filteredOpportunities}

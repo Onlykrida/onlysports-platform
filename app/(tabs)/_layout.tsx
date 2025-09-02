@@ -1,7 +1,8 @@
-import { Tabs } from "expo-router";
-import { Home, Search, Briefcase, User, PlusCircle, MessageCircle, Bell } from "lucide-react-native";
+import { Tabs, router } from "expo-router";
+import { Home, Search, Briefcase, User, PlusCircle, MessageCircle, Bell, Plus } from "lucide-react-native";
 import React from "react";
-import { View, Text, Platform } from "react-native";
+import { View, Text, Platform, TouchableOpacity } from "react-native";
+import { useAuth } from "@/hooks/auth-context";
 import BackgroundGradient from "@/components/BackgroundGradient";
 import { theme } from "@/constants/theme";
 import { useMessages } from "@/hooks/messages-context";
@@ -67,6 +68,18 @@ export default function TabLayout() {
         options={{
           title: 'Opportunities',
           tabBarIcon: ({ color, size }) => <Briefcase size={size} color={color} />,
+          headerShown: true,
+          headerRight: () => {
+            const { user } = useAuth();
+            return (user?.role === 'coach' || user?.role === 'scout' || user?.role === 'team') ? (
+              <TouchableOpacity 
+                style={{ marginRight: theme.spacing.md }}
+                onPress={() => router.push('/opportunities/create')}
+              >
+                <Plus size={24} color={theme.colors.primary} />
+              </TouchableOpacity>
+            ) : null;
+          }
         }}
       />
       <Tabs.Screen
