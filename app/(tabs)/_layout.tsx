@@ -69,6 +69,10 @@ export default function TabLayout() {
           title: 'Opportunities',
           tabBarIcon: ({ color, size }) => <Briefcase size={size} color={color} />,
           headerShown: true,
+          headerStyle: { backgroundColor: theme.colors.surfaceDark },
+          headerTitleStyle: { color: theme.colors.text, fontWeight: '700' },
+          headerTintColor: theme.colors.text,
+          headerShadowVisible: false,
           headerRight: () => {
             const { user } = useAuth();
             return (user?.role === 'coach' || user?.role === 'scout' || user?.role === 'team') ? (
