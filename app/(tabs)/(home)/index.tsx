@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BackgroundGradient from '@/components/BackgroundGradient';
 import { 
   Zap, 
   MessageSquare, 
@@ -213,18 +214,18 @@ export default function HomeScreen() {
 
   if (isLoading && posts.length === 0) {
     return (
-      <View style={styles.container}>
+      <BackgroundGradient style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={styles.loadingText}>Loading the action...</Text>
         </View>
-      </View>
+      </BackgroundGradient>
     );
   }
 
   if (!isLoading && posts.length === 0) {
     return (
-      <View style={styles.container}>
+      <BackgroundGradient style={styles.container}>
         <View style={styles.loadingContainer}>
           <Trophy size={48} color={theme.colors.textSecondary} />
           <Text style={styles.emptyText}>No highlights yet</Text>
@@ -236,12 +237,12 @@ export default function HomeScreen() {
             <Text style={styles.refreshButtonText}>Refresh Feed</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </BackgroundGradient>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <BackgroundGradient style={styles.container}>
       <FlatList
         data={posts}
         renderItem={renderPost}
@@ -332,14 +333,13 @@ export default function HomeScreen() {
           }}
         />
       )}
-    </View>
+    </BackgroundGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   listContent: {
     paddingVertical: theme.spacing.sm,

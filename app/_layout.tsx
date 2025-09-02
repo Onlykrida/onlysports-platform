@@ -11,10 +11,11 @@ import { NotificationProvider } from "@/hooks/notifications-context";
 import { MessagesProvider } from "@/hooks/messages-context";
 import { UsersProvider } from "@/hooks/users-context";
 import { OpportunitiesProvider } from "@/hooks/opportunities-context";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, StatusBar } from "react-native";
 import { ScoutingProvider } from "@/hooks/scouting-context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
+import BackgroundGradient from "@/components/BackgroundGradient";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -27,9 +28,11 @@ function RootLayoutNav() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
+      <BackgroundGradient>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      </BackgroundGradient>
     );
   }
 
@@ -62,7 +65,8 @@ export default function RootLayout() {
                 <OpportunitiesProvider>
                   <UsersProvider>
                     <PostsProvider>
-                      <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+                      <GestureHandlerRootView style={{ flex: 1 }}>
+                        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
                         <ScoutingProvider>
                           <RootLayoutNav />
                         </ScoutingProvider>

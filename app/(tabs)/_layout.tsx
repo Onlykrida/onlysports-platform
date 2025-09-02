@@ -1,7 +1,8 @@
 import { Tabs } from "expo-router";
 import { Home, Search, Briefcase, User, PlusCircle, MessageCircle, Bell } from "lucide-react-native";
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, Platform } from "react-native";
+import BackgroundGradient from "@/components/BackgroundGradient";
 import { theme } from "@/constants/theme";
 import { useMessages } from "@/hooks/messages-context";
 import { useNotifications } from "@/hooks/notifications-context";
@@ -24,15 +25,19 @@ export default function TabLayout() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
-          backgroundColor: theme.colors.white,
+          backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
           paddingBottom: 5,
           paddingTop: 5,
           height: 60,
+          borderTopWidth: 1,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',
+        },
+        tabBarBadgeStyle: {
+          backgroundColor: theme.colors.danger,
         },
       }}
     >

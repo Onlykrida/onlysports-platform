@@ -1,58 +1,60 @@
 export const theme = {
   colors: {
-    // Light theme colors
-    background: '#FFFFFF',
-    surface: '#F8F9FA',
-    surfaceLight: '#FFFFFF',
-    cardBackground: '#FFFFFF',
+    // Dark sporty theme colors
+    background: '#000000', // Base background color
+    backgroundGradient: ['#003300', '#000000'], // Gradient from deep sport green to black
+    surface: '#1C1C1E', // Charcoal grey for surfaces
+    surfaceLight: '#2C2C2E', // Slightly lighter charcoal
+    cardBackground: '#1C1C1E', // Charcoal grey for cards
     
     // Primary colors
-    primary: '#007BFF',
-    primaryDark: '#0056B3',
-    secondary: '#28A745',
-    accent: '#FFC107',
+    primary: '#30D158', // Sporty green
+    primaryDark: '#248A3D', // Darker sporty green
+    secondary: '#30D158', // Sporty green
+    accent: '#30D158', // Sporty green
     
     // Status colors
-    warning: '#FFC107',
-    info: '#17A2B8',
-    orange: '#FD7E14',
+    warning: '#FF9F0A', // Sporty orange
+    info: '#64D2FF', // Sporty blue
+    orange: '#FF9F0A', // Sporty orange
     
     // Text colors
-    text: '#212529',
-    textSecondary: '#6C757D',
-    textMuted: '#ADB5BD',
-    textOnCard: '#212529',
-    textOnLight: '#212529',
-    textOnDark: '#FFFFFF',
-    textPrimary: '#212529',
-    textLight: '#6C757D',
+    text: '#FFFFFF', // White text
+    textSecondary: '#C7C7CC', // Light grey
+    textMuted: '#8E8E93', // Dim grey
+    textOnCard: '#FFFFFF', // White text on cards
+    textOnLight: '#000000', // Black text on light backgrounds
+    textOnDark: '#FFFFFF', // White text on dark backgrounds
+    textPrimary: '#FFFFFF', // White text
+    textLight: '#C7C7CC', // Light grey
     
     // Status colors
-    success: '#28A745',
-    danger: '#DC3545',
-    successBg: '#D4EDDA',
-    dangerBg: '#F8D7DA',
+    success: '#30D158', // Sporty green
+    danger: '#FF453A', // Sporty red
+    successBg: '#0A2F1C', // Dark green background
+    dangerBg: '#3A0A0A', // Dark red background
     
     // Utility colors
     white: '#FFFFFF',
     black: '#000000',
-    border: '#DEE2E6',
-    borderLight: '#E9ECEF',
+    border: '#38383A', // Dark border
+    borderLight: '#48484A', // Slightly lighter border
     
     // Card and surface colors
-    cardBg: '#FFFFFF',
-    surfaceDark: '#F8F9FA',
-    inputBackground: '#FFFFFF',
+    cardBg: '#1C1C1E', // Charcoal grey
+    surfaceDark: '#1C1C1E', // Charcoal grey
+    inputBackground: '#2C2C2E', // Slightly lighter charcoal
     
-    // Simple gradients
+    // Sporty gradients
     gradient: {
-      primary: ['#007BFF', '#0056B3'],
-      secondary: ['#28A745', '#1E7E34'],
-      accent: ['#FFC107', '#E0A800'],
-      dark: ['#343A40', '#212529'],
-      energetic: ['#007BFF', '#17A2B8'],
-      fire: ['#FD7E14', '#FFC107'],
-      navy: ['#007BFF', '#0056B3'],
+      primary: ['#30D158', '#248A3D'], // Sporty green gradient
+      secondary: ['#30D158', '#248A3D'], // Sporty green gradient
+      accent: ['#FF9F0A', '#FF8000'], // Sporty orange gradient
+      dark: ['#1C1C1E', '#000000'], // Dark gradient
+      energetic: ['#64D2FF', '#0A84FF'], // Sporty blue gradient
+      fire: ['#FF453A', '#FF9F0A'], // Sporty red to orange gradient
+      navy: ['#0A84FF', '#0040DD'], // Sporty blue gradient
+      sport: ['#003300', '#000000'], // Deep sport green to black gradient
     },
   },
   spacing: {
