@@ -204,6 +204,25 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
         console.error('Broadcast notifications failed:', notifyErr);
       }
 
+      try {
+        console.log('[Opportunities] Also creating a feed post for the opportunity');
+        const { error: postErr } = await supabase
+          .from('posts')
+          .insert({
+            user_id: user.id,
+            title: opportunityData.title,
+            description: opportunityData.description,
+            type: 'opportunity',
+          });
+        if (postErr) {
+          console.error('Failed to create feed post for opportunity:', postErr);
+        } else {
+          console.log('[Opportunities] Feed post created for opportunity');
+        }
+      } catch (postCreateErr) {
+        console.error('Exception while creating feed post for opportunity:', postCreateErr);
+      }
+
       await loadOpportunities();
       return {};
     } catch (error) {
