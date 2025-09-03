@@ -133,6 +133,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           shares: 0,
           isLiked: userLikes.includes(post.id),
           createdAt: new Date(post.created_at),
+          opportunityId: post.opportunity_id ?? undefined,
         };
       }) || [];
 

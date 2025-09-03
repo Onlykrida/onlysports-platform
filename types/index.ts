@@ -115,6 +115,7 @@ export interface Post {
   shares: number;
   isLiked?: boolean;
   createdAt: Date;
+  opportunityId?: string;
 }
 
 export interface Opportunity {

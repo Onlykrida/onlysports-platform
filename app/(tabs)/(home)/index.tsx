@@ -163,31 +163,50 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Text style={styles.postContent}>{item.content}</Text>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => {
+          if (item.opportunityId) {
+            router.push({ pathname: '/opportunities', params: { focus: item.opportunityId } });
+          }
+        }}
+      >
+        <Text style={styles.postContent}>{item.content}</Text>
+      </TouchableOpacity>
 
-      {item.media && (
-        <View style={styles.mediaContainer}>
-          {item.media.type === 'image' ? (
-            <Image source={{ uri: item.media.url }} style={styles.postImage} />
-          ) : (
-            <VideoPlayer
-              uri={item.media.url ?? ''}
-              poster={item.media.thumbnail}
-              height={width * 0.75}
-              width={width}
-              autoPlay={false}
-              loop={false}
-              muted={false}
-              testID={`post-video-${item.id}`}
-            />
-          )}
-        </View>
-      )}
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => {
+          if (item.opportunityId) {
+            router.push({ pathname: '/opportunities', params: { focus: item.opportunityId } });
+          }
+        }}
+      >
+        {item.media && (
+          <View style={styles.mediaContainer}>
+            {item.media.type === 'image' ? (
+              <Image source={{ uri: item.media.url }} style={styles.postImage} />
+            ) : (
+              <VideoPlayer
+                uri={item.media.url ?? ''}
+                poster={item.media.thumbnail}
+                height={width * 0.75}
+                width={width}
+                autoPlay={false}
+                loop={false}
+                muted={false}
+                testID={`post-video-${item.id}`}
+              />
+            )}
+          </View>
+        )}
+      </TouchableOpacity>
 
       <View style={styles.postActions}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.actionButton, item.isLiked && styles.likedButton]}
           onPress={() => likePost(item.id)}
+          testID={`like-button-${item.id}`}
         >
           <Zap 
             size={24} 
