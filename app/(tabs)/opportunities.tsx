@@ -56,7 +56,7 @@ interface OpportunityData {
 
 export default function OpportunitiesScreen() {
   const { user } = useAuth();
-  const { opportunities, isLoading, applyToOpportunity, refreshOpportunities } = useOpportunities();
+  const { opportunities, isLoading, applyToOpportunity, refreshOpportunities, createOpportunity } = useOpportunities();
   const params = useLocalSearchParams<{ focus?: string }>();
   const listRef = useRef<RNFlatList<Opportunity>>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -86,6 +86,7 @@ export default function OpportunitiesScreen() {
     contactInfo: '',
     additionalInfo: ''
   });
+  const [sportInput, setSportInput] = useState<string>('General');
 
   const filteredOpportunities = useMemo(() => {
     let list = opportunities;
@@ -303,7 +304,7 @@ export default function OpportunitiesScreen() {
   };
 
   const handleCreateOpportunity = async () => {
-    if (!opportunityData.category || !opportunityData.title.trim() || !opportunityData.description.trim()) {
+    if (!opportunityData.category || !opportunityData.title.trim() || !opportunityData.description.trim() || !sportInput.trim()) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -315,17 +316,40 @@ export default function OpportunitiesScreen() {
 
     try {
       setIsCreating(true);
-      console.log('Creating opportunity:', opportunityData);
-      Alert.alert('Success', 'Your opportunity has been posted!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            resetOpportunityData();
-            setShowCreateModal(false);
-            refreshOpportunities();
-          }
-        }
-      ]);
+      const typeMap: Record<OpportunityCategory, Opportunity['type']> = {
+        tryouts: 'tryout',
+        tournaments: 'tournament',
+        sponsorships: 'sponsorship',
+        scholarships: 'scholarship',
+        contracts: 'job',
+      };
+
+      const paid = opportunityData.type.includes('paid');
+      const requirementsArr = opportunityData.requirements
+        ? opportunityData.requirements.split(/\r?\n|,/)?.map(r => r.trim()).filter(Boolean)
+        : [];
+
+      const payload = {
+        title: opportunityData.title.trim(),
+        description: opportunityData.description.trim(),
+        type: typeMap[opportunityData.category],
+        sport: sportInput.trim(),
+        location: opportunityData.location.trim() || 'N/A',
+        deadline: opportunityData.deadline.trim() || new Date().toISOString(),
+        requirements: requirementsArr,
+        paid,
+      } as Omit<Opportunity, 'id' | 'createdAt' | 'updatedAt' | 'teamId'>;
+
+      const res = await createOpportunity(payload);
+      if (res.error) {
+        Alert.alert('Error', res.error);
+      } else {
+        Alert.alert('Success', 'Your opportunity has been posted!');
+        resetOpportunityData();
+        setShowCreateModal(false);
+        setSportInput('General');
+        refreshOpportunities();
+      }
     } catch (error) {
       console.error('Error creating opportunity:', error);
       Alert.alert('Error', 'Failed to create opportunity. Please try again.');
@@ -350,6 +374,7 @@ export default function OpportunitiesScreen() {
       contactInfo: '',
       additionalInfo: ''
     });
+    setSportInput('General');
   };
 
   const toggleFilters = useCallback(() => {
@@ -752,6 +777,14 @@ export default function OpportunitiesScreen() {
                 
                 <TextInput
                   style={styles.input}
+                  placeholder="Sport * (e.g., Soccer)"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  value={sportInput}
+                  onChangeText={setSportInput}
+                />
+                
+                <TextInput
+                  style={styles.input}
                   placeholder="Location *"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.location}
@@ -760,7 +793,7 @@ export default function OpportunitiesScreen() {
                 
                 <TextInput
                   style={styles.input}
-                  placeholder="Deadline (e.g., March 15, 2024)"
+                  placeholder="Deadline (e.g., March 15, 2025)"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.deadline}
                   onChangeText={(text) => setOpportunityData(prev => ({ ...prev, deadline: text }))}

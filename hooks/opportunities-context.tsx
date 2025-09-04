@@ -213,6 +213,7 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
             title: opportunityData.title,
             description: opportunityData.description,
             opportunity_id: inserted?.id,
+            type: 'highlight',
           });
         if (postErr) {
           console.error('Failed to create feed post for opportunity:', postErr);
