@@ -52,68 +52,64 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         return;
       }
 
-      let postsData: any[] | null = null;
-      let lastError: any = null;
-
-      const profileFieldSets = [
-        ['id', 'name', 'avatar', 'role'],
-        ['id', 'full_name', 'avatar', 'role'],
-        ['id', 'username', 'avatar', 'role'],
-        ['id', 'email', 'avatar', 'role'],
-      ];
-
-      for (const fields of profileFieldSets) {
-        try {
-          const selectStr = `*, profiles!posts_user_id_fkey (${fields.join(',')})`;
-          console.log('Trying select with fields:', fields.join(','));
-          const { data, error } = await supabase
-            .from('posts')
-            .select(selectStr)
-            .order('created_at', { ascending: false });
-
-          if (!error) {
-            postsData = data as any[];
-            lastError = null;
-            break;
-          }
-
-          lastError = error;
-          console.warn('Select attempt failed with fields', fields.join(','), '->', getErrorMessage(error));
-        } catch (err) {
-          lastError = err;
-          console.warn('Select attempt threw with fields', fields.join(','), '->', getErrorMessage(err));
+      let postsRows: any[] | null = null;
+      try {
+        const { data, error } = await supabase
+          .from('posts')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) {
+          throw error;
         }
-      }
-
-      if (lastError) {
-        const msg = getErrorMessage(lastError);
-        console.error('Error loading posts from database:', msg, lastError);
+        postsRows = data as any[];
+      } catch (err) {
+        const msg = getErrorMessage(err);
+        console.error('Error loading posts from database:', msg, err);
         const sortedMockPosts = mockPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         console.log('Falling back to mock posts:', sortedMockPosts.length, 'posts');
         setPosts(sortedMockPosts);
         return;
       }
 
-      console.log('Raw posts data from database:', postsData?.length || 0, 'posts');
+      console.log('Raw posts rows from database:', postsRows?.length || 0, 'posts');
+      
+      // Fetch author profiles in a single query
+      const userIds = Array.from(new Set((postsRows ?? []).map((p: any) => p.user_id).filter(Boolean)));
+      let profilesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        try {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, name, full_name, username, email, avatar, role')
+            .in('id', userIds);
+          if (profilesError) {
+            console.warn('Failed to load profiles for posts:', getErrorMessage(profilesError));
+          } else if (profilesData) {
+            profilesMap = (profilesData as any[]).reduce<Record<string, any>>((acc, p) => {
+              acc[p.id] = p;
+              return acc;
+            }, {});
+          }
+        } catch (e) {
+          console.warn('Exception while loading profiles for posts:', getErrorMessage(e));
+        }
+      }
       
       // Check which posts the current user has liked
       let userLikes: string[] = [];
-      if (user && postsData?.length) {
+      if (user && postsRows?.length) {
         const { data: likesData } = await supabase
           .from('likes')
           .select('post_id')
           .eq('user_id', user.id)
-          .in('post_id', postsData.map((p: any) => p.id));
+          .in('post_id', postsRows.map((p: any) => p.id));
         
         userLikes = likesData?.map((like: any) => like.post_id) || [];
       }
       
-      // Transform database posts to our Post interface, filtering out posts from deleted users
-      const transformedPosts: Post[] = postsData?.filter((post: any) => {
-        // Filter out posts where the profile is null (user was deleted)
-        return post.profiles !== null;
-      }).map((post: any) => {
-        const profile = post.profiles ?? {};
+      // Transform posts using the profiles map
+      const transformedPosts: Post[] = (postsRows ?? []).map((post: any) => {
+        const profile = profilesMap[post.user_id] ?? {};
         const resolvedName = profile.name ?? profile.full_name ?? profile.username ?? profile.email ?? 'Unknown User';
         console.log('Transforming post:', post.id, 'by user:', resolvedName);
         return {
@@ -135,7 +131,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           createdAt: new Date(post.created_at),
           opportunityId: post.opportunity_id ?? undefined,
         };
-      }) || [];
+      });
 
       console.log('Transformed posts:', transformedPosts.length, 'posts');
       setPosts(transformedPosts);
