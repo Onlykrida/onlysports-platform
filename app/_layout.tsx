@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider, useAuth } from "@/hooks/auth-context";
 import { PostsProvider } from "@/hooks/posts-context";
@@ -11,11 +11,11 @@ import { NotificationProvider } from "@/hooks/notifications-context";
 import { MessagesProvider } from "@/hooks/messages-context";
 import { UsersProvider } from "@/hooks/users-context";
 import { OpportunitiesProvider } from "@/hooks/opportunities-context";
-import { View, ActivityIndicator, StatusBar, Platform } from "react-native";
+import { View, ActivityIndicator, StatusBar, Platform, useColorScheme, StyleSheet } from "react-native";
 import { ScoutingProvider } from "@/hooks/scouting-context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
-import BackgroundGradient from "@/components/BackgroundGradient";
+import { BackgroundGradient } from "@/components/BackgroundGradient";
 import { useNetworkErrorHandler } from "@/hooks/network-error-handler";
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -52,7 +52,7 @@ function RootLayoutNav() {
   if (isLoading) {
     return (
       <BackgroundGradient>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       </BackgroundGradient>
@@ -72,42 +72,87 @@ function RootLayoutNav() {
   );
 }
 
+const AppProviders = React.memo(({ children }: { children: React.ReactNode }) => {
+  const colorScheme = useColorScheme();
+  const barStyle = useMemo<'light-content' | 'dark-content'>(() => (
+    colorScheme === 'dark' ? 'light-content' : 'dark-content'
+  ), [colorScheme]);
+
+  return (
+    <AuthProvider>
+      <SearchProvider>
+        <NotificationProvider>
+          <FollowProvider>
+            <MessagesProvider>
+              <OpportunitiesProvider>
+                <UsersProvider>
+                  <PostsProvider>
+                    <GestureHandlerRootView style={styles.flex} testID="app-root">
+                      <StatusBar
+                        barStyle={barStyle}
+                        translucent
+                        backgroundColor={Platform.OS === 'android' ? 'transparent' : 'transparent'}
+                      />
+                      <ScoutingProvider>
+                        {children}
+                      </ScoutingProvider>
+                    </GestureHandlerRootView>
+                  </PostsProvider>
+                </UsersProvider>
+              </OpportunitiesProvider>
+            </MessagesProvider>
+          </FollowProvider>
+        </NotificationProvider>
+      </SearchProvider>
+    </AuthProvider>
+  );
+});
+
+AppProviders.displayName = 'AppProviders';
+
 export default function RootLayout() {
-  // Set up network error handler
   useNetworkErrorHandler();
   
   useEffect(() => {
-    SplashScreen.hideAsync().catch(() => {
-      // Ignore errors from splash screen
-    });
+    let isMounted = true;
+    const hide = async () => {
+      try {
+        await SplashScreen.hideAsync();
+      } catch {
+      }
+    };
+    const timeout = setTimeout(() => {
+      if (isMounted) {
+        SplashScreen.hideAsync().catch(() => {});
+      }
+    }, 2000);
+
+    hide();
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeout);
+    };
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
-      <AuthProvider>
-        <SearchProvider>
-          <NotificationProvider>
-            <FollowProvider>
-              <MessagesProvider>
-                <OpportunitiesProvider>
-                  <UsersProvider>
-                    <PostsProvider>
-                      <GestureHandlerRootView style={{ flex: 1 }}>
-                        <StatusBar barStyle="light-content" backgroundColor={theme.colors.surface} translucent={Platform.OS === 'ios'} />
-                        <ScoutingProvider>
-                          <RootLayoutNav />
-                        </ScoutingProvider>
-                      </GestureHandlerRootView>
-                    </PostsProvider>
-                  </UsersProvider>
-                </OpportunitiesProvider>
-              </MessagesProvider>
-            </FollowProvider>
-          </NotificationProvider>
-        </SearchProvider>
-      </AuthProvider>
+        <AppProviders>
+          <RootLayoutNav />
+        </AppProviders>
       </ErrorBoundary>
     </QueryClientProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  flex: {
+    flex: 1,
+  },
+});
