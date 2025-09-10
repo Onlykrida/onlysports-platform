@@ -16,10 +16,33 @@ import { ScoutingProvider } from "@/hooks/scouting-context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
 import BackgroundGradient from "@/components/BackgroundGradient";
+import { useNetworkErrorHandler } from "@/hooks/network-error-handler";
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Ignore errors from splash screen
+});
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        // Don't retry on update errors
+        if (error instanceof Error && 
+            (error.message.includes('Remote update request') || 
+             error.message.includes('java.io.IOException'))) {
+          return false;
+        }
+        // Retry other errors up to 3 times
+        return failureCount < 3;
+      },
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 10, // 10 minutes
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -50,8 +73,13 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  // Set up network error handler
+  useNetworkErrorHandler();
+  
   useEffect(() => {
-    SplashScreen.hideAsync();
+    SplashScreen.hideAsync().catch(() => {
+      // Ignore errors from splash screen
+    });
   }, []);
 
   return (
