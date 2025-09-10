@@ -32,6 +32,8 @@ export default function DiscoverScreen() {
   const [showSearchResults, setShowSearchResults] = useState<boolean>(false);
   const [usersError, setUsersError] = useState<string | null>(null);
   const [hasInitializedFilters, setHasInitializedFilters] = useState<boolean>(false);
+  const [showFilters, setShowFilters] = useState<boolean>(true);
+  const [locationQuery, setLocationQuery] = useState<string>('');
 
   const { 
     searchResults, 
@@ -134,7 +136,6 @@ export default function DiscoverScreen() {
   }, [cachedUsers]);
 
   const filteredUsers = useMemo(() => {
-    // First deduplicate users by ID and exclude current user
     const uniqueUsers = users.reduce((acc, user) => {
       if (!acc.has(user.id) && user.id !== currentUser?.id) {
         acc.set(user.id, user);
@@ -152,16 +153,19 @@ export default function DiscoverScreen() {
         user.role.toLowerCase().includes(q);
       const matchesSport = !selectedSport || user.sport === selectedSport;
       const matchesRole = !selectedRole || user.role === selectedRole;
+
+      // Location filter applies primarily to athletes
+      const locationQ = locationQuery.trim().toLowerCase();
+      const matchesLocation = locationQ.length === 0
+        ? true
+        : (user.role === 'athlete' && (user.location?.toLowerCase().includes(locationQ) ?? false));
       
-      // Additional smart filtering based on current user's role
       let isRelevantMatch = true;
       if (currentUser) {
-        // If current user is a scout, prioritize athletes in their sport
         if (currentUser.role === 'scout' && user.role === 'athlete') {
           const scoutData = currentUser.roleSpecificData;
           if (scoutData?.scoutingRegions && user.location) {
-            // Check if user's location matches scout's regions
-            const matchesRegion = scoutData.scoutingRegions.some(region => 
+            const matchesRegion = scoutData.scoutingRegions.some((region: string) => 
               user.location?.toLowerCase().includes(region.toLowerCase())
             );
             if (!matchesRegion && scoutData.scoutingRegions.length > 0) {
@@ -171,9 +175,9 @@ export default function DiscoverScreen() {
         }
       }
       
-      return matchesSearch && matchesSport && matchesRole && isRelevantMatch;
+      return matchesSearch && matchesSport && matchesRole && matchesLocation && isRelevantMatch;
     });
-  }, [users, localSearchQuery, selectedSport, selectedRole, currentUser]);
+  }, [users, localSearchQuery, selectedSport, selectedRole, currentUser, locationQuery]);
 
   const isInitialLoading = useMemo(() => {
     return (isLoadingUsers || usersIsLoading) && users.length === 0 && !usersError;
@@ -453,8 +457,15 @@ export default function DiscoverScreen() {
               <Text style={styles.clearButtonText}>✕</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.filterButton}>
-            <Filter size={20} color={theme.colors.primary} />
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => {
+              console.log('Discover: toggle filters', { next: !showFilters });
+              setShowFilters((prev) => !prev);
+            }}
+            testID="discover-toggle-filters"
+          >
+            <Filter size={20} color={showFilters ? theme.colors.primary : theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -491,13 +502,15 @@ export default function DiscoverScreen() {
         </View>
       ) : (
         <>
-          {/* Role Filter */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.roleFilter}
-            contentContainerStyle={styles.filterContent}
-          >
+          {showFilters && (
+            <> 
+              {/* Role Filter */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.roleFilter}
+                contentContainerStyle={styles.filterContent}
+              >
             <TouchableOpacity
               style={[styles.filterChip, !selectedRole && styles.filterChipActive]}
               onPress={() => setSelectedRole(null)}
@@ -530,15 +543,15 @@ export default function DiscoverScreen() {
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+              </ScrollView>
 
-          {/* Sports Filter */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.sportsFilter}
-            contentContainerStyle={styles.filterContent}
-          >
+              {/* Sports Filter */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.sportsFilter}
+                contentContainerStyle={styles.filterContent}
+              >
             <TouchableOpacity
               style={[styles.filterChip, !selectedSport && styles.filterChipActive]}
               onPress={() => setSelectedSport(null)}
@@ -566,7 +579,31 @@ export default function DiscoverScreen() {
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+              </ScrollView>
+
+              {/* Location Filter */}
+              <View style={styles.locationFilter}>
+                <MapPin size={16} color={theme.colors.textSecondary} />
+                <TextInput
+                  style={styles.locationInput}
+                  placeholder="Filter athletes by location (city, state, region)"
+                  value={locationQuery}
+                  onChangeText={setLocationQuery}
+                  placeholderTextColor={theme.colors.textSecondary}
+                  testID="discover-location-input"
+                />
+                {locationQuery.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setLocationQuery('')}
+                    style={styles.clearButton}
+                    testID="discover-location-clear"
+                  >
+                    <Text style={styles.clearButtonText}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </>
+          )}
 
           {isInitialLoading ? (
             <View style={styles.loadingContainer}>
@@ -693,6 +730,22 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     padding: theme.spacing.xs,
+  },
+  locationFilter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    gap: theme.spacing.sm,
+  },
+  locationInput: {
+    flex: 1,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    paddingVertical: theme.spacing.xs,
   },
   roleFilter: {
     backgroundColor: theme.colors.surface,
