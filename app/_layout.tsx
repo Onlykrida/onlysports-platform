@@ -11,7 +11,7 @@ import { NotificationProvider } from "@/hooks/notifications-context";
 import { MessagesProvider } from "@/hooks/messages-context";
 import { UsersProvider } from "@/hooks/users-context";
 import { OpportunitiesProvider } from "@/hooks/opportunities-context";
-import { View, ActivityIndicator, StatusBar } from "react-native";
+import { View, ActivityIndicator, StatusBar, Platform } from "react-native";
 import { ScoutingProvider } from "@/hooks/scouting-context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
@@ -94,7 +94,7 @@ export default function RootLayout() {
                   <UsersProvider>
                     <PostsProvider>
                       <GestureHandlerRootView style={{ flex: 1 }}>
-                        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+                        <StatusBar barStyle="light-content" backgroundColor={theme.colors.surface} translucent={Platform.OS === 'ios'} />
                         <ScoutingProvider>
                           <RootLayoutNav />
                         </ScoutingProvider>
