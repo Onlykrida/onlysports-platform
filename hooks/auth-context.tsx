@@ -5,7 +5,7 @@ import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { router } from 'expo-router';
 
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 interface AuthState {
   user: User | null;
@@ -521,7 +521,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         }
         if (/^(file:\/\/|content:\/\/)/i.test(uri)) {
           try {
-            const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+            const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
             const dataUrl = `data:${mimeGuess};base64,${base64}`;
             const r = await fetch(dataUrl);
             return await r.blob();
