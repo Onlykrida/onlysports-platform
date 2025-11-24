@@ -204,15 +204,19 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
       if (bucketsError) {
-        console.error('Posts: Failed to list buckets:', bucketsError);
-        return false;
+        console.warn('Posts: Failed to list buckets (may be due to permissions):', bucketsError.message);
+        console.log('Posts: Assuming bucket exists and proceeding with upload...');
+        // Return true to allow upload attempt even if we can't verify bucket existence
+        // The upload will fail explicitly if the bucket truly doesn't exist
+        return true;
       }
       
       const postsBucket = buckets?.find((bucket: any) => bucket.id === 'posts');
       if (!postsBucket) {
-        console.error('Posts: "posts" bucket does not exist. Please create it in your Supabase dashboard.');
-        console.error('Posts: Go to Storage > Create bucket > Name: "posts" > Public: ON');
-        return false;
+        console.warn('Posts: "posts" bucket not found in the list.');
+        console.log('Posts: This might be a permissions issue. Attempting upload anyway...');
+        // Return true to allow upload attempt - better to try and fail than to block unnecessarily
+        return true;
       }
       
       console.log('Posts: Storage bucket found:', postsBucket);
@@ -224,8 +228,10 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       
       return true;
     } catch (error) {
-      console.error('Posts: Error checking storage bucket:', error);
-      return false;
+      console.warn('Posts: Error checking storage bucket:', error);
+      console.log('Posts: Proceeding with upload attempt anyway...');
+      // Return true to allow upload attempt
+      return true;
     }
   }, []);
 
