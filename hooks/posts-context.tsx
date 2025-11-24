@@ -274,15 +274,34 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
       }
       
-      const blob = await response.blob();
-      console.log('Posts: blob created', { 
-        size: blob.size, 
-        type: blob.type,
-        sizeInMB: (blob.size / (1024 * 1024)).toFixed(2)
+      // Get file data based on platform
+      let fileData: Blob | ArrayBuffer;
+      let fileSize: number;
+      let mimeType: string;
+      
+      if (Platform.OS === 'web') {
+        // Web platform - use blob()
+        const blob = await response.blob();
+        fileData = blob;
+        fileSize = blob.size;
+        mimeType = blob.type;
+      } else {
+        // React Native - use arrayBuffer()
+        const arrayBuffer = await response.arrayBuffer();
+        fileData = arrayBuffer;
+        fileSize = arrayBuffer.byteLength;
+        mimeType = mType === 'image' ? 'image/jpeg' : 'video/mp4';
+      }
+      
+      console.log('Posts: file data created', { 
+        size: fileSize, 
+        type: mimeType,
+        sizeInMB: (fileSize / (1024 * 1024)).toFixed(2),
+        platform: Platform.OS
       });
 
-      if (blob.size === 0) {
-        throw new Error('Blob is empty');
+      if (fileSize === 0) {
+        throw new Error('File is empty');
       }
 
       // Set content type based on media type
@@ -292,7 +311,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('posts')
-        .upload(path, blob, { 
+        .upload(path, fileData, { 
           contentType,
           upsert: false,
           cacheControl: '3600'
