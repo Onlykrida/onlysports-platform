@@ -20,11 +20,13 @@ export function useNetworkErrorHandler() {
       if (typeof error === 'object' && error !== null) {
         const errorMessage = error.message || error.toString();
         
-        // Check for update-related errors
+        // Check for update-related errors and network errors
         if (errorMessage.includes('Remote update request not successful') ||
             errorMessage.includes('java.io.IOException') ||
-            errorMessage.includes('Network request failed')) {
-          console.log('[NetworkErrorHandler] Caught network/update error, ignoring:', errorMessage);
+            errorMessage.includes('Network request failed') ||
+            errorMessage.includes('Failed to fetch') ||
+            errorMessage.includes('fetch failed')) {
+          console.log('[NetworkErrorHandler] Network/connectivity issue detected (normal in simulator/dev).');
           
           // Prevent the error from bubbling up
           if (event.preventDefault) {

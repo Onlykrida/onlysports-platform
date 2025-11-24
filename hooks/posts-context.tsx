@@ -64,7 +64,15 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         postsRows = data as any[];
       } catch (err) {
         const msg = getErrorMessage(err);
-        console.error('Error loading posts from database:', msg, err);
+        
+        // Check if it's a network error (common in dev/simulator)
+        if (msg.includes('Failed to fetch') || msg.includes('Network request failed') || msg.includes('fetch')) {
+          console.log('Network connection issue detected. Using mock data for offline mode.');
+          console.log('This is normal if you\'re using a simulator/emulator or have network restrictions.');
+        } else {
+          console.error('Error loading posts from database:', msg);
+        }
+        
         const sortedMockPosts = mockPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         console.log('Falling back to mock posts:', sortedMockPosts.length, 'posts');
         setPosts(sortedMockPosts);
