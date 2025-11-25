@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,10 @@ import {
   TouchableOpacity,
   Dimensions,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import BackgroundGradient from '@/components/BackgroundGradient';
+import BackgroundGradientWrapper from '@/components/BackgroundGradient';
+import PostSkeleton from '@/components/PostSkeleton';
+import VideoPlayer from '@/components/VideoPlayer';
 import { 
   Zap, 
   MessageSquare, 
@@ -36,8 +36,6 @@ import EditPostModal from '@/components/EditPostModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
 const { width } = Dimensions.get('window');
-
-import VideoPlayer from '@/components/VideoPlayer';
 
 const getRoleIcon = (role: string) => {
   switch (role.toLowerCase()) {
@@ -232,19 +230,20 @@ export default function HomeScreen() {
   );
 
   if (isLoading && posts.length === 0) {
+    console.log('HomeScreen showing skeleton state');
     return (
-      <BackgroundGradient style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading the action...</Text>
+      <BackgroundGradientWrapper style={styles.container}>
+        <View style={styles.skeletonContainer}>
+          <PostSkeleton count={4} testID="home-feed-skeleton" />
+          <Text style={styles.skeletonLabel}>Dialing up fresh highlights…</Text>
         </View>
-      </BackgroundGradient>
+      </BackgroundGradientWrapper>
     );
   }
 
   if (!isLoading && posts.length === 0) {
     return (
-      <BackgroundGradient style={styles.container}>
+      <BackgroundGradientWrapper style={styles.container}>
         <View style={styles.loadingContainer}>
           <Trophy size={48} color={theme.colors.textSecondary} />
           <Text style={styles.emptyText}>No highlights yet</Text>
@@ -256,12 +255,12 @@ export default function HomeScreen() {
             <Text style={styles.refreshButtonText}>Refresh Feed</Text>
           </TouchableOpacity>
         </View>
-      </BackgroundGradient>
+      </BackgroundGradientWrapper>
     );
   }
 
   return (
-    <BackgroundGradient style={styles.container}>
+    <BackgroundGradientWrapper style={styles.container}>
       <FlatList
         data={posts}
         renderItem={renderPost}
@@ -352,7 +351,7 @@ export default function HomeScreen() {
           }}
         />
       )}
-    </BackgroundGradient>
+    </BackgroundGradientWrapper>
   );
 }
 
@@ -547,6 +546,20 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.lg,
     color: theme.colors.textSecondary,
     fontWeight: theme.fontWeight.bold,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+  },
+  skeletonContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: theme.spacing.xl,
+  },
+  skeletonLabel: {
+    textAlign: 'center',
+    marginTop: theme.spacing.lg,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.fontWeight.medium,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },
