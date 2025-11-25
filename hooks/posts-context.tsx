@@ -88,7 +88,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         try {
           const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
-            .select('id, name, full_name, username, email, avatar, role')
+            .select('id, name, email, avatar, role')
             .in('id', userIds);
           if (profilesError) {
             console.warn('Failed to load profiles for posts:', getErrorMessage(profilesError));
@@ -118,8 +118,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       // Transform posts using the profiles map
       const transformedPosts: Post[] = (postsRows ?? []).map((post: any) => {
         const profile = profilesMap[post.user_id] ?? {};
-        const resolvedName = profile.name ?? profile.full_name ?? profile.username ?? profile.email ?? 'Unknown User';
-        console.log('Transforming post:', post.id, 'by user:', resolvedName);
+        const resolvedName = profile.name ?? profile.email?.split('@')[0] ?? 'User';
+        console.log('Transforming post:', post.id, 'by user_id:', post.user_id, 'profile found:', !!profile.id, 'resolved name:', resolvedName, 'profile:', profile);
         return {
           id: post.id,
           userId: post.user_id,
