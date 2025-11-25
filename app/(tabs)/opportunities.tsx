@@ -18,8 +18,7 @@ import {
   Calendar, 
   MapPin, 
   Users, 
-  DollarSign, 
-  Plus,
+  DollarSign,
   Trophy,
   FileSignature,
   GraduationCap,
@@ -32,8 +31,7 @@ import {
 import { theme } from '@/constants/theme';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import CreateOpportunityModal from '@/components/CreateOpportunityModal';
+import { useLocalSearchParams } from 'expo-router';
 
 type OpportunityCategory = 'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
 type OpportunityType = 'paid' | 'unpaid' | 'local' | 'national' | 'short-term' | 'long-term';
@@ -68,8 +66,8 @@ export default function OpportunitiesScreen() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
-  const filterHeight = useState(new Animated.Value(1))[0];
-  const filterOpacity = useState(new Animated.Value(1))[0];
+  const [filterHeight] = useState(new Animated.Value(1));
+  const [filterOpacity] = useState(new Animated.Value(1));
   
   const [opportunityData, setOpportunityData] = useState<OpportunityData>({
     category: null,
