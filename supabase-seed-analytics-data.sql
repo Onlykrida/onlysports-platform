@@ -238,7 +238,7 @@ BEGIN
             first_names[1 + floor(random() * array_length(first_names, 1))::int] || ' ' ||
             last_names[1 + floor(random() * array_length(last_names, 1))::int],
             'athlete',
-            'https://api.dicebear.com/7.x/avataaars/svg?seed=' || i,
+            'https://api.dicebear.com/7' || '.x' || '/avataaars/svg?seed=' || i,
             bios[1 + floor(random() * array_length(bios, 1))::int],
             location,
             CASE WHEN random() > 0.7 THEN true ELSE false END,
@@ -361,7 +361,7 @@ BEGIN
                 first_names[1 + floor(random() * array_length(first_names, 1))::int] || ' ' ||
                 last_names[1 + floor(random() * array_length(last_names, 1))::int],
                 'scout',
-                'https://api.dicebear.com/7.x/avataaars/svg?seed=scout' || i,
+                'https://api.dicebear.com/7' || '.x' || '/avataaars/svg?seed=scout' || i,
                 'Professional talent scout looking for the next sports stars',
                 locations[1 + floor(random() * array_length(locations, 1))::int],
                 true,
@@ -391,7 +391,7 @@ BEGIN
                 first_names[1 + floor(random() * array_length(first_names, 1))::int] || ' ' ||
                 last_names[1 + floor(random() * array_length(last_names, 1))::int],
                 'coach',
-                'https://api.dicebear.com/7.x/avataaars/svg?seed=coach' || i,
+                'https://api.dicebear.com/7' || '.x' || '/avataaars/svg?seed=coach' || i,
                 'Experienced coach dedicated to developing young talent',
                 locations[1 + floor(random() * array_length(locations, 1))::int],
                 true,
