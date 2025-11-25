@@ -11,7 +11,7 @@ import { NotificationProvider } from "@/hooks/notifications-context";
 import { MessagesProvider } from "@/hooks/messages-context";
 import { UsersProvider } from "@/hooks/users-context";
 import { OpportunitiesProvider } from "@/hooks/opportunities-context";
-import { View, ActivityIndicator, StatusBar, Platform, useColorScheme, StyleSheet } from "react-native";
+import { View, ActivityIndicator, StatusBar, Platform, useColorScheme, StyleSheet, LogBox } from "react-native";
 import { ScoutingProvider } from "@/hooks/scouting-context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
@@ -21,6 +21,37 @@ import { useNetworkErrorHandler } from "@/hooks/network-error-handler";
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Ignore errors from splash screen
 });
+
+if (Platform.OS === 'web') {
+  const originalError = console.error;
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      (args[0].includes('Unable to activate keep awake') ||
+        args[0].includes('expo-keep-awake'))
+    ) {
+      return;
+    }
+    originalError.apply(console, args);
+  };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('unhandledrejection', (event) => {
+      if (
+        event.reason?.message?.includes('Unable to activate keep awake') ||
+        event.reason?.message?.includes('expo-keep-awake')
+      ) {
+        event.preventDefault();
+        return;
+      }
+    });
+  }
+}
+
+LogBox.ignoreLogs([
+  'Unable to activate keep awake',
+  'expo-keep-awake',
+]);
 
 const queryClient = new QueryClient({
   defaultOptions: {
