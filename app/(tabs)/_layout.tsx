@@ -1,5 +1,5 @@
 import { Tabs, router } from "expo-router";
-import { Home, Search, Briefcase, User, PlusCircle, MessageCircle, Bell, Plus } from "lucide-react-native";
+import { Home, Search, Briefcase, User, PlusCircle, MessageCircle, Bell, Plus, BarChart3 } from "lucide-react-native";
 import React from "react";
 import { View, Text, Platform, TouchableOpacity } from "react-native";
 import { useAuth } from "@/hooks/auth-context";
@@ -84,6 +84,18 @@ export default function TabLayout() {
               </TouchableOpacity>
             ) : null;
           }
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          tabBarIcon: ({ color, size }) => <BarChart3 size={size} color={color} />,
+          headerShown: true,
+          headerStyle: { backgroundColor: theme.colors.surfaceDark },
+          headerTitleStyle: { color: theme.colors.text, fontWeight: '700' },
+          headerTintColor: theme.colors.text,
+          headerShadowVisible: false,
         }}
       />
       <Tabs.Screen

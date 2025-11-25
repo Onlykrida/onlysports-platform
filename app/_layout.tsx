@@ -13,6 +13,7 @@ import { UsersProvider } from "@/hooks/users-context";
 import { OpportunitiesProvider } from "@/hooks/opportunities-context";
 import { View, ActivityIndicator, StatusBar, Platform, useColorScheme, StyleSheet, LogBox } from "react-native";
 import { ScoutingProvider } from "@/hooks/scouting-context";
+import { AnalyticsProvider } from "@/hooks/analytics-context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
 import { BackgroundGradient } from "@/components/BackgroundGradient";
@@ -125,7 +126,9 @@ const AppProviders = React.memo(({ children }: { children: React.ReactNode }) =>
                         backgroundColor={Platform.OS === 'android' ? 'transparent' : 'transparent'}
                       />
                       <ScoutingProvider>
-                        {children}
+                        <AnalyticsProvider>
+                          {children}
+                        </AnalyticsProvider>
                       </ScoutingProvider>
                     </GestureHandlerRootView>
                   </PostsProvider>
