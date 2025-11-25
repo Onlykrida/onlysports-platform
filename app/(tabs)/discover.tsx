@@ -535,7 +535,7 @@ export default function DiscoverScreen() {
                   onPress={() => setSelectedRole(role)}
                 >
                   <Text style={[styles.filterChipText, selectedRole === role && styles.filterChipTextActive]}>
-                    {role.charAt(0).toUpperCase() + role.slice(1)}s
+                    {role === 'coach' ? 'Coaches' : role.charAt(0).toUpperCase() + role.slice(1) + 's'}
                     {isRecommended && selectedRole !== role && (
                       <Text style={styles.recommendedBadge}> ⭐</Text>
                     )}
