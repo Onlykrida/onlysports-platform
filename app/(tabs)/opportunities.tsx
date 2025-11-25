@@ -399,6 +399,16 @@ export default function OpportunitiesScreen() {
     return count;
   }, [selectedType, selectedSport, selectedPayment]);
 
+  useEffect(() => {
+    if (params?.focus && opportunities.length > 0) {
+      const index = opportunities.findIndex(o => o.id === params.focus);
+      if (index >= 0) {
+        listRef.current?.scrollToIndex({ index, animated: true });
+        setTimeout(() => setSelectedOpportunity(opportunities[index] ?? null), 350);
+      }
+    }
+  }, [params?.focus, opportunities]);
+
   const FiltersBar = useMemo(() => {
     const filterMaxHeight = filterHeight.interpolate({
       inputRange: [0, 1],
@@ -543,16 +553,6 @@ export default function OpportunitiesScreen() {
       </SafeAreaView>
     );
   }
-
-  useEffect(() => {
-    if (params?.focus && opportunities.length > 0) {
-      const index = opportunities.findIndex(o => o.id === params.focus);
-      if (index >= 0) {
-        listRef.current?.scrollToIndex({ index, animated: true });
-        setTimeout(() => setSelectedOpportunity(opportunities[index] ?? null), 350);
-      }
-    }
-  }, [params?.focus, opportunities]);
 
   return (
     <SafeAreaView style={styles.container}>
