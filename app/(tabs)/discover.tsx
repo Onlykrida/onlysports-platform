@@ -503,7 +503,7 @@ export default function DiscoverScreen() {
       ) : (
         <>
           {showFilters && (
-            <> 
+            <View style={styles.filtersContainer}>
               {/* Role Filter */}
               <ScrollView
                 horizontal
@@ -511,38 +511,37 @@ export default function DiscoverScreen() {
                 style={styles.roleFilter}
                 contentContainerStyle={styles.filterContent}
               >
-            <TouchableOpacity
-              style={[styles.filterChip, !selectedRole && styles.filterChipActive]}
-              onPress={() => setSelectedRole(null)}
-            >
-              <Text style={[styles.filterChipText, !selectedRole && styles.filterChipTextActive]}>
-                All Roles
-              </Text>
-            </TouchableOpacity>
-            {['athlete', 'scout', 'coach', 'trainer'].map((role) => {
-              // Show recommended badge for roles that match user's likely interests
-              const isRecommended = currentUser && (
-                (currentUser.role === 'scout' && role === 'athlete') ||
-                (currentUser.role === 'athlete' && (role === 'scout' || role === 'coach' || role === 'trainer')) ||
-                (currentUser.role === 'coach' && role === 'athlete') ||
-                (currentUser.role === 'trainer' && role === 'athlete')
-              );
-              
-              return (
                 <TouchableOpacity
-                  key={role}
-                  style={[styles.filterChip, selectedRole === role && styles.filterChipActive]}
-                  onPress={() => setSelectedRole(role)}
+                  style={[styles.filterChip, !selectedRole && styles.filterChipActive]}
+                  onPress={() => setSelectedRole(null)}
                 >
-                  <Text style={[styles.filterChipText, selectedRole === role && styles.filterChipTextActive]}>
-                    {role === 'coach' ? 'Coaches' : role.charAt(0).toUpperCase() + role.slice(1) + 's'}
-                    {isRecommended && selectedRole !== role && (
-                      <Text style={styles.recommendedBadge}> ⭐</Text>
-                    )}
+                  <Text style={[styles.filterChipText, !selectedRole && styles.filterChipTextActive]}>
+                    All Roles
                   </Text>
                 </TouchableOpacity>
-              );
-            })}
+                {['athlete', 'scout', 'coach', 'trainer'].map((role) => {
+                  const isRecommended = currentUser && (
+                    (currentUser.role === 'scout' && role === 'athlete') ||
+                    (currentUser.role === 'athlete' && (role === 'scout' || role === 'coach' || role === 'trainer')) ||
+                    (currentUser.role === 'coach' && role === 'athlete') ||
+                    (currentUser.role === 'trainer' && role === 'athlete')
+                  );
+                  
+                  return (
+                    <TouchableOpacity
+                      key={role}
+                      style={[styles.filterChip, selectedRole === role && styles.filterChipActive]}
+                      onPress={() => setSelectedRole(role)}
+                    >
+                      <Text style={[styles.filterChipText, selectedRole === role && styles.filterChipTextActive]}>
+                        {role === 'coach' ? 'Coaches' : role.charAt(0).toUpperCase() + role.slice(1) + 's'}
+                        {isRecommended && selectedRole !== role && (
+                          <Text style={styles.recommendedBadge}> ⭐</Text>
+                        )}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
 
               {/* Sports Filter */}
@@ -552,33 +551,32 @@ export default function DiscoverScreen() {
                 style={styles.sportsFilter}
                 contentContainerStyle={styles.filterContent}
               >
-            <TouchableOpacity
-              style={[styles.filterChip, !selectedSport && styles.filterChipActive]}
-              onPress={() => setSelectedSport(null)}
-            >
-              <Text style={[styles.filterChipText, !selectedSport && styles.filterChipTextActive]}>
-                All Sports
-              </Text>
-            </TouchableOpacity>
-            {sports.map((sport) => {
-              // Show recommended badge for user's sport
-              const isUserSport = currentUser?.sport === sport;
-              
-              return (
                 <TouchableOpacity
-                  key={sport}
-                  style={[styles.filterChip, selectedSport === sport && styles.filterChipActive]}
-                  onPress={() => setSelectedSport(sport)}
+                  style={[styles.filterChip, !selectedSport && styles.filterChipActive]}
+                  onPress={() => setSelectedSport(null)}
                 >
-                  <Text style={[styles.filterChipText, selectedSport === sport && styles.filterChipTextActive]}>
-                    {sport}
-                    {isUserSport && selectedSport !== sport && (
-                      <Text style={styles.recommendedBadge}> 🏆</Text>
-                    )}
+                  <Text style={[styles.filterChipText, !selectedSport && styles.filterChipTextActive]}>
+                    All Sports
                   </Text>
                 </TouchableOpacity>
-              );
-            })}
+                {sports.map((sport) => {
+                  const isUserSport = currentUser?.sport === sport;
+                  
+                  return (
+                    <TouchableOpacity
+                      key={sport}
+                      style={[styles.filterChip, selectedSport === sport && styles.filterChipActive]}
+                      onPress={() => setSelectedSport(sport)}
+                    >
+                      <Text style={[styles.filterChipText, selectedSport === sport && styles.filterChipTextActive]}>
+                        {sport}
+                        {isUserSport && selectedSport !== sport && (
+                          <Text style={styles.recommendedBadge}> 🏆</Text>
+                        )}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
 
               {/* Location Filter */}
@@ -595,14 +593,14 @@ export default function DiscoverScreen() {
                 {locationQuery.length > 0 && (
                   <TouchableOpacity
                     onPress={() => setLocationQuery('')}
-                    style={styles.clearButton}
+                    style={styles.clearLocationButton}
                     testID="discover-location-clear"
                   >
                     <Text style={styles.clearButtonText}>✕</Text>
                   </TouchableOpacity>
                 )}
               </View>
-            </>
+            </View>
           )}
 
           {isInitialLoading ? (
@@ -737,9 +735,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     gap: theme.spacing.sm,
+  },
+  clearLocationButton: {
+    padding: theme.spacing.xs,
   },
   locationInput: {
     flex: 1,
@@ -747,15 +750,16 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     paddingVertical: theme.spacing.xs,
   },
+  filtersContainer: {
+    backgroundColor: theme.colors.surface,
+  },
   roleFilter: {
     backgroundColor: theme.colors.surface,
-    maxHeight: 60,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
   sportsFilter: {
     backgroundColor: theme.colors.surface,
-    maxHeight: 60,
   },
   filterContent: {
     paddingHorizontal: theme.spacing.md,
