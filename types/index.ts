@@ -17,6 +17,7 @@ export interface User {
   followersCount?: number;
   followingCount?: number;
   isFollowing?: boolean;
+  resumeUrl?: string;
   // Role-specific fields
   roleSpecificData?: RoleSpecificData;
 }

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
-import { Settings, Edit3, Award, BarChart3, LogOut, Plus, Grid, List, Camera, Sparkles, BadgeCheck } from 'lucide-react-native';
+import { Settings, Edit3, Award, BarChart3, LogOut, Plus, Grid, List, Camera, Sparkles, BadgeCheck, FileText, ExternalLink } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';
@@ -21,6 +21,7 @@ import { mockAthletes } from '@/mocks/data';
 import { Button } from '@/components/Button';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as Linking from 'expo-linking';
 import { useScouting, AIRecommendationRow } from '@/hooks/scouting-context';
 
 export default function ProfileScreen() {
@@ -374,6 +375,41 @@ export default function ProfileScreen() {
             {renderRoleSpecificDetails()}
           </View>
         )}
+
+        {/* CV/Resume Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <FileText size={20} color={theme.colors.primary} />
+            <Text style={styles.sectionTitle}>CV / Resume</Text>
+          </View>
+          {user.resumeUrl ? (
+            <TouchableOpacity 
+              style={styles.resumeCard}
+              onPress={() => {
+                if (user.resumeUrl) {
+                  Linking.openURL(user.resumeUrl).catch(err => {
+                    console.error('Failed to open resume:', err);
+                  });
+                }
+              }}
+              testID="resume-view-button"
+            >
+              <View style={styles.resumeCardContent}>
+                <FileText size={24} color={theme.colors.primary} />
+                <View style={styles.resumeCardInfo}>
+                  <Text style={styles.resumeCardTitle}>Resume</Text>
+                  <Text style={styles.resumeCardSubtitle}>Tap to view PDF</Text>
+                </View>
+              </View>
+              <ExternalLink size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No resume uploaded</Text>
+              <Text style={styles.emptyStateSubtext}>Add your CV in Edit Profile</Text>
+            </View>
+          )}
+        </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -819,6 +855,33 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     lineHeight: 18,
+  },
+  resumeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  resumeCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  resumeCardInfo: {
+    gap: 2,
+  },
+  resumeCardTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+  },
+  resumeCardSubtitle: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
   },
   avatarContainer: {
     position: 'relative',

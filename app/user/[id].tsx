@@ -23,10 +23,13 @@ import {
   Flame,
   Star,
   Grid,
-  List
+  List,
+  FileText,
+  ExternalLink
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { User, Post } from '@/types';
+import * as Linking from 'expo-linking';
 import { useScouting } from '@/hooks/scouting-context';
 import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';
@@ -90,7 +93,7 @@ export default function UserProfileScreen() {
       // Load user profile
       const { data: userData, error: userError } = await supabase
         .from('profiles')
-        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at')
+        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, resume_url, created_at')
         .eq('id', id)
         .single();
 
@@ -115,6 +118,7 @@ export default function UserProfileScreen() {
           achievements: userData.achievements || [],
           stats: userData.stats || {},
           roleSpecificData: userData.role_specific_data || {},
+          resumeUrl: userData.resume_url,
           createdAt: new Date(userData.created_at),
         };
         setProfileUser(user);
@@ -422,6 +426,36 @@ export default function UserProfileScreen() {
             )}
           </View>
         </View>
+
+        {/* CV/Resume Section */}
+        {profileUser.resumeUrl && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <FileText size={20} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>CV / Resume</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.resumeCard}
+              onPress={() => {
+                if (profileUser.resumeUrl) {
+                  Linking.openURL(profileUser.resumeUrl).catch(err => {
+                    console.error('Failed to open resume:', err);
+                  });
+                }
+              }}
+              testID="resume-view-button"
+            >
+              <View style={styles.resumeCardContent}>
+                <FileText size={24} color={theme.colors.primary} />
+                <View style={styles.resumeCardInfo}>
+                  <Text style={styles.resumeCardTitle}>{profileUser.name}&apos;s Resume</Text>
+                  <Text style={styles.resumeCardSubtitle}>Tap to view PDF</Text>
+                </View>
+              </View>
+              <ExternalLink size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Interested Scouts for athletes */}
         {profileUser.role === 'athlete' && (
@@ -823,5 +857,32 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     lineHeight: 18,
+  },
+  resumeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  resumeCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  resumeCardInfo: {
+    gap: 2,
+  },
+  resumeCardTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+  },
+  resumeCardSubtitle: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
   },
 });

@@ -10,13 +10,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
-import { Save, X, Camera, Plus, Trash2 } from 'lucide-react-native';
+import { Save, X, Camera, Plus, Trash2, FileText, Upload } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Achievement } from '@/types';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 
 const SPORTS = [
   'Football', 'Basketball', 'Soccer', 'Baseball', 'Tennis', 'Golf',
@@ -50,7 +51,10 @@ export default function EditProfileScreen() {
     avatar: user?.avatar || '',
     coverPhoto: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200',
     roleSpecificData: user?.roleSpecificData || {},
+    resumeUrl: user?.resumeUrl || '',
   });
+  const [resumeFileName, setResumeFileName] = useState<string>('');
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
 
   const [newAchievement, setNewAchievement] = useState({
     title: '',
@@ -119,6 +123,47 @@ export default function EditProfileScreen() {
     }
   };
 
+  const pickResume = async () => {
+    try {
+      setIsUploadingResume(true);
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const file = result.assets[0];
+        console.log('Selected resume file:', file.name, file.uri);
+        setFormData(prev => ({ ...prev, resumeUrl: file.uri }));
+        setResumeFileName(file.name);
+        Alert.alert('Success', 'Resume selected. Save your profile to upload it.');
+      }
+    } catch (error) {
+      console.error('Error picking resume:', error);
+      Alert.alert('Error', 'Failed to select resume. Please try again.');
+    } finally {
+      setIsUploadingResume(false);
+    }
+  };
+
+  const removeResume = () => {
+    Alert.alert(
+      'Remove Resume',
+      'Are you sure you want to remove your resume?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            setFormData(prev => ({ ...prev, resumeUrl: '' }));
+            setResumeFileName('');
+          },
+        },
+      ]
+    );
+  };
+
   const handleSave = async () => {
     if (!formData.name.trim()) {
       Alert.alert('Error', 'Name is required');
@@ -129,6 +174,7 @@ export default function EditProfileScreen() {
     try {
       const result = await updateProfile({
         ...formData,
+        resumeUrl: formData.resumeUrl,
         roleSpecificData: formData.roleSpecificData
       });
       if (result.error) {
@@ -547,6 +593,51 @@ export default function EditProfileScreen() {
           )}
         </View>
 
+        {/* CV/Resume Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>CV / Resume</Text>
+          <Text style={styles.sectionSubtitle}>Upload your resume as a PDF file</Text>
+          
+          {formData.resumeUrl ? (
+            <View style={styles.resumeContainer}>
+              <View style={styles.resumeInfo}>
+                <FileText size={24} color={theme.colors.primary} />
+                <View style={styles.resumeDetails}>
+                  <Text style={styles.resumeFileName} numberOfLines={1}>
+                    {resumeFileName || 'Resume.pdf'}
+                  </Text>
+                  <Text style={styles.resumeStatus}>PDF Document</Text>
+                </View>
+              </View>
+              <View style={styles.resumeActions}>
+                <TouchableOpacity 
+                  style={styles.resumeActionButton}
+                  onPress={pickResume}
+                >
+                  <Upload size={18} color={theme.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.resumeActionButton}
+                  onPress={removeResume}
+                >
+                  <Trash2 size={18} color={theme.colors.danger} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity 
+              style={styles.uploadResumeButton}
+              onPress={pickResume}
+              disabled={isUploadingResume}
+            >
+              <Upload size={20} color={theme.colors.primary} />
+              <Text style={styles.uploadResumeText}>
+                {isUploadingResume ? 'Selecting...' : 'Upload Resume (PDF)'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Stats */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -818,5 +909,65 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
+  },
+  sectionSubtitle: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
+  },
+  resumeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  resumeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: theme.spacing.md,
+  },
+  resumeDetails: {
+    flex: 1,
+  },
+  resumeFileName: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.text,
+  },
+  resumeStatus: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  resumeActions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  resumeActionButton: {
+    padding: theme.spacing.sm,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.sm,
+  },
+  uploadResumeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderStyle: 'dashed',
+  },
+  uploadResumeText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.primary,
   },
 });
