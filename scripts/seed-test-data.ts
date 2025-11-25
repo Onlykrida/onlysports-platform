@@ -13,7 +13,7 @@ type Env = {
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SEED_TAG = process.env.SEED_TAG || 'onlysports-seed';
-const TOTAL_USERS = Number(process.env.SEED_TOTAL_USERS || 50);
+const TOTAL_USERS = Number(process.env.SEED_TOTAL_USERS || 100);
 
 const IMAGE_SOURCES: string[] = [
   'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1600&auto=format&fit=crop',
@@ -31,8 +31,8 @@ const IMAGE_SOURCES: string[] = [
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 function randomInt(min: number, max: number): number { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-const firstNames: string[] = ['Alex','Jordan','Taylor','Casey','Riley','Morgan','Parker','Quinn','Reese','Avery','Jamie','Cameron','Drew','Elliot','Harper','Kai','Logan','Mason','Noah','Owen','Peyton','Rowan','Sawyer','Skyler','Sage'];
-const lastNames: string[] = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Martinez','Lopez','Wilson','Anderson','Thomas','Jackson','White','Harris','Clark','Lewis','Robinson','Walker'];
+const firstNames: string[] = ['Alex','Jordan','Taylor','Casey','Riley','Morgan','Parker','Quinn','Reese','Avery','Jamie','Cameron','Drew','Elliot','Harper','Kai','Logan','Mason','Noah','Owen','Peyton','Rowan','Sawyer','Skyler','Sage','Blake','Charlie','Dakota','Eden','Finley','Gray','Hayden','Indigo','Jules','Kennedy','Lane','Marley','North','Ocean','Phoenix','River','Scout','Shiloh','Taylor','Unity','Wyatt'];
+const lastNames: string[] = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Martinez','Lopez','Wilson','Anderson','Thomas','Jackson','White','Harris','Clark','Lewis','Robinson','Walker','Lee','Kim','Patel','Chen','Silva','Kumar','Rodriguez','Nguyen','Thompson','Moore','Taylor','Martin','Young','Allen','King','Wright','Scott','Green','Adams','Baker'];
 const bios: string[] = [
   'Passionate about sports and continuous improvement.',
   'Always hustling on and off the field.',
@@ -41,18 +41,57 @@ const bios: string[] = [
   'Chasing dreams one rep at a time.',
   'Here to discover and develop talent.',
   'Let the work speak for itself.',
+  'Elite performance is built in the details.',
+  'Committed to excellence every single day.',
+  'Train hard, compete harder.',
+  'Building champions one day at a time.',
+  'Focused on finding the next generation of talent.',
+  'Performance analytics enthusiast.',
+  'Dedicated to the craft and the grind.',
+  'Professional mindset, amateur heart.',
+  'Believer in hard work and smart training.',
+  'Creating opportunities for rising stars.',
+  'Every setback is a setup for a comeback.',
 ];
-const sports: string[] = ['football','basketball','soccer','tennis','track','swimming','volleyball'];
+const sports: string[] = ['football','basketball','soccer','tennis','track','swimming','volleyball','baseball','hockey','rugby','cricket','golf','martial arts'];
 const positions: Record<string,string[]> = {
-  football: ['QB','WR','RB','LB','CB','S','DL'],
+  football: ['QB','WR','RB','LB','CB','S','DL','TE','OL','K'],
   basketball: ['PG','SG','SF','PF','C'],
   soccer: ['GK','DF','MF','FW'],
   tennis: ['Singles','Doubles'],
   track: ['Sprinter','Mid-distance','Long-distance','Hurdles','Field'],
   swimming: ['Freestyle','Backstroke','Breaststroke','Butterfly','IM'],
   volleyball: ['Setter','Outside','Middle','Opposite','Libero'],
+  baseball: ['P','C','1B','2B','3B','SS','OF'],
+  hockey: ['C','W','D','G'],
+  rugby: ['Prop','Hooker','Lock','Flanker','Back'],
+  cricket: ['Batsman','Bowler','All-rounder','Wicket-keeper'],
+  golf: ['Professional','Amateur'],
+  'martial arts': ['Striker','Grappler','All-around'],
 };
 const oppTypes = ['tryout','tournament','sponsorship','scholarship'] as const;
+const postContents: string[] = [
+  'Great training session today! Feeling stronger every day 💪',
+  'Game day highlights from last night. What a match!',
+  'Breaking down film from this week. Always learning.',
+  'Recovery day is just as important as training day.',
+  'Proud of the team\'s performance this season!',
+  'New personal record! Hard work pays off.',
+  'Focused on fundamentals today. Back to basics.',
+  'Amazing atmosphere at today\'s game. Thank you fans!',
+  'Training camp update: Week 2 complete.',
+  'Big thanks to my coaches for pushing me to be better.',
+  'Competition brings out the best in all of us.',
+  'Excited to announce a new partnership!',
+  'Behind the scenes of our training routine.',
+  'Scouts in the building today. Time to shine!',
+  'Team bonding session. Chemistry matters.',
+  'Working on my weaknesses to make them strengths.',
+  'Game film breakdown: What we did right and wrong.',
+  'Recruiting update: Looking for dedicated athletes.',
+  'Tournament prep is in full swing.',
+  'Grateful for every opportunity to compete.',
+];
 
 function getEnv(): Env {
   return {
@@ -107,11 +146,13 @@ async function seed() {
   await ensureBucket(admin, 'posts');
 
   const categories: Category[] = [];
-  const counts = { athlete: 28, scout: 11, coach: 11 };
-  for (let i=0;i<counts.athlete;i++) categories.push('athlete');
-  for (let i=0;i<counts.scout;i++) categories.push('scout');
-  for (let i=0;i<counts.coach;i++) categories.push('coach');
-  while (categories.length < env.total) categories.push('athlete');
+  const athleteCount = Math.floor(env.total * 0.60);
+  const scoutCount = Math.floor(env.total * 0.20);
+  const coachCount = env.total - athleteCount - scoutCount;
+  
+  for (let i=0;i<athleteCount;i++) categories.push('athlete');
+  for (let i=0;i<scoutCount;i++) categories.push('scout');
+  for (let i=0;i<coachCount;i++) categories.push('coach');
 
   const users: { id: string; email: string; full_name: string; username: string; category: Category; sport: string; position: string }[] = [];
 
@@ -162,17 +203,23 @@ async function seed() {
   }
 
   const postsRows: any[] = [];
+  const postTypes: ('highlight' | 'training' | 'match' | 'achievement')[] = ['highlight', 'training', 'match', 'achievement'];
+  
   for (const u of users) {
-    const count = randomInt(1,3);
+    const count = randomInt(2, 8);
     for (let j=0;j<count;j++) {
-      const withImage = Math.random() > 0.4;
+      const withImage = Math.random() > 0.35;
       let imageUrl: string | null = null;
       if (withImage) imageUrl = await uploadImage(admin, u.id, j);
+      
+      const type = pick(postTypes);
+      const content = pick(postContents);
+      
       postsRows.push({
         user_id: u.id,
-        title: withImage ? `${u.sport} ${u.position} highlights` : `${u.sport} training log`,
-        description: withImage ? `Game day recap by @${u.username}` : `Focused session on ${u.sport}.`,
-        type: withImage ? 'highlight' : 'training',
+        title: `${u.sport} - ${type}`,
+        description: content.replace('@username', `@${u.username}`),
+        type,
         image_url: imageUrl,
         video_url: null,
       });
@@ -211,20 +258,137 @@ async function seed() {
   const athletes = users.filter(u => u.category === 'athlete');
   const staff = users.filter(u => u.category !== 'athlete');
   const followRows: any[] = [];
+  
   for (const a of athletes) {
-    const sample = [...staff].sort(() => 0.5 - Math.random()).slice(0, randomInt(2,4));
-    for (const s of sample) {
+    const staffSample = [...staff].sort(() => 0.5 - Math.random()).slice(0, randomInt(3,8));
+    for (const s of staffSample) {
       followRows.push({ follower_id: a.id, following_id: s.id });
-      if (Math.random() > 0.5) followRows.push({ follower_id: s.id, following_id: a.id });
+      if (Math.random() > 0.4) followRows.push({ follower_id: s.id, following_id: a.id });
+    }
+    
+    const athleteSample = athletes.filter(x => x.id !== a.id).sort(() => 0.5 - Math.random()).slice(0, randomInt(5,15));
+    for (const other of athleteSample) {
+      followRows.push({ follower_id: a.id, following_id: other.id });
+    }
+  }
+  
+  for (const s of staff) {
+    const athleteSample = athletes.sort(() => 0.5 - Math.random()).slice(0, randomInt(10,30));
+    for (const a of athleteSample) {
+      followRows.push({ follower_id: s.id, following_id: a.id });
     }
   }
 
-  if (followRows.length) {
-    const { error: folErr } = await admin.from('follows').insert(followRows);
+  const uniqueFollows = Array.from(
+    new Map(followRows.map(f => [`${f.follower_id}-${f.following_id}`, f])).values()
+  );
+  
+  if (uniqueFollows.length) {
+    const { error: folErr } = await admin.from('follows').insert(uniqueFollows);
     if (folErr) console.error('follows insert error', folErr.message);
   }
 
-  console.log('seed:done', { users: users.length, posts: postsRows.length, opportunities: oppRows.length, follows: followRows.length });
+  const { data: allPosts } = await admin.from('posts').select('id, user_id');
+  const likesRows: any[] = [];
+  const commentsRows: any[] = [];
+  
+  if (allPosts && allPosts.length > 0) {
+    for (const post of allPosts) {
+      const likeCount = randomInt(0, Math.min(30, users.length));
+      const likersPool = [...users].sort(() => 0.5 - Math.random());
+      
+      for (let i = 0; i < likeCount && i < likersPool.length; i++) {
+        const liker = likersPool[i];
+        if (liker.id !== post.user_id || Math.random() > 0.9) {
+          likesRows.push({
+            user_id: liker.id,
+            post_id: post.id,
+          });
+        }
+      }
+      
+      const commentCount = randomInt(0, Math.min(8, users.length / 3));
+      const commentersPool = [...users].sort(() => 0.5 - Math.random());
+      const commentTexts = [
+        'Great work! Keep it up! 💪',
+        'Inspiring performance!',
+        'This is what dedication looks like',
+        'Amazing! 🔥',
+        'Keep grinding!',
+        'Incredible talent on display',
+        'This is elite level stuff',
+        'You make it look easy!',
+        'Hard work pays off',
+        'Respect! 👏',
+        'Can\'t wait to see what\'s next',
+        'Outstanding!',
+        'That\'s how it\'s done',
+        'Pure excellence',
+        'So proud of this team',
+      ];
+      
+      for (let i = 0; i < commentCount && i < commentersPool.length; i++) {
+        const commenter = commentersPool[i];
+        commentsRows.push({
+          post_id: post.id,
+          user_id: commenter.id,
+          content: pick(commentTexts),
+        });
+      }
+    }
+  }
+  
+  if (likesRows.length) {
+    const { error: likesErr } = await admin.from('likes').insert(likesRows);
+    if (likesErr) console.error('likes insert error', likesErr.message);
+  }
+  
+  if (commentsRows.length) {
+    const { error: commentsErr } = await admin.from('comments').insert(commentsRows);
+    if (commentsErr) console.error('comments insert error', commentsErr.message);
+  }
+  
+  const { data: allOpportunities } = await admin.from('opportunities').select('id, team_id');
+  const applicationsRows: any[] = [];
+  
+  if (allOpportunities && allOpportunities.length > 0) {
+    for (const opp of allOpportunities) {
+      const applicantCount = randomInt(5, Math.min(25, athletes.length));
+      const applicantsPool = [...athletes].sort(() => 0.5 - Math.random()).slice(0, applicantCount);
+      
+      for (const applicant of applicantsPool) {
+        const weights = [0.6, 0.2, 0.2];
+        const rand = Math.random();
+        let status: 'pending' | 'accepted' | 'rejected';
+        
+        if (rand < weights[0]) status = 'pending';
+        else if (rand < weights[0] + weights[1]) status = 'accepted';
+        else status = 'rejected';
+        
+        applicationsRows.push({
+          opportunity_id: opp.id,
+          athlete_id: applicant.id,
+          status,
+          cover_letter: `I am very interested in this opportunity. My experience in ${applicant.sport} as a ${applicant.position} makes me a great fit.`,
+        });
+      }
+    }
+  }
+  
+  if (applicationsRows.length) {
+    const { error: appsErr } = await admin.from('applications').insert(applicationsRows);
+    if (appsErr) console.error('applications insert error', appsErr.message);
+  }
+
+  console.log('seed:done', { 
+    users: users.length, 
+    posts: postsRows.length, 
+    opportunities: oppRows.length, 
+    follows: uniqueFollows.length,
+    likes: likesRows.length,
+    comments: commentsRows.length,
+    applications: applicationsRows.length,
+  });
 }
 
 async function listSeedUserIds(admin: SupabaseClient, seedTag: string): Promise<{ ids: string[]; emails: string[]; }>{
@@ -282,6 +446,8 @@ async function cleanup() {
   const chunk = <T,>(arr: T[], size: number) => arr.reduce<T[][]>((acc, _, i) => (i % size ? acc : [...acc, arr.slice(i, i + size)]), []);
 
   for (const group of chunk(ids, 1000)) {
+    await admin.from('comments').delete().in('user_id', group);
+    await admin.from('likes').delete().in('user_id', group);
     await admin.from('messages').delete().or(`sender_id.in.(${group.join(',')}),receiver_id.in.(${group.join(',')})`);
     await admin.from('notifications').delete().in('user_id', group);
     await admin.from('applications').delete().in('athlete_id', group);
