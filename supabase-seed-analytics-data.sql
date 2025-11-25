@@ -238,7 +238,7 @@ BEGIN
             first_names[1 + floor(random() * array_length(first_names, 1))::int] || ' ' ||
             last_names[1 + floor(random() * array_length(last_names, 1))::int],
             'athlete',
-            'https://api.dicebear.com/7' || '.x' || '/avataaars/svg?seed=' || i,
+            'https://api.dicebear.com/7.x/avataaars/svg?seed=' || i,
             bios[1 + floor(random() * array_length(bios, 1))::int],
             location,
             CASE WHEN random() > 0.7 THEN true ELSE false END,
@@ -276,14 +276,13 @@ BEGIN
             'Never give up attitude'
         ];
         post_images text[] := ARRAY[
-            'https://images.unsplash.com/photo-1461896836934-ffe607ba8211',
-            'https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a',
-            'https://images.unsplash.com/photo-1579952363873-27f3bade9f55',
-            'https://images.unsplash.com/photo-1546519638-68e109498ffc',
-            'https://images.unsplash.com/photo-1579952363873-27f3bade9f55',
-            'https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff',
-            'https://images.unsplash.com/photo-1556817411-31ae72fa3ea0',
-            'https://images.unsplash.com/photo-1517649763962-0c623066013b'
+            'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800',
+            'https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?w=800',
+            'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800',
+            'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800',
+            'https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?w=800',
+            'https://images.unsplash.com/photo-1556817411-31ae72fa3ea0?w=800',
+            'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800'
         ];
     BEGIN
         FOR i IN 1..post_count LOOP
@@ -361,7 +360,7 @@ BEGIN
                 first_names[1 + floor(random() * array_length(first_names, 1))::int] || ' ' ||
                 last_names[1 + floor(random() * array_length(last_names, 1))::int],
                 'scout',
-                'https://api.dicebear.com/7' || '.x' || '/avataaars/svg?seed=scout' || i,
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=scout' || i,
                 'Professional talent scout looking for the next sports stars',
                 locations[1 + floor(random() * array_length(locations, 1))::int],
                 true,
@@ -391,7 +390,7 @@ BEGIN
                 first_names[1 + floor(random() * array_length(first_names, 1))::int] || ' ' ||
                 last_names[1 + floor(random() * array_length(last_names, 1))::int],
                 'coach',
-                'https://api.dicebear.com/7' || '.x' || '/avataaars/svg?seed=coach' || i,
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=coach' || i,
                 'Experienced coach dedicated to developing young talent',
                 locations[1 + floor(random() * array_length(locations, 1))::int],
                 true,
