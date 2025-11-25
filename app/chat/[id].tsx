@@ -274,9 +274,7 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   receivedBubble: {
-    backgroundColor: theme.colors.white,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    backgroundColor: '#4A90E2',
   },
   messageText: {
     fontSize: theme.fontSize.md,
@@ -287,7 +285,7 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
   },
   receivedText: {
-    color: theme.colors.text,
+    color: theme.colors.white,
   },
   messageTime: {
     fontSize: theme.fontSize.xs,
@@ -297,7 +295,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   receivedTime: {
-    color: theme.colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   inputContainer: {
     flexDirection: 'row',
