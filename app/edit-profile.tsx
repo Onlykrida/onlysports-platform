@@ -8,7 +8,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Stack, router } from 'expo-router';
 import { Save, X, Camera, Plus, Trash2, FileText, Upload } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
@@ -69,9 +69,9 @@ export default function EditProfileScreen() {
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Text>Please log in to edit your profile</Text>
-      </SafeAreaView>
+      <View style={styles.container}>
+        <Text style={{ color: theme.colors.white }}>Please log in to edit your profile</Text>
+      </View>
     );
   }
 
@@ -374,13 +374,21 @@ export default function EditProfileScreen() {
   const availablePositions = formData.sport ? (POSITIONS[formData.sport as keyof typeof POSITIONS] || POSITIONS.Other) : POSITIONS.Other;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Stack.Screen 
         options={{
           title: 'Edit Profile',
+          headerStyle: {
+            backgroundColor: theme.colors.white,
+          },
+          headerTintColor: theme.colors.black,
+          headerTitleStyle: {
+            fontWeight: theme.fontWeight.black,
+            fontSize: theme.fontSize.lg,
+          },
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-              <X size={24} color={theme.colors.text} />
+              <X size={24} color={theme.colors.black} />
             </TouchableOpacity>
           ),
           headerRight: () => (
@@ -699,28 +707,28 @@ export default function EditProfileScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.black,
   },
   headerButton: {
     padding: theme.spacing.sm,
   },
   scrollContent: {
     paddingBottom: theme.spacing.xl,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.black,
   },
   avatarSection: {
     alignItems: 'center',
     padding: theme.spacing.lg,
     marginTop: -50,
     marginBottom: theme.spacing.lg,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.black,
   },
   avatarContainer: {
     position: 'relative',
@@ -729,7 +737,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#2a2a2a',
     borderWidth: 3,
     borderColor: theme.colors.primary,
   },
@@ -741,7 +749,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.full,
     padding: theme.spacing.sm,
     borderWidth: 3,
-    borderColor: theme.colors.background,
+    borderColor: theme.colors.black,
   },
   avatarText: {
     fontSize: theme.fontSize.xs,
@@ -753,12 +761,12 @@ const styles = StyleSheet.create({
   },
   section: {
     padding: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#1a1a1a',
     marginHorizontal: theme.spacing.md,
     marginBottom: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#333',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -769,7 +777,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.black,
-    color: theme.colors.text,
+    color: theme.colors.white,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: theme.spacing.sm,
@@ -787,45 +795,45 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
-    color: theme.colors.text,
+    color: theme.colors.white,
     marginBottom: theme.spacing.xs,
   },
   picker: {
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#333',
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#2a2a2a',
   },
   pickerText: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.text,
+    color: theme.colors.white,
   },
   placeholderText: {
     color: theme.colors.textSecondary,
   },
   pickerOptions: {
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#333',
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#2a2a2a',
     marginTop: theme.spacing.xs,
     maxHeight: 200,
   },
   pickerOption: {
     padding: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: '#333',
   },
   pickerOptionText: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.text,
+    color: theme.colors.white,
   },
   achievementItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#2a2a2a',
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.sm,
@@ -839,7 +847,7 @@ const styles = StyleSheet.create({
   achievementTitle: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    color: theme.colors.white,
   },
   achievementDescription: {
     fontSize: theme.fontSize.sm,
@@ -855,7 +863,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xs,
   },
   addForm: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#2a2a2a',
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     marginTop: theme.spacing.sm,
@@ -877,7 +885,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     flex: 1,
     minWidth: '45%',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#2a2a2a',
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     alignItems: 'center',
@@ -934,11 +942,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#2a2a2a',
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#333',
   },
   resumeInfo: {
     flexDirection: 'row',
@@ -952,7 +960,7 @@ const styles = StyleSheet.create({
   resumeFileName: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.medium,
-    color: theme.colors.text,
+    color: theme.colors.white,
   },
   resumeStatus: {
     fontSize: theme.fontSize.xs,
@@ -965,7 +973,7 @@ const styles = StyleSheet.create({
   },
   resumeActionButton: {
     padding: theme.spacing.sm,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.black,
     borderRadius: theme.borderRadius.sm,
   },
   uploadResumeButton: {
@@ -973,11 +981,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#2a2a2a',
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
     borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderColor: '#333',
     borderStyle: 'dashed',
   },
   uploadResumeText: {
