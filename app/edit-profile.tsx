@@ -706,19 +706,20 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#000000',
   },
   headerButton: {
     padding: theme.spacing.sm,
   },
   scrollContent: {
     paddingBottom: theme.spacing.xl,
+    backgroundColor: '#000000',
   },
   avatarSection: {
     alignItems: 'center',
     padding: theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    marginTop: -50,
+    marginBottom: theme.spacing.lg,
   },
   avatarContainer: {
     position: 'relative',
@@ -728,6 +729,8 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     backgroundColor: theme.colors.surface,
+    borderWidth: 4,
+    borderColor: theme.colors.primary,
   },
   cameraButton: {
     position: 'absolute',
@@ -736,16 +739,23 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.full,
     padding: theme.spacing.sm,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   avatarText: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.sm,
+    fontWeight: theme.fontWeight.medium,
   },
   section: {
     padding: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -755,8 +765,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.semibold,
+    fontWeight: theme.fontWeight.black,
     color: theme.colors.text,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: theme.spacing.sm,
   },
   addButton: {
     padding: theme.spacing.xs,
@@ -883,8 +896,7 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs,
   },
   coverSection: {
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    marginBottom: 0,
   },
   coverImageContainer: {
     position: 'relative',

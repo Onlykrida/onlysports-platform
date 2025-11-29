@@ -204,7 +204,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#1C1C1E',
   },
   header: {
     flexDirection: 'row',
@@ -212,8 +212,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
     backgroundColor: theme.colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomWidth: 0,
     gap: theme.spacing.md,
     shadowColor: '#000',
     shadowOffset: {
@@ -240,11 +239,11 @@ const styles = StyleSheet.create({
   headerName: {
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
+    color: theme.colors.primary,
   },
   headerRole: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.primary,
+    color: theme.colors.textMuted,
     textTransform: 'capitalize',
     fontWeight: theme.fontWeight.medium,
   },
@@ -281,9 +280,13 @@ const styles = StyleSheet.create({
   sentBubble: {
     backgroundColor: theme.colors.primary,
     marginLeft: 'auto',
+    borderRadius: 20,
+    borderBottomRightRadius: 4,
   },
   receivedBubble: {
     backgroundColor: '#4A90E2',
+    borderRadius: 20,
+    borderBottomLeftRadius: 4,
   },
   messageText: {
     fontSize: theme.fontSize.md,
@@ -310,32 +313,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
     backgroundColor: theme.colors.white,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderTopWidth: 0,
     gap: theme.spacing.sm,
   },
   messageInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.lg,
+    borderColor: '#E5E7EB',
+    borderRadius: 24,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     fontSize: theme.fontSize.md,
-    color: theme.colors.text,
+    color: '#000000',
+    backgroundColor: theme.colors.white,
     maxHeight: 100,
   },
   sendButton: {
-    backgroundColor: theme.colors.primary,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    backgroundColor: '#2C2C2E',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: theme.colors.border,
+    backgroundColor: '#E5E7EB',
   },
 });
