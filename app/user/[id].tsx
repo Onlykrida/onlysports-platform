@@ -36,6 +36,7 @@ import { useFollow } from '@/hooks/follow-context';
 import { usePosts } from '@/hooks/posts-context';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Button } from '@/components/Button';
+import { ScoutingSummaryModal } from '@/components/ScoutingSummaryModal';
 
 const getRoleIcon = (role: string) => {
   switch (role.toLowerCase()) {
@@ -83,6 +84,7 @@ export default function UserProfileScreen() {
   const { getInterestedForPlayer } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [showScoutingSummary, setShowScoutingSummary] = useState(false);
 
   const loadUserProfile = async () => {
     if (!id || !isSupabaseConfigured) return;
@@ -482,6 +484,22 @@ export default function UserProfileScreen() {
           </View>
         )}
 
+        {/* Scouting Report Button */}
+        {(profileUser.role === 'athlete' || profileUser.role === 'coach' || profileUser.role === 'trainer' || profileUser.role === 'scout') && (
+          <View style={styles.scoutingReportSection}>
+            <TouchableOpacity 
+              style={styles.scoutingReportButton}
+              onPress={() => setShowScoutingSummary(true)}
+            >
+              <FileText size={20} color={theme.colors.primary} />
+              <View style={styles.scoutingReportContent}>
+                <Text style={styles.scoutingReportTitle}>View Scouting Report</Text>
+                <Text style={styles.scoutingReportSubtitle}>AI-generated professional assessment</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Action Buttons */}
         {!isOwnProfile && (
           <View style={styles.actionButtons}>
@@ -553,6 +571,13 @@ export default function UserProfileScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Scouting Summary Modal */}
+      <ScoutingSummaryModal
+        visible={showScoutingSummary}
+        onClose={() => setShowScoutingSummary(false)}
+        user={profileUser}
+      />
     </SafeAreaView>
   );
 }
@@ -884,5 +909,32 @@ const styles = StyleSheet.create({
   resumeCardSubtitle: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
+  },
+  scoutingReportSection: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+  },
+  scoutingReportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    gap: theme.spacing.md,
+  },
+  scoutingReportContent: {
+    flex: 1,
+  },
+  scoutingReportTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+  },
+  scoutingReportSubtitle: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
   },
 });
