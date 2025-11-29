@@ -706,20 +706,21 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: theme.colors.background,
   },
   headerButton: {
     padding: theme.spacing.sm,
   },
   scrollContent: {
     paddingBottom: theme.spacing.xl,
-    backgroundColor: '#000000',
+    backgroundColor: theme.colors.background,
   },
   avatarSection: {
     alignItems: 'center',
     padding: theme.spacing.lg,
     marginTop: -50,
     marginBottom: theme.spacing.lg,
+    backgroundColor: theme.colors.background,
   },
   avatarContainer: {
     position: 'relative',
@@ -729,7 +730,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     backgroundColor: theme.colors.surface,
-    borderWidth: 4,
+    borderWidth: 3,
     borderColor: theme.colors.primary,
   },
   cameraButton: {
@@ -740,13 +741,15 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.full,
     padding: theme.spacing.sm,
     borderWidth: 3,
-    borderColor: '#000000',
+    borderColor: theme.colors.background,
   },
   avatarText: {
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.sm,
-    fontWeight: theme.fontWeight.medium,
+    fontWeight: theme.fontWeight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   section: {
     padding: theme.spacing.md,
@@ -764,11 +767,11 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   sectionTitle: {
-    fontSize: theme.fontSize.lg,
+    fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.black,
     color: theme.colors.text,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
     marginBottom: theme.spacing.sm,
   },
   addButton: {
