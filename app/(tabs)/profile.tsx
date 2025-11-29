@@ -260,12 +260,6 @@ export default function ProfileScreen() {
                 <Camera size={16} color={theme.colors.white} />
               </View>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.editButton}
-              onPress={() => router.push('/edit-profile')}
-            >
-              <Edit3 size={16} color={theme.colors.white} />
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -546,14 +540,7 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: theme.colors.primary,
   },
-  editButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: -10,
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.full,
-    padding: theme.spacing.sm,
-  },
+
   infoSection: {
     alignItems: 'center',
     padding: theme.spacing.md,
