@@ -115,14 +115,41 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         userLikes = likesData?.map((like: any) => like.post_id) || [];
       }
       
-      // Transform posts using the profiles map
-      const transformedPosts: Post[] = (postsRows ?? []).map((post: any) => {
+      // Transform posts and convert video URLs to signed URLs for Android compatibility
+      const transformedPosts: Post[] = await Promise.all((postsRows ?? []).map(async (post: any) => {
         const profile = profilesMap[post.user_id] ?? {};
         const resolvedName = profile.name ?? profile.email?.split('@')[0] ?? 'User';
         console.log('Transforming post:', post.id, 'by user_id:', post.user_id, 'profile found:', !!profile.id, 'resolved name:', resolvedName, 'profile:', profile);
         
-        const mediaUrl = post.video_url || post.image_url;
+        let mediaUrl = post.video_url || post.image_url;
         const mediaType = post.video_url ? 'video' : 'image';
+        
+        // Convert video URLs to signed URLs for Android compatibility
+        if (mediaType === 'video' && mediaUrl && mediaUrl.includes('supabase.co')) {
+          try {
+            // Extract the file path from the public URL
+            const urlObj = new URL(mediaUrl);
+            const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/posts\/(.+)/);
+            if (pathMatch && pathMatch[1]) {
+              const filePath = decodeURIComponent(pathMatch[1]);
+              console.log('[Posts] Converting video URL to signed URL for:', filePath);
+              
+              const { data: signedData, error: signedError } = await supabase.storage
+                .from('posts')
+                .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year expiry
+              
+              if (signedData?.signedUrl && !signedError) {
+                mediaUrl = signedData.signedUrl;
+                console.log('[Posts] Video URL converted to signed URL');
+              } else {
+                console.warn('[Posts] Failed to create signed URL, using public URL:', signedError);
+              }
+            }
+          } catch (err) {
+            console.warn('[Posts] Error converting video URL to signed URL:', err);
+          }
+        }
+        
         console.log('[Posts] Post media debug:', {
           postId: post.id,
           hasVideoUrl: !!post.video_url,
@@ -152,7 +179,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           createdAt: new Date(post.created_at),
           opportunityId: post.opportunity_id ?? undefined,
         };
-      });
+      }));
 
       console.log('Transformed posts:', transformedPosts.length, 'posts');
       setPosts(transformedPosts);
@@ -350,19 +377,23 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
       console.log('Posts: upload successful', uploadData);
 
-      // Get public URL
-      const { data: publicUrlData } = supabase.storage
+      // Get signed URL with proper headers for Android compatibility
+      // Android requires proper CORS and Content-Type headers
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('posts')
-        .getPublicUrl(path);
+        .createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year expiry
 
-      const publicUrl = publicUrlData?.publicUrl;
-      if (!publicUrl) {
-        console.error('Posts: failed to get public URL');
-        return uri;
+      if (signedUrlError || !signedUrlData?.signedUrl) {
+        console.error('Posts: failed to get signed URL, falling back to public URL:', signedUrlError);
+        // Fallback to public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('posts')
+          .getPublicUrl(path);
+        return publicUrlData?.publicUrl || uri;
       }
 
-      console.log('Posts: public URL generated:', publicUrl);
-      return publicUrl;
+      console.log('Posts: signed URL generated:', signedUrlData.signedUrl);
+      return signedUrlData.signedUrl;
       
     } catch (error) {
       console.error('Posts: upload exception', {

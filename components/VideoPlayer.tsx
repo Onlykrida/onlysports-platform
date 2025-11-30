@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { View, StyleSheet, ViewStyle, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ViewStyle, Text, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 
@@ -33,11 +33,15 @@ export default function VideoPlayer({
   const [showControls, setShowControls] = useState(true);
 
   console.log('[VideoPlayer] Rendering with URI:', uri);
+  console.log('[VideoPlayer] Platform:', Platform.OS);
+  console.log('[VideoPlayer] URI length:', uri?.length);
+  console.log('[VideoPlayer] Is signed URL:', uri?.includes('token='));
 
   const player = useVideoPlayer(uri, player => {
     player.loop = loop;
     player.muted = isMuted;
     if (autoPlay) {
+      console.log('[VideoPlayer] Auto-playing video');
       player.play();
     }
   });
