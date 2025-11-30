@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import BackgroundGradientWrapper from '@/components/BackgroundGradient';
 import PostSkeleton from '@/components/PostSkeleton';
-import VideoPlayer from '@/components/VideoPlayer';
+import FeedVideoItem from '@/components/FeedVideoItem';
+import { useVideoVisibilityTracker } from '@/hooks/video-visibility-tracker';
 import { 
   Zap, 
   MessageSquare, 
@@ -78,6 +79,10 @@ export default function HomeScreen() {
   const [editVisible, setEditVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   
+  const { visibleVideoId, viewabilityConfigCallbackPairs } = useVideoVisibilityTracker();
+  
+  console.log('[HomeScreen] Visible video ID:', visibleVideoId);
+  
   console.log('HomeScreen render - posts:', posts.length, 'isLoading:', isLoading, 'user:', user?.name);
 
   const handleDeletePost = useCallback(async (postId: string) => {
@@ -87,23 +92,23 @@ export default function HomeScreen() {
     }
   }, [deletePost]);
 
-  const handleUserPress = (userId: string) => {
+  const handleUserPress = useCallback((userId: string) => {
     if (userId === user?.id) {
       router.push('/profile');
     } else {
       router.push(`/user/${userId}`);
     }
-  };
+  }, [user?.id]);
 
-  const handleCommentsPress = (post: Post) => {
+  const handleCommentsPress = useCallback((post: Post) => {
     setSelectedPost(post);
     setCommentsModalVisible(true);
-  };
+  }, []);
 
-  const handleSharePress = (post: Post) => {
+  const handleSharePress = useCallback((post: Post) => {
     setSelectedPost(post);
     setShareModalVisible(true);
-  };
+  }, []);
 
   const openMenu = useCallback((post: Post) => {
     setSelectedPost(post);
@@ -121,7 +126,7 @@ export default function HomeScreen() {
     );
   };
 
-  const renderPost = ({ item }: { item: Post }) => (
+  const renderPost = useCallback(({ item }: { item: Post }) => (
     <View style={styles.postContainer} testID={`post-${item.id}`}>
       <View style={styles.postHeader}>
         <TouchableOpacity style={styles.userInfo} onPress={() => handleUserPress(item.userId)}>
@@ -185,14 +190,11 @@ export default function HomeScreen() {
             {item.media.type === 'image' ? (
               <Image source={{ uri: item.media.url }} style={styles.postImage} />
             ) : (
-              <VideoPlayer
-                uri={item.media.url ?? ''}
-                poster={item.media.thumbnail}
-                height={(width - (theme.spacing.md * 2)) * 0.75}
+              <FeedVideoItem
+                url={item.media.url ?? ''}
+                isVisible={visibleVideoId === item.id}
                 width={width - (theme.spacing.md * 2)}
-                autoPlay={false}
-                loop={true}
-                muted={true}
+                height={(width - (theme.spacing.md * 2)) * 0.75}
                 testID={`post-video-${item.id}`}
               />
             )}
@@ -227,7 +229,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
     </View>
-  );
+  ), [user, topRecommendations, visibleVideoId, likePost, handleCommentsPress, handleSharePress, openMenu, handleUserPress]);
 
   if (isLoading && posts.length === 0) {
     console.log('HomeScreen showing skeleton state');
@@ -275,6 +277,12 @@ export default function HomeScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
+        viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={3}
+        windowSize={10}
+        initialNumToRender={3}
+        updateCellsBatchingPeriod={50}
       />
       
       {/* Comments Modal */}
