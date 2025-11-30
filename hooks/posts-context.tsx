@@ -416,7 +416,16 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
       const uploadedUrl = await uploadMediaIfNeeded(mediaUrl, mediaType ?? undefined);
 
-      const { error } = await supabase
+      console.log('[CreatePost] About to insert post with:', {
+        user_id: user.id,
+        title: content.substring(0, 100),
+        mediaType,
+        uploadedUrl,
+        image_url: mediaType === 'image' ? uploadedUrl : undefined,
+        video_url: mediaType === 'video' ? uploadedUrl : undefined,
+      });
+
+      const { data: insertedData, error } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
@@ -425,13 +434,16 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           image_url: mediaType === 'image' ? uploadedUrl : undefined,
           video_url: mediaType === 'video' ? uploadedUrl : undefined,
           type: 'highlight',
-        });
+        })
+        .select();
 
       if (error) {
         const msg = getErrorMessage(error);
         console.error('Error creating post:', msg, error);
         return { error: msg };
       }
+
+      console.log('[CreatePost] Post created successfully:', insertedData);
 
       await loadPosts();
       return {};
