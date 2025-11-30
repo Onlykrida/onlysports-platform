@@ -22,6 +22,12 @@ CREATE INDEX IF NOT EXISTS idx_scout_interests_created ON scout_interests(create
 -- Enable RLS
 ALTER TABLE scout_interests ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view scout interests related to them" ON scout_interests;
+DROP POLICY IF EXISTS "Scouts and coaches can track interests" ON scout_interests;
+DROP POLICY IF EXISTS "Scouts and coaches can update their interests" ON scout_interests;
+DROP POLICY IF EXISTS "Scouts and coaches can delete their interests" ON scout_interests;
+
 -- Policy: Users can view their own interests (both as scout and as athlete)
 CREATE POLICY "Users can view scout interests related to them"
   ON scout_interests FOR SELECT
