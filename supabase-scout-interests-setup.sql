@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS scout_interests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   scout_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   athlete_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  action_type TEXT NOT NULL CHECK (action_type IN ('view', 'bookmark', 'request')),
+  action_type TEXT NOT NULL CHECK (action_type IN ('view', 'bookmark', 'request', 'interested')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   
@@ -30,24 +30,24 @@ CREATE POLICY "Users can view scout interests related to them"
     auth.uid() = athlete_id
   );
 
--- Policy: Only scouts can create interests
-CREATE POLICY "Scouts can track interests"
+-- Policy: Only scouts and coaches can create interests
+CREATE POLICY "Scouts and coaches can track interests"
   ON scout_interests FOR INSERT
   WITH CHECK (
     auth.uid() = scout_id AND
     EXISTS (
       SELECT 1 FROM profiles 
-      WHERE id = auth.uid() AND role = 'scout'
+      WHERE id = auth.uid() AND (role = 'scout' OR role = 'coach')
     )
   );
 
--- Policy: Scouts can update their own interests
-CREATE POLICY "Scouts can update their interests"
+-- Policy: Scouts and coaches can update their own interests
+CREATE POLICY "Scouts and coaches can update their interests"
   ON scout_interests FOR UPDATE
   USING (auth.uid() = scout_id);
 
--- Policy: Scouts can delete their own interests
-CREATE POLICY "Scouts can delete their interests"
+-- Policy: Scouts and coaches can delete their own interests
+CREATE POLICY "Scouts and coaches can delete their interests"
   ON scout_interests FOR DELETE
   USING (auth.uid() = scout_id);
 
@@ -90,7 +90,7 @@ BEGIN
   FROM scout_interests si
   JOIN profiles p ON p.id = si.scout_id
   WHERE si.athlete_id = p_athlete_id
-    AND p.role = 'scout'
+    AND (p.role = 'scout' OR p.role = 'coach')
   GROUP BY p.id, p.name, p.avatar, p.role_specific_data
   ORDER BY last_interaction DESC
   LIMIT p_limit;
@@ -116,6 +116,6 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION get_interested_scouts_for_athlete TO authenticated;
 GRANT EXECUTE ON FUNCTION track_scout_interest TO authenticated;
 
-COMMENT ON TABLE scout_interests IS 'Tracks scout interactions with athletes (views, bookmarks, requests)';
-COMMENT ON FUNCTION get_interested_scouts_for_athlete IS 'Returns scouts who have shown interest in an athlete';
+COMMENT ON TABLE scout_interests IS 'Tracks scout and coach interactions with athletes (views, bookmarks, requests, interested)';
+COMMENT ON FUNCTION get_interested_scouts_for_athlete IS 'Returns scouts and coaches who have shown interest in an athlete';
 COMMENT ON FUNCTION track_scout_interest IS 'Records a scout interest action';

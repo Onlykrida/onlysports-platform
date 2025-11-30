@@ -81,8 +81,8 @@ export default function UserProfileScreen() {
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
-  const { getInterestedForPlayer, trackProfileView, getInterestedScoutsForAthlete } = useScouting();
-  const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
+  const { getInterestedForPlayer, trackProfileView, getInterestedScoutsForAthlete, trackInterested, isInterested, removeInterest } = useScouting();
+  const [aiInterestedScouts, setAiInterestedScouts] = useState<{ scoutName: string; score: number }[]>([]);
   const [scoutInterests, setScoutInterests] = useState<{
     scout_id: string;
     scout_name: string;
@@ -92,6 +92,8 @@ export default function UserProfileScreen() {
   }[]>([]);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [showScoutingSummary, setShowScoutingSummary] = useState(false);
+  const [isCurrentUserInterested, setIsCurrentUserInterested] = useState<boolean>(false);
+  const [isInterestedLoading, setIsInterestedLoading] = useState(false);
 
   const loadUserProfile = async () => {
     if (!id || !isSupabaseConfigured) return;
@@ -161,7 +163,7 @@ export default function UserProfileScreen() {
       if (!id) return;
       try {
         const res = await getInterestedForPlayer(id, 70);
-        setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
+        setAiInterestedScouts(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
       } catch (e) {
         console.log('UserProfile: interested load failed', e);
       }
@@ -182,12 +184,14 @@ export default function UserProfileScreen() {
         }
       }
       
-      if (currentUser?.role === 'scout' && profileUser.role === 'athlete') {
+      if ((currentUser?.role === 'scout' || currentUser?.role === 'coach') && profileUser.role === 'athlete') {
         await trackProfileView(id);
+        const isInterestedResult = await isInterested(id);
+        setIsCurrentUserInterested(isInterestedResult);
       }
     };
     void run();
-  }, [id, profileUser, currentUser, getInterestedScoutsForAthlete, trackProfileView]);
+  }, [id, profileUser, currentUser, getInterestedScoutsForAthlete, trackProfileView, isInterested]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -226,6 +230,26 @@ export default function UserProfileScreen() {
   const handleMessage = () => {
     if (!profileUser) return;
     router.push(`/chat/${profileUser.id}`);
+  };
+
+  const handleInterestedToggle = async () => {
+    if (!profileUser) return;
+    
+    setIsInterestedLoading(true);
+    try {
+      if (isCurrentUserInterested) {
+        await removeInterest(profileUser.id);
+        setIsCurrentUserInterested(false);
+      } else {
+        await trackInterested(profileUser.id);
+        setIsCurrentUserInterested(true);
+      }
+    } catch (error) {
+      console.error('Interest toggle failed:', error);
+      Alert.alert('Error', 'Failed to update interest status');
+    } finally {
+      setIsInterestedLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -517,6 +541,7 @@ export default function UserProfileScreen() {
                           {action === 'view' && '👁️ Viewed'}
                           {action === 'bookmark' && '⭐ Bookmarked'}
                           {action === 'request' && '📩 Requested'}
+                          {action === 'interested' && '❤️ Interested'}
                         </Text>
                       </View>
                     ))}
@@ -528,13 +553,13 @@ export default function UserProfileScreen() {
         )}
 
         {/* AI-based Interested Scouts (Legacy fallback) */}
-        {profileUser.role === 'athlete' && scoutInterests.length === 0 && interested.length > 0 && (
+        {profileUser.role === 'athlete' && scoutInterests.length === 0 && aiInterestedScouts.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Flame size={20} color={theme.colors.success} />
               <Text style={styles.sectionTitle}>Scouts Interested in {profileUser.name}</Text>
             </View>
-            {interested.slice(0, 5).map((it, idx) => (
+            {aiInterestedScouts.slice(0, 5).map((it, idx) => (
               <View key={`${it.scoutName}-${idx}`} style={styles.achievementItem}>
                 <Star size={18} color={theme.colors.warning} />
                 <View style={styles.achievementInfo}>
@@ -583,6 +608,24 @@ export default function UserProfileScreen() {
               icon={<MessageCircle size={16} color={theme.colors.primary} />}
               style={styles.actionButton}
             />
+          </View>
+        )}
+
+        {/* Interested Button for Scouts/Coaches viewing Athletes */}
+        {!isOwnProfile && (currentUser?.role === 'scout' || currentUser?.role === 'coach') && profileUser.role === 'athlete' && (
+          <View style={styles.interestedButtonContainer}>
+            <Button
+              title={isCurrentUserInterested ? 'Interested ❤️' : 'Mark as Interested'}
+              onPress={handleInterestedToggle}
+              variant={isCurrentUserInterested ? 'primary' : 'outline'}
+              style={styles.interestedButton}
+              loading={isInterestedLoading}
+            />
+            <Text style={styles.interestedHint}>
+              {isCurrentUserInterested 
+                ? 'You marked this athlete as interested. They can see this.' 
+                : 'Show this athlete you are interested in their profile'}
+            </Text>
           </View>
         )}
 
@@ -1046,5 +1089,19 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xs,
     color: theme.colors.primary,
     fontWeight: theme.fontWeight.medium,
+  },
+  interestedButtonContainer: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+  },
+  interestedButton: {
+    width: '100%',
+  },
+  interestedHint: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: theme.spacing.sm,
+    lineHeight: 18,
   },
 });
