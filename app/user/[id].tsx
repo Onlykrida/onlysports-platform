@@ -81,8 +81,15 @@ export default function UserProfileScreen() {
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
-  const { getInterestedForPlayer } = useScouting();
+  const { getInterestedForPlayer, trackProfileView, getInterestedScoutsForAthlete } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
+  const [scoutInterests, setScoutInterests] = useState<{
+    scout_id: string;
+    scout_name: string;
+    scout_avatar?: string;
+    scout_organization?: string;
+    actions: string[];
+  }[]>([]);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [showScoutingSummary, setShowScoutingSummary] = useState(false);
 
@@ -146,7 +153,7 @@ export default function UserProfileScreen() {
   };
 
   useEffect(() => {
-    loadUserProfile();
+    void loadUserProfile();
   }, [id, posts]);
 
   useEffect(() => {
@@ -161,6 +168,26 @@ export default function UserProfileScreen() {
     };
     void run();
   }, [id, getInterestedForPlayer]);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!id || !profileUser) return;
+      
+      if (profileUser.role === 'athlete') {
+        try {
+          const scouts = await getInterestedScoutsForAthlete(id);
+          setScoutInterests(scouts);
+        } catch (e) {
+          console.log('UserProfile: scout interests load failed', e);
+        }
+      }
+      
+      if (currentUser?.role === 'scout' && profileUser.role === 'athlete') {
+        await trackProfileView(id);
+      }
+    };
+    void run();
+  }, [id, profileUser, currentUser, getInterestedScoutsForAthlete, trackProfileView]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -460,27 +487,62 @@ export default function UserProfileScreen() {
         )}
 
         {/* Interested Scouts for athletes */}
-        {profileUser.role === 'athlete' && (
+        {profileUser.role === 'athlete' && scoutInterests.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Flame size={20} color={theme.colors.success} />
               <Text style={styles.sectionTitle}>Scouts Interested in {profileUser.name}</Text>
             </View>
-            {interested.length > 0 ? (
-              interested.slice(0, 5).map((it, idx) => (
-                <View key={`${it.scoutName}-${idx}`} style={styles.achievementItem}>
-                  <Star size={18} color={theme.colors.warning} />
-                  <View style={styles.achievementInfo}>
-                    <Text style={styles.achievementTitle}>{it.scoutName}</Text>
-                    <Text style={styles.achievementDescription}>Fit score {it.score}%</Text>
+            {scoutInterests.slice(0, 10).map((scout, idx) => (
+              <TouchableOpacity
+                key={`${scout.scout_id}-${idx}`}
+                style={styles.scoutInterestItem}
+                onPress={() => router.push(`/user/${scout.scout_id}`)}
+              >
+                <Image
+                  source={{
+                    uri: scout.scout_avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'
+                  }}
+                  style={styles.scoutAvatar}
+                />
+                <View style={styles.scoutInfo}>
+                  <Text style={styles.scoutName}>{scout.scout_name}</Text>
+                  {scout.scout_organization && (
+                    <Text style={styles.scoutOrganization}>{scout.scout_organization}</Text>
+                  )}
+                  <View style={styles.scoutActions}>
+                    {scout.actions.map((action, actionIdx) => (
+                      <View key={actionIdx} style={styles.actionBadge}>
+                        <Text style={styles.actionText}>
+                          {action === 'view' && '👁️ Viewed'}
+                          {action === 'bookmark' && '⭐ Bookmarked'}
+                          {action === 'request' && '📩 Requested'}
+                        </Text>
+                      </View>
+                    ))}
                   </View>
                 </View>
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No interested scouts yet</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* AI-based Interested Scouts (Legacy fallback) */}
+        {profileUser.role === 'athlete' && scoutInterests.length === 0 && interested.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Flame size={20} color={theme.colors.success} />
+              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser.name}</Text>
+            </View>
+            {interested.slice(0, 5).map((it, idx) => (
+              <View key={`${it.scoutName}-${idx}`} style={styles.achievementItem}>
+                <Star size={18} color={theme.colors.warning} />
+                <View style={styles.achievementInfo}>
+                  <Text style={styles.achievementTitle}>{it.scoutName}</Text>
+                  <Text style={styles.achievementDescription}>Fit score {it.score}%</Text>
+                </View>
               </View>
-            )}
+            ))}
           </View>
         )}
 
@@ -936,5 +998,53 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     marginTop: 2,
+  },
+  scoutInterestItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  scoutAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: theme.colors.warning,
+  },
+  scoutInfo: {
+    flex: 1,
+    gap: theme.spacing.xs,
+  },
+  scoutName: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  scoutOrganization: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+  },
+  scoutActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.xs,
+  },
+  actionBadge: {
+    backgroundColor: theme.colors.primary + '20',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+  },
+  actionText: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.medium,
   },
 });

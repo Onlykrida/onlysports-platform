@@ -51,6 +51,15 @@ type RecommendResult = {
   recommendations: AIRecommendationRow[];
 };
 
+export interface ScoutInterest {
+  scout_id: string;
+  scout_name: string;
+  scout_avatar?: string;
+  scout_organization?: string;
+  last_interaction: string;
+  actions: string[];
+}
+
 interface ScoutingState {
   isReady: boolean;
   isComputing: boolean;
@@ -59,6 +68,10 @@ interface ScoutingState {
   computeForScout: (scoutId: string) => Promise<RecommendResult>;
   getTopForScout: (scoutId: string, limit?: number) => Promise<AIRecommendationRow[]>;
   getInterestedForPlayer: (playerId: string, threshold?: number) => Promise<{ scout: User; rec: AIRecommendationRow }[]>;
+  trackProfileView: (athleteId: string) => Promise<void>;
+  trackBookmark: (athleteId: string) => Promise<void>;
+  trackRequest: (athleteId: string) => Promise<void>;
+  getInterestedScoutsForAthlete: (athleteId: string) => Promise<ScoutInterest[]>;
   refresh: () => Promise<void>;
 }
 
@@ -290,6 +303,85 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     }
   }, [users, topRecommendations, persistCache]);
 
+  const trackProfileView = useCallback(async (athleteId: string) => {
+    if (!isSupabaseConfigured || !currentUser || currentUser.role !== 'scout') return;
+    
+    try {
+      const { error } = await supabase.rpc('track_scout_interest', {
+        p_scout_id: currentUser.id,
+        p_athlete_id: athleteId,
+        p_action_type: 'view'
+      });
+      
+      if (error) {
+        console.log('ScoutingProvider: trackProfileView error', error);
+      }
+    } catch (e) {
+      console.log('ScoutingProvider: trackProfileView exception', e);
+    }
+  }, [currentUser]);
+
+  const trackBookmark = useCallback(async (athleteId: string) => {
+    if (!isSupabaseConfigured || !currentUser || currentUser.role !== 'scout') return;
+    
+    try {
+      const { error } = await supabase.rpc('track_scout_interest', {
+        p_scout_id: currentUser.id,
+        p_athlete_id: athleteId,
+        p_action_type: 'bookmark'
+      });
+      
+      if (error) {
+        console.log('ScoutingProvider: trackBookmark error', error);
+      }
+    } catch (e) {
+      console.log('ScoutingProvider: trackBookmark exception', e);
+    }
+  }, [currentUser]);
+
+  const trackRequest = useCallback(async (athleteId: string) => {
+    if (!isSupabaseConfigured || !currentUser || currentUser.role !== 'scout') return;
+    
+    try {
+      const { error } = await supabase.rpc('track_scout_interest', {
+        p_scout_id: currentUser.id,
+        p_athlete_id: athleteId,
+        p_action_type: 'request'
+      });
+      
+      if (error) {
+        console.log('ScoutingProvider: trackRequest error', error);
+      }
+    } catch (e) {
+      console.log('ScoutingProvider: trackRequest exception', e);
+    }
+  }, [currentUser]);
+
+  const getInterestedScoutsForAthlete = useCallback(async (athleteId: string): Promise<ScoutInterest[]> => {
+    if (!isSupabaseConfigured) return [];
+    
+    try {
+      const { data, error } = await supabase.rpc('get_interested_scouts_for_athlete', {
+        p_athlete_id: athleteId,
+        p_limit: 50
+      });
+      
+      if (error) {
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find')) {
+          console.log('ScoutingProvider: scout_interests table not found');
+          return [];
+        }
+        console.log('ScoutingProvider: getInterestedScoutsForAthlete error', error);
+        return [];
+      }
+      
+      return (data ?? []) as ScoutInterest[];
+    } catch (e) {
+      console.log('ScoutingProvider: getInterestedScoutsForAthlete exception', e);
+      return [];
+    }
+  }, []);
+
   const refresh = useCallback(async () => {
     await loadCache();
     if (currentUser?.role === 'scout') {
@@ -344,6 +436,10 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     computeForScout,
     getTopForScout,
     getInterestedForPlayer,
+    trackProfileView,
+    trackBookmark,
+    trackRequest,
+    getInterestedScoutsForAthlete,
     refresh,
-  }), [isReady, isComputing, topRecommendations, interestedScouts, computeForScout, getTopForScout, getInterestedForPlayer, refresh]);
+  }), [isReady, isComputing, topRecommendations, interestedScouts, computeForScout, getTopForScout, getInterestedForPlayer, trackProfileView, trackBookmark, trackRequest, getInterestedScoutsForAthlete, refresh]);
 });
