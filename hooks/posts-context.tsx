@@ -276,7 +276,9 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       const randomId = Math.random().toString(36).substring(2, 15);
       const extension = mType === 'image' ? 'jpg' : 'mp4';
       const filename = `${timestamp}-${randomId}.${extension}`;
-      const path = `${user.id}/${filename}`;
+      const path = `${filename}`;
+      
+      console.log('Posts: generated filename and path:', { filename, path, userId: user.id });
       
       console.log('Posts: upload path:', path);
 
@@ -421,8 +423,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         title: content.substring(0, 100),
         mediaType,
         uploadedUrl,
-        image_url: mediaType === 'image' ? uploadedUrl : undefined,
-        video_url: mediaType === 'video' ? uploadedUrl : undefined,
+        image_url: mediaType === 'image' ? uploadedUrl : null,
+        video_url: mediaType === 'video' ? uploadedUrl : null,
       });
 
       const { data: insertedData, error } = await supabase
@@ -431,8 +433,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           user_id: user.id,
           title: content.substring(0, 100),
           description: content,
-          image_url: mediaType === 'image' ? uploadedUrl : undefined,
-          video_url: mediaType === 'video' ? uploadedUrl : undefined,
+          image_url: mediaType === 'image' ? uploadedUrl : null,
+          video_url: mediaType === 'video' ? uploadedUrl : null,
           type: 'highlight',
         })
         .select();

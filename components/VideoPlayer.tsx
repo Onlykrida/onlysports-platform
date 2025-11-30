@@ -57,9 +57,32 @@ export default function VideoPlayer({
 
   const HasVideo = !!ExpoVideo?.Video;
 
+  if (!uri) {
+    console.log('[VideoPlayer] No URI provided');
+    return (
+      <View style={[styles.container, { height, width }, style]} testID={`${testID}-container`}>
+        <View style={styles.fallback} testID={`${testID}-fallback`}>
+          <Text style={styles.errorText}>No video URL provided</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!HasVideo) {
+    console.log('[VideoPlayer] expo-video not available');
+    return (
+      <View style={[styles.container, { height, width }, style]} testID={`${testID}-container`}>
+        <View style={styles.errorContainer} testID={`${testID}-error`}>
+          <Text style={styles.errorText}>Video player not available</Text>
+          <Text style={styles.errorDetails}>Install expo-video to play videos</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { height, width }, style]} testID={`${testID}-container`}>
-      {!error && HasVideo && uri ? (
+      {!error ? (
         <ExpoVideo.Video
           ref={ref}
           source={source}
@@ -71,22 +94,11 @@ export default function VideoPlayer({
           shouldPlay={autoPlay}
           onError={onError}
         />
-      ) : error ? (
+      ) : (
         <View style={styles.errorContainer} testID={`${testID}-error`}>
           <Text style={styles.errorText}>{error}</Text>
-          <Text style={styles.errorDetails}>Video URL: {uri || 'No URL provided'}</Text>
-        </View>
-      ) : posterSource ? (
-        <Image
-          source={posterSource}
-          style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
-          resizeMode={'cover'}
-          testID={`${testID}-poster`}
-        />
-      ) : (
-        <View style={styles.fallback} testID={`${testID}-fallback`}>
-          <Text style={styles.errorText}>No video available</Text>
-          {uri && <Text style={styles.errorDetails}>URI: {uri}</Text>}
+          <Text style={styles.errorDetails}>URL: {uri}</Text>
+          <Text style={styles.errorDetails}>Check console for details</Text>
         </View>
       )}
     </View>
