@@ -185,25 +185,16 @@ export default function HomeScreen() {
             {item.media.type === 'image' ? (
               <Image source={{ uri: item.media.url }} style={styles.postImage} />
             ) : (
-              (() => {
-                console.log(`[Feed] Rendering video for post ${item.id}:`, {
-                  url: item.media?.url,
-                  thumbnail: item.media?.thumbnail,
-                  type: item.media?.type
-                });
-                return (
-                  <VideoPlayer
-                    uri={item.media.url ?? ''}
-                    poster={item.media.thumbnail}
-                    height={width * 0.75}
-                    width={width}
-                    autoPlay={false}
-                    loop={false}
-                    muted={false}
-                    testID={`post-video-${item.id}`}
-                  />
-                );
-              })()
+              <VideoPlayer
+                uri={item.media.url ?? ''}
+                poster={item.media.thumbnail}
+                height={(width - (theme.spacing.md * 2)) * 0.75}
+                width={width - (theme.spacing.md * 2)}
+                autoPlay={false}
+                loop={true}
+                muted={true}
+                testID={`post-video-${item.id}`}
+              />
             )}
           </View>
         )}

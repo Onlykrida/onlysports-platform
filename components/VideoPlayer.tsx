@@ -1,5 +1,7 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, ViewStyle, Image, Platform, Text } from 'react-native';
+import React, { useCallback, useState, useEffect } from 'react';
+import { View, StyleSheet, ViewStyle, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Play, Pause, Volume2, VolumeX } from 'lucide-react-native';
+import { VideoView, useVideoPlayer } from 'expo-video';
 
 interface VideoPlayerProps {
   uri: string;
@@ -18,63 +20,109 @@ export default function VideoPlayer({
   poster,
   autoPlay = false,
   loop = true,
-  muted = false,
+  muted = true,
   height = 240,
   width = '100%',
   style,
   testID = 'video-player',
 }: VideoPlayerProps) {
-  const ref = useRef<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  const [isMuted, setIsMuted] = useState(muted);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showControls, setShowControls] = useState(true);
 
   console.log('[VideoPlayer] Rendering with URI:', uri);
-  console.log('[VideoPlayer] Platform:', Platform.OS);
-  console.log('[VideoPlayer] Poster:', poster);
 
-  const source = useMemo(() => {
-    console.log('[VideoPlayer] Creating source object:', { uri });
-    return { uri };
-  }, [uri]);
-  
-  const posterSource = useMemo(() => (poster ? { uri: poster } : undefined), [poster]);
-
-  const onError = useCallback((e: unknown) => {
-    console.error('[VideoPlayer] Playback error for URI:', uri);
-    console.error('[VideoPlayer] Error details:', e);
-    setError('Unable to play this video.');
-  }, [uri]);
-
-  const ExpoVideo: any = useMemo(() => {
-    try {
-      const video = require('expo-video');
-      console.log('[VideoPlayer] expo-video loaded successfully');
-      return video;
-    } catch (e) {
-      console.log('[VideoPlayer] expo-video not available:', e);
-      return null;
+  const player = useVideoPlayer(uri, player => {
+    player.loop = loop;
+    player.muted = isMuted;
+    if (autoPlay) {
+      player.play();
     }
+  });
+
+  useEffect(() => {
+    player.muted = isMuted;
+  }, [player, isMuted]);
+
+  useEffect(() => {
+    player.loop = loop;
+  }, [player, loop]);
+
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    if (showControls && isPlaying) {
+      timeout = setTimeout(() => setShowControls(false), 3000);
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [showControls, isPlaying]);
+
+  const togglePlayPause = useCallback(() => {
+    if (isPlaying) {
+      player.pause();
+      setIsPlaying(false);
+    } else {
+      player.play();
+      setIsPlaying(true);
+    }
+    setShowControls(true);
+  }, [isPlaying, player]);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted(prev => !prev);
+    setShowControls(true);
   }, []);
 
-  const HasVideo = !!ExpoVideo?.Video;
+  const handlePress = useCallback(() => {
+    if (showControls) {
+      togglePlayPause();
+    } else {
+      setShowControls(true);
+    }
+  }, [showControls, togglePlayPause]);
+
+  const onPlayerError = useCallback((e: any) => {
+    console.error('[VideoPlayer] Error:', e);
+    setError('Unable to play video');
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const subscription = player.addListener('statusChange', (status) => {
+      console.log('[VideoPlayer] Status change:', status);
+      if (status.status === 'readyToPlay') {
+        setIsLoading(false);
+      }
+      if (status.status === 'error') {
+        console.error('[VideoPlayer] Player error:', status.error);
+        setError('Unable to play video');
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [player]);
 
   if (!uri) {
-    console.log('[VideoPlayer] No URI provided');
     return (
       <View style={[styles.container, { height, width }, style]} testID={`${testID}-container`}>
-        <View style={styles.fallback} testID={`${testID}-fallback`}>
-          <Text style={styles.errorText}>No video URL provided</Text>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>No video URL</Text>
         </View>
       </View>
     );
   }
 
-  if (!HasVideo) {
-    console.log('[VideoPlayer] expo-video not available');
+  if (error) {
     return (
       <View style={[styles.container, { height, width }, style]} testID={`${testID}-container`}>
-        <View style={styles.errorContainer} testID={`${testID}-error`}>
-          <Text style={styles.errorText}>Video player not available</Text>
-          <Text style={styles.errorDetails}>Install expo-video to play videos</Text>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       </View>
     );
@@ -82,41 +130,65 @@ export default function VideoPlayer({
 
   return (
     <View style={[styles.container, { height, width }, style]} testID={`${testID}-container`}>
-      {!error ? (
-        <ExpoVideo.Video
-          ref={ref}
-          source={source}
+      <TouchableOpacity 
+        style={StyleSheet.absoluteFill} 
+        activeOpacity={1}
+        onPress={handlePress}
+      >
+        <VideoView
           style={StyleSheet.absoluteFill}
+          player={player}
           contentFit="cover"
-          useNativeControls
-          isLooping={loop}
-          isMuted={muted}
-          shouldPlay={autoPlay}
-          onError={onError}
+          nativeControls={false}
         />
-      ) : (
-        <View style={styles.errorContainer} testID={`${testID}-error`}>
-          <Text style={styles.errorText}>{error}</Text>
-          <Text style={styles.errorDetails}>URL: {uri}</Text>
-          <Text style={styles.errorDetails}>Check console for details</Text>
-        </View>
-      )}
+
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#fff" />
+          </View>
+        )}
+
+        {showControls && !isLoading && (
+          <View style={styles.controlsOverlay}>
+            <View style={styles.centerControls}>
+              <TouchableOpacity 
+                style={styles.playButton}
+                onPress={togglePlayPause}
+                activeOpacity={0.8}
+              >
+                {isPlaying ? (
+                  <Pause size={40} color="#fff" fill="#fff" />
+                ) : (
+                  <Play size={40} color="#fff" fill="#fff" />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.bottomControls}>
+              <TouchableOpacity 
+                style={styles.muteButton}
+                onPress={toggleMute}
+                activeOpacity={0.8}
+              >
+                {isMuted ? (
+                  <VolumeX size={24} color="#fff" />
+                ) : (
+                  <Volume2 size={24} color="#fff" />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#000000',
+    backgroundColor: '#000',
     overflow: 'hidden',
-    borderRadius: 8,
-  },
-  fallback: {
-    flex: 1,
-    backgroundColor: '#111',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
+    position: 'relative' as const,
   },
   errorContainer: {
     flex: 1,
@@ -128,13 +200,47 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#ff4444',
     fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
+    fontWeight: 'bold' as const,
+    textAlign: 'center' as const,
   },
-  errorDetails: {
-    color: '#999',
-    fontSize: 12,
-    textAlign: 'center',
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  controlsOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  centerControls: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  bottomControls: {
+    position: 'absolute' as const,
+    bottom: 16,
+    right: 16,
+    flexDirection: 'row' as const,
+    gap: 12,
+  },
+  muteButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
