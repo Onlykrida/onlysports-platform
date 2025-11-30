@@ -5,10 +5,12 @@ import {
   TouchableOpacity, 
   ActivityIndicator, 
   Dimensions,
-  Platform
+  Platform,
+  Text
 } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Volume2, VolumeX } from 'lucide-react-native';
+import { theme } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -36,6 +38,7 @@ const FeedVideoItem = memo(({
   const [error, setError] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(!isVisible);
   const isActiveRef = useRef(false);
+  const hasPlayedRef = useRef(false);
 
   console.log('[FeedVideoItem] Render:', {
     url: url.substring(0, 50) + '...',
@@ -57,20 +60,23 @@ const FeedVideoItem = memo(({
     
     if (isVisible && !error) {
       isActiveRef.current = true;
-      setIsLoading(true);
       
       const playVideo = async () => {
         try {
           console.log('[FeedVideoItem] Playing video');
-          player.play();
+          await player.play();
+          hasPlayedRef.current = true;
           setIsPaused(false);
           onPlay?.();
         } catch (err) {
           console.error('[FeedVideoItem] Play error:', err);
+          setError('Failed to play video');
         }
       };
       
-      playVideo();
+      if (hasPlayedRef.current) {
+        playVideo();
+      }
     } else {
       isActiveRef.current = false;
       console.log('[FeedVideoItem] Pausing video');
@@ -78,7 +84,7 @@ const FeedVideoItem = memo(({
       setIsPaused(true);
       onPause?.();
     }
-  }, [isVisible, url, player, error]);
+  }, [isVisible, url, player, error, onPlay, onPause]);
 
   useEffect(() => {
     player.muted = isMuted;
@@ -93,6 +99,7 @@ const FeedVideoItem = memo(({
         console.log('[FeedVideoItem] Ready to play');
         setIsLoading(false);
         setError(null);
+        hasPlayedRef.current = true;
         
         if (isActiveRef.current && isVisible) {
           player.play();
@@ -109,6 +116,7 @@ const FeedVideoItem = memo(({
     const playingSubscription = player.addListener('playingChange', (event) => {
       setIsPaused(!event.isPlaying);
       if (event.isPlaying) {
+        setIsLoading(false);
         onPlay?.();
       } else {
         onPause?.();
@@ -119,7 +127,7 @@ const FeedVideoItem = memo(({
       statusSubscription.remove();
       playingSubscription.remove();
     };
-  }, [player, isVisible]);
+  }, [player, isVisible, onPlay, onPause]);
 
   const handleTapToToggleMute = useCallback(() => {
     console.log('[FeedVideoItem] Toggle mute:', !isMuted);
@@ -141,7 +149,7 @@ const FeedVideoItem = memo(({
     return (
       <View style={[styles.container, { width, height }]} testID={`${testID}-error`}>
         <View style={styles.errorContainer}>
-          <ActivityIndicator size="small" color="#ff4444" />
+          <Text style={styles.errorText}>Video unavailable</Text>
         </View>
       </View>
     );
@@ -199,6 +207,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
