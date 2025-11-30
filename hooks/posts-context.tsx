@@ -276,7 +276,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       const randomId = Math.random().toString(36).substring(2, 15);
       const extension = mType === 'image' ? 'jpg' : 'mp4';
       const filename = `${timestamp}-${randomId}.${extension}`;
-      const path = `posts/${user.id}/${filename}`;
+      const path = `${user.id}/${filename}`;
       
       console.log('Posts: upload path:', path);
 
