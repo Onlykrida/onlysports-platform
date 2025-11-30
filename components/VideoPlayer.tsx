@@ -84,12 +84,6 @@ export default function VideoPlayer({
     }
   }, [showControls, togglePlayPause]);
 
-  const onPlayerError = useCallback((e: any) => {
-    console.error('[VideoPlayer] Error:', e);
-    setError('Unable to play video');
-    setIsLoading(false);
-  }, []);
-
   useEffect(() => {
     const subscription = player.addListener('statusChange', (status) => {
       console.log('[VideoPlayer] Status change:', status);
@@ -103,8 +97,14 @@ export default function VideoPlayer({
       }
     });
 
+    const playingSubscription = player.addListener('playingChange', (event) => {
+      console.log('[VideoPlayer] Playing state changed:', event.isPlaying);
+      setIsPlaying(event.isPlaying);
+    });
+
     return () => {
       subscription.remove();
+      playingSubscription.remove();
     };
   }, [player]);
 
