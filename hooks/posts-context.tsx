@@ -120,6 +120,19 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         const profile = profilesMap[post.user_id] ?? {};
         const resolvedName = profile.name ?? profile.email?.split('@')[0] ?? 'User';
         console.log('Transforming post:', post.id, 'by user_id:', post.user_id, 'profile found:', !!profile.id, 'resolved name:', resolvedName, 'profile:', profile);
+        
+        const mediaUrl = post.video_url || post.image_url;
+        const mediaType = post.video_url ? 'video' : 'image';
+        console.log('[Posts] Post media debug:', {
+          postId: post.id,
+          hasVideoUrl: !!post.video_url,
+          hasImageUrl: !!post.image_url,
+          videoUrl: post.video_url,
+          imageUrl: post.image_url,
+          mediaType,
+          finalUrl: mediaUrl
+        });
+        
         return {
           id: post.id,
           userId: post.user_id,
@@ -127,10 +140,10 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           userAvatar: profile.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
           userRole: profile.role || 'athlete',
           content: post.description || post.title,
-          media: post.image_url || post.video_url ? {
-            type: post.video_url ? 'video' : 'image',
-            url: post.video_url || post.image_url,
-            thumbnail: post.image_url
+          media: mediaUrl ? {
+            type: mediaType,
+            url: mediaUrl,
+            thumbnail: post.image_url || undefined
           } : undefined,
           likes: post.likes_count || 0,
           comments: post.comments_count || 0,
