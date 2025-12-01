@@ -23,6 +23,8 @@ import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { useScouting, AIRecommendationRow } from '@/hooks/scouting-context';
+import { ScoutInterestsCard } from '@/components/ScoutInterestsCard';
+import { ProfileViewersCard } from '@/components/ProfileViewersCard';
 
 export default function ProfileScreen() {
   const { user, logout, updateProfile } = useAuth();
@@ -358,6 +360,14 @@ export default function ProfileScreen() {
             )}
           </View>
         )}
+
+        {/* Scout Interests Card - for Athletes */}
+        {user.role === 'athlete' && (
+          <ScoutInterestsCard userId={user.id} isOwnProfile={true} />
+        )}
+
+        {/* Profile Views Card - for everyone on their own profile */}
+        <ProfileViewersCard userId={user.id} isOwnProfile={true} />
 
         {/* Role-Specific Information */}
         {user.roleSpecificData && Object.keys(user.roleSpecificData).length > 0 && (

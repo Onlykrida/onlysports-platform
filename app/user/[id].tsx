@@ -37,6 +37,8 @@ import { usePosts } from '@/hooks/posts-context';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Button } from '@/components/Button';
 import { ScoutingSummaryModal } from '@/components/ScoutingSummaryModal';
+import { ScoutInterestsCard } from '@/components/ScoutInterestsCard';
+import { ProfileViewersCard } from '@/components/ProfileViewersCard';
 
 const getRoleIcon = (role: string) => {
   switch (role.toLowerCase()) {
@@ -181,6 +183,20 @@ export default function UserProfileScreen() {
           setScoutInterests(scouts);
         } catch (e) {
           console.log('UserProfile: scout interests load failed', e);
+        }
+      }
+      
+      if (currentUser && currentUser.id !== id) {
+        try {
+          const { error } = await supabase.rpc('track_profile_view', {
+            p_profile_id: id,
+            p_viewer_id: currentUser.id
+          });
+          if (error) {
+            console.log('UserProfile: trackProfileView error', error);
+          }
+        } catch (e) {
+          console.log('UserProfile: trackProfileView exception', e);
         }
       }
       
@@ -510,12 +526,20 @@ export default function UserProfileScreen() {
           </View>
         )}
 
-        {/* Interested Scouts for athletes */}
-        {profileUser.role === 'athlete' && scoutInterests.length > 0 && (
+        {/* Scout Interests Card - for Athletes */}
+        {profileUser.role === 'athlete' && (
+          <ScoutInterestsCard userId={profileUser.id} isOwnProfile={isOwnProfile} />
+        )}
+
+        {/* Profile Views Card - only for own profile */}
+        <ProfileViewersCard userId={profileUser.id} isOwnProfile={isOwnProfile} />
+
+        {/* Interested Scouts for athletes (Legacy) */}
+        {profileUser.role === 'athlete' && scoutInterests.length > 0 && false && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Flame size={20} color={theme.colors.success} />
-              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser.name}</Text>
+              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser?.name || 'Athlete'}</Text>
             </View>
             {scoutInterests.slice(0, 10).map((scout, idx) => (
               <TouchableOpacity
@@ -557,7 +581,7 @@ export default function UserProfileScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Flame size={20} color={theme.colors.success} />
-              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser.name}</Text>
+              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser?.name || 'Athlete'}</Text>
             </View>
             {aiInterestedScouts.slice(0, 5).map((it, idx) => (
               <View key={`${it.scoutName}-${idx}`} style={styles.achievementItem}>
