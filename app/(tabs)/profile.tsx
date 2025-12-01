@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
@@ -22,7 +21,7 @@ import { Button } from '@/components/Button';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
-import { useScouting, AIRecommendationRow } from '@/hooks/scouting-context';
+import { useScouting } from '@/hooks/scouting-context';
 import { ScoutInterestsCard } from '@/components/ScoutInterestsCard';
 import { ProfileViewersCard } from '@/components/ProfileViewersCard';
 
@@ -65,7 +64,7 @@ export default function ProfileScreen() {
 
   React.useEffect(() => {
     loadCounts();
-  }, [user, posts, followers, following]);
+  }, [user, posts, followers, following, loadCounts]);
 
   React.useEffect(() => {
     const run = async () => {

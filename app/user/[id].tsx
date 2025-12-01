@@ -158,7 +158,7 @@ export default function UserProfileScreen() {
 
   useEffect(() => {
     void loadUserProfile();
-  }, [id, posts]);
+  }, [id, posts, loadUserProfile]);
 
   useEffect(() => {
     const run = async () => {
