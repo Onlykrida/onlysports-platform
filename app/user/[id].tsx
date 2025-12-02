@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -89,7 +89,7 @@ export default function UserProfileScreen() {
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [showScoutingSummary, setShowScoutingSummary] = useState(false);
 
-  const loadUserProfile = async () => {
+  const loadUserProfile = useCallback(async () => {
     if (!id || !isSupabaseConfigured) return;
 
     try {
@@ -146,7 +146,7 @@ export default function UserProfileScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id, posts, getFollowersCount, getFollowingCount]);
 
   useEffect(() => {
     void loadUserProfile();
