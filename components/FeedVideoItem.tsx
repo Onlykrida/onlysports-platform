@@ -74,9 +74,7 @@ const FeedVideoItem = memo(({
         }
       };
       
-      if (hasPlayedRef.current) {
-        playVideo();
-      }
+      playVideo();
     } else {
       isActiveRef.current = false;
       console.log('[FeedVideoItem] Pausing video');
