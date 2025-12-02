@@ -28,6 +28,7 @@ import {
   ExternalLink
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { ProfileVideoThumbnail } from '@/components/ProfileVideoThumbnail';
 import { User, Post } from '@/types';
 import * as Linking from 'expo-linking';
 import { useScouting } from '@/hooks/scouting-context';
@@ -676,9 +677,21 @@ export default function UserProfileScreen() {
           {userPosts.length > 0 ? (
             <View style={styles.postsGrid}>
               {userPosts.map((post) => (
-                <TouchableOpacity key={post.id} style={styles.postItem}>
+                <TouchableOpacity 
+                  key={post.id} 
+                  style={styles.postItem}
+                  onPress={() => router.push(`/post/${post.id}`)}
+                >
                   {post.media ? (
-                    <Image source={{ uri: post.media.url }} style={styles.postImage} />
+                    post.media.type === 'video' ? (
+                      <ProfileVideoThumbnail
+                        videoUrl={post.media.url}
+                        thumbnailUrl={post.media.thumbnail}
+                        testID={`profile-video-${post.id}`}
+                      />
+                    ) : (
+                      <Image source={{ uri: post.media.url }} style={styles.postImage} />
+                    )
                   ) : (
                     <View style={styles.postTextContainer}>
                       <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>

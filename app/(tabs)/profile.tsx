@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
-import FeedVideoItem from '@/components/FeedVideoItem';
+import { ProfileVideoThumbnail } from '@/components/ProfileVideoThumbnail';
 import { Settings, Edit3, Award, BarChart3, LogOut, Plus, Grid, List, Camera, Sparkles, BadgeCheck, FileText, ExternalLink } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
@@ -472,9 +472,11 @@ export default function ProfileScreen() {
                   >
                     {post.media ? (
                       post.media.type === 'video' ? (
-                        <FeedVideoItem
-                          url={post.media.url}
-                          isVisible={false}
+                        <ProfileVideoThumbnail
+                          videoUrl={post.media.url}
+                          thumbnailUrl={post.media.thumbnail}
+                          width={postsViewMode === 'grid' ? undefined : 400}
+                          height={postsViewMode === 'grid' ? undefined : 300}
                           testID={`profile-video-${post.id}`}
                         />
                       ) : (
