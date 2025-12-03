@@ -1,5 +1,24 @@
 # Quick Start: Mock Data Testing
 
+## Prerequisites
+
+### ⚠️ IMPORTANT: Get Service Role Key First
+
+**You MUST complete this step before generating mock data:**
+
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard) → Your Project
+2. **Settings** → **API** → **Project API keys**
+3. Copy the **service_role** key (click eye icon to reveal)
+4. Add to your `.env` file:
+   ```env
+   EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+   ```
+5. **Restart your dev server** to load the environment variable
+
+📖 **See MOCK_DATA_SETUP.md for detailed instructions**
+
+---
+
 ## Step 1: Add Database Field (One-time setup)
 1. Go to your Supabase dashboard: https://supabase.com/dashboard
 2. Open SQL Editor

@@ -102,7 +102,32 @@ function createMockClient() {
   };
 }
 
-export { supabase, isSupabaseConfigured };
+let supabaseAdmin: any;
+
+if (isSupabaseConfigured) {
+  const serviceRoleKey = process.env.EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+  if (serviceRoleKey) {
+    try {
+      supabaseAdmin = createClient(supabaseUrl!, serviceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      });
+      console.log('✅ Supabase admin client initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to create Supabase admin client:', error);
+      supabaseAdmin = null;
+    }
+  } else {
+    console.warn('⚠️ Service role key not found. Admin operations will not be available.');
+    supabaseAdmin = null;
+  }
+} else {
+  supabaseAdmin = null;
+}
+
+export { supabase, supabaseAdmin, isSupabaseConfigured };
 
 // Database types
 export interface Database {

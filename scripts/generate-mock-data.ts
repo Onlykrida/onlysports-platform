@@ -1,4 +1,4 @@
-import { supabase } from '@/constants/supabase';
+import { supabaseAdmin } from '@/constants/supabase';
 
 const firstNames = ['Alex', 'Jordan', 'Taylor', 'Casey', 'Riley', 'Morgan', 'Parker', 'Quinn', 'Reese', 'Avery', 'Jamie', 'Cameron', 'Drew', 'Elliot', 'Harper', 'Kai', 'Logan', 'Mason', 'Noah', 'Owen', 'Peyton', 'Rowan', 'Sawyer', 'Skyler', 'Sage', 'Blake', 'Charlie', 'Dakota', 'Eden', 'Finley'];
 const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Martinez', 'Lopez', 'Wilson', 'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Clark', 'Lewis', 'Robinson', 'Walker'];
@@ -92,6 +92,11 @@ function generateEmail(firstName: string, lastName: string, index: number): stri
 
 export async function generateMockUsers(count: number = 100) {
   console.log(`🔄 Generating ${count} mock users...`);
+  
+  if (!supabaseAdmin) {
+    throw new Error('Admin client not available. Please add EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY to your .env file');
+  }
+  
   const roles: ('athlete' | 'coach' | 'scout' | 'team' | 'trainer')[] = ['athlete', 'coach', 'scout', 'team', 'trainer'];
   
   const users: any[] = [];
@@ -123,7 +128,7 @@ export async function generateMockUsers(count: number = 100) {
     users.push(user);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('profiles')
     .insert(users)
     .select();
@@ -140,7 +145,11 @@ export async function generateMockUsers(count: number = 100) {
 export async function generateMockPosts(count: number = 150) {
   console.log(`🔄 Generating ${count} mock posts...`);
   
-  const { data: users, error: usersError } = await supabase
+  if (!supabaseAdmin) {
+    throw new Error('Admin client not available. Please add EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY to your .env file');
+  }
+  
+  const { data: users, error: usersError } = await supabaseAdmin
     .from('profiles')
     .select('id, name, avatar, role')
     .eq('is_mock', true)
@@ -175,7 +184,7 @@ export async function generateMockPosts(count: number = 150) {
     }
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('posts')
     .insert(posts)
     .select();
@@ -192,7 +201,11 @@ export async function generateMockPosts(count: number = 150) {
 export async function generateMockOpportunities(count: number = 100) {
   console.log(`🔄 Generating ${count} mock opportunities...`);
   
-  const { data: teams, error: teamsError } = await supabase
+  if (!supabaseAdmin) {
+    throw new Error('Admin client not available. Please add EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY to your .env file');
+  }
+  
+  const { data: teams, error: teamsError } = await supabaseAdmin
     .from('profiles')
     .select('id, name, sport')
     .eq('is_mock', true)
@@ -238,7 +251,7 @@ export async function generateMockOpportunities(count: number = 100) {
     }
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('opportunities')
     .insert(opportunities)
     .select();
@@ -255,12 +268,16 @@ export async function generateMockOpportunities(count: number = 100) {
 export async function generateMockInteractions() {
   console.log('🔄 Generating mock interactions (follows, likes, comments)...');
   
-  const { data: users, error: usersError } = await supabase
+  if (!supabaseAdmin) {
+    throw new Error('Admin client not available. Please add EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY to your .env file');
+  }
+  
+  const { data: users, error: usersError } = await supabaseAdmin
     .from('profiles')
     .select('id, role')
     .eq('is_mock', true);
 
-  const { data: posts, error: postsError } = await supabase
+  const { data: posts, error: postsError } = await supabaseAdmin
     .from('posts')
     .select('id, user_id')
     .eq('is_mock', true);
@@ -290,7 +307,7 @@ export async function generateMockInteractions() {
     new Map(follows.map((f: any) => [`${f.follower_id}-${f.following_id}`, f])).values()
   );
 
-  const { error: followsError } = await supabase
+  const { error: followsError } = await supabaseAdmin
     .from('follows')
     .insert(uniqueFollows);
 
@@ -340,7 +357,7 @@ export async function generateMockInteractions() {
     }
   }
 
-  const { error: likesError } = await supabase
+  const { error: likesError } = await supabaseAdmin
     .from('likes')
     .insert(likes);
 
@@ -350,7 +367,7 @@ export async function generateMockInteractions() {
     console.log(`✅ Created ${likes.length} likes`);
   }
 
-  const { error: commentsError } = await supabase
+  const { error: commentsError } = await supabaseAdmin
     .from('comments')
     .insert(comments);
 

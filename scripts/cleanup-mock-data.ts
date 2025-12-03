@@ -1,11 +1,15 @@
-import { supabase } from '@/constants/supabase';
+import { supabaseAdmin } from '@/constants/supabase';
 
 export async function cleanupMockData() {
   console.log('🧹 Starting cleanup of mock data...');
   console.log('================================================');
   
+  if (!supabaseAdmin) {
+    throw new Error('Admin client not available. Please add EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY to your .env file');
+  }
+  
   try {
-    const { data: mockProfiles } = await supabase
+    const { data: mockProfiles } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('is_mock', true);
@@ -20,25 +24,25 @@ export async function cleanupMockData() {
     console.log(`🔄 Found ${mockUserIds.length} mock users to clean up...`);
 
     console.log('🔄 Deleting comments...');
-    const { error: commentsError } = await supabase
+    const { error: commentsError } = await supabaseAdmin
       .from('comments')
       .delete()
       .in('user_id', mockUserIds);
     if (commentsError) console.error('❌ Error deleting comments:', commentsError);
 
     console.log('🔄 Deleting likes...');
-    const { error: likesError } = await supabase
+    const { error: likesError } = await supabaseAdmin
       .from('likes')
       .delete()
       .in('user_id', mockUserIds);
     if (likesError) console.error('❌ Error deleting likes:', likesError);
 
     console.log('🔄 Deleting messages...');
-    const { error: messagesError1 } = await supabase
+    const { error: messagesError1 } = await supabaseAdmin
       .from('messages')
       .delete()
       .in('sender_id', mockUserIds);
-    const { error: messagesError2 } = await supabase
+    const { error: messagesError2 } = await supabaseAdmin
       .from('messages')
       .delete()
       .in('receiver_id', mockUserIds);
@@ -46,39 +50,39 @@ export async function cleanupMockData() {
     if (messagesError2) console.error('❌ Error deleting messages (receiver):', messagesError2);
 
     console.log('🔄 Deleting notifications...');
-    const { error: notificationsError } = await supabase
+    const { error: notificationsError } = await supabaseAdmin
       .from('notifications')
       .delete()
       .in('user_id', mockUserIds);
     if (notificationsError) console.error('❌ Error deleting notifications:', notificationsError);
 
     console.log('🔄 Deleting applications...');
-    const { error: applicationsError } = await supabase
+    const { error: applicationsError } = await supabaseAdmin
       .from('applications')
       .delete()
       .in('athlete_id', mockUserIds);
     if (applicationsError) console.error('❌ Error deleting applications:', applicationsError);
 
     console.log('🔄 Deleting posts...');
-    const { error: postsError } = await supabase
+    const { error: postsError } = await supabaseAdmin
       .from('posts')
       .delete()
       .eq('is_mock', true);
     if (postsError) console.error('❌ Error deleting posts:', postsError);
 
     console.log('🔄 Deleting opportunities...');
-    const { error: opportunitiesError } = await supabase
+    const { error: opportunitiesError } = await supabaseAdmin
       .from('opportunities')
       .delete()
       .eq('is_mock', true);
     if (opportunitiesError) console.error('❌ Error deleting opportunities:', opportunitiesError);
 
     console.log('🔄 Deleting follows...');
-    const { error: followsError1 } = await supabase
+    const { error: followsError1 } = await supabaseAdmin
       .from('follows')
       .delete()
       .in('follower_id', mockUserIds);
-    const { error: followsError2 } = await supabase
+    const { error: followsError2 } = await supabaseAdmin
       .from('follows')
       .delete()
       .in('following_id', mockUserIds);
@@ -86,7 +90,7 @@ export async function cleanupMockData() {
     if (followsError2) console.error('❌ Error deleting follows (following):', followsError2);
 
     console.log('🔄 Deleting profiles...');
-    const { error: profilesError } = await supabase
+    const { error: profilesError } = await supabaseAdmin
       .from('profiles')
       .delete()
       .eq('is_mock', true);
@@ -104,18 +108,22 @@ export async function cleanupMockData() {
 export async function cleanupSpecificMockData(type: 'users' | 'posts' | 'opportunities' | 'all') {
   console.log(`🧹 Cleaning up mock ${type}...`);
   
+  if (!supabaseAdmin) {
+    throw new Error('Admin client not available. Please add EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY to your .env file');
+  }
+  
   try {
     if (type === 'users' || type === 'all') {
       await cleanupMockData();
     } else if (type === 'posts') {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('posts')
         .delete()
         .eq('is_mock', true);
       if (error) throw error;
       console.log('✅ Deleted mock posts');
     } else if (type === 'opportunities') {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('opportunities')
         .delete()
         .eq('is_mock', true);
