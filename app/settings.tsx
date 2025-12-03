@@ -24,7 +24,8 @@ import {
   Globe,
   Trash2,
   Download,
-  Share2
+  Share2,
+  Database
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
@@ -275,6 +276,19 @@ export default function SettingsScreen() {
           subtitle: 'Share your profile with others',
           icon: <Share2 size={20} color={theme.colors.text} />,
           onPress: () => Alert.alert('Share Profile', 'Profile sharing will be available soon!'),
+          showChevron: true,
+        },
+      ],
+    },
+    {
+      title: 'Developer',
+      items: [
+        {
+          id: 'mock-data',
+          title: 'Mock Data Testing',
+          subtitle: 'Generate and manage test data',
+          icon: <Database size={20} color={theme.colors.primary} />,
+          onPress: () => router.push('/mock-data-test'),
           showChevron: true,
         },
       ],
