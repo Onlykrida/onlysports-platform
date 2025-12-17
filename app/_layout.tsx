@@ -12,6 +12,7 @@ import { MessagesProvider } from "@/hooks/messages-context";
 import { UsersProvider } from "@/hooks/users-context";
 import { OpportunitiesProvider } from "@/hooks/opportunities-context";
 import { ScoutingProvider } from "@/hooks/scouting-context";
+import { TeamManagementProvider } from "@/hooks/team-management-context";
 import { View, ActivityIndicator, StatusBar, Platform, useColorScheme, StyleSheet, LogBox } from "react-native";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
@@ -99,6 +100,7 @@ function RootLayoutNav() {
       <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
       <Stack.Screen name="user/[id]" options={{ title: "Profile" }} />
       <Stack.Screen name="chat" options={{ headerShown: false }} />
+      <Stack.Screen name="team" options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -125,7 +127,9 @@ const AppProviders = React.memo(({ children }: { children: React.ReactNode }) =>
                         backgroundColor={Platform.OS === 'android' ? 'transparent' : 'transparent'}
                       />
                       <ScoutingProvider>
-                        {children}
+                        <TeamManagementProvider>
+                          {children}
+                        </TeamManagementProvider>
                       </ScoutingProvider>
                     </GestureHandlerRootView>
                   </PostsProvider>

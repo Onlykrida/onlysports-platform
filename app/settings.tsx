@@ -284,11 +284,11 @@ export default function SettingsScreen() {
       title: 'Developer',
       items: [
         {
-          id: 'mock-data',
-          title: 'Mock Data Testing',
-          subtitle: 'Generate and manage test data',
+          id: 'team-management',
+          title: 'Team Management',
+          subtitle: 'Manage your team and academy',
           icon: <Database size={20} color={theme.colors.primary} />,
-          onPress: () => router.push('/mock-data-test'),
+          onPress: () => router.push('/team'),
           showChevron: true,
         },
       ],

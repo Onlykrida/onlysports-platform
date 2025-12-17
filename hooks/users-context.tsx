@@ -11,6 +11,7 @@ interface UsersState {
   isLoading: boolean;
   addOrUpdateUser: (u: User) => Promise<void>;
   findByRole: (role: UserRole) => User[];
+  searchUsers: (query: string, role?: UserRole) => Promise<User[]>;
   refreshUsers: () => Promise<void>;
   clearAll: () => Promise<void>;
 }
@@ -195,6 +196,18 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
     await loadFromRemote();
   }, [loadFromRemote]);
 
+  const searchUsers = useCallback(async (query: string, role?: UserRole): Promise<User[]> => {
+    const filtered = users.filter((u) => {
+      const matchesQuery = u.name.toLowerCase().includes(query.toLowerCase()) ||
+                          u.email.toLowerCase().includes(query.toLowerCase()) ||
+                          u.sport?.toLowerCase().includes(query.toLowerCase()) ||
+                          u.position?.toLowerCase().includes(query.toLowerCase());
+      const matchesRole = !role || u.role === role;
+      return matchesQuery && matchesRole;
+    });
+    return filtered;
+  }, [users]);
+
   const clearAll = useCallback(async () => {
     try {
       await AsyncStorage.removeItem(STORAGE_KEY);
@@ -202,5 +215,5 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
     setUsers([]);
   }, []);
 
-  return useMemo(() => ({ users, isLoading, addOrUpdateUser, findByRole, refreshUsers, clearAll }), [users, isLoading, addOrUpdateUser, findByRole, refreshUsers, clearAll]);
+  return useMemo(() => ({ users, isLoading, addOrUpdateUser, findByRole, searchUsers, refreshUsers, clearAll }), [users, isLoading, addOrUpdateUser, findByRole, searchUsers, refreshUsers, clearAll]);
 });
