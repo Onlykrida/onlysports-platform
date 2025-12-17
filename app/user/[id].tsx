@@ -98,7 +98,7 @@ export default function UserProfileScreen() {
       // Load user profile
       const { data: userData, error: userError } = await supabase
         .from('profiles')
-        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, resume_url, created_at')
+        .select('id, email, name, role, avatar, bio, location_city, location_state, location_country, verified, sport, position, achievements, stats, role_specific_data, resume_url, created_at')
         .eq('id', id)
         .single();
 
@@ -109,6 +109,13 @@ export default function UserProfileScreen() {
       }
 
       if (userData) {
+        const locationParts = [
+          userData.location_city,
+          userData.location_state,
+          userData.location_country
+        ].filter(Boolean);
+        const location = locationParts.length > 0 ? locationParts.join(', ') : undefined;
+
         const user: User = {
           id: userData.id,
           email: userData.email,
@@ -116,7 +123,7 @@ export default function UserProfileScreen() {
           role: userData.role,
           avatar: userData.avatar,
           bio: userData.bio,
-          location: userData.location,
+          location: location,
           verified: userData.verified,
           sport: userData.sport,
           position: userData.position,

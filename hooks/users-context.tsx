@@ -53,28 +53,37 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at')
+        .select('id, email, name, role, avatar, bio, location_city, location_state, location_country, verified, sport, position, achievements, stats, role_specific_data, created_at')
         .limit(200);
       if (error) {
         console.log('UsersProvider: remote load error', error);
         return;
       }
-      const remoteUsers: User[] = (data ?? []).map((p: any) => ({
-        id: p.id,
-        email: p.email,
-        name: p.name,
-        role: p.role,
-        avatar: p.avatar ?? undefined,
-        bio: p.bio ?? undefined,
-        location: p.location ?? undefined,
-        verified: p.verified ?? false,
-        sport: p.sport ?? undefined,
-        position: p.position ?? undefined,
-        achievements: p.achievements ?? [],
-        stats: p.stats ?? {},
-        roleSpecificData: p.role_specific_data ?? {},
-        createdAt: new Date(p.created_at ?? Date.now()),
-      }));
+      const remoteUsers: User[] = (data ?? []).map((p: any) => {
+        const locationParts = [
+          p.location_city,
+          p.location_state,
+          p.location_country
+        ].filter(Boolean);
+        const location = locationParts.length > 0 ? locationParts.join(', ') : undefined;
+
+        return {
+          id: p.id,
+          email: p.email,
+          name: p.name,
+          role: p.role,
+          avatar: p.avatar ?? undefined,
+          bio: p.bio ?? undefined,
+          location: location,
+          verified: p.verified ?? false,
+          sport: p.sport ?? undefined,
+          position: p.position ?? undefined,
+          achievements: p.achievements ?? [],
+          stats: p.stats ?? {},
+          roleSpecificData: p.role_specific_data ?? {},
+          createdAt: new Date(p.created_at ?? Date.now()),
+        };
+      });
       setUsers((prev) => {
         const map = new Map<string, User>();
         // First add remote users (they are more up-to-date)
@@ -133,6 +142,13 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
           
           const row = (payload.new ?? payload.old) as any;
           if (!row) return;
+          const locationParts = [
+            row.location_city,
+            row.location_state,
+            row.location_country
+          ].filter(Boolean);
+          const location = locationParts.length > 0 ? locationParts.join(', ') : undefined;
+
           const updated: User = {
             id: row.id,
             email: row.email,
@@ -140,7 +156,7 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
             role: row.role,
             avatar: row.avatar ?? undefined,
             bio: row.bio ?? undefined,
-            location: row.location ?? undefined,
+            location: location,
             verified: row.verified ?? false,
             sport: row.sport ?? undefined,
             position: row.position ?? undefined,
