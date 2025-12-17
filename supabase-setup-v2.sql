@@ -22,7 +22,7 @@ DROP FUNCTION IF EXISTS calculate_profile_completion(UUID) CASCADE;
 
 -- Create enhanced profiles table with comprehensive role-specific fields
 CREATE TABLE profiles (
-  id UUID PRIMARY KEY,
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   name TEXT NOT NULL,
   display_name TEXT,
@@ -358,10 +358,6 @@ GRANT SELECT ON profiles TO anon;
 GRANT SELECT ON posts TO anon;
 GRANT SELECT ON opportunities TO anon;
 GRANT EXECUTE ON FUNCTION calculate_profile_completion(UUID) TO anon;
-
--- Add foreign key constraint to auth.users (after table creation)
-ALTER TABLE profiles ADD CONSTRAINT profiles_id_fkey 
-  FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 -- Success notification
 DO $$
