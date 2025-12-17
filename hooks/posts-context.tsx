@@ -56,7 +56,10 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       try {
         const { data, error } = await supabase
           .from('posts')
-          .select('*')
+          .select(`
+            *,
+            likes_count:likes(count)
+          `)
           .order('created_at', { ascending: false });
         if (error) {
           throw error;
@@ -160,6 +163,12 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           finalUrl: mediaUrl
         });
         
+        const actualLikesCount = Array.isArray(post.likes_count) && post.likes_count.length > 0 
+          ? post.likes_count[0].count 
+          : 0;
+        
+        console.log('[Posts] Likes count for post', post.id, ':', actualLikesCount, 'raw:', post.likes_count);
+        
         return {
           id: post.id,
           userId: post.user_id,
@@ -172,7 +181,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
             url: mediaUrl,
             thumbnail: post.image_url || undefined
           } : undefined,
-          likes: post.likes_count || 0,
+          likes: actualLikesCount,
           comments: post.comments_count || 0,
           shares: 0,
           isLiked: userLikes.includes(post.id),
