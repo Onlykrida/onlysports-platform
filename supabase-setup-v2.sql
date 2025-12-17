@@ -7,19 +7,16 @@ DROP TABLE IF EXISTS opportunities CASCADE;
 DROP TABLE IF EXISTS posts CASCADE;
 DROP TABLE IF EXISTS profiles CASCADE;
 
--- Ensure we have access to auth schema
-GRANT USAGE ON SCHEMA auth TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA auth TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA auth TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL ROUTINES IN SCHEMA auth TO postgres, anon, authenticated, service_role;
-
--- Drop existing functions (triggers are automatically dropped with CASCADE from tables)
+-- Drop existing functions and triggers
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
+DROP TRIGGER IF EXISTS update_posts_updated_at ON posts;
+DROP TRIGGER IF EXISTS update_opportunities_updated_at ON opportunities;
 DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
 DROP FUNCTION IF EXISTS calculate_profile_completion(UUID) CASCADE;
 
 -- Create enhanced profiles table with comprehensive role-specific fields
 CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   email TEXT NOT NULL,
   name TEXT NOT NULL,
   display_name TEXT,

@@ -103,31 +103,16 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         }
       }
       
-      // Get likes count for all posts
-      const postIds = postsRows?.map((p: any) => p.id) || [];
-      let likesMap: Record<string, number> = {};
-      
-      if (postIds.length > 0) {
-        const { data: likesData } = await supabase
-          .from('post_likes')
-          .select('post_id')
-          .in('post_id', postIds);
-        
-        likesData?.forEach((like: any) => {
-          likesMap[like.post_id] = (likesMap[like.post_id] || 0) + 1;
-        });
-      }
-      
       // Check which posts the current user has liked
       let userLikes: string[] = [];
-      if (user && postIds.length > 0) {
-        const { data: userLikesData } = await supabase
-          .from('post_likes')
+      if (user && postsRows?.length) {
+        const { data: likesData } = await supabase
+          .from('likes')
           .select('post_id')
           .eq('user_id', user.id)
-          .in('post_id', postIds);
+          .in('post_id', postsRows.map((p: any) => p.id));
         
-        userLikes = userLikesData?.map((like: any) => like.post_id) || [];
+        userLikes = likesData?.map((like: any) => like.post_id) || [];
       }
       
       // Transform posts and convert video URLs to signed URLs for Android compatibility
@@ -175,10 +160,6 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           finalUrl: mediaUrl
         });
         
-        const actualLikesCount = likesMap[post.id] || post.likes_count || 0;
-        
-        console.log('[Posts] Likes count for post', post.id, ':', actualLikesCount);
-        
         return {
           id: post.id,
           userId: post.user_id,
@@ -191,7 +172,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
             url: mediaUrl,
             thumbnail: post.image_url || undefined
           } : undefined,
-          likes: actualLikesCount,
+          likes: post.likes_count || 0,
           comments: post.comments_count || 0,
           shares: 0,
           isLiked: userLikes.includes(post.id),
@@ -563,7 +544,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         // Unlike post
         console.log('Unliking post:', postId);
         const { error } = await supabase
-          .from('post_likes')
+          .from('likes')
           .delete()
           .eq('user_id', user.id)
           .eq('post_id', postId);
@@ -590,7 +571,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         // Like post
         console.log('Liking post:', postId);
         const { error } = await supabase
-          .from('post_likes')
+          .from('likes')
           .insert({
             user_id: user.id,
             post_id: postId,
@@ -774,10 +755,12 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       .channel('posts_and_profiles_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, (payload: any) => {
         console.log('Posts change detected:', payload);
+        // Reload posts for any post changes except optimistic like updates
         loadPosts();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'post_likes' }, (payload: any) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, (payload: any) => {
         console.log('Likes change detected:', payload);
+        // When likes change, update the specific post's like count and status
         if (payload.eventType === 'INSERT' && payload.new) {
           const { post_id, user_id } = payload.new;
           setPosts(prevPosts => 
@@ -811,12 +794,14 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {
         console.log('Profile change detected (reload posts to refresh author meta):', payload?.new?.id || payload?.old?.id);
         if (payload.eventType === 'DELETE') {
+          // When a user is deleted, remove their posts from the local state immediately
           const deletedUserId = payload.old?.id;
           if (deletedUserId) {
             console.log('User deleted, removing their posts from local state:', deletedUserId);
             setPosts(prevPosts => prevPosts.filter(post => post.userId !== deletedUserId));
           }
         }
+        // Always reload to get the latest data
         loadPosts();
       })
       .subscribe();
@@ -824,7 +809,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     return () => {
       channel.unsubscribe();
     };
-  }, [loadPosts, user?.id]);
+  }, [loadPosts]);
 
   return useMemo(() => ({
     posts,

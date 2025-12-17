@@ -162,7 +162,7 @@ export default function NotificationsTab() {
       <Bell size={48} color={theme.colors.textSecondary} />
       <Text style={styles.emptyTitle}>No notifications yet</Text>
       <Text style={styles.emptyMessage}>
-        You&apos;ll see notifications here when people interact with your content
+        You'll see notifications here when people interact with your content
       </Text>
     </View>
   );

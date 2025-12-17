@@ -121,7 +121,7 @@ export default function LoginScreen() {
               style={styles.signupLink}
             >
               <Text style={styles.signupText}>
-                Don&apos;t have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
+                Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
               </Text>
             </TouchableOpacity>
           </View>

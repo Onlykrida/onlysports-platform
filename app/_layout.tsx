@@ -12,7 +12,6 @@ import { MessagesProvider } from "@/hooks/messages-context";
 import { UsersProvider } from "@/hooks/users-context";
 import { OpportunitiesProvider } from "@/hooks/opportunities-context";
 import { ScoutingProvider } from "@/hooks/scouting-context";
-
 import { View, ActivityIndicator, StatusBar, Platform, useColorScheme, StyleSheet, LogBox } from "react-native";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
