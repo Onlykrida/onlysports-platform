@@ -134,6 +134,9 @@ ALTER TABLE training_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE team_announcements ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for team_members
+DROP POLICY IF EXISTS "Team managers can view their team members" ON team_members;
+DROP POLICY IF EXISTS "Team managers can manage their team members" ON team_members;
+
 CREATE POLICY "Team managers can view their team members" ON team_members
   FOR SELECT USING (
     team_id = auth.uid() OR 
@@ -145,6 +148,10 @@ CREATE POLICY "Team managers can manage their team members" ON team_members
   FOR ALL USING (team_id = auth.uid());
 
 -- RLS Policies for team_invitations
+DROP POLICY IF EXISTS "Users can view their invitations" ON team_invitations;
+DROP POLICY IF EXISTS "Team managers can create invitations" ON team_invitations;
+DROP POLICY IF EXISTS "Team managers and players can update invitations" ON team_invitations;
+
 CREATE POLICY "Users can view their invitations" ON team_invitations
   FOR SELECT USING (player_id = auth.uid() OR team_id = auth.uid());
 
@@ -155,6 +162,9 @@ CREATE POLICY "Team managers and players can update invitations" ON team_invitat
   FOR UPDATE USING (team_id = auth.uid() OR player_id = auth.uid());
 
 -- RLS Policies for attendance_records
+DROP POLICY IF EXISTS "Team members can view attendance" ON attendance_records;
+DROP POLICY IF EXISTS "Team managers can manage attendance" ON attendance_records;
+
 CREATE POLICY "Team members can view attendance" ON attendance_records
   FOR SELECT USING (
     team_id = auth.uid() OR 
@@ -166,6 +176,9 @@ CREATE POLICY "Team managers can manage attendance" ON attendance_records
   FOR ALL USING (team_id = auth.uid());
 
 -- RLS Policies for injury_records
+DROP POLICY IF EXISTS "Team members can view injuries" ON injury_records;
+DROP POLICY IF EXISTS "Team managers can manage injuries" ON injury_records;
+
 CREATE POLICY "Team members can view injuries" ON injury_records
   FOR SELECT USING (
     team_id = auth.uid() OR 
@@ -177,6 +190,9 @@ CREATE POLICY "Team managers can manage injuries" ON injury_records
   FOR ALL USING (team_id = auth.uid());
 
 -- RLS Policies for match_records
+DROP POLICY IF EXISTS "Team members can view matches" ON match_records;
+DROP POLICY IF EXISTS "Team managers can manage matches" ON match_records;
+
 CREATE POLICY "Team members can view matches" ON match_records
   FOR SELECT USING (
     team_id = auth.uid() OR
@@ -187,6 +203,9 @@ CREATE POLICY "Team managers can manage matches" ON match_records
   FOR ALL USING (team_id = auth.uid());
 
 -- RLS Policies for player_match_performance
+DROP POLICY IF EXISTS "Team members can view performance" ON player_match_performance;
+DROP POLICY IF EXISTS "Team managers can manage performance" ON player_match_performance;
+
 CREATE POLICY "Team members can view performance" ON player_match_performance
   FOR SELECT USING (
     player_id = auth.uid() OR
@@ -199,6 +218,9 @@ CREATE POLICY "Team managers can manage performance" ON player_match_performance
   );
 
 -- RLS Policies for training_sessions
+DROP POLICY IF EXISTS "Team members can view training sessions" ON training_sessions;
+DROP POLICY IF EXISTS "Team managers can manage training sessions" ON training_sessions;
+
 CREATE POLICY "Team members can view training sessions" ON training_sessions
   FOR SELECT USING (
     team_id = auth.uid() OR
@@ -209,6 +231,9 @@ CREATE POLICY "Team managers can manage training sessions" ON training_sessions
   FOR ALL USING (team_id = auth.uid());
 
 -- RLS Policies for team_announcements
+DROP POLICY IF EXISTS "Team members can view announcements" ON team_announcements;
+DROP POLICY IF EXISTS "Team managers can manage announcements" ON team_announcements;
+
 CREATE POLICY "Team members can view announcements" ON team_announcements
   FOR SELECT USING (
     team_id = auth.uid() OR
@@ -218,64 +243,81 @@ CREATE POLICY "Team members can view announcements" ON team_announcements
 CREATE POLICY "Team managers can manage announcements" ON team_announcements
   FOR ALL USING (team_id = auth.uid());
 
+-- Create function for updated_at if not exists
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$ language 'plpgsql';
+
 -- Create triggers for updated_at
+DROP TRIGGER IF EXISTS update_team_members_updated_at ON team_members;
 CREATE TRIGGER update_team_members_updated_at 
   BEFORE UPDATE ON team_members
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_team_invitations_updated_at ON team_invitations;
 CREATE TRIGGER update_team_invitations_updated_at 
   BEFORE UPDATE ON team_invitations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_attendance_records_updated_at ON attendance_records;
 CREATE TRIGGER update_attendance_records_updated_at 
   BEFORE UPDATE ON attendance_records
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_injury_records_updated_at ON injury_records;
 CREATE TRIGGER update_injury_records_updated_at 
   BEFORE UPDATE ON injury_records
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_match_records_updated_at ON match_records;
 CREATE TRIGGER update_match_records_updated_at 
   BEFORE UPDATE ON match_records
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_player_match_performance_updated_at ON player_match_performance;
 CREATE TRIGGER update_player_match_performance_updated_at 
   BEFORE UPDATE ON player_match_performance
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_training_sessions_updated_at ON training_sessions;
 CREATE TRIGGER update_training_sessions_updated_at 
   BEFORE UPDATE ON training_sessions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_team_announcements_updated_at ON team_announcements;
 CREATE TRIGGER update_team_announcements_updated_at 
   BEFORE UPDATE ON team_announcements
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Create indexes for better performance
-CREATE INDEX team_members_team_id_idx ON team_members(team_id);
-CREATE INDEX team_members_player_id_idx ON team_members(player_id);
-CREATE INDEX team_members_status_idx ON team_members(status);
+CREATE INDEX IF NOT EXISTS team_members_team_id_idx ON team_members(team_id);
+CREATE INDEX IF NOT EXISTS team_members_player_id_idx ON team_members(player_id);
+CREATE INDEX IF NOT EXISTS team_members_status_idx ON team_members(status);
 
-CREATE INDEX team_invitations_team_id_idx ON team_invitations(team_id);
-CREATE INDEX team_invitations_player_id_idx ON team_invitations(player_id);
-CREATE INDEX team_invitations_status_idx ON team_invitations(status);
+CREATE INDEX IF NOT EXISTS team_invitations_team_id_idx ON team_invitations(team_id);
+CREATE INDEX IF NOT EXISTS team_invitations_player_id_idx ON team_invitations(player_id);
+CREATE INDEX IF NOT EXISTS team_invitations_status_idx ON team_invitations(status);
 
-CREATE INDEX attendance_records_team_id_idx ON attendance_records(team_id);
-CREATE INDEX attendance_records_player_id_idx ON attendance_records(player_id);
-CREATE INDEX attendance_records_session_date_idx ON attendance_records(session_date DESC);
+CREATE INDEX IF NOT EXISTS attendance_records_team_id_idx ON attendance_records(team_id);
+CREATE INDEX IF NOT EXISTS attendance_records_player_id_idx ON attendance_records(player_id);
+CREATE INDEX IF NOT EXISTS attendance_records_session_date_idx ON attendance_records(session_date DESC);
 
-CREATE INDEX injury_records_team_id_idx ON injury_records(team_id);
-CREATE INDEX injury_records_player_id_idx ON injury_records(player_id);
-CREATE INDEX injury_records_status_idx ON injury_records(status);
+CREATE INDEX IF NOT EXISTS injury_records_team_id_idx ON injury_records(team_id);
+CREATE INDEX IF NOT EXISTS injury_records_player_id_idx ON injury_records(player_id);
+CREATE INDEX IF NOT EXISTS injury_records_status_idx ON injury_records(status);
 
-CREATE INDEX match_records_team_id_idx ON match_records(team_id);
-CREATE INDEX match_records_match_date_idx ON match_records(match_date DESC);
+CREATE INDEX IF NOT EXISTS match_records_team_id_idx ON match_records(team_id);
+CREATE INDEX IF NOT EXISTS match_records_match_date_idx ON match_records(match_date DESC);
 
-CREATE INDEX training_sessions_team_id_idx ON training_sessions(team_id);
-CREATE INDEX training_sessions_session_date_idx ON training_sessions(session_date DESC);
+CREATE INDEX IF NOT EXISTS training_sessions_team_id_idx ON training_sessions(team_id);
+CREATE INDEX IF NOT EXISTS training_sessions_session_date_idx ON training_sessions(session_date DESC);
 
-CREATE INDEX team_announcements_team_id_idx ON team_announcements(team_id);
-CREATE INDEX team_announcements_created_at_idx ON team_announcements(created_at DESC);
+CREATE INDEX IF NOT EXISTS team_announcements_team_id_idx ON team_announcements(team_id);
+CREATE INDEX IF NOT EXISTS team_announcements_created_at_idx ON team_announcements(created_at DESC);
 
 -- Grant permissions
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
