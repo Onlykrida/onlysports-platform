@@ -49,9 +49,7 @@ export default function TabLayout() {
           <Tabs.Screen
             name="(home)"
             options={{
-              href: '/team',
-              title: 'Team',
-              tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
+              href: null,
             }}
           />
           <Tabs.Screen

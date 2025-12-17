@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -84,6 +84,12 @@ export default function HomeScreen() {
   console.log('[HomeScreen] Visible video ID:', visibleVideoId);
   
   console.log('HomeScreen render - posts:', posts.length, 'isLoading:', isLoading, 'user:', user?.name);
+
+  useEffect(() => {
+    if (user?.role === 'team') {
+      router.replace('/team');
+    }
+  }, [user?.role]);
 
   const handleDeletePost = useCallback(async (postId: string) => {
     const result = await deletePost(postId);
