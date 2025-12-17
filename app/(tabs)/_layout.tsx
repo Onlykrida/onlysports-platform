@@ -1,16 +1,13 @@
-import { Tabs, router } from "expo-router";
-import { Home, Search, Briefcase, User, PlusCircle, MessageCircle, Bell, Plus, Users } from "lucide-react-native";
+import { Tabs } from "expo-router";
+import { Home, Search, User, PlusCircle, MessageCircle } from "lucide-react-native";
 import React from "react";
-import { TouchableOpacity } from "react-native";
 import { useAuth } from "@/hooks/auth-context";
 import { theme } from "@/constants/theme";
 import { useMessages } from "@/hooks/messages-context";
-import { useNotifications } from "@/hooks/notifications-context";
 
 export default function TabLayout() {
   const { user } = useAuth();
   const { conversations } = useMessages();
-  const { unreadCount } = useNotifications();
   
   const unreadMessagesCount = conversations.reduce((total, conv) => total + conv.unreadCount, 0);
   
@@ -18,8 +15,6 @@ export default function TabLayout() {
     if (count === 0) return undefined;
     return count > 99 ? '99+' : count.toString();
   };
-
-  const isTeamRole = user?.role === 'team';
   
   return (
     <Tabs
@@ -44,139 +39,54 @@ export default function TabLayout() {
         },
       }}
     >
-      {isTeamRole ? (
-        <>
-          <Tabs.Screen
-            name="(home)"
-            options={{
-              href: null,
-            }}
-          />
-          <Tabs.Screen
-            name="discover"
-            options={{
-              title: 'Discover',
-              tabBarIcon: ({ color, size }) => <Search size={size} color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="opportunities"
-            options={{
-              title: 'Opportunities',
-              tabBarIcon: ({ color, size }) => <Briefcase size={size} color={color} />,
-              headerShown: true,
-              headerStyle: { backgroundColor: theme.colors.surfaceDark },
-              headerTitleStyle: { color: theme.colors.text, fontWeight: '700' },
-              headerTintColor: theme.colors.text,
-              headerShadowVisible: false,
-              headerRight: () => (
-                <TouchableOpacity 
-                  style={{ marginRight: theme.spacing.md }}
-                  onPress={() => router.push('/opportunities/create')}
-                >
-                  <Plus size={24} color={theme.colors.primary} />
-                </TouchableOpacity>
-              )
-            }}
-          />
-          <Tabs.Screen
-            name="messages"
-            options={{
-              title: 'Messages',
-              tabBarIcon: ({ color, size }) => <MessageCircle size={size} color={color} />,
-              tabBarBadge: getTabBarBadge(unreadMessagesCount),
-            }}
-          />
-          <Tabs.Screen
-            name="profile"
-            options={{
-              title: 'Profile',
-              tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="create"
-            options={{
-              href: null,
-            }}
-          />
-          <Tabs.Screen
-            name="notifications"
-            options={{
-              href: null,
-            }}
-          />
-        </>
-      ) : (
-        <>
-          <Tabs.Screen
-            name="(home)"
-            options={{
-              title: 'Feed',
-              tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="discover"
-            options={{
-              title: 'Discover',
-              tabBarIcon: ({ color, size }) => <Search size={size} color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="create"
-            options={{
-              title: 'Create',
-              tabBarIcon: ({ color, size }) => <PlusCircle size={size} color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="opportunities"
-            options={{
-              title: 'Opportunities',
-              tabBarIcon: ({ color, size }) => <Briefcase size={size} color={color} />,
-              headerShown: true,
-              headerStyle: { backgroundColor: theme.colors.surfaceDark },
-              headerTitleStyle: { color: theme.colors.text, fontWeight: '700' },
-              headerTintColor: theme.colors.text,
-              headerShadowVisible: false,
-              headerRight: () => {
-                return (user?.role === 'coach' || user?.role === 'scout' || user?.role === 'team') ? (
-                  <TouchableOpacity 
-                    style={{ marginRight: theme.spacing.md }}
-                    onPress={() => router.push('/opportunities/create')}
-                  >
-                    <Plus size={24} color={theme.colors.primary} />
-                  </TouchableOpacity>
-                ) : null;
-              }
-            }}
-          />
-          <Tabs.Screen
-            name="messages"
-            options={{
-              title: 'Messages',
-              tabBarIcon: ({ color, size }) => <MessageCircle size={size} color={color} />,
-              tabBarBadge: getTabBarBadge(unreadMessagesCount),
-            }}
-          />
-          <Tabs.Screen
-            name="notifications"
-            options={{
-              title: 'Notifications',
-              tabBarIcon: ({ color, size }) => <Bell size={size} color={color} />,
-              tabBarBadge: getTabBarBadge(unreadCount),
-            }}
-          />
-          <Tabs.Screen
-            name="profile"
-            options={{
-              title: 'Profile',
-              tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
-            }}
-          />
-        </>
-      )}
+      <Tabs.Screen
+        name="(home)"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="discover"
+        options={{
+          title: 'Discover',
+          tabBarIcon: ({ color, size }) => <Search size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: 'Create',
+          tabBarIcon: ({ color, size }) => <PlusCircle size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          tabBarIcon: ({ color, size }) => <MessageCircle size={size} color={color} />,
+          tabBarBadge: getTabBarBadge(unreadMessagesCount),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="opportunities"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
