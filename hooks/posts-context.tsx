@@ -58,7 +58,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           .from('posts')
           .select(`
             *,
-            likes_count:likes(count)
+            likes_count:post_likes(count)
           `)
           .order('created_at', { ascending: false });
         if (error) {
@@ -110,7 +110,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       let userLikes: string[] = [];
       if (user && postsRows?.length) {
         const { data: likesData } = await supabase
-          .from('likes')
+          .from('post_likes')
           .select('post_id')
           .eq('user_id', user.id)
           .in('post_id', postsRows.map((p: any) => p.id));
@@ -553,7 +553,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         // Unlike post
         console.log('Unliking post:', postId);
         const { error } = await supabase
-          .from('likes')
+          .from('post_likes')
           .delete()
           .eq('user_id', user.id)
           .eq('post_id', postId);
@@ -580,7 +580,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         // Like post
         console.log('Liking post:', postId);
         const { error } = await supabase
-          .from('likes')
+          .from('post_likes')
           .insert({
             user_id: user.id,
             post_id: postId,
@@ -767,7 +767,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         // Reload posts for any post changes except optimistic like updates
         loadPosts();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, (payload: any) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'post_likes' }, (payload: any) => {
         console.log('Likes change detected:', payload);
         // When likes change, update the specific post's like count and status
         if (payload.eventType === 'INSERT' && payload.new) {
