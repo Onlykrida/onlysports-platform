@@ -1,5 +1,8 @@
--- Team Management System Schema
+-- Team Management System Schema (Corrected Version)
 -- For team/academy management features
+
+-- Enable required extensions
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Team Members (linking players to teams)
 CREATE TABLE IF NOT EXISTS team_members (
@@ -7,7 +10,7 @@ CREATE TABLE IF NOT EXISTS team_members (
   team_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   player_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('pending', 'active', 'inactive', 'removed')) DEFAULT 'pending',
-  jersey_number INTEGER,
+  jersey_number INTEGER CHECK (jersey_number BETWEEN 0 AND 999),
   joined_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   position TEXT,
   role TEXT DEFAULT 'player' CHECK (role IN ('player', 'captain', 'vice_captain')),
@@ -27,8 +30,14 @@ CREATE TABLE IF NOT EXISTS team_invitations (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   responded_at TIMESTAMP WITH TIME ZONE,
-  UNIQUE(team_id, player_id, status)
+  CHECK (
+    (status = 'pending' AND responded_at IS NULL) OR
+    (status IN ('accepted', 'rejected', 'cancelled') AND responded_at IS NOT NULL)
+  )
 );
+
+-- Create unique index for team_invitations (one invitation per player per team)
+CREATE UNIQUE INDEX IF NOT EXISTS team_invitations_team_player_idx ON team_invitations(team_id, player_id);
 
 -- Attendance Records
 CREATE TABLE IF NOT EXISTS attendance_records (
@@ -71,8 +80,8 @@ CREATE TABLE IF NOT EXISTS match_records (
   location TEXT,
   match_type TEXT NOT NULL CHECK (match_type IN ('friendly', 'league', 'cup', 'tournament')),
   result TEXT CHECK (result IN ('win', 'loss', 'draw', 'pending')),
-  team_score INTEGER,
-  opponent_score INTEGER,
+  team_score INTEGER CHECK (team_score >= 0),
+  opponent_score INTEGER CHECK (opponent_score >= 0),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -83,12 +92,12 @@ CREATE TABLE IF NOT EXISTS player_match_performance (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   match_id UUID REFERENCES match_records(id) ON DELETE CASCADE NOT NULL,
   player_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-  minutes_played INTEGER,
-  goals INTEGER DEFAULT 0,
-  assists INTEGER DEFAULT 0,
-  yellow_cards INTEGER DEFAULT 0,
-  red_cards INTEGER DEFAULT 0,
-  rating DECIMAL(3,1),
+  minutes_played INTEGER CHECK (minutes_played >= 0 AND minutes_played <= 200),
+  goals INTEGER DEFAULT 0 CHECK (goals >= 0),
+  assists INTEGER DEFAULT 0 CHECK (assists >= 0),
+  yellow_cards INTEGER DEFAULT 0 CHECK (yellow_cards >= 0),
+  red_cards INTEGER DEFAULT 0 CHECK (red_cards >= 0),
+  rating DECIMAL(3,1) CHECK (rating BETWEEN 0 AND 10),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -102,7 +111,7 @@ CREATE TABLE IF NOT EXISTS training_sessions (
   title TEXT NOT NULL,
   description TEXT,
   session_date TIMESTAMP WITH TIME ZONE NOT NULL,
-  duration_minutes INTEGER,
+  duration_minutes INTEGER CHECK (duration_minutes > 0),
   location TEXT,
   focus_areas TEXT[],
   created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -134,123 +143,232 @@ ALTER TABLE training_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE team_announcements ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for team_members
-DROP POLICY IF EXISTS "Team managers can view their team members" ON team_members;
-DROP POLICY IF EXISTS "Team managers can manage their team members" ON team_members;
+DROP POLICY IF EXISTS "team_members_select_policy" ON team_members;
+DROP POLICY IF EXISTS "team_members_insert_policy" ON team_members;
+DROP POLICY IF EXISTS "team_members_update_policy" ON team_members;
+DROP POLICY IF EXISTS "team_members_delete_policy" ON team_members;
 
-CREATE POLICY "Team managers can view their team members" ON team_members
-  FOR SELECT USING (
-    team_id = auth.uid() OR 
-    player_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('scout', 'coach'))
+CREATE POLICY "team_members_select_policy" ON team_members
+  FOR SELECT TO authenticated USING (
+    team_id = (SELECT auth.uid()) OR 
+    player_id = (SELECT auth.uid()) OR
+    EXISTS (SELECT 1 FROM profiles WHERE id = (SELECT auth.uid()) AND role IN ('scout', 'coach'))
   );
 
-CREATE POLICY "Team managers can manage their team members" ON team_members
-  FOR ALL USING (team_id = auth.uid());
+CREATE POLICY "team_members_insert_policy" ON team_members
+  FOR INSERT TO authenticated WITH CHECK (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "team_members_update_policy" ON team_members
+  FOR UPDATE TO authenticated USING (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "team_members_delete_policy" ON team_members
+  FOR DELETE TO authenticated USING (team_id = (SELECT auth.uid()));
 
 -- RLS Policies for team_invitations
-DROP POLICY IF EXISTS "Users can view their invitations" ON team_invitations;
-DROP POLICY IF EXISTS "Team managers can create invitations" ON team_invitations;
-DROP POLICY IF EXISTS "Team managers and players can update invitations" ON team_invitations;
+DROP POLICY IF EXISTS "team_invitations_select_policy" ON team_invitations;
+DROP POLICY IF EXISTS "team_invitations_insert_policy" ON team_invitations;
+DROP POLICY IF EXISTS "team_invitations_update_policy" ON team_invitations;
 
-CREATE POLICY "Users can view their invitations" ON team_invitations
-  FOR SELECT USING (player_id = auth.uid() OR team_id = auth.uid());
+CREATE POLICY "team_invitations_select_policy" ON team_invitations
+  FOR SELECT TO authenticated USING (
+    player_id = (SELECT auth.uid()) OR 
+    team_id = (SELECT auth.uid())
+  );
 
-CREATE POLICY "Team managers can create invitations" ON team_invitations
-  FOR INSERT WITH CHECK (team_id = auth.uid());
+CREATE POLICY "team_invitations_insert_policy" ON team_invitations
+  FOR INSERT TO authenticated WITH CHECK (team_id = (SELECT auth.uid()));
 
-CREATE POLICY "Team managers and players can update invitations" ON team_invitations
-  FOR UPDATE USING (team_id = auth.uid() OR player_id = auth.uid());
+CREATE POLICY "team_invitations_update_policy" ON team_invitations
+  FOR UPDATE TO authenticated USING (
+    team_id = (SELECT auth.uid()) OR 
+    player_id = (SELECT auth.uid())
+  );
 
 -- RLS Policies for attendance_records
-DROP POLICY IF EXISTS "Team members can view attendance" ON attendance_records;
-DROP POLICY IF EXISTS "Team managers can manage attendance" ON attendance_records;
+DROP POLICY IF EXISTS "attendance_select_policy" ON attendance_records;
+DROP POLICY IF EXISTS "attendance_insert_policy" ON attendance_records;
+DROP POLICY IF EXISTS "attendance_update_policy" ON attendance_records;
+DROP POLICY IF EXISTS "attendance_delete_policy" ON attendance_records;
 
-CREATE POLICY "Team members can view attendance" ON attendance_records
-  FOR SELECT USING (
-    team_id = auth.uid() OR 
-    player_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM team_members WHERE team_id = attendance_records.team_id AND player_id = auth.uid() AND status = 'active')
+CREATE POLICY "attendance_select_policy" ON attendance_records
+  FOR SELECT TO authenticated USING (
+    team_id = (SELECT auth.uid()) OR 
+    player_id = (SELECT auth.uid()) OR
+    EXISTS (
+      SELECT 1 FROM team_members 
+      WHERE team_id = attendance_records.team_id 
+      AND player_id = (SELECT auth.uid()) 
+      AND status = 'active'
+    )
   );
 
-CREATE POLICY "Team managers can manage attendance" ON attendance_records
-  FOR ALL USING (team_id = auth.uid());
+CREATE POLICY "attendance_insert_policy" ON attendance_records
+  FOR INSERT TO authenticated WITH CHECK (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "attendance_update_policy" ON attendance_records
+  FOR UPDATE TO authenticated USING (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "attendance_delete_policy" ON attendance_records
+  FOR DELETE TO authenticated USING (team_id = (SELECT auth.uid()));
 
 -- RLS Policies for injury_records
-DROP POLICY IF EXISTS "Team members can view injuries" ON injury_records;
-DROP POLICY IF EXISTS "Team managers can manage injuries" ON injury_records;
+DROP POLICY IF EXISTS "injury_select_policy" ON injury_records;
+DROP POLICY IF EXISTS "injury_insert_policy" ON injury_records;
+DROP POLICY IF EXISTS "injury_update_policy" ON injury_records;
+DROP POLICY IF EXISTS "injury_delete_policy" ON injury_records;
 
-CREATE POLICY "Team members can view injuries" ON injury_records
-  FOR SELECT USING (
-    team_id = auth.uid() OR 
-    player_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM team_members WHERE team_id = injury_records.team_id AND player_id = auth.uid() AND status = 'active')
+CREATE POLICY "injury_select_policy" ON injury_records
+  FOR SELECT TO authenticated USING (
+    team_id = (SELECT auth.uid()) OR 
+    player_id = (SELECT auth.uid()) OR
+    EXISTS (
+      SELECT 1 FROM team_members 
+      WHERE team_id = injury_records.team_id 
+      AND player_id = (SELECT auth.uid()) 
+      AND status = 'active'
+    )
   );
 
-CREATE POLICY "Team managers can manage injuries" ON injury_records
-  FOR ALL USING (team_id = auth.uid());
+CREATE POLICY "injury_insert_policy" ON injury_records
+  FOR INSERT TO authenticated WITH CHECK (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "injury_update_policy" ON injury_records
+  FOR UPDATE TO authenticated USING (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "injury_delete_policy" ON injury_records
+  FOR DELETE TO authenticated USING (team_id = (SELECT auth.uid()));
 
 -- RLS Policies for match_records
-DROP POLICY IF EXISTS "Team members can view matches" ON match_records;
-DROP POLICY IF EXISTS "Team managers can manage matches" ON match_records;
+DROP POLICY IF EXISTS "match_select_policy" ON match_records;
+DROP POLICY IF EXISTS "match_insert_policy" ON match_records;
+DROP POLICY IF EXISTS "match_update_policy" ON match_records;
+DROP POLICY IF EXISTS "match_delete_policy" ON match_records;
 
-CREATE POLICY "Team members can view matches" ON match_records
-  FOR SELECT USING (
-    team_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM team_members WHERE team_id = match_records.team_id AND player_id = auth.uid() AND status = 'active')
+CREATE POLICY "match_select_policy" ON match_records
+  FOR SELECT TO authenticated USING (
+    team_id = (SELECT auth.uid()) OR
+    EXISTS (
+      SELECT 1 FROM team_members 
+      WHERE team_id = match_records.team_id 
+      AND player_id = (SELECT auth.uid()) 
+      AND status = 'active'
+    )
   );
 
-CREATE POLICY "Team managers can manage matches" ON match_records
-  FOR ALL USING (team_id = auth.uid());
+CREATE POLICY "match_insert_policy" ON match_records
+  FOR INSERT TO authenticated WITH CHECK (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "match_update_policy" ON match_records
+  FOR UPDATE TO authenticated USING (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "match_delete_policy" ON match_records
+  FOR DELETE TO authenticated USING (team_id = (SELECT auth.uid()));
 
 -- RLS Policies for player_match_performance
-DROP POLICY IF EXISTS "Team members can view performance" ON player_match_performance;
-DROP POLICY IF EXISTS "Team managers can manage performance" ON player_match_performance;
+DROP POLICY IF EXISTS "performance_select_policy" ON player_match_performance;
+DROP POLICY IF EXISTS "performance_insert_policy" ON player_match_performance;
+DROP POLICY IF EXISTS "performance_update_policy" ON player_match_performance;
+DROP POLICY IF EXISTS "performance_delete_policy" ON player_match_performance;
 
-CREATE POLICY "Team members can view performance" ON player_match_performance
-  FOR SELECT USING (
-    player_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM match_records WHERE id = player_match_performance.match_id AND team_id = auth.uid())
+CREATE POLICY "performance_select_policy" ON player_match_performance
+  FOR SELECT TO authenticated USING (
+    player_id = (SELECT auth.uid()) OR
+    EXISTS (
+      SELECT 1 FROM match_records 
+      WHERE id = player_match_performance.match_id 
+      AND team_id = (SELECT auth.uid())
+    )
   );
 
-CREATE POLICY "Team managers can manage performance" ON player_match_performance
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM match_records WHERE id = player_match_performance.match_id AND team_id = auth.uid())
+CREATE POLICY "performance_insert_policy" ON player_match_performance
+  FOR INSERT TO authenticated WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM match_records 
+      WHERE id = match_id 
+      AND team_id = (SELECT auth.uid())
+    )
+  );
+
+CREATE POLICY "performance_update_policy" ON player_match_performance
+  FOR UPDATE TO authenticated USING (
+    EXISTS (
+      SELECT 1 FROM match_records 
+      WHERE id = player_match_performance.match_id 
+      AND team_id = (SELECT auth.uid())
+    )
+  );
+
+CREATE POLICY "performance_delete_policy" ON player_match_performance
+  FOR DELETE TO authenticated USING (
+    EXISTS (
+      SELECT 1 FROM match_records 
+      WHERE id = player_match_performance.match_id 
+      AND team_id = (SELECT auth.uid())
+    )
   );
 
 -- RLS Policies for training_sessions
-DROP POLICY IF EXISTS "Team members can view training sessions" ON training_sessions;
-DROP POLICY IF EXISTS "Team managers can manage training sessions" ON training_sessions;
+DROP POLICY IF EXISTS "training_select_policy" ON training_sessions;
+DROP POLICY IF EXISTS "training_insert_policy" ON training_sessions;
+DROP POLICY IF EXISTS "training_update_policy" ON training_sessions;
+DROP POLICY IF EXISTS "training_delete_policy" ON training_sessions;
 
-CREATE POLICY "Team members can view training sessions" ON training_sessions
-  FOR SELECT USING (
-    team_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM team_members WHERE team_id = training_sessions.team_id AND player_id = auth.uid() AND status = 'active')
+CREATE POLICY "training_select_policy" ON training_sessions
+  FOR SELECT TO authenticated USING (
+    team_id = (SELECT auth.uid()) OR
+    EXISTS (
+      SELECT 1 FROM team_members 
+      WHERE team_id = training_sessions.team_id 
+      AND player_id = (SELECT auth.uid()) 
+      AND status = 'active'
+    )
   );
 
-CREATE POLICY "Team managers can manage training sessions" ON training_sessions
-  FOR ALL USING (team_id = auth.uid());
+CREATE POLICY "training_insert_policy" ON training_sessions
+  FOR INSERT TO authenticated WITH CHECK (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "training_update_policy" ON training_sessions
+  FOR UPDATE TO authenticated USING (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "training_delete_policy" ON training_sessions
+  FOR DELETE TO authenticated USING (team_id = (SELECT auth.uid()));
 
 -- RLS Policies for team_announcements
-DROP POLICY IF EXISTS "Team members can view announcements" ON team_announcements;
-DROP POLICY IF EXISTS "Team managers can manage announcements" ON team_announcements;
+DROP POLICY IF EXISTS "announcements_select_policy" ON team_announcements;
+DROP POLICY IF EXISTS "announcements_insert_policy" ON team_announcements;
+DROP POLICY IF EXISTS "announcements_update_policy" ON team_announcements;
+DROP POLICY IF EXISTS "announcements_delete_policy" ON team_announcements;
 
-CREATE POLICY "Team members can view announcements" ON team_announcements
-  FOR SELECT USING (
-    team_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM team_members WHERE team_id = team_announcements.team_id AND player_id = auth.uid() AND status = 'active')
+CREATE POLICY "announcements_select_policy" ON team_announcements
+  FOR SELECT TO authenticated USING (
+    team_id = (SELECT auth.uid()) OR
+    EXISTS (
+      SELECT 1 FROM team_members 
+      WHERE team_id = team_announcements.team_id 
+      AND player_id = (SELECT auth.uid()) 
+      AND status = 'active'
+    )
   );
 
-CREATE POLICY "Team managers can manage announcements" ON team_announcements
-  FOR ALL USING (team_id = auth.uid());
+CREATE POLICY "announcements_insert_policy" ON team_announcements
+  FOR INSERT TO authenticated WITH CHECK (team_id = (SELECT auth.uid()));
 
--- Create function for updated_at if not exists
+CREATE POLICY "announcements_update_policy" ON team_announcements
+  FOR UPDATE TO authenticated USING (team_id = (SELECT auth.uid()));
+
+CREATE POLICY "announcements_delete_policy" ON team_announcements
+  FOR DELETE TO authenticated USING (team_id = (SELECT auth.uid()));
+
+-- Create function for updated_at trigger
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$ language 'plpgsql';
+$$;
 
 -- Create triggers for updated_at
 DROP TRIGGER IF EXISTS update_team_members_updated_at ON team_members;
@@ -293,42 +411,47 @@ CREATE TRIGGER update_team_announcements_updated_at
   BEFORE UPDATE ON team_announcements
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS team_members_team_id_idx ON team_members(team_id);
-CREATE INDEX IF NOT EXISTS team_members_player_id_idx ON team_members(player_id);
-CREATE INDEX IF NOT EXISTS team_members_status_idx ON team_members(status);
+-- Create composite and optimized indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_team_members_team_player ON team_members(team_id, player_id);
+CREATE INDEX IF NOT EXISTS idx_team_members_status ON team_members(status);
 
-CREATE INDEX IF NOT EXISTS team_invitations_team_id_idx ON team_invitations(team_id);
-CREATE INDEX IF NOT EXISTS team_invitations_player_id_idx ON team_invitations(player_id);
-CREATE INDEX IF NOT EXISTS team_invitations_status_idx ON team_invitations(status);
+CREATE INDEX IF NOT EXISTS idx_team_invitations_team_player ON team_invitations(team_id, player_id);
+CREATE INDEX IF NOT EXISTS idx_team_invitations_status ON team_invitations(status);
 
-CREATE INDEX IF NOT EXISTS attendance_records_team_id_idx ON attendance_records(team_id);
-CREATE INDEX IF NOT EXISTS attendance_records_player_id_idx ON attendance_records(player_id);
-CREATE INDEX IF NOT EXISTS attendance_records_session_date_idx ON attendance_records(session_date DESC);
+CREATE INDEX IF NOT EXISTS idx_attendance_team_player ON attendance_records(team_id, player_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_session_date ON attendance_records(session_date DESC);
+CREATE INDEX IF NOT EXISTS idx_attendance_team_date ON attendance_records(team_id, session_date DESC);
 
-CREATE INDEX IF NOT EXISTS injury_records_team_id_idx ON injury_records(team_id);
-CREATE INDEX IF NOT EXISTS injury_records_player_id_idx ON injury_records(player_id);
-CREATE INDEX IF NOT EXISTS injury_records_status_idx ON injury_records(status);
+CREATE INDEX IF NOT EXISTS idx_injury_team_player ON injury_records(team_id, player_id);
+CREATE INDEX IF NOT EXISTS idx_injury_status ON injury_records(status);
 
-CREATE INDEX IF NOT EXISTS match_records_team_id_idx ON match_records(team_id);
-CREATE INDEX IF NOT EXISTS match_records_match_date_idx ON match_records(match_date DESC);
+CREATE INDEX IF NOT EXISTS idx_match_team_date ON match_records(team_id, match_date DESC);
 
-CREATE INDEX IF NOT EXISTS training_sessions_team_id_idx ON training_sessions(team_id);
-CREATE INDEX IF NOT EXISTS training_sessions_session_date_idx ON training_sessions(session_date DESC);
+CREATE INDEX IF NOT EXISTS idx_performance_match_player ON player_match_performance(match_id, player_id);
 
-CREATE INDEX IF NOT EXISTS team_announcements_team_id_idx ON team_announcements(team_id);
-CREATE INDEX IF NOT EXISTS team_announcements_created_at_idx ON team_announcements(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_training_team_date ON training_sessions(team_id, session_date DESC);
 
--- Grant permissions
-GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+CREATE INDEX IF NOT EXISTS idx_announcements_team_created ON team_announcements(team_id, created_at DESC);
+
+-- Grant limited permissions (not ALL)
+GRANT SELECT, INSERT, UPDATE, DELETE ON team_members TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON team_invitations TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON attendance_records TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON injury_records TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON match_records TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON player_match_performance TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON training_sessions TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON team_announcements TO authenticated;
+
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
 -- Success notification
 DO $$
 BEGIN
-  RAISE NOTICE '✅ Team Management System setup completed!';
-  RAISE NOTICE '📋 Tables created for roster, attendance, injuries, matches, and announcements';
-  RAISE NOTICE '🔒 RLS policies enabled for security';
-  RAISE NOTICE '⚡ Indexes created for performance';
-  RAISE NOTICE '🎯 Ready to use with team management features!';
+  RAISE NOTICE 'Team Management System setup completed successfully!';
+  RAISE NOTICE 'Tables created: team_members, team_invitations, attendance_records, injury_records';
+  RAISE NOTICE 'Tables created: match_records, player_match_performance, training_sessions, team_announcements';
+  RAISE NOTICE 'RLS policies enabled with proper security';
+  RAISE NOTICE 'Optimized indexes created for performance';
+  RAISE NOTICE 'Ready to use with team management features!';
 END $$;
