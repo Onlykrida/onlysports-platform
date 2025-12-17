@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, Search, User, PlusCircle, MessageCircle } from "lucide-react-native";
+import { Home, Search, User, PlusCircle, MessageCircle, Briefcase } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/hooks/auth-context";
 import { theme } from "@/constants/theme";
@@ -61,6 +61,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="opportunities"
+        options={{
+          title: 'Opportunities',
+          tabBarIcon: ({ color, size }) => <Briefcase size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="messages"
         options={{
           title: 'Messages',
@@ -73,12 +80,6 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="opportunities"
-        options={{
-          href: null,
         }}
       />
       <Tabs.Screen
