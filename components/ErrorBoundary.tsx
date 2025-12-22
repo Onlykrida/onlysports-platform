@@ -18,47 +18,13 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
   }
 
   static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
-    let message = 'Unknown error';
-    
-    if (error instanceof Error) {
-      message = error.message;
-      
-      // Handle specific Expo update errors
-      if (message.includes('Remote update request not successful') || 
-          message.includes('java.io.IOException')) {
-        message = 'Unable to check for updates. The app will continue working offline.';
-      }
-    } else if (typeof error === 'string') {
-      message = error;
-    }
-    
+    const message = error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
     return { hasError: true, errorMessage: message };
   }
 
   componentDidCatch(error: unknown, info: React.ErrorInfo) {
     console.error('[ErrorBoundary] Caught error:', error, info);
-    
-    // Handle update-related errors gracefully
-    if (error instanceof Error && 
-        (error.message.includes('Remote update request') || 
-         error.message.includes('java.io.IOException'))) {
-      console.log('[ErrorBoundary] Update check failed, continuing with cached version');
-      // Try to reload the app with cached version
-      this.handleReloadWithCache();
-    }
   }
-
-  handleReloadWithCache = async () => {
-    try {
-      // Just reset the error state to let the app continue
-      // In Expo Go, we can't use Updates module
-      this.setState({ hasError: false, errorMessage: null });
-    } catch (reloadError) {
-      console.error('[ErrorBoundary] Failed to recover:', reloadError);
-      // Reset error state anyway to let the app continue
-      this.setState({ hasError: false, errorMessage: null });
-    }
-  };
 
   handleReset = () => {
     this.setState({ hasError: false, errorMessage: null });
@@ -66,24 +32,6 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
 
   render() {
     if (this.state.hasError) {
-      // Check if it's an update error - if so, auto-recover
-      const isUpdateError = this.state.errorMessage?.includes('update') || 
-                           this.state.errorMessage?.includes('offline');
-      
-      if (isUpdateError) {
-        // Auto-recover from update errors
-        setTimeout(() => {
-          this.handleReset();
-        }, 100);
-        
-        return (
-          <View style={styles.container} testID="error-boundary">
-            <Text style={styles.title}>Loading...</Text>
-            <Text style={styles.message}>Starting app in offline mode</Text>
-          </View>
-        );
-      }
-      
       return (
         <View style={styles.container} testID="error-boundary">
           <Text style={styles.title}>Something went wrong</Text>

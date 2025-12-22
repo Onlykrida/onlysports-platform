@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -46,7 +46,7 @@ interface OpportunityData {
 
 export default function CreateOpportunityScreen() {
   const { user } = useAuth();
-  const { refreshOpportunities, createOpportunity } = useOpportunities();
+  const { refreshOpportunities } = useOpportunities();
   const [showCategoryModal, setShowCategoryModal] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -120,8 +120,8 @@ export default function CreateOpportunityScreen() {
     }));
   };
 
-  const handleCreateOpportunity = useCallback(async () => {
-    if (!opportunityData.category || !opportunityData.title.trim() || !opportunityData.description.trim() || !opportunityData.location.trim()) {
+  const handleCreateOpportunity = async () => {
+    if (!opportunityData.category || !opportunityData.title.trim() || !opportunityData.description.trim()) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -133,57 +133,7 @@ export default function CreateOpportunityScreen() {
 
     try {
       setIsCreating(true);
-      console.log('[CreateOpportunity] creating with data:', opportunityData);
-
-      const categoryToType: Record<NonNullable<OpportunityData['category']>, 'tryout' | 'tournament' | 'sponsorship' | 'scholarship'> = {
-        tryouts: 'tryout',
-        tournaments: 'tournament',
-        sponsorships: 'sponsorship',
-        scholarships: 'scholarship',
-        contracts: 'tryout',
-      };
-
-      const paid = opportunityData.type.includes('paid');
-
-      const requirementsArray = opportunityData.requirements
-        ? opportunityData.requirements
-            .split(/\n|,/)
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-        : [];
-
-      let deadlineISO = '';
-      if (opportunityData.deadline && opportunityData.deadline.trim().length > 0) {
-        const d = new Date(opportunityData.deadline);
-        if (!isNaN(d.getTime())) {
-          deadlineISO = d.toISOString().slice(0, 10);
-        } else {
-          Alert.alert('Invalid deadline', 'Please enter a valid date for the deadline (e.g., 2025-03-15).');
-          setIsCreating(false);
-          return;
-        }
-      } else {
-        const d = new Date();
-        deadlineISO = d.toISOString().slice(0, 10);
-      }
-
-      const payload = {
-        title: opportunityData.title.trim(),
-        description: opportunityData.description.trim(),
-        type: categoryToType[opportunityData.category],
-        sport: opportunityData.skillLevel?.trim() ? opportunityData.skillLevel.trim() : 'General',
-        location: opportunityData.location.trim(),
-        deadline: deadlineISO,
-        requirements: requirementsArray,
-        paid,
-      } as const;
-
-      const res = await createOpportunity(payload as any);
-      if (res?.error) {
-        Alert.alert('Error', res.error ?? 'Failed to create opportunity');
-        return;
-      }
-
+      console.log('Creating opportunity:', opportunityData);
       Alert.alert('Success', 'Your opportunity has been posted!', [
         {
           text: 'OK',
@@ -200,7 +150,7 @@ export default function CreateOpportunityScreen() {
     } finally {
       setIsCreating(false);
     }
-  }, [opportunityData, user, createOpportunity, refreshOpportunities]);
+  };
 
   const resetOpportunityData = () => {
     setOpportunityData({
@@ -359,7 +309,6 @@ export default function CreateOpportunityScreen() {
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.title}
                   onChangeText={(text) => setOpportunityData(prev => ({ ...prev, title: text }))}
-                  testID="input-title"
                 />
                 
                 <TextInput
@@ -370,7 +319,6 @@ export default function CreateOpportunityScreen() {
                   value={opportunityData.description}
                   onChangeText={(text) => setOpportunityData(prev => ({ ...prev, description: text }))}
                   textAlignVertical="top"
-                  testID="input-description"
                 />
                 
                 <TextInput
@@ -379,17 +327,14 @@ export default function CreateOpportunityScreen() {
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.location}
                   onChangeText={(text) => setOpportunityData(prev => ({ ...prev, location: text }))}
-                  testID="input-location"
                 />
                 
                 <TextInput
                   style={styles.input}
-                  placeholder="Deadline (YYYY-MM-DD)"
+                  placeholder="Deadline (e.g., March 15, 2024)"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.deadline}
                   onChangeText={(text) => setOpportunityData(prev => ({ ...prev, deadline: text }))}
-                  keyboardType="numbers-and-punctuation"
-                  testID="input-deadline"
                 />
               </View>
 
@@ -406,11 +351,10 @@ export default function CreateOpportunityScreen() {
                   />
                   <TextInput
                     style={styles.input}
-                    placeholder="Sport (e.g., Soccer)"
+                    placeholder="Skill Level Required"
                     placeholderTextColor={theme.colors.textSecondary}
                     value={opportunityData.skillLevel}
                     onChangeText={(text) => setOpportunityData(prev => ({ ...prev, skillLevel: text }))}
-                    testID="input-sport"
                   />
                 </View>
               )}
@@ -461,13 +405,12 @@ export default function CreateOpportunityScreen() {
                 
                 <TextInput
                   style={[styles.input, styles.textArea]}
-                  placeholder="Requirements (comma or newline separated)"
+                  placeholder="Requirements"
                   placeholderTextColor={theme.colors.textSecondary}
                   multiline
                   value={opportunityData.requirements}
                   onChangeText={(text) => setOpportunityData(prev => ({ ...prev, requirements: text }))}
                   textAlignVertical="top"
-                  testID="input-requirements"
                 />
                 
                 <TextInput
@@ -476,7 +419,6 @@ export default function CreateOpportunityScreen() {
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.contactInfo}
                   onChangeText={(text) => setOpportunityData(prev => ({ ...prev, contactInfo: text }))}
-                  testID="input-contact"
                 />
                 
                 <TextInput
@@ -487,12 +429,10 @@ export default function CreateOpportunityScreen() {
                   value={opportunityData.additionalInfo}
                   onChangeText={(text) => setOpportunityData(prev => ({ ...prev, additionalInfo: text }))}
                   textAlignVertical="top"
-                  testID="input-notes"
                 />
               </View>
 
               <TouchableOpacity
-                testID="btn-publish-opportunity"
                 style={[
                   styles.submitButton,
                   (!opportunityData.title.trim() || !opportunityData.description.trim()) && styles.submitButtonDisabled

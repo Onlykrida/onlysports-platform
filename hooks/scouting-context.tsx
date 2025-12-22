@@ -51,8 +51,6 @@ type RecommendResult = {
   recommendations: AIRecommendationRow[];
 };
 
-
-
 interface ScoutingState {
   isReady: boolean;
   isComputing: boolean;
@@ -61,7 +59,6 @@ interface ScoutingState {
   computeForScout: (scoutId: string) => Promise<RecommendResult>;
   getTopForScout: (scoutId: string, limit?: number) => Promise<AIRecommendationRow[]>;
   getInterestedForPlayer: (playerId: string, threshold?: number) => Promise<{ scout: User; rec: AIRecommendationRow }[]>;
-
   refresh: () => Promise<void>;
 }
 
@@ -293,8 +290,6 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     }
   }, [users, topRecommendations, persistCache]);
 
-
-
   const refresh = useCallback(async () => {
     await loadCache();
     if (currentUser?.role === 'scout') {
@@ -349,7 +344,6 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     computeForScout,
     getTopForScout,
     getInterestedForPlayer,
-
     refresh,
   }), [isReady, isComputing, topRecommendations, interestedScouts, computeForScout, getTopForScout, getInterestedForPlayer, refresh]);
 });

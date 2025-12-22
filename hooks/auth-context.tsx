@@ -5,7 +5,7 @@ import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { router } from 'expo-router';
 
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 
 interface AuthState {
   user: User | null;
@@ -219,7 +219,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
               achievements: newProfile.achievements || [],
               stats: newProfile.stats || {},
               roleSpecificData: newProfile.role_specific_data || {},
-              resumeUrl: newProfile.resume_url,
               createdAt: new Date(newProfile.created_at),
             };
             setUser(user);
@@ -260,7 +259,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           achievements: profile.achievements || [],
           stats: profile.stats || {},
           roleSpecificData: profile.role_specific_data || {},
-          resumeUrl: profile.resume_url,
           createdAt: new Date(profile.created_at),
         };
         setUser(user);
@@ -523,7 +521,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         }
         if (/^(file:\/\/|content:\/\/)/i.test(uri)) {
           try {
-            const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+            const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
             const dataUrl = `data:${mimeGuess};base64,${base64}`;
             const r = await fetch(dataUrl);
             return await r.blob();
@@ -564,40 +562,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         }
       }
 
-      let resumeUrl: string | undefined = updates.resumeUrl;
-      const inputResume: string | undefined = typeof updates.resumeUrl === 'string' ? updates.resumeUrl : undefined;
-      const isResumeLocal = !!inputResume && /^(file:\/\/|content:\/\/)/i.test(inputResume);
-
-      if (isResumeLocal && inputResume) {
-        try {
-          const filenameFromUri = inputResume.split('?')[0]?.split('/').pop() ?? `resume-${Date.now()}.pdf`;
-          const path = `resumes/${userId}/${Date.now()}-${filenameFromUri}`;
-
-          const base64 = await FileSystem.readAsStringAsync(inputResume, { encoding: 'base64' });
-          const dataUrl = `data:application/pdf;base64,${base64}`;
-          const response = await fetch(dataUrl);
-          const blob = await response.blob();
-
-          const { error: uploadError } = await supabase
-            .storage
-            .from('resumes')
-            .upload(path, blob, { contentType: 'application/pdf', upsert: false });
-
-          if (!uploadError) {
-            const { data: pub } = supabase.storage.from('resumes').getPublicUrl(path);
-            const publicUrl: string | undefined = (pub && (pub as any).publicUrl) || undefined;
-            resumeUrl = publicUrl ?? inputResume;
-            console.log('Resume uploaded to storage successfully:', { path, publicUrl });
-          } else {
-            console.warn('Resume storage upload failed, keeping local URI', uploadError);
-            resumeUrl = inputResume;
-          }
-        } catch (e) {
-          console.warn('Resume upload exception, keeping local URI', e);
-          resumeUrl = inputResume;
-        }
-      }
-
       const payload: Record<string, any> = {
         name: updates.name,
         bio: updates.bio,
@@ -609,7 +573,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         stats: updates.stats,
         role: updates.role,
         role_specific_data: updates.roleSpecificData,
-        resume_url: resumeUrl,
       };
 
       Object.keys(payload).forEach((k) => {
@@ -630,7 +593,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
       }
 
       if (user && user.id === userId) {
-        const updatedUser = { ...user, ...updates, avatar: avatarUrl ?? updates.avatar, resumeUrl: resumeUrl ?? updates.resumeUrl };
+        const updatedUser = { ...user, ...updates, avatar: avatarUrl ?? updates.avatar };
         setUser(updatedUser);
       } else {
         const { data: sessionData } = await supabase.auth.getSession();

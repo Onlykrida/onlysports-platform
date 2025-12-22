@@ -50,7 +50,7 @@ export default function LoginScreen() {
       if (result.error) {
         setErrors({ general: result.error });
       } else {
-        router.replace('/');
+        router.replace('/(tabs)');
       }
     } catch (error) {
       console.error('Login error:', error);

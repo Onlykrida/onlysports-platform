@@ -32,8 +32,6 @@ export default function DiscoverScreen() {
   const [showSearchResults, setShowSearchResults] = useState<boolean>(false);
   const [usersError, setUsersError] = useState<string | null>(null);
   const [hasInitializedFilters, setHasInitializedFilters] = useState<boolean>(false);
-  const [showFilters, setShowFilters] = useState<boolean>(true);
-  const [locationQuery, setLocationQuery] = useState<string>('');
 
   const { 
     searchResults, 
@@ -136,6 +134,7 @@ export default function DiscoverScreen() {
   }, [cachedUsers]);
 
   const filteredUsers = useMemo(() => {
+    // First deduplicate users by ID and exclude current user
     const uniqueUsers = users.reduce((acc, user) => {
       if (!acc.has(user.id) && user.id !== currentUser?.id) {
         acc.set(user.id, user);
@@ -153,19 +152,16 @@ export default function DiscoverScreen() {
         user.role.toLowerCase().includes(q);
       const matchesSport = !selectedSport || user.sport === selectedSport;
       const matchesRole = !selectedRole || user.role === selectedRole;
-
-      // Location filter applies primarily to athletes
-      const locationQ = locationQuery.trim().toLowerCase();
-      const matchesLocation = locationQ.length === 0
-        ? true
-        : (user.role === 'athlete' && (user.location?.toLowerCase().includes(locationQ) ?? false));
       
+      // Additional smart filtering based on current user's role
       let isRelevantMatch = true;
       if (currentUser) {
+        // If current user is a scout, prioritize athletes in their sport
         if (currentUser.role === 'scout' && user.role === 'athlete') {
           const scoutData = currentUser.roleSpecificData;
           if (scoutData?.scoutingRegions && user.location) {
-            const matchesRegion = scoutData.scoutingRegions.some((region: string) => 
+            // Check if user's location matches scout's regions
+            const matchesRegion = scoutData.scoutingRegions.some(region => 
               user.location?.toLowerCase().includes(region.toLowerCase())
             );
             if (!matchesRegion && scoutData.scoutingRegions.length > 0) {
@@ -175,9 +171,9 @@ export default function DiscoverScreen() {
         }
       }
       
-      return matchesSearch && matchesSport && matchesRole && matchesLocation && isRelevantMatch;
+      return matchesSearch && matchesSport && matchesRole && isRelevantMatch;
     });
-  }, [users, localSearchQuery, selectedSport, selectedRole, currentUser, locationQuery]);
+  }, [users, localSearchQuery, selectedSport, selectedRole, currentUser]);
 
   const isInitialLoading = useMemo(() => {
     return (isLoadingUsers || usersIsLoading) && users.length === 0 && !usersError;
@@ -457,15 +453,8 @@ export default function DiscoverScreen() {
               <Text style={styles.clearButtonText}>✕</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity 
-            style={styles.filterButton}
-            onPress={() => {
-              console.log('Discover: toggle filters', { next: !showFilters });
-              setShowFilters((prev) => !prev);
-            }}
-            testID="discover-toggle-filters"
-          >
-            <Filter size={20} color={showFilters ? theme.colors.primary : theme.colors.textSecondary} />
+          <TouchableOpacity style={styles.filterButton}>
+            <Filter size={20} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -502,106 +491,82 @@ export default function DiscoverScreen() {
         </View>
       ) : (
         <>
-          {showFilters && (
-            <View style={styles.filtersContainer}>
-              {/* Role Filter */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.roleFilter}
-                contentContainerStyle={styles.filterContent}
-              >
+          {/* Role Filter */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.roleFilter}
+            contentContainerStyle={styles.filterContent}
+          >
+            <TouchableOpacity
+              style={[styles.filterChip, !selectedRole && styles.filterChipActive]}
+              onPress={() => setSelectedRole(null)}
+            >
+              <Text style={[styles.filterChipText, !selectedRole && styles.filterChipTextActive]}>
+                All Roles
+              </Text>
+            </TouchableOpacity>
+            {['athlete', 'scout', 'coach', 'trainer'].map((role) => {
+              // Show recommended badge for roles that match user's likely interests
+              const isRecommended = currentUser && (
+                (currentUser.role === 'scout' && role === 'athlete') ||
+                (currentUser.role === 'athlete' && (role === 'scout' || role === 'coach' || role === 'trainer')) ||
+                (currentUser.role === 'coach' && role === 'athlete') ||
+                (currentUser.role === 'trainer' && role === 'athlete')
+              );
+              
+              return (
                 <TouchableOpacity
-                  style={[styles.filterChip, !selectedRole && styles.filterChipActive]}
-                  onPress={() => setSelectedRole(null)}
+                  key={role}
+                  style={[styles.filterChip, selectedRole === role && styles.filterChipActive]}
+                  onPress={() => setSelectedRole(role)}
                 >
-                  <Text style={[styles.filterChipText, !selectedRole && styles.filterChipTextActive]}>
-                    All Roles
+                  <Text style={[styles.filterChipText, selectedRole === role && styles.filterChipTextActive]}>
+                    {role.charAt(0).toUpperCase() + role.slice(1)}s
+                    {isRecommended && selectedRole !== role && (
+                      <Text style={styles.recommendedBadge}> ⭐</Text>
+                    )}
                   </Text>
                 </TouchableOpacity>
-                {['athlete', 'scout', 'coach', 'trainer'].map((role) => {
-                  const isRecommended = currentUser && (
-                    (currentUser.role === 'scout' && role === 'athlete') ||
-                    (currentUser.role === 'athlete' && (role === 'scout' || role === 'coach' || role === 'trainer')) ||
-                    (currentUser.role === 'coach' && role === 'athlete') ||
-                    (currentUser.role === 'trainer' && role === 'athlete')
-                  );
-                  
-                  return (
-                    <TouchableOpacity
-                      key={role}
-                      style={[styles.filterChip, selectedRole === role && styles.filterChipActive]}
-                      onPress={() => setSelectedRole(role)}
-                    >
-                      <Text style={[styles.filterChipText, selectedRole === role && styles.filterChipTextActive]}>
-                        {role === 'coach' ? 'Coaches' : role.charAt(0).toUpperCase() + role.slice(1) + 's'}
-                        {isRecommended && selectedRole !== role && (
-                          <Text style={styles.recommendedBadge}> ⭐</Text>
-                        )}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+              );
+            })}
+          </ScrollView>
 
-              {/* Sports Filter */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.sportsFilter}
-                contentContainerStyle={styles.filterContent}
-              >
+          {/* Sports Filter */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.sportsFilter}
+            contentContainerStyle={styles.filterContent}
+          >
+            <TouchableOpacity
+              style={[styles.filterChip, !selectedSport && styles.filterChipActive]}
+              onPress={() => setSelectedSport(null)}
+            >
+              <Text style={[styles.filterChipText, !selectedSport && styles.filterChipTextActive]}>
+                All Sports
+              </Text>
+            </TouchableOpacity>
+            {sports.map((sport) => {
+              // Show recommended badge for user's sport
+              const isUserSport = currentUser?.sport === sport;
+              
+              return (
                 <TouchableOpacity
-                  style={[styles.filterChip, !selectedSport && styles.filterChipActive]}
-                  onPress={() => setSelectedSport(null)}
+                  key={sport}
+                  style={[styles.filterChip, selectedSport === sport && styles.filterChipActive]}
+                  onPress={() => setSelectedSport(sport)}
                 >
-                  <Text style={[styles.filterChipText, !selectedSport && styles.filterChipTextActive]}>
-                    All Sports
+                  <Text style={[styles.filterChipText, selectedSport === sport && styles.filterChipTextActive]}>
+                    {sport}
+                    {isUserSport && selectedSport !== sport && (
+                      <Text style={styles.recommendedBadge}> 🏆</Text>
+                    )}
                   </Text>
                 </TouchableOpacity>
-                {sports.map((sport) => {
-                  const isUserSport = currentUser?.sport === sport;
-                  
-                  return (
-                    <TouchableOpacity
-                      key={sport}
-                      style={[styles.filterChip, selectedSport === sport && styles.filterChipActive]}
-                      onPress={() => setSelectedSport(sport)}
-                    >
-                      <Text style={[styles.filterChipText, selectedSport === sport && styles.filterChipTextActive]}>
-                        {sport}
-                        {isUserSport && selectedSport !== sport && (
-                          <Text style={styles.recommendedBadge}> 🏆</Text>
-                        )}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-
-              {/* Location Filter */}
-              <View style={styles.locationFilter}>
-                <MapPin size={16} color={theme.colors.textSecondary} />
-                <TextInput
-                  style={styles.locationInput}
-                  placeholder="Filter athletes by location (city, state, region)"
-                  value={locationQuery}
-                  onChangeText={setLocationQuery}
-                  placeholderTextColor={theme.colors.textSecondary}
-                  testID="discover-location-input"
-                />
-                {locationQuery.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => setLocationQuery('')}
-                    style={styles.clearLocationButton}
-                    testID="discover-location-clear"
-                  >
-                    <Text style={styles.clearButtonText}>✕</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          )}
+              );
+            })}
+          </ScrollView>
 
           {isInitialLoading ? (
             <View style={styles.loadingContainer}>
@@ -729,37 +694,15 @@ const styles = StyleSheet.create({
   filterButton: {
     padding: theme.spacing.xs,
   },
-  locationFilter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    gap: theme.spacing.sm,
-  },
-  clearLocationButton: {
-    padding: theme.spacing.xs,
-  },
-  locationInput: {
-    flex: 1,
-    fontSize: theme.fontSize.md,
-    color: theme.colors.text,
-    paddingVertical: theme.spacing.xs,
-  },
-  filtersContainer: {
-    backgroundColor: theme.colors.surface,
-  },
   roleFilter: {
     backgroundColor: theme.colors.surface,
+    maxHeight: 60,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
   sportsFilter: {
     backgroundColor: theme.colors.surface,
+    maxHeight: 60,
   },
   filterContent: {
     paddingHorizontal: theme.spacing.md,

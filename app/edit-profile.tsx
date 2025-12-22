@@ -8,16 +8,15 @@ import {
   Alert,
   Image,
 } from 'react-native';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
-import { Save, X, Camera, Plus, Trash2, FileText, Upload } from 'lucide-react-native';
+import { Save, X, Camera, Plus, Trash2 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Achievement } from '@/types';
 import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
 
 const SPORTS = [
   'Football', 'Basketball', 'Soccer', 'Baseball', 'Tennis', 'Golf',
@@ -51,10 +50,7 @@ export default function EditProfileScreen() {
     avatar: user?.avatar || '',
     coverPhoto: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200',
     roleSpecificData: user?.roleSpecificData || {},
-    resumeUrl: user?.resumeUrl || '',
   });
-  const [resumeFileName, setResumeFileName] = useState<string>('');
-  const [isUploadingResume, setIsUploadingResume] = useState(false);
 
   const [newAchievement, setNewAchievement] = useState({
     title: '',
@@ -69,9 +65,9 @@ export default function EditProfileScreen() {
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <Text style={{ color: theme.colors.white }}>Please log in to edit your profile</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <Text>Please log in to edit your profile</Text>
+      </SafeAreaView>
     );
   }
 
@@ -123,47 +119,6 @@ export default function EditProfileScreen() {
     }
   };
 
-  const pickResume = async () => {
-    try {
-      setIsUploadingResume(true);
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const file = result.assets[0];
-        console.log('Selected resume file:', file.name, file.uri);
-        setFormData(prev => ({ ...prev, resumeUrl: file.uri }));
-        setResumeFileName(file.name);
-        Alert.alert('Success', 'Resume selected. Save your profile to upload it.');
-      }
-    } catch (error) {
-      console.error('Error picking resume:', error);
-      Alert.alert('Error', 'Failed to select resume. Please try again.');
-    } finally {
-      setIsUploadingResume(false);
-    }
-  };
-
-  const removeResume = () => {
-    Alert.alert(
-      'Remove Resume',
-      'Are you sure you want to remove your resume?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => {
-            setFormData(prev => ({ ...prev, resumeUrl: '' }));
-            setResumeFileName('');
-          },
-        },
-      ]
-    );
-  };
-
   const handleSave = async () => {
     if (!formData.name.trim()) {
       Alert.alert('Error', 'Name is required');
@@ -174,7 +129,6 @@ export default function EditProfileScreen() {
     try {
       const result = await updateProfile({
         ...formData,
-        resumeUrl: formData.resumeUrl,
         roleSpecificData: formData.roleSpecificData
       });
       if (result.error) {
@@ -374,21 +328,13 @@ export default function EditProfileScreen() {
   const availablePositions = formData.sport ? (POSITIONS[formData.sport as keyof typeof POSITIONS] || POSITIONS.Other) : POSITIONS.Other;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Stack.Screen 
         options={{
           title: 'Edit Profile',
-          headerStyle: {
-            backgroundColor: theme.colors.white,
-          },
-          headerTintColor: theme.colors.black,
-          headerTitleStyle: {
-            fontWeight: theme.fontWeight.black,
-            fontSize: theme.fontSize.lg,
-          },
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-              <X size={24} color={theme.colors.black} />
+              <X size={24} color={theme.colors.text} />
             </TouchableOpacity>
           ),
           headerRight: () => (
@@ -601,51 +547,6 @@ export default function EditProfileScreen() {
           )}
         </View>
 
-        {/* CV/Resume Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>CV / Resume</Text>
-          <Text style={styles.sectionSubtitle}>Upload your resume as a PDF file</Text>
-          
-          {formData.resumeUrl ? (
-            <View style={styles.resumeContainer}>
-              <View style={styles.resumeInfo}>
-                <FileText size={24} color={theme.colors.primary} />
-                <View style={styles.resumeDetails}>
-                  <Text style={styles.resumeFileName} numberOfLines={1}>
-                    {resumeFileName || 'Resume.pdf'}
-                  </Text>
-                  <Text style={styles.resumeStatus}>PDF Document</Text>
-                </View>
-              </View>
-              <View style={styles.resumeActions}>
-                <TouchableOpacity 
-                  style={styles.resumeActionButton}
-                  onPress={pickResume}
-                >
-                  <Upload size={18} color={theme.colors.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.resumeActionButton}
-                  onPress={removeResume}
-                >
-                  <Trash2 size={18} color={theme.colors.danger} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <TouchableOpacity 
-              style={styles.uploadResumeButton}
-              onPress={pickResume}
-              disabled={isUploadingResume}
-            >
-              <Upload size={20} color={theme.colors.primary} />
-              <Text style={styles.uploadResumeText}>
-                {isUploadingResume ? 'Selecting...' : 'Upload Resume (PDF)'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
         {/* Stats */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -707,28 +608,26 @@ export default function EditProfileScreen() {
           )}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.black,
+    backgroundColor: theme.colors.background,
   },
   headerButton: {
     padding: theme.spacing.sm,
   },
   scrollContent: {
     paddingBottom: theme.spacing.xl,
-    backgroundColor: theme.colors.black,
   },
   avatarSection: {
     alignItems: 'center',
     padding: theme.spacing.lg,
-    marginTop: -50,
-    marginBottom: theme.spacing.lg,
-    backgroundColor: theme.colors.black,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   avatarContainer: {
     position: 'relative',
@@ -737,9 +636,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#2a2a2a',
-    borderWidth: 3,
-    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.surface,
   },
   cameraButton: {
     position: 'absolute',
@@ -748,25 +645,16 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.full,
     padding: theme.spacing.sm,
-    borderWidth: 3,
-    borderColor: theme.colors.black,
   },
   avatarText: {
-    fontSize: theme.fontSize.xs,
+    fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.sm,
-    fontWeight: theme.fontWeight.bold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   section: {
     padding: theme.spacing.md,
-    backgroundColor: '#1a1a1a',
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: '#333',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -775,12 +663,9 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   sectionTitle: {
-    fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.black,
-    color: theme.colors.white,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: theme.spacing.sm,
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
   },
   addButton: {
     padding: theme.spacing.xs,
@@ -795,45 +680,45 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
-    color: theme.colors.white,
+    color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
   picker: {
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: theme.colors.surface,
   },
   pickerText: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.white,
+    color: theme.colors.text,
   },
   placeholderText: {
     color: theme.colors.textSecondary,
   },
   pickerOptions: {
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: theme.colors.surface,
     marginTop: theme.spacing.xs,
     maxHeight: 200,
   },
   pickerOption: {
     padding: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: theme.colors.border,
   },
   pickerOptionText: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.white,
+    color: theme.colors.text,
   },
   achievementItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: theme.spacing.md,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: theme.colors.surface,
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.sm,
@@ -847,7 +732,7 @@ const styles = StyleSheet.create({
   achievementTitle: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.white,
+    color: theme.colors.text,
   },
   achievementDescription: {
     fontSize: theme.fontSize.sm,
@@ -863,7 +748,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xs,
   },
   addForm: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: theme.colors.surface,
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     marginTop: theme.spacing.sm,
@@ -885,7 +770,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#2a2a2a',
+    backgroundColor: theme.colors.surface,
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     alignItems: 'center',
@@ -907,7 +792,8 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs,
   },
   coverSection: {
-    marginBottom: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   coverImageContainer: {
     position: 'relative',
@@ -932,65 +818,5 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
-  },
-  sectionSubtitle: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.md,
-  },
-  resumeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#2a2a2a',
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  resumeInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: theme.spacing.md,
-  },
-  resumeDetails: {
-    flex: 1,
-  },
-  resumeFileName: {
-    fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.medium,
-    color: theme.colors.white,
-  },
-  resumeStatus: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    marginTop: 2,
-  },
-  resumeActions: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-  },
-  resumeActionButton: {
-    padding: theme.spacing.sm,
-    backgroundColor: theme.colors.black,
-    borderRadius: theme.borderRadius.sm,
-  },
-  uploadResumeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.sm,
-    backgroundColor: '#2a2a2a',
-    padding: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 2,
-    borderColor: '#333',
-    borderStyle: 'dashed',
-  },
-  uploadResumeText: {
-    fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.medium,
-    color: theme.colors.primary,
   },
 });

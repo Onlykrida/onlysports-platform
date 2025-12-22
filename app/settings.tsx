@@ -279,7 +279,6 @@ export default function SettingsScreen() {
         },
       ],
     },
-
     {
       title: 'Account Actions',
       items: [

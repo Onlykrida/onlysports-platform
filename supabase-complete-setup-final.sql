@@ -1,45 +1,13 @@
--- OnlySports Ultimate Clean Database Setup Script
--- This script completely resets and creates all necessary tables, policies, functions, and triggers
+-- OnlySports Complete Database Setup Script
+-- This script creates all necessary tables, policies, functions, and triggers
 -- Run this in your Supabase SQL Editor
 
 -- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Drop all existing triggers first (to avoid dependency issues)
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users CASCADE;
-DROP TRIGGER IF EXISTS on_like_change ON public.likes CASCADE;
-DROP TRIGGER IF EXISTS on_comment_change ON public.comments CASCADE;
-DROP TRIGGER IF EXISTS on_follow_change ON public.follows CASCADE;
-DROP TRIGGER IF EXISTS on_post_change ON public.posts CASCADE;
-DROP TRIGGER IF EXISTS on_like_notification ON public.likes CASCADE;
-DROP TRIGGER IF EXISTS on_follow_notification ON public.follows CASCADE;
-DROP TRIGGER IF EXISTS on_comment_notification ON public.comments CASCADE;
-DROP TRIGGER IF EXISTS on_message_notification ON public.messages CASCADE;
-
--- Drop all existing functions
-DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
-DROP FUNCTION IF EXISTS public.update_post_likes_count() CASCADE;
-DROP FUNCTION IF EXISTS public.update_post_comments_count() CASCADE;
-DROP FUNCTION IF EXISTS public.update_follow_counts() CASCADE;
-DROP FUNCTION IF EXISTS public.update_posts_count() CASCADE;
-DROP FUNCTION IF EXISTS public.create_like_notification() CASCADE;
-DROP FUNCTION IF EXISTS public.create_follow_notification() CASCADE;
-DROP FUNCTION IF EXISTS public.create_comment_notification() CASCADE;
-DROP FUNCTION IF EXISTS public.create_message_notification() CASCADE;
-
--- Drop all existing policies
-DO $$ 
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN (SELECT schemaname, tablename, policyname FROM pg_policies WHERE schemaname = 'public') LOOP
-        EXECUTE 'DROP POLICY IF EXISTS "' || r.policyname || '" ON ' || r.schemaname || '.' || r.tablename;
-    END LOOP;
-END $$;
-
--- Drop existing tables in correct order (to handle foreign keys)
-DROP TABLE IF EXISTS public.notifications CASCADE;
+-- Drop existing tables if they exist (in correct order to handle foreign keys)
 DROP TABLE IF EXISTS public.comments CASCADE;
+DROP TABLE IF EXISTS public.notifications CASCADE;
 DROP TABLE IF EXISTS public.messages CASCADE;
 DROP TABLE IF EXISTS public.likes CASCADE;
 DROP TABLE IF EXISTS public.follows CASCADE;
@@ -61,9 +29,6 @@ CREATE TABLE public.profiles (
     position text,
     achievements jsonb DEFAULT '[]'::jsonb,
     stats jsonb DEFAULT '{}'::jsonb,
-    followers_count integer DEFAULT 0,
-    following_count integer DEFAULT 0,
-    posts_count integer DEFAULT 0,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     CONSTRAINT profiles_pkey PRIMARY KEY (id),
@@ -115,7 +80,7 @@ CREATE TABLE public.follows (
     CONSTRAINT follows_follower_id_fkey FOREIGN KEY (follower_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
     CONSTRAINT follows_following_id_fkey FOREIGN KEY (following_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
     CONSTRAINT follows_unique UNIQUE (follower_id, following_id),
-    CONSTRAINT follows_no_self_follow CHECK (follower_id <> following_id)
+    CONSTRAINT follows_no_self_follow CHECK (follower_id != following_id)
 );
 
 -- Create likes table
@@ -128,32 +93,6 @@ CREATE TABLE public.likes (
     CONSTRAINT likes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
     CONSTRAINT likes_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE,
     CONSTRAINT likes_unique UNIQUE (user_id, post_id)
-);
-
--- Create comments table
-CREATE TABLE public.comments (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    user_id uuid NOT NULL,
-    post_id uuid NOT NULL,
-    content text NOT NULL,
-    likes_count integer DEFAULT 0,
-    created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now(),
-    CONSTRAINT comments_pkey PRIMARY KEY (id),
-    CONSTRAINT comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
-    CONSTRAINT comments_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE
-);
-
--- Create comment_likes table
-CREATE TABLE public.comment_likes (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    user_id uuid NOT NULL,
-    comment_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now(),
-    CONSTRAINT comment_likes_pkey PRIMARY KEY (id),
-    CONSTRAINT comment_likes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
-    CONSTRAINT comment_likes_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE,
-    CONSTRAINT comment_likes_unique UNIQUE (user_id, comment_id)
 );
 
 -- Create messages table
@@ -169,6 +108,19 @@ CREATE TABLE public.messages (
     CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
     CONSTRAINT messages_receiver_id_fkey FOREIGN KEY (receiver_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
     CONSTRAINT messages_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE
+);
+
+-- Create comments table
+CREATE TABLE public.comments (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    post_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    content text NOT NULL,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    CONSTRAINT comments_pkey PRIMARY KEY (id),
+    CONSTRAINT comments_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE,
+    CONSTRAINT comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
 );
 
 -- Create notifications table
@@ -192,15 +144,13 @@ CREATE INDEX idx_follows_follower_id ON public.follows(follower_id);
 CREATE INDEX idx_follows_following_id ON public.follows(following_id);
 CREATE INDEX idx_likes_post_id ON public.likes(post_id);
 CREATE INDEX idx_likes_user_id ON public.likes(user_id);
-CREATE INDEX idx_comments_post_id ON public.comments(post_id);
-CREATE INDEX idx_comments_user_id ON public.comments(user_id);
-CREATE INDEX idx_comments_created_at ON public.comments(created_at DESC);
-CREATE INDEX idx_comment_likes_comment_id ON public.comment_likes(comment_id);
-CREATE INDEX idx_comment_likes_user_id ON public.comment_likes(user_id);
 CREATE INDEX idx_messages_sender_id ON public.messages(sender_id);
 CREATE INDEX idx_messages_receiver_id ON public.messages(receiver_id);
 CREATE INDEX idx_messages_created_at ON public.messages(created_at DESC);
 CREATE INDEX idx_messages_conversation ON public.messages(sender_id, receiver_id, created_at);
+CREATE INDEX idx_comments_post_id ON public.comments(post_id);
+CREATE INDEX idx_comments_user_id ON public.comments(user_id);
+CREATE INDEX idx_comments_created_at ON public.comments(created_at DESC);
 CREATE INDEX idx_notifications_user_id ON public.notifications(user_id);
 CREATE INDEX idx_notifications_read ON public.notifications(read);
 
@@ -210,9 +160,8 @@ ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.opportunities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.comment_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for profiles
@@ -256,7 +205,7 @@ CREATE POLICY "Follows are viewable by everyone" ON public.follows
     FOR SELECT USING (true);
 
 CREATE POLICY "Users can follow others" ON public.follows
-    FOR INSERT WITH CHECK (auth.uid() = follower_id AND follower_id <> following_id);
+    FOR INSERT WITH CHECK (auth.uid() = follower_id);
 
 CREATE POLICY "Users can unfollow others" ON public.follows
     FOR DELETE USING (auth.uid() = follower_id);
@@ -271,29 +220,6 @@ CREATE POLICY "Users can like posts" ON public.likes
 CREATE POLICY "Users can unlike posts" ON public.likes
     FOR DELETE USING (auth.uid() = user_id);
 
--- RLS Policies for comments
-CREATE POLICY "Comments are viewable by everyone" ON public.comments
-    FOR SELECT USING (true);
-
-CREATE POLICY "Users can create comments" ON public.comments
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own comments" ON public.comments
-    FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own comments" ON public.comments
-    FOR DELETE USING (auth.uid() = user_id);
-
--- RLS Policies for comment_likes
-CREATE POLICY "Comment likes are viewable by everyone" ON public.comment_likes
-    FOR SELECT USING (true);
-
-CREATE POLICY "Users can like comments" ON public.comment_likes
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can unlike comments" ON public.comment_likes
-    FOR DELETE USING (auth.uid() = user_id);
-
 -- RLS Policies for messages
 CREATE POLICY "Users can view messages they sent or received" ON public.messages
     FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
@@ -304,6 +230,19 @@ CREATE POLICY "Users can send messages" ON public.messages
 CREATE POLICY "Users can update messages they received" ON public.messages
     FOR UPDATE USING (auth.uid() = receiver_id);
 
+-- RLS Policies for comments
+CREATE POLICY "Comments are viewable by everyone" ON public.comments
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert their own comments" ON public.comments
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own comments" ON public.comments
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own comments" ON public.comments
+    FOR DELETE USING (auth.uid() = user_id);
+
 -- RLS Policies for notifications
 CREATE POLICY "Users can view their own notifications" ON public.notifications
     FOR SELECT USING (auth.uid() = user_id);
@@ -313,29 +252,23 @@ CREATE POLICY "Users can update their own notifications" ON public.notifications
 
 -- Function to automatically create profile on user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $
+RETURNS trigger AS $$
 BEGIN
     INSERT INTO public.profiles (id, email, name, role)
-    VALUES (
-        new.id, 
-        new.email, 
-        COALESCE(new.raw_user_meta_data->>'name', 'New User'), 
-        'athlete'
-    )
+    VALUES (new.id, new.email, COALESCE(new.raw_user_meta_data->>'name', 'New User'), 'athlete')
     ON CONFLICT (id) DO NOTHING;
     RETURN new;
 END;
-$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to create profile on user signup
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 -- Function to update likes count when like is added/removed
 CREATE OR REPLACE FUNCTION public.update_post_likes_count()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $
+RETURNS trigger AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         UPDATE public.posts 
@@ -350,14 +283,16 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to update likes count
+CREATE TRIGGER on_like_change
+    AFTER INSERT OR DELETE ON public.likes
+    FOR EACH ROW EXECUTE PROCEDURE public.update_post_likes_count();
 
 -- Function to update comments count when comment is added/removed
 CREATE OR REPLACE FUNCTION public.update_post_comments_count()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $
+RETURNS trigger AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         UPDATE public.posts 
@@ -372,94 +307,16 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to update follow counts
-CREATE OR REPLACE FUNCTION public.update_follow_counts()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        -- Increase follower count for the person being followed
-        UPDATE public.profiles 
-        SET followers_count = followers_count + 1 
-        WHERE id = NEW.following_id;
-        
-        -- Increase following count for the person doing the following
-        UPDATE public.profiles 
-        SET following_count = following_count + 1 
-        WHERE id = NEW.follower_id;
-        
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        -- Decrease follower count for the person being unfollowed
-        UPDATE public.profiles 
-        SET followers_count = followers_count - 1 
-        WHERE id = OLD.following_id;
-        
-        -- Decrease following count for the person doing the unfollowing
-        UPDATE public.profiles 
-        SET following_count = following_count - 1 
-        WHERE id = OLD.follower_id;
-        
-        RETURN OLD;
-    END IF;
-    RETURN NULL;
-END;
-$;
-
--- Function to update posts count
-CREATE OR REPLACE FUNCTION public.update_posts_count()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        UPDATE public.profiles 
-        SET posts_count = posts_count + 1 
-        WHERE id = NEW.user_id;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        UPDATE public.profiles 
-        SET posts_count = posts_count - 1 
-        WHERE id = OLD.user_id;
-        RETURN OLD;
-    END IF;
-    RETURN NULL;
-END;
-$;
-
--- Function to update comment likes count
-CREATE OR REPLACE FUNCTION public.update_comment_likes_count()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        UPDATE public.comments 
-        SET likes_count = likes_count + 1 
-        WHERE id = NEW.comment_id;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        UPDATE public.comments 
-        SET likes_count = likes_count - 1 
-        WHERE id = OLD.comment_id;
-        RETURN OLD;
-    END IF;
-    RETURN NULL;
-END;
-$;
+-- Trigger to update comments count
+CREATE TRIGGER on_comment_change
+    AFTER INSERT OR DELETE ON public.comments
+    FOR EACH ROW EXECUTE PROCEDURE public.update_post_comments_count();
 
 -- Function to create notification on new like
 CREATE OR REPLACE FUNCTION public.create_like_notification()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $$
+RETURNS trigger AS $$
 DECLARE
     post_owner_id uuid;
     liker_name text;
@@ -484,14 +341,16 @@ BEGIN
     
     RETURN NEW;
 END;
-$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to create like notification
+CREATE TRIGGER on_like_notification
+    AFTER INSERT ON public.likes
+    FOR EACH ROW EXECUTE PROCEDURE public.create_like_notification();
 
 -- Function to create notification on new follow
 CREATE OR REPLACE FUNCTION public.create_follow_notification()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $$
+RETURNS trigger AS $$
 DECLARE
     follower_name text;
 BEGIN
@@ -511,14 +370,16 @@ BEGIN
     
     RETURN NEW;
 END;
-$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to create follow notification
+CREATE TRIGGER on_follow_notification
+    AFTER INSERT ON public.follows
+    FOR EACH ROW EXECUTE PROCEDURE public.create_follow_notification();
 
 -- Function to create notification on new comment
 CREATE OR REPLACE FUNCTION public.create_comment_notification()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $$
+RETURNS trigger AS $$
 DECLARE
     post_owner_id uuid;
     commenter_name text;
@@ -543,14 +404,16 @@ BEGIN
     
     RETURN NEW;
 END;
-$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to create comment notification
+CREATE TRIGGER on_comment_notification
+    AFTER INSERT ON public.comments
+    FOR EACH ROW EXECUTE PROCEDURE public.create_comment_notification();
 
 -- Function to create notification on new message
 CREATE OR REPLACE FUNCTION public.create_message_notification()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $$
+RETURNS trigger AS $$
 DECLARE
     sender_name text;
 BEGIN
@@ -570,48 +433,12 @@ BEGIN
     
     RETURN NEW;
 END;
-$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create all triggers
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
-CREATE TRIGGER on_like_change
-    AFTER INSERT OR DELETE ON public.likes
-    FOR EACH ROW EXECUTE FUNCTION public.update_post_likes_count();
-
-CREATE TRIGGER on_comment_change
-    AFTER INSERT OR DELETE ON public.comments
-    FOR EACH ROW EXECUTE FUNCTION public.update_post_comments_count();
-
-CREATE TRIGGER on_follow_change
-    AFTER INSERT OR DELETE ON public.follows
-    FOR EACH ROW EXECUTE FUNCTION public.update_follow_counts();
-
-CREATE TRIGGER on_post_change
-    AFTER INSERT OR DELETE ON public.posts
-    FOR EACH ROW EXECUTE FUNCTION public.update_posts_count();
-
-CREATE TRIGGER on_like_notification
-    AFTER INSERT ON public.likes
-    FOR EACH ROW EXECUTE FUNCTION public.create_like_notification();
-
-CREATE TRIGGER on_follow_notification
-    AFTER INSERT ON public.follows
-    FOR EACH ROW EXECUTE FUNCTION public.create_follow_notification();
-
-CREATE TRIGGER on_comment_notification
-    AFTER INSERT ON public.comments
-    FOR EACH ROW EXECUTE FUNCTION public.create_comment_notification();
-
+-- Trigger to create message notification
 CREATE TRIGGER on_message_notification
     AFTER INSERT ON public.messages
-    FOR EACH ROW EXECUTE FUNCTION public.create_message_notification();
-
-CREATE TRIGGER on_comment_like_change
-    AFTER INSERT OR DELETE ON public.comment_likes
-    FOR EACH ROW EXECUTE FUNCTION public.update_comment_likes_count();
+    FOR EACH ROW EXECUTE PROCEDURE public.create_message_notification();
 
 -- Insert sample data for testing
 INSERT INTO public.profiles (id, email, name, role, sport, bio, location, verified, achievements, stats)

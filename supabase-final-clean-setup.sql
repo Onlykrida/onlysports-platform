@@ -1,4 +1,4 @@
--- OnlySports Ultimate Clean Database Setup Script
+-- OnlySports Final Clean Database Setup Script
 -- This script completely resets and creates all necessary tables, policies, functions, and triggers
 -- Run this in your Supabase SQL Editor
 
@@ -28,14 +28,14 @@ DROP FUNCTION IF EXISTS public.create_comment_notification() CASCADE;
 DROP FUNCTION IF EXISTS public.create_message_notification() CASCADE;
 
 -- Drop all existing policies
-DO $$ 
+DO $ 
 DECLARE
     r RECORD;
 BEGIN
     FOR r IN (SELECT schemaname, tablename, policyname FROM pg_policies WHERE schemaname = 'public') LOOP
         EXECUTE 'DROP POLICY IF EXISTS "' || r.policyname || '" ON ' || r.schemaname || '.' || r.tablename;
     END LOOP;
-END $$;
+END $;
 
 -- Drop existing tables in correct order (to handle foreign keys)
 DROP TABLE IF EXISTS public.notifications CASCADE;
@@ -136,24 +136,11 @@ CREATE TABLE public.comments (
     user_id uuid NOT NULL,
     post_id uuid NOT NULL,
     content text NOT NULL,
-    likes_count integer DEFAULT 0,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     CONSTRAINT comments_pkey PRIMARY KEY (id),
     CONSTRAINT comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
     CONSTRAINT comments_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE
-);
-
--- Create comment_likes table
-CREATE TABLE public.comment_likes (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    user_id uuid NOT NULL,
-    comment_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now(),
-    CONSTRAINT comment_likes_pkey PRIMARY KEY (id),
-    CONSTRAINT comment_likes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
-    CONSTRAINT comment_likes_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES public.comments(id) ON DELETE CASCADE,
-    CONSTRAINT comment_likes_unique UNIQUE (user_id, comment_id)
 );
 
 -- Create messages table
@@ -195,8 +182,6 @@ CREATE INDEX idx_likes_user_id ON public.likes(user_id);
 CREATE INDEX idx_comments_post_id ON public.comments(post_id);
 CREATE INDEX idx_comments_user_id ON public.comments(user_id);
 CREATE INDEX idx_comments_created_at ON public.comments(created_at DESC);
-CREATE INDEX idx_comment_likes_comment_id ON public.comment_likes(comment_id);
-CREATE INDEX idx_comment_likes_user_id ON public.comment_likes(user_id);
 CREATE INDEX idx_messages_sender_id ON public.messages(sender_id);
 CREATE INDEX idx_messages_receiver_id ON public.messages(receiver_id);
 CREATE INDEX idx_messages_created_at ON public.messages(created_at DESC);
@@ -211,9 +196,10 @@ ALTER TABLE public.opportunities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.comment_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+
 
 -- RLS Policies for profiles
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles
@@ -284,16 +270,6 @@ CREATE POLICY "Users can update their own comments" ON public.comments
 CREATE POLICY "Users can delete their own comments" ON public.comments
     FOR DELETE USING (auth.uid() = user_id);
 
--- RLS Policies for comment_likes
-CREATE POLICY "Comment likes are viewable by everyone" ON public.comment_likes
-    FOR SELECT USING (true);
-
-CREATE POLICY "Users can like comments" ON public.comment_likes
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can unlike comments" ON public.comment_likes
-    FOR DELETE USING (auth.uid() = user_id);
-
 -- RLS Policies for messages
 CREATE POLICY "Users can view messages they sent or received" ON public.messages
     FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
@@ -311,12 +287,14 @@ CREATE POLICY "Users can view their own notifications" ON public.notifications
 CREATE POLICY "Users can update their own notifications" ON public.notifications
     FOR UPDATE USING (auth.uid() = user_id);
 
+
+
 -- Function to automatically create profile on user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger 
 LANGUAGE plpgsql 
 SECURITY DEFINER
-AS $
+AS $$
 BEGIN
     INSERT INTO public.profiles (id, email, name, role)
     VALUES (
@@ -328,14 +306,14 @@ BEGIN
     ON CONFLICT (id) DO NOTHING;
     RETURN new;
 END;
-$;
+$$;
 
 -- Function to update likes count when like is added/removed
 CREATE OR REPLACE FUNCTION public.update_post_likes_count()
 RETURNS trigger 
 LANGUAGE plpgsql 
 SECURITY DEFINER
-AS $
+AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         UPDATE public.posts 
@@ -350,14 +328,14 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$;
+$$;
 
 -- Function to update comments count when comment is added/removed
 CREATE OR REPLACE FUNCTION public.update_post_comments_count()
 RETURNS trigger 
 LANGUAGE plpgsql 
 SECURITY DEFINER
-AS $
+AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         UPDATE public.posts 
@@ -372,14 +350,14 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$;
+$$;
 
 -- Function to update follow counts
 CREATE OR REPLACE FUNCTION public.update_follow_counts()
 RETURNS trigger 
 LANGUAGE plpgsql 
 SECURITY DEFINER
-AS $
+AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         -- Increase follower count for the person being followed
@@ -408,14 +386,14 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$;
+$$;
 
 -- Function to update posts count
 CREATE OR REPLACE FUNCTION public.update_posts_count()
 RETURNS trigger 
 LANGUAGE plpgsql 
 SECURITY DEFINER
-AS $
+AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         UPDATE public.profiles 
@@ -430,29 +408,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$;
-
--- Function to update comment likes count
-CREATE OR REPLACE FUNCTION public.update_comment_likes_count()
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER
-AS $
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        UPDATE public.comments 
-        SET likes_count = likes_count + 1 
-        WHERE id = NEW.comment_id;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        UPDATE public.comments 
-        SET likes_count = likes_count - 1 
-        WHERE id = OLD.comment_id;
-        RETURN OLD;
-    END IF;
-    RETURN NULL;
-END;
-$;
+$$;
 
 -- Function to create notification on new like
 CREATE OR REPLACE FUNCTION public.create_like_notification()
@@ -484,7 +440,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$;
+$$;
 
 -- Function to create notification on new follow
 CREATE OR REPLACE FUNCTION public.create_follow_notification()
@@ -511,7 +467,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$;
+$$;
 
 -- Function to create notification on new comment
 CREATE OR REPLACE FUNCTION public.create_comment_notification()
@@ -543,7 +499,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$;
+$$;
 
 -- Function to create notification on new message
 CREATE OR REPLACE FUNCTION public.create_message_notification()
@@ -570,7 +526,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$;
+$$;
 
 -- Create all triggers
 CREATE TRIGGER on_auth_user_created
@@ -609,35 +565,5 @@ CREATE TRIGGER on_message_notification
     AFTER INSERT ON public.messages
     FOR EACH ROW EXECUTE FUNCTION public.create_message_notification();
 
-CREATE TRIGGER on_comment_like_change
-    AFTER INSERT OR DELETE ON public.comment_likes
-    FOR EACH ROW EXECUTE FUNCTION public.update_comment_likes_count();
-
--- Insert sample data for testing
-INSERT INTO public.profiles (id, email, name, role, sport, bio, location, verified, achievements, stats)
-VALUES 
-    ('550e8400-e29b-41d4-a716-446655440001', 'anirudh@example.com', 'Anirudh', 'athlete', 'Football', 'Professional football player with 5 years of experience.', 'New York, USA', true, 
-     '[{"id": "1", "title": "Championship Winner", "description": "Won the regional championship", "date": "2023", "icon": "🏆"}]'::jsonb,
-     '{"goals": 25, "assists": 12, "matches": 30}'::jsonb),
-    ('550e8400-e29b-41d4-a716-446655440002', 'coach@example.com', 'Sample Coach', 'coach', 'Basketball', 'Experienced basketball coach specializing in youth development.', 'Los Angeles, USA', true,
-     '[{"id": "1", "title": "Coach of the Year", "description": "Awarded coach of the year 2023", "date": "2023", "icon": "🏅"}]'::jsonb,
-     '{"teams_coached": 5, "championships": 2, "years_experience": 10}'::jsonb),
-    ('550e8400-e29b-41d4-a716-446655440003', 'scout@example.com', 'Sample Scout', 'scout', 'Soccer', 'Talent scout for professional soccer teams.', 'London, UK', false,
-     '[]'::jsonb,
-     '{"players_discovered": 50, "successful_signings": 15}'::jsonb);
-
--- Insert sample posts
-INSERT INTO public.posts (user_id, title, description, type, image_url, likes_count, comments_count, views_count)
-VALUES 
-    ('550e8400-e29b-41d4-a716-446655440001', 'Amazing Goal!', 'Scored this incredible goal in yesterday''s match. The team played amazingly!', 'highlight', 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800', 15, 3, 120),
-    ('550e8400-e29b-41d4-a716-446655440001', 'Training Session', 'Intense training session today. Working on my speed and agility.', 'training', 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800', 8, 1, 65),
-    ('550e8400-e29b-41d4-a716-446655440002', 'Team Strategy', 'Working with the team on new formations and strategies for the upcoming season.', 'training', 'https://images.unsplash.com/photo-1546608235-65d1b2d5d9c4?w=800', 12, 2, 89);
-
--- Insert sample opportunities
-INSERT INTO public.opportunities (team_id, title, description, type, sport, location, deadline, requirements)
-VALUES 
-    ('550e8400-e29b-41d4-a716-446655440002', 'Youth Football Tryouts', 'Open tryouts for our youth football team. Looking for talented players aged 16-18.', 'tryout', 'Football', 'New York, USA', '2024-03-15 10:00:00+00', '["Age 16-18", "Basic football skills", "Physical fitness test"]'::jsonb),
-    ('550e8400-e29b-41d4-a716-446655440002', 'Basketball Scholarship', 'Full scholarship opportunity for exceptional basketball players.', 'scholarship', 'Basketball', 'Los Angeles, USA', '2024-04-01 23:59:59+00', '["High school diploma", "Basketball experience", "Academic excellence"]'::jsonb);
-
 -- Success message
-SELECT 'OnlySports database setup completed successfully! All tables, policies, functions, and triggers have been created.' as status;
+SELECT 'OnlySports database setup completed successfully! All tables, policies, functions, and triggers have been created. No sample data inserted - profiles will be created automatically when users sign up.' as status;

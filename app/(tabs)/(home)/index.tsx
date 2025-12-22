@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,10 @@ import {
   TouchableOpacity,
   Dimensions,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
-import BackgroundGradientWrapper from '@/components/BackgroundGradient';
-import PostSkeleton from '@/components/PostSkeleton';
-import FeedVideoItem from '@/components/FeedVideoItem';
-import { useVideoVisibilityTracker } from '@/hooks/video-visibility-tracker';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import BackgroundGradient from '@/components/BackgroundGradient';
 import { 
   Zap, 
   MessageSquare, 
@@ -37,6 +36,8 @@ import EditPostModal from '@/components/EditPostModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
 const { width } = Dimensions.get('window');
+
+import VideoPlayer from '@/components/VideoPlayer';
 
 const getRoleIcon = (role: string) => {
   switch (role.toLowerCase()) {
@@ -79,10 +80,6 @@ export default function HomeScreen() {
   const [editVisible, setEditVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   
-  const { visibleVideoId, viewabilityConfigCallbackPairs } = useVideoVisibilityTracker();
-  
-  console.log('[HomeScreen] Visible video ID:', visibleVideoId);
-  
   console.log('HomeScreen render - posts:', posts.length, 'isLoading:', isLoading, 'user:', user?.name);
 
   const handleDeletePost = useCallback(async (postId: string) => {
@@ -92,23 +89,23 @@ export default function HomeScreen() {
     }
   }, [deletePost]);
 
-  const handleUserPress = useCallback((userId: string) => {
+  const handleUserPress = (userId: string) => {
     if (userId === user?.id) {
       router.push('/profile');
     } else {
       router.push(`/user/${userId}`);
     }
-  }, [user?.id]);
+  };
 
-  const handleCommentsPress = useCallback((post: Post) => {
+  const handleCommentsPress = (post: Post) => {
     setSelectedPost(post);
     setCommentsModalVisible(true);
-  }, []);
+  };
 
-  const handleSharePress = useCallback((post: Post) => {
+  const handleSharePress = (post: Post) => {
     setSelectedPost(post);
     setShareModalVisible(true);
-  }, []);
+  };
 
   const openMenu = useCallback((post: Post) => {
     setSelectedPost(post);
@@ -126,7 +123,7 @@ export default function HomeScreen() {
     );
   };
 
-  const renderPost = useCallback(({ item }: { item: Post }) => (
+  const renderPost = ({ item }: { item: Post }) => (
     <View style={styles.postContainer} testID={`post-${item.id}`}>
       <View style={styles.postHeader}>
         <TouchableOpacity style={styles.userInfo} onPress={() => handleUserPress(item.userId)}>
@@ -166,47 +163,31 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => {
-          if (item.opportunityId) {
-            router.push({ pathname: '/opportunities', params: { focus: item.opportunityId } });
-          }
-        }}
-      >
-        <Text style={styles.postContent}>{item.content}</Text>
-      </TouchableOpacity>
+      <Text style={styles.postContent}>{item.content}</Text>
 
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => {
-          if (item.opportunityId) {
-            router.push({ pathname: '/opportunities', params: { focus: item.opportunityId } });
-          }
-        }}
-      >
-        {item.media && (
-          <View style={styles.mediaContainer}>
-            {item.media.type === 'image' ? (
-              <Image source={{ uri: item.media.url }} style={styles.postImage} />
-            ) : (
-              <FeedVideoItem
-                url={item.media.url ?? ''}
-                isVisible={visibleVideoId === item.id}
-                width={width - (theme.spacing.md * 2)}
-                height={(width - (theme.spacing.md * 2)) * 0.75}
-                testID={`post-video-${item.id}`}
-              />
-            )}
-          </View>
-        )}
-      </TouchableOpacity>
+      {item.media && (
+        <View style={styles.mediaContainer}>
+          {item.media.type === 'image' ? (
+            <Image source={{ uri: item.media.url }} style={styles.postImage} />
+          ) : (
+            <VideoPlayer
+              uri={item.media.url ?? ''}
+              poster={item.media.thumbnail}
+              height={width * 0.75}
+              width={width}
+              autoPlay={false}
+              loop={false}
+              muted={false}
+              testID={`post-video-${item.id}`}
+            />
+          )}
+        </View>
+      )}
 
       <View style={styles.postActions}>
-        <TouchableOpacity
+        <TouchableOpacity 
           style={[styles.actionButton, item.isLiked && styles.likedButton]}
           onPress={() => likePost(item.id)}
-          testID={`like-button-${item.id}`}
         >
           <Zap 
             size={24} 
@@ -229,23 +210,22 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
     </View>
-  ), [user, topRecommendations, visibleVideoId, likePost, handleCommentsPress, handleSharePress, openMenu, handleUserPress]);
+  );
 
   if (isLoading && posts.length === 0) {
-    console.log('HomeScreen showing skeleton state');
     return (
-      <BackgroundGradientWrapper style={styles.container}>
-        <View style={styles.skeletonContainer}>
-          <PostSkeleton count={4} testID="home-feed-skeleton" />
-          <Text style={styles.skeletonLabel}>Dialing up fresh highlights…</Text>
+      <BackgroundGradient style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading the action...</Text>
         </View>
-      </BackgroundGradientWrapper>
+      </BackgroundGradient>
     );
   }
 
   if (!isLoading && posts.length === 0) {
     return (
-      <BackgroundGradientWrapper style={styles.container}>
+      <BackgroundGradient style={styles.container}>
         <View style={styles.loadingContainer}>
           <Trophy size={48} color={theme.colors.textSecondary} />
           <Text style={styles.emptyText}>No highlights yet</Text>
@@ -257,12 +237,12 @@ export default function HomeScreen() {
             <Text style={styles.refreshButtonText}>Refresh Feed</Text>
           </TouchableOpacity>
         </View>
-      </BackgroundGradientWrapper>
+      </BackgroundGradient>
     );
   }
 
   return (
-    <BackgroundGradientWrapper style={styles.container}>
+    <BackgroundGradient style={styles.container}>
       <FlatList
         data={posts}
         renderItem={renderPost}
@@ -277,12 +257,6 @@ export default function HomeScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
-        viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={3}
-        windowSize={10}
-        initialNumToRender={3}
-        updateCellsBatchingPeriod={50}
       />
       
       {/* Comments Modal */}
@@ -359,7 +333,7 @@ export default function HomeScreen() {
           }}
         />
       )}
-    </BackgroundGradientWrapper>
+    </BackgroundGradient>
   );
 }
 
@@ -554,20 +528,6 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.lg,
     color: theme.colors.textSecondary,
     fontWeight: theme.fontWeight.bold,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-  },
-  skeletonContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingBottom: theme.spacing.xl,
-  },
-  skeletonLabel: {
-    textAlign: 'center',
-    marginTop: theme.spacing.lg,
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
-    fontWeight: theme.fontWeight.medium,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },

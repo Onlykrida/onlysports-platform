@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,22 +23,16 @@ import {
   Flame,
   Star,
   Grid,
-  List,
-  FileText,
-  ExternalLink
+  List
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
-import { ProfileVideoThumbnail } from '@/components/ProfileVideoThumbnail';
 import { User, Post } from '@/types';
-import * as Linking from 'expo-linking';
 import { useScouting } from '@/hooks/scouting-context';
 import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';
 import { usePosts } from '@/hooks/posts-context';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Button } from '@/components/Button';
-import { ScoutingSummaryModal } from '@/components/ScoutingSummaryModal';
-
 
 const getRoleIcon = (role: string) => {
   switch (role.toLowerCase()) {
@@ -84,12 +78,10 @@ export default function UserProfileScreen() {
   const [followingCount, setFollowingCount] = useState(0);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
   const { getInterestedForPlayer } = useScouting();
-  const [aiInterestedScouts, setAiInterestedScouts] = useState<{ scoutName: string; score: number }[]>([]);
-
+  const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
-  const [showScoutingSummary, setShowScoutingSummary] = useState(false);
 
-  const loadUserProfile = useCallback(async () => {
+  const loadUserProfile = async () => {
     if (!id || !isSupabaseConfigured) return;
 
     try {
@@ -98,7 +90,7 @@ export default function UserProfileScreen() {
       // Load user profile
       const { data: userData, error: userError } = await supabase
         .from('profiles')
-        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, resume_url, created_at')
+        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at')
         .eq('id', id)
         .single();
 
@@ -123,7 +115,6 @@ export default function UserProfileScreen() {
           achievements: userData.achievements || [],
           stats: userData.stats || {},
           roleSpecificData: userData.role_specific_data || {},
-          resumeUrl: userData.resume_url,
           createdAt: new Date(userData.created_at),
         };
         setProfileUser(user);
@@ -146,26 +137,24 @@ export default function UserProfileScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [id, posts, getFollowersCount, getFollowingCount]);
+  };
 
   useEffect(() => {
-    void loadUserProfile();
-  }, [id, posts, loadUserProfile]);
+    loadUserProfile();
+  }, [id, posts]);
 
   useEffect(() => {
     const run = async () => {
       if (!id) return;
       try {
         const res = await getInterestedForPlayer(id, 70);
-        setAiInterestedScouts(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
+        setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
       } catch (e) {
         console.log('UserProfile: interested load failed', e);
       }
     };
     void run();
   }, [id, getInterestedForPlayer]);
-
-
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -205,8 +194,6 @@ export default function UserProfileScreen() {
     if (!profileUser) return;
     router.push(`/chat/${profileUser.id}`);
   };
-
-
 
   if (isLoading) {
     return (
@@ -436,72 +423,28 @@ export default function UserProfileScreen() {
           </View>
         </View>
 
-        {/* CV/Resume Section */}
-        {profileUser.resumeUrl && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <FileText size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>CV / Resume</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.resumeCard}
-              onPress={() => {
-                if (profileUser.resumeUrl) {
-                  Linking.openURL(profileUser.resumeUrl).catch(err => {
-                    console.error('Failed to open resume:', err);
-                  });
-                }
-              }}
-              testID="resume-view-button"
-            >
-              <View style={styles.resumeCardContent}>
-                <FileText size={24} color={theme.colors.primary} />
-                <View style={styles.resumeCardInfo}>
-                  <Text style={styles.resumeCardTitle}>{profileUser.name}&apos;s Resume</Text>
-                  <Text style={styles.resumeCardSubtitle}>Tap to view PDF</Text>
-                </View>
-              </View>
-              <ExternalLink size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        )}
-
-
-
-
-
-        {/* AI-based Interested Scouts */}
-        {profileUser.role === 'athlete' && aiInterestedScouts.length > 0 && (
+        {/* Interested Scouts for athletes */}
+        {profileUser.role === 'athlete' && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Flame size={20} color={theme.colors.success} />
-              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser?.name || 'Athlete'}</Text>
+              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser.name}</Text>
             </View>
-            {aiInterestedScouts.slice(0, 5).map((it, idx) => (
-              <View key={`${it.scoutName}-${idx}`} style={styles.achievementItem}>
-                <Star size={18} color={theme.colors.warning} />
-                <View style={styles.achievementInfo}>
-                  <Text style={styles.achievementTitle}>{it.scoutName}</Text>
-                  <Text style={styles.achievementDescription}>Fit score {it.score}%</Text>
+            {interested.length > 0 ? (
+              interested.slice(0, 5).map((it, idx) => (
+                <View key={`${it.scoutName}-${idx}`} style={styles.achievementItem}>
+                  <Star size={18} color={theme.colors.warning} />
+                  <View style={styles.achievementInfo}>
+                    <Text style={styles.achievementTitle}>{it.scoutName}</Text>
+                    <Text style={styles.achievementDescription}>Fit score {it.score}%</Text>
+                  </View>
                 </View>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No interested scouts yet</Text>
               </View>
-            ))}
-          </View>
-        )}
-
-        {/* Scouting Report Button */}
-        {(profileUser.role === 'athlete' || profileUser.role === 'coach' || profileUser.role === 'trainer' || profileUser.role === 'scout') && (
-          <View style={styles.scoutingReportSection}>
-            <TouchableOpacity 
-              style={styles.scoutingReportButton}
-              onPress={() => setShowScoutingSummary(true)}
-            >
-              <FileText size={20} color={theme.colors.primary} />
-              <View style={styles.scoutingReportContent}>
-                <Text style={styles.scoutingReportTitle}>View Scouting Report</Text>
-                <Text style={styles.scoutingReportSubtitle}>AI-generated professional assessment</Text>
-              </View>
-            </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -529,8 +472,6 @@ export default function UserProfileScreen() {
           </View>
         )}
 
-
-
         {/* Posts Section */}
         <View style={styles.postsSection}>
           <View style={styles.postsHeader}>
@@ -554,21 +495,9 @@ export default function UserProfileScreen() {
           {userPosts.length > 0 ? (
             <View style={styles.postsGrid}>
               {userPosts.map((post) => (
-                <TouchableOpacity 
-                  key={post.id} 
-                  style={styles.postItem}
-                  onPress={() => router.push(`/post/${post.id}`)}
-                >
+                <TouchableOpacity key={post.id} style={styles.postItem}>
                   {post.media ? (
-                    post.media.type === 'video' ? (
-                      <ProfileVideoThumbnail
-                        videoUrl={post.media.url}
-                        thumbnailUrl={post.media.thumbnail}
-                        testID={`profile-video-${post.id}`}
-                      />
-                    ) : (
-                      <Image source={{ uri: post.media.url }} style={styles.postImage} />
-                    )
+                    <Image source={{ uri: post.media.url }} style={styles.postImage} />
                   ) : (
                     <View style={styles.postTextContainer}>
                       <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
@@ -590,13 +519,6 @@ export default function UserProfileScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* Scouting Summary Modal */}
-      <ScoutingSummaryModal
-        visible={showScoutingSummary}
-        onClose={() => setShowScoutingSummary(false)}
-        user={profileUser}
-      />
     </SafeAreaView>
   );
 }
@@ -902,59 +824,4 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     lineHeight: 18,
   },
-  resumeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  resumeCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.md,
-  },
-  resumeCardInfo: {
-    gap: 2,
-  },
-  resumeCardTitle: {
-    fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
-  },
-  resumeCardSubtitle: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-  },
-  scoutingReportSection: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-  },
-  scoutingReportButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    gap: theme.spacing.md,
-  },
-  scoutingReportContent: {
-    flex: 1,
-  },
-  scoutingReportTitle: {
-    fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
-  },
-  scoutingReportSubtitle: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginTop: 2,
-  },
-
 });

@@ -147,8 +147,7 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
     }
 
     try {
-      console.log('[Opportunities] Creating opportunity payload:', opportunityData);
-      const { data: inserted, error } = await supabase
+      const { error } = await supabase
         .from('opportunities')
         .insert({
           team_id: user.id,
@@ -160,68 +159,11 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
           deadline: opportunityData.deadline,
           requirements: opportunityData.requirements,
           paid: opportunityData.paid,
-        })
-        .select('id')
-        .single();
+        });
 
       if (error) {
         console.error('Error creating opportunity:', error);
         return { error: error.message };
-      }
-
-      try {
-        console.log('[Opportunities] Fetching all user ids to notify');
-        const { data: usersToNotify, error: usersErr } = await supabase
-          .from('profiles')
-          .select('id')
-          .neq('id', user.id)
-          .limit(10000);
-
-        if (usersErr) {
-          console.error('Failed to load users for notifications:', usersErr);
-        } else if (usersToNotify && usersToNotify.length > 0) {
-          const title = `New Opportunity: ${opportunityData.title}`;
-          const message = `${user.name ?? 'A team'} posted a new ${opportunityData.type} in ${opportunityData.location}`;
-          const rows = usersToNotify.map((u: { id: string }) => ({
-            user_id: u.id,
-            type: 'opportunity' as const,
-            title,
-            message,
-            data: {
-              opportunityId: inserted?.id,
-              teamId: user.id,
-              title: opportunityData.title,
-            },
-            read: false,
-          }));
-          console.log('[Opportunities] Inserting notifications for users count:', rows.length);
-          const { error: notifErr } = await supabase.from('notifications').insert(rows);
-          if (notifErr) {
-            console.error('Failed to insert notifications:', notifErr);
-          }
-        }
-      } catch (notifyErr) {
-        console.error('Broadcast notifications failed:', notifyErr);
-      }
-
-      try {
-        console.log('[Opportunities] Also creating a feed post for the opportunity');
-        const { error: postErr } = await supabase
-          .from('posts')
-          .insert({
-            user_id: user.id,
-            title: opportunityData.title,
-            description: opportunityData.description,
-            opportunity_id: inserted?.id,
-            type: 'highlight',
-          });
-        if (postErr) {
-          console.error('Failed to create feed post for opportunity:', postErr);
-        } else {
-          console.log('[Opportunities] Feed post created for opportunity');
-        }
-      } catch (postCreateErr) {
-        console.error('Exception while creating feed post for opportunity:', postCreateErr);
       }
 
       await loadOpportunities();

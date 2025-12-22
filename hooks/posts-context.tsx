@@ -52,114 +52,70 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         return;
       }
 
-      let postsRows: any[] | null = null;
-      try {
-        const { data, error } = await supabase
-          .from('posts')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (error) {
-          throw error;
+      let postsData: any[] | null = null;
+      let lastError: any = null;
+
+      const profileFieldSets = [
+        ['id', 'name', 'avatar', 'role'],
+        ['id', 'full_name', 'avatar', 'role'],
+        ['id', 'username', 'avatar', 'role'],
+        ['id', 'email', 'avatar', 'role'],
+      ];
+
+      for (const fields of profileFieldSets) {
+        try {
+          const selectStr = `*, profiles!posts_user_id_fkey (${fields.join(',')})`;
+          console.log('Trying select with fields:', fields.join(','));
+          const { data, error } = await supabase
+            .from('posts')
+            .select(selectStr)
+            .order('created_at', { ascending: false });
+
+          if (!error) {
+            postsData = data as any[];
+            lastError = null;
+            break;
+          }
+
+          lastError = error;
+          console.warn('Select attempt failed with fields', fields.join(','), '->', getErrorMessage(error));
+        } catch (err) {
+          lastError = err;
+          console.warn('Select attempt threw with fields', fields.join(','), '->', getErrorMessage(err));
         }
-        postsRows = data as any[];
-      } catch (err) {
-        const msg = getErrorMessage(err);
-        
-        // Check if it's a network error (common in dev/simulator)
-        if (msg.includes('Failed to fetch') || msg.includes('Network request failed') || msg.includes('fetch')) {
-          console.log('Network connection issue detected. Using mock data for offline mode.');
-          console.log('This is normal if you\'re using a simulator/emulator or have network restrictions.');
-        } else {
-          console.error('Error loading posts from database:', msg);
-        }
-        
+      }
+
+      if (lastError) {
+        const msg = getErrorMessage(lastError);
+        console.error('Error loading posts from database:', msg, lastError);
         const sortedMockPosts = mockPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         console.log('Falling back to mock posts:', sortedMockPosts.length, 'posts');
         setPosts(sortedMockPosts);
         return;
       }
 
-      console.log('Raw posts rows from database:', postsRows?.length || 0, 'posts');
-      
-      // Fetch author profiles in a single query
-      const userIds = Array.from(new Set((postsRows ?? []).map((p: any) => p.user_id).filter(Boolean)));
-      let profilesMap: Record<string, any> = {};
-      if (userIds.length > 0) {
-        try {
-          const { data: profilesData, error: profilesError } = await supabase
-            .from('profiles')
-            .select('id, name, email, avatar, role')
-            .in('id', userIds);
-          if (profilesError) {
-            console.warn('Failed to load profiles for posts:', getErrorMessage(profilesError));
-          } else if (profilesData) {
-            profilesMap = (profilesData as any[]).reduce<Record<string, any>>((acc, p) => {
-              acc[p.id] = p;
-              return acc;
-            }, {});
-          }
-        } catch (e) {
-          console.warn('Exception while loading profiles for posts:', getErrorMessage(e));
-        }
-      }
+      console.log('Raw posts data from database:', postsData?.length || 0, 'posts');
       
       // Check which posts the current user has liked
       let userLikes: string[] = [];
-      if (user && postsRows?.length) {
+      if (user && postsData?.length) {
         const { data: likesData } = await supabase
           .from('likes')
           .select('post_id')
           .eq('user_id', user.id)
-          .in('post_id', postsRows.map((p: any) => p.id));
+          .in('post_id', postsData.map((p: any) => p.id));
         
         userLikes = likesData?.map((like: any) => like.post_id) || [];
       }
       
-      // Transform posts and convert video URLs to signed URLs for Android compatibility
-      const transformedPosts: Post[] = await Promise.all((postsRows ?? []).map(async (post: any) => {
-        const profile = profilesMap[post.user_id] ?? {};
-        const resolvedName = profile.name ?? profile.email?.split('@')[0] ?? 'User';
-        console.log('Transforming post:', post.id, 'by user_id:', post.user_id, 'profile found:', !!profile.id, 'resolved name:', resolvedName, 'profile:', profile);
-        
-        let mediaUrl = post.video_url || post.image_url;
-        const mediaType = post.video_url ? 'video' : 'image';
-        
-        // Convert video URLs to signed URLs for Android compatibility
-        if (mediaType === 'video' && mediaUrl && mediaUrl.includes('supabase.co')) {
-          try {
-            // Extract the file path from the public URL
-            const urlObj = new URL(mediaUrl);
-            const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/posts\/(.+)/);
-            if (pathMatch && pathMatch[1]) {
-              const filePath = decodeURIComponent(pathMatch[1]);
-              console.log('[Posts] Converting video URL to signed URL for:', filePath);
-              
-              const { data: signedData, error: signedError } = await supabase.storage
-                .from('posts')
-                .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year expiry
-              
-              if (signedData?.signedUrl && !signedError) {
-                mediaUrl = signedData.signedUrl;
-                console.log('[Posts] Video URL converted to signed URL');
-              } else {
-                console.warn('[Posts] Failed to create signed URL, using public URL:', signedError);
-              }
-            }
-          } catch (err) {
-            console.warn('[Posts] Error converting video URL to signed URL:', err);
-          }
-        }
-        
-        console.log('[Posts] Post media debug:', {
-          postId: post.id,
-          hasVideoUrl: !!post.video_url,
-          hasImageUrl: !!post.image_url,
-          videoUrl: post.video_url,
-          imageUrl: post.image_url,
-          mediaType,
-          finalUrl: mediaUrl
-        });
-        
+      // Transform database posts to our Post interface, filtering out posts from deleted users
+      const transformedPosts: Post[] = postsData?.filter((post: any) => {
+        // Filter out posts where the profile is null (user was deleted)
+        return post.profiles !== null;
+      }).map((post: any) => {
+        const profile = post.profiles ?? {};
+        const resolvedName = profile.name ?? profile.full_name ?? profile.username ?? profile.email ?? 'Unknown User';
+        console.log('Transforming post:', post.id, 'by user:', resolvedName);
         return {
           id: post.id,
           userId: post.user_id,
@@ -167,19 +123,18 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           userAvatar: profile.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
           userRole: profile.role || 'athlete',
           content: post.description || post.title,
-          media: mediaUrl ? {
-            type: mediaType,
-            url: mediaUrl,
-            thumbnail: post.image_url || undefined
+          media: post.image_url || post.video_url ? {
+            type: post.video_url ? 'video' : 'image',
+            url: post.video_url || post.image_url,
+            thumbnail: post.image_url
           } : undefined,
           likes: post.likes_count || 0,
           comments: post.comments_count || 0,
           shares: 0,
           isLiked: userLikes.includes(post.id),
           createdAt: new Date(post.created_at),
-          opportunityId: post.opportunity_id ?? undefined,
         };
-      }));
+      }) || [];
 
       console.log('Transformed posts:', transformedPosts.length, 'posts');
       setPosts(transformedPosts);
@@ -244,19 +199,15 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
       if (bucketsError) {
-        console.warn('Posts: Failed to list buckets (may be due to permissions):', bucketsError.message);
-        console.log('Posts: Assuming bucket exists and proceeding with upload...');
-        // Return true to allow upload attempt even if we can't verify bucket existence
-        // The upload will fail explicitly if the bucket truly doesn't exist
-        return true;
+        console.error('Posts: Failed to list buckets:', bucketsError);
+        return false;
       }
       
       const postsBucket = buckets?.find((bucket: any) => bucket.id === 'posts');
       if (!postsBucket) {
-        console.warn('Posts: "posts" bucket not found in the list.');
-        console.log('Posts: This might be a permissions issue. Attempting upload anyway...');
-        // Return true to allow upload attempt - better to try and fail than to block unnecessarily
-        return true;
+        console.error('Posts: "posts" bucket does not exist. Please create it in your Supabase dashboard.');
+        console.error('Posts: Go to Storage > Create bucket > Name: "posts" > Public: ON');
+        return false;
       }
       
       console.log('Posts: Storage bucket found:', postsBucket);
@@ -268,10 +219,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       
       return true;
     } catch (error) {
-      console.warn('Posts: Error checking storage bucket:', error);
-      console.log('Posts: Proceeding with upload attempt anyway...');
-      // Return true to allow upload attempt
-      return true;
+      console.error('Posts: Error checking storage bucket:', error);
+      return false;
     }
   }, []);
 
@@ -303,9 +252,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       const randomId = Math.random().toString(36).substring(2, 15);
       const extension = mType === 'image' ? 'jpg' : 'mp4';
       const filename = `${timestamp}-${randomId}.${extension}`;
-      const path = `${filename}`;
-      
-      console.log('Posts: generated filename and path:', { filename, path, userId: user.id });
+      const path = `posts/${user.id}/${filename}`;
       
       console.log('Posts: upload path:', path);
 
@@ -316,34 +263,15 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
       }
       
-      // Get file data based on platform
-      let fileData: Blob | ArrayBuffer;
-      let fileSize: number;
-      let mimeType: string;
-      
-      if (Platform.OS === 'web') {
-        // Web platform - use blob()
-        const blob = await response.blob();
-        fileData = blob;
-        fileSize = blob.size;
-        mimeType = blob.type;
-      } else {
-        // React Native - use arrayBuffer()
-        const arrayBuffer = await response.arrayBuffer();
-        fileData = arrayBuffer;
-        fileSize = arrayBuffer.byteLength;
-        mimeType = mType === 'image' ? 'image/jpeg' : 'video/mp4';
-      }
-      
-      console.log('Posts: file data created', { 
-        size: fileSize, 
-        type: mimeType,
-        sizeInMB: (fileSize / (1024 * 1024)).toFixed(2),
-        platform: Platform.OS
+      const blob = await response.blob();
+      console.log('Posts: blob created', { 
+        size: blob.size, 
+        type: blob.type,
+        sizeInMB: (blob.size / (1024 * 1024)).toFixed(2)
       });
 
-      if (fileSize === 0) {
-        throw new Error('File is empty');
+      if (blob.size === 0) {
+        throw new Error('Blob is empty');
       }
 
       // Set content type based on media type
@@ -353,7 +281,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('posts')
-        .upload(path, fileData, { 
+        .upload(path, blob, { 
           contentType,
           upsert: false,
           cacheControl: '3600'
@@ -377,23 +305,19 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
       console.log('Posts: upload successful', uploadData);
 
-      // Get signed URL with proper headers for Android compatibility
-      // Android requires proper CORS and Content-Type headers
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
         .from('posts')
-        .createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year expiry
+        .getPublicUrl(path);
 
-      if (signedUrlError || !signedUrlData?.signedUrl) {
-        console.error('Posts: failed to get signed URL, falling back to public URL:', signedUrlError);
-        // Fallback to public URL
-        const { data: publicUrlData } = supabase.storage
-          .from('posts')
-          .getPublicUrl(path);
-        return publicUrlData?.publicUrl || uri;
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) {
+        console.error('Posts: failed to get public URL');
+        return uri;
       }
 
-      console.log('Posts: signed URL generated:', signedUrlData.signedUrl);
-      return signedUrlData.signedUrl;
+      console.log('Posts: public URL generated:', publicUrl);
+      return publicUrl;
       
     } catch (error) {
       console.error('Posts: upload exception', {
@@ -449,34 +373,22 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
       const uploadedUrl = await uploadMediaIfNeeded(mediaUrl, mediaType ?? undefined);
 
-      console.log('[CreatePost] About to insert post with:', {
-        user_id: user.id,
-        title: content.substring(0, 100),
-        mediaType,
-        uploadedUrl,
-        image_url: mediaType === 'image' ? uploadedUrl : null,
-        video_url: mediaType === 'video' ? uploadedUrl : null,
-      });
-
-      const { data: insertedData, error } = await supabase
+      const { error } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
           title: content.substring(0, 100),
           description: content,
-          image_url: mediaType === 'image' ? uploadedUrl : null,
-          video_url: mediaType === 'video' ? uploadedUrl : null,
+          image_url: mediaType === 'image' ? uploadedUrl : undefined,
+          video_url: mediaType === 'video' ? uploadedUrl : undefined,
           type: 'highlight',
-        })
-        .select();
+        });
 
       if (error) {
         const msg = getErrorMessage(error);
         console.error('Error creating post:', msg, error);
         return { error: msg };
       }
-
-      console.log('[CreatePost] Post created successfully:', insertedData);
 
       await loadPosts();
       return {};

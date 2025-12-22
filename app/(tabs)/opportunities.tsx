@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,14 +11,14 @@ import {
   Modal,
   TextInput,
   Animated,
-  FlatList as RNFlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Calendar, 
   MapPin, 
   Users, 
-  DollarSign,
+  DollarSign, 
+  Plus,
   Trophy,
   FileSignature,
   GraduationCap,
@@ -31,7 +31,8 @@ import {
 import { theme } from '@/constants/theme';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack } from 'expo-router';
+import CreateOpportunityModal from '@/components/CreateOpportunityModal';
 
 type OpportunityCategory = 'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
 type OpportunityType = 'paid' | 'unpaid' | 'local' | 'national' | 'short-term' | 'long-term';
@@ -54,20 +55,17 @@ interface OpportunityData {
 
 export default function OpportunitiesScreen() {
   const { user } = useAuth();
-  const { opportunities, isLoading, applyToOpportunity, refreshOpportunities, createOpportunity } = useOpportunities();
-  const params = useLocalSearchParams<{ focus?: string }>();
-  const listRef = useRef<RNFlatList<Opportunity>>(null);
+  const { opportunities, isLoading, applyToOpportunity, refreshOpportunities } = useOpportunities();
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
-  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
-  const [filterHeight] = useState(new Animated.Value(1));
-  const [filterOpacity] = useState(new Animated.Value(1));
+  const filterHeight = useState(new Animated.Value(1))[0];
+  const filterOpacity = useState(new Animated.Value(1))[0];
   
   const [opportunityData, setOpportunityData] = useState<OpportunityData>({
     category: null,
@@ -84,7 +82,6 @@ export default function OpportunitiesScreen() {
     contactInfo: '',
     additionalInfo: ''
   });
-  const [sportInput, setSportInput] = useState<string>('General');
 
   const filteredOpportunities = useMemo(() => {
     let list = opportunities;
@@ -161,7 +158,7 @@ export default function OpportunitiesScreen() {
     const canApply = user?.role === 'athlete' && !item.hasApplied;
     
     return (
-      <TouchableOpacity style={styles.opportunityCard} onPress={() => setSelectedOpportunity(item)} testID={`opp-card-${item.id}`}>
+      <TouchableOpacity style={styles.opportunityCard}>
         <View style={styles.cardHeader}>
           <View style={[styles.typeTag, { backgroundColor: getTypeColor(item.type) }]}>
             <Text style={styles.typeText}>{item.type.toUpperCase()}</Text>
@@ -302,7 +299,7 @@ export default function OpportunitiesScreen() {
   };
 
   const handleCreateOpportunity = async () => {
-    if (!opportunityData.category || !opportunityData.title.trim() || !opportunityData.description.trim() || !sportInput.trim()) {
+    if (!opportunityData.category || !opportunityData.title.trim() || !opportunityData.description.trim()) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -314,40 +311,17 @@ export default function OpportunitiesScreen() {
 
     try {
       setIsCreating(true);
-      const typeMap: Record<OpportunityCategory, Opportunity['type']> = {
-        tryouts: 'tryout',
-        tournaments: 'tournament',
-        sponsorships: 'sponsorship',
-        scholarships: 'scholarship',
-        contracts: 'job',
-      };
-
-      const paid = opportunityData.type.includes('paid');
-      const requirementsArr = opportunityData.requirements
-        ? opportunityData.requirements.split(/\r?\n|,/)?.map(r => r.trim()).filter(Boolean)
-        : [];
-
-      const payload = {
-        title: opportunityData.title.trim(),
-        description: opportunityData.description.trim(),
-        type: typeMap[opportunityData.category],
-        sport: sportInput.trim(),
-        location: opportunityData.location.trim() || 'N/A',
-        deadline: opportunityData.deadline.trim() || new Date().toISOString(),
-        requirements: requirementsArr,
-        paid,
-      } as Omit<Opportunity, 'id' | 'createdAt' | 'updatedAt' | 'teamId'>;
-
-      const res = await createOpportunity(payload);
-      if (res.error) {
-        Alert.alert('Error', res.error);
-      } else {
-        Alert.alert('Success', 'Your opportunity has been posted!');
-        resetOpportunityData();
-        setShowCreateModal(false);
-        setSportInput('General');
-        refreshOpportunities();
-      }
+      console.log('Creating opportunity:', opportunityData);
+      Alert.alert('Success', 'Your opportunity has been posted!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            resetOpportunityData();
+            setShowCreateModal(false);
+            refreshOpportunities();
+          }
+        }
+      ]);
     } catch (error) {
       console.error('Error creating opportunity:', error);
       Alert.alert('Error', 'Failed to create opportunity. Please try again.');
@@ -372,7 +346,6 @@ export default function OpportunitiesScreen() {
       contactInfo: '',
       additionalInfo: ''
     });
-    setSportInput('General');
   };
 
   const toggleFilters = useCallback(() => {
@@ -398,16 +371,6 @@ export default function OpportunitiesScreen() {
     if (selectedPayment) count++;
     return count;
   }, [selectedType, selectedSport, selectedPayment]);
-
-  useEffect(() => {
-    if (params?.focus && opportunities.length > 0) {
-      const index = opportunities.findIndex(o => o.id === params.focus);
-      if (index >= 0) {
-        listRef.current?.scrollToIndex({ index, animated: true });
-        setTimeout(() => setSelectedOpportunity(opportunities[index] ?? null), 350);
-      }
-    }
-  }, [params?.focus, opportunities]);
 
   const FiltersBar = useMemo(() => {
     const filterMaxHeight = filterHeight.interpolate({
@@ -558,7 +521,6 @@ export default function OpportunitiesScreen() {
     <SafeAreaView style={styles.container}>
       {FiltersBar}
       <FlatList
-        ref={listRef as any}
         data={filteredOpportunities}
         renderItem={renderOpportunity}
         keyExtractor={(item) => item.id}
@@ -567,7 +529,6 @@ export default function OpportunitiesScreen() {
         testID="opportunities-list"
         onRefresh={refreshOpportunities}
         refreshing={isLoading}
-        getItemLayout={(_, index) => ({ length: 200, offset: 200 * index, index })}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No opportunities found</Text>
@@ -576,76 +537,6 @@ export default function OpportunitiesScreen() {
         }
       />
       
-      {/* Opportunity Details Modal */}
-      <Modal
-        visible={!!selectedOpportunity}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelectedOpportunity(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '90%' }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{selectedOpportunity?.title ?? 'Opportunity'}</Text>
-              <TouchableOpacity onPress={() => setSelectedOpportunity(null)}>
-                <X size={24} color={theme.colors.text} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.formContainer}>
-              {selectedOpportunity && (
-                <View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
-                    <View style={[styles.typeTag, { backgroundColor: getTypeColor(selectedOpportunity.type) }]}>
-                      <Text style={styles.typeText}>{selectedOpportunity.type.toUpperCase()}</Text>
-                    </View>
-                    <Text style={styles.sportTag}>{selectedOpportunity.sport}</Text>
-                  </View>
-                  <Text style={styles.organization}>{selectedOpportunity.teamName || 'Unknown Team'}</Text>
-                  <Text style={styles.description}>{selectedOpportunity.description}</Text>
-                  <View style={styles.details}>
-                    <View style={styles.detailItem}>
-                      <MapPin size={14} color={theme.colors.textSecondary} />
-                      <Text style={styles.detailText}>{selectedOpportunity.location}</Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                      <Calendar size={14} color={theme.colors.textSecondary} />
-                      <Text style={styles.detailText}>Deadline: {new Date(selectedOpportunity.deadline).toLocaleDateString()}</Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                      <DollarSign size={14} color={selectedOpportunity.paid ? theme.colors.success : theme.colors.textSecondary} />
-                      <Text style={[styles.detailText, { color: selectedOpportunity.paid ? theme.colors.success : theme.colors.textSecondary }]}>
-                        {selectedOpportunity.paid ? 'Paid' : 'Unpaid'}
-                      </Text>
-                    </View>
-                  </View>
-                  {!!selectedOpportunity.requirements?.length && (
-                    <View style={styles.requirements}>
-                      <Text style={styles.requirementsTitle}>Requirements</Text>
-                      {selectedOpportunity.requirements.map((req, idx) => (
-                        <Text key={`${req}-${idx}`} style={styles.requirement}>• {req}</Text>
-                      ))}
-                    </View>
-                  )}
-                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: theme.spacing.sm }}>
-                    {user?.role === 'athlete' && !selectedOpportunity.hasApplied && (
-                      <TouchableOpacity style={styles.applyButton} onPress={() => {
-                        setSelectedOpportunity(null);
-                        handleApply(selectedOpportunity.id);
-                      }}>
-                        <Text style={styles.applyButtonText}>Apply Now</Text>
-                      </TouchableOpacity>
-                    )}
-                    <TouchableOpacity style={styles.viewButton} onPress={() => setSelectedOpportunity(null)}>
-                      <Text style={styles.viewButtonText}>Close</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
       {/* Category Selection Modal */}
       <Modal
         visible={showCategoryModal}
@@ -775,14 +666,6 @@ export default function OpportunitiesScreen() {
                 
                 <TextInput
                   style={styles.input}
-                  placeholder="Sport * (e.g., Soccer)"
-                  placeholderTextColor={theme.colors.textSecondary}
-                  value={sportInput}
-                  onChangeText={setSportInput}
-                />
-                
-                <TextInput
-                  style={styles.input}
                   placeholder="Location *"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.location}
@@ -791,7 +674,7 @@ export default function OpportunitiesScreen() {
                 
                 <TextInput
                   style={styles.input}
-                  placeholder="Deadline (e.g., March 15, 2025)"
+                  placeholder="Deadline (e.g., March 15, 2024)"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.deadline}
                   onChangeText={(text) => setOpportunityData(prev => ({ ...prev, deadline: text }))}

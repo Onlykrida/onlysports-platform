@@ -15,7 +15,7 @@ interface UsersState {
   clearAll: () => Promise<void>;
 }
 
-const STORAGE_KEY = 'users_cache_v3';
+const STORAGE_KEY = 'users_cache_v2'; // Updated to clear old duplicates
 
 export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
   const [users, setUsers] = useState<User[]>([]);
@@ -74,9 +74,21 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
         roleSpecificData: p.role_specific_data ?? {},
         createdAt: new Date(p.created_at ?? Date.now()),
       }));
-      console.log('UsersProvider: loaded remote users count:', remoteUsers.length);
-      setUsers(remoteUsers);
-      void persist(remoteUsers);
+      setUsers((prev) => {
+        const map = new Map<string, User>();
+        // First add remote users (they are more up-to-date)
+        remoteUsers.forEach((u) => map.set(u.id, u));
+        // Then add cached users only if they don't exist in remote
+        prev.forEach((u) => {
+          if (!map.has(u.id)) {
+            map.set(u.id, u);
+          }
+        });
+        const merged = Array.from(map.values());
+        console.log('UsersProvider: merged users count:', merged.length, 'remote:', remoteUsers.length, 'cached:', prev.length);
+        void persist(merged);
+        return merged;
+      });
     } catch (e) {
       console.log('UsersProvider: remote load failed', e);
     } finally {

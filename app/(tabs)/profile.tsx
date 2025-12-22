@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,11 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
-import { ProfileVideoThumbnail } from '@/components/ProfileVideoThumbnail';
-import { Settings, Edit3, Award, BarChart3, LogOut, Plus, Grid, List, Camera, Sparkles, BadgeCheck, FileText, ExternalLink } from 'lucide-react-native';
+import { Settings, Edit3, Award, BarChart3, LogOut, Plus, Grid, List, Camera, Sparkles, BadgeCheck } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';
@@ -21,18 +21,12 @@ import { mockAthletes } from '@/mocks/data';
 import { Button } from '@/components/Button';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import * as Linking from 'expo-linking';
-import { useScouting } from '@/hooks/scouting-context';
-
+import { useScouting, AIRecommendationRow } from '@/hooks/scouting-context';
 
 export default function ProfileScreen() {
   const { user, logout, updateProfile } = useAuth();
   const { followers, following, getFollowersCount, getFollowingCount } = useFollow();
   const { posts } = usePosts();
-  const userPosts = useMemo(() => {
-    if (!user) return [] as typeof posts;
-    return posts.filter(p => p.userId === user.id);
-  }, [posts, user]);
   const { getInterestedForPlayer, getTopForScout } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const [topPlayers, setTopPlayers] = useState<{ playerId: string; name: string; avatar?: string; position?: string; score: number }[]>([]);
@@ -64,7 +58,7 @@ export default function ProfileScreen() {
 
   React.useEffect(() => {
     loadCounts();
-  }, [user, posts, followers, following, loadCounts]);
+  }, [user, posts, followers, following]);
 
   React.useEffect(() => {
     const run = async () => {
@@ -261,6 +255,12 @@ export default function ProfileScreen() {
                 <Camera size={16} color={theme.colors.white} />
               </View>
             </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => router.push('/edit-profile')}
+            >
+              <Edit3 size={16} color={theme.colors.white} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -360,8 +360,6 @@ export default function ProfileScreen() {
           </View>
         )}
 
-
-
         {/* Role-Specific Information */}
         {user.roleSpecificData && Object.keys(user.roleSpecificData).length > 0 && (
           <View style={styles.section}>
@@ -372,41 +370,6 @@ export default function ProfileScreen() {
             {renderRoleSpecificDetails()}
           </View>
         )}
-
-        {/* CV/Resume Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <FileText size={20} color={theme.colors.primary} />
-            <Text style={styles.sectionTitle}>CV / Resume</Text>
-          </View>
-          {user.resumeUrl ? (
-            <TouchableOpacity 
-              style={styles.resumeCard}
-              onPress={() => {
-                if (user.resumeUrl) {
-                  Linking.openURL(user.resumeUrl).catch(err => {
-                    console.error('Failed to open resume:', err);
-                  });
-                }
-              }}
-              testID="resume-view-button"
-            >
-              <View style={styles.resumeCardContent}>
-                <FileText size={24} color={theme.colors.primary} />
-                <View style={styles.resumeCardInfo}>
-                  <Text style={styles.resumeCardTitle}>Resume</Text>
-                  <Text style={styles.resumeCardSubtitle}>Tap to view PDF</Text>
-                </View>
-              </View>
-              <ExternalLink size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No resume uploaded</Text>
-              <Text style={styles.emptyStateSubtext}>Add your CV in Edit Profile</Text>
-            </View>
-          )}
-        </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -454,50 +417,16 @@ export default function ProfileScreen() {
             </View>
           </View>
           <View style={styles.postsContainer}>
-            {userPosts.length > 0 ? (
-              <View style={[styles.postsGrid, postsViewMode === 'list' && { gap: theme.spacing.sm }]}
-                testID="profile-posts-grid"
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No posts yet</Text>
+              <Text style={styles.emptyStateSubtext}>Share your achievements and highlights</Text>
+              <TouchableOpacity 
+                style={styles.createPostButton}
+                onPress={() => router.push('/create')}
               >
-                {userPosts.map((post) => (
-                  <TouchableOpacity key={post.id} style={[styles.postItem, postsViewMode === 'list' && { width: '100%', aspectRatio: undefined }]}
-                    testID={`profile-post-${post.id}`}
-                    onPress={() => router.push(`/post/${post.id}`)}
-                  >
-                    {post.media ? (
-                      post.media.type === 'video' ? (
-                        <ProfileVideoThumbnail
-                          videoUrl={post.media.url}
-                          thumbnailUrl={post.media.thumbnail}
-                          width={postsViewMode === 'grid' ? undefined : 400}
-                          height={postsViewMode === 'grid' ? undefined : 300}
-                          testID={`profile-video-${post.id}`}
-                        />
-                      ) : (
-                        <Image source={{ uri: post.media.url }} style={postsViewMode === 'grid' ? styles.postImage : styles.postImageList} />
-                      )
-                    ) : (
-                      <View style={styles.postTextContainer}>
-                        <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
-                      </View>
-                    )}
-                    <View style={styles.postOverlay}>
-                      <Text style={styles.postLikes}>{post.likes} ⚡</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No posts yet</Text>
-                <Text style={styles.emptyStateSubtext}>Share your achievements and highlights</Text>
-                <TouchableOpacity 
-                  style={styles.createPostButton}
-                  onPress={() => router.push('/create')}
-                >
-                  <Text style={styles.createPostText}>Create Your First Post</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+                <Text style={styles.createPostText}>Create Your First Post</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -553,7 +482,14 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: theme.colors.primary,
   },
-
+  editButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: -10,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.full,
+    padding: theme.spacing.sm,
+  },
   infoSection: {
     alignItems: 'center',
     padding: theme.spacing.md,
@@ -716,54 +652,6 @@ const styles = StyleSheet.create({
   postsContainer: {
     minHeight: 100,
   },
-  postsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.xs,
-  },
-  postItem: {
-    width: '32%',
-    aspectRatio: 1,
-    borderRadius: theme.borderRadius.md,
-    overflow: 'hidden',
-    position: 'relative',
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  postImage: {
-    width: '100%',
-    height: '100%',
-  },
-  postImageList: {
-    width: '100%',
-    height: 200,
-  },
-  postTextContainer: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.sm,
-    justifyContent: 'center',
-  },
-  postText: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  postOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    padding: theme.spacing.xs,
-  },
-  postLikes: {
-    color: theme.colors.white,
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.medium,
-  },
   createPostButton: {
     marginTop: theme.spacing.md,
     paddingVertical: theme.spacing.lg,
@@ -855,33 +743,6 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     lineHeight: 18,
-  },
-  resumeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  resumeCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.md,
-  },
-  resumeCardInfo: {
-    gap: 2,
-  },
-  resumeCardTitle: {
-    fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
-  },
-  resumeCardSubtitle: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
   },
   avatarContainer: {
     position: 'relative',
