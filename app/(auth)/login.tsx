@@ -50,7 +50,7 @@ export default function LoginScreen() {
       if (result.error) {
         setErrors({ general: result.error });
       } else {
-        router.replace('/(tabs)');
+        router.replace('/');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -121,7 +121,7 @@ export default function LoginScreen() {
               style={styles.signupLink}
             >
               <Text style={styles.signupText}>
-                Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
+                Don&apos;t have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
               </Text>
             </TouchableOpacity>
           </View>

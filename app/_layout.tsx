@@ -15,7 +15,7 @@ import { View, ActivityIndicator, StatusBar } from "react-native";
 import { ScoutingProvider } from "@/hooks/scouting-context";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { theme } from "@/constants/theme";
-import BackgroundGradient from "@/components/BackgroundGradient";
+import { BackgroundGradient } from "@/components/BackgroundGradient";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,12 +24,12 @@ const queryClient = new QueryClient();
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  console.log('RootLayoutNav: isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+  console.log("RootLayoutNav: isAuthenticated:", isAuthenticated, "isLoading:", isLoading);
 
   if (isLoading) {
     return (
       <BackgroundGradient>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       </BackgroundGradient>
@@ -37,15 +37,23 @@ function RootLayoutNav() {
   }
 
   return (
-    <Stack screenOptions={{ headerBackTitle: "Back" }} initialRouteName={isAuthenticated ? "(tabs)" : "(auth)"}>
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="edit-profile" options={{ title: "Edit Profile", presentation: "modal" }} />
-      <Stack.Screen name="settings" options={{ title: "Settings", presentation: "modal" }} />
-      <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
-      <Stack.Screen name="user/[id]" options={{ title: "Profile" }} />
-      <Stack.Screen name="chat" options={{ headerShown: false }} />
-    </Stack>
+    <BackgroundGradient>
+      <Stack
+        screenOptions={{
+          headerBackTitle: "Back",
+          contentStyle: { backgroundColor: "transparent" },
+        }}
+        initialRouteName={isAuthenticated ? "(tabs)" : "(auth)"}
+      >
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="edit-profile" options={{ title: "Edit Profile", presentation: "modal" }} />
+        <Stack.Screen name="settings" options={{ title: "Settings", presentation: "modal" }} />
+        <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
+        <Stack.Screen name="user/[id]" options={{ title: "Profile" }} />
+        <Stack.Screen name="chat" options={{ headerShown: false }} />
+      </Stack>
+    </BackgroundGradient>
   );
 }
 

@@ -10,6 +10,7 @@ export const theme = {
     // Primary colors
     primary: '#30D158', // Sporty green
     primaryDark: '#248A3D', // Darker sporty green
+    primaryLight: '#0A2F1C', // Dark green tint for highlights
     secondary: '#30D158', // Sporty green
     accent: '#30D158', // Sporty green
     
