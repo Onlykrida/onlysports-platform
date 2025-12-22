@@ -1,9 +1,8 @@
 import { Tabs, router } from "expo-router";
 import { Home, Search, Briefcase, User, PlusCircle, MessageCircle, Bell, Plus } from "lucide-react-native";
 import React from "react";
-import { View, Text, Platform, TouchableOpacity } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { useAuth } from "@/hooks/auth-context";
-import BackgroundGradient from "@/components/BackgroundGradient";
 import { theme } from "@/constants/theme";
 import { useMessages } from "@/hooks/messages-context";
 import { useNotifications } from "@/hooks/notifications-context";
@@ -11,6 +10,7 @@ import { useNotifications } from "@/hooks/notifications-context";
 export default function TabLayout() {
   const { conversations } = useMessages();
   const { unreadCount } = useNotifications();
+  const { user } = useAuth();
   
   const unreadMessagesCount = conversations.reduce((total, conv) => total + conv.unreadCount, 0);
   
@@ -74,11 +74,10 @@ export default function TabLayout() {
           headerTintColor: theme.colors.text,
           headerShadowVisible: false,
           headerRight: () => {
-            const { user } = useAuth();
             return (user?.role === 'coach' || user?.role === 'scout' || user?.role === 'team') ? (
               <TouchableOpacity 
                 style={{ marginRight: theme.spacing.md }}
-                onPress={() => router.push('/opportunities/create')}
+                onPress={() => router.push('/opportunities/create' as any)}
               >
                 <Plus size={24} color={theme.colors.primary} />
               </TouchableOpacity>

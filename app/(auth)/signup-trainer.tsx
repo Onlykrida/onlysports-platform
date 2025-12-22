@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Mail, Lock, User as UserIcon, Dumbbell, MapPin, ClipboardList, Award, Quote } from 'lucide-react-native';
+import { Mail, Lock, User as UserIcon, Dumbbell, MapPin, Award, Quote } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -60,8 +60,9 @@ export default function SignupTrainerScreen() {
         setErrors({ general: upd.error });
         return;
       }
-      router.replace('/(tabs)/(home)');
-    } catch (e) {
+      router.replace('/');
+    } catch (error) {
+      console.error('Signup trainer error:', error);
       setErrors({ general: 'Signup failed. Please try again.' });
     } finally {
       setLoading(false);
@@ -99,7 +100,7 @@ export default function SignupTrainerScreen() {
 
           <View style={styles.footer}>
             <Button title="Sign Up as Trainer" onPress={handleSignup} loading={loading} size="large" />
-            <TouchableOpacity onPress={() => router.push('/(auth)/login')} style={styles.loginLink}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login' as any)} style={styles.loginLink}>
               <Text style={styles.loginText}>Already have an account? <Text style={styles.loginTextBold}>Sign In</Text></Text>
             </TouchableOpacity>
           </View>

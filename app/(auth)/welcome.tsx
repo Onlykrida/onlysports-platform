@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '@/constants/theme';
-import { useAuth } from '@/hooks/auth-context';
 import { Globe2, Handshake, Rocket, Trophy } from 'lucide-react-native';
 
 const { height } = Dimensions.get('window');
@@ -103,7 +102,7 @@ export default function WelcomeScreen() {
                 <Pressable
                   onPressIn={onPressIn}
                   onPressOut={onPressOut}
-                  onPress={() => router.push('/(auth)/role-selection')}
+                  onPress={() => router.push('/(auth)/role-selection' as any)}
                   accessibilityRole="button"
                   testID="cta-join"
                 >
@@ -119,7 +118,7 @@ export default function WelcomeScreen() {
               </Animated.View>
 
               <Pressable
-                onPress={() => router.push('/(auth)/login')}
+                onPress={() => router.push('/(auth)/login' as any)}
                 accessibilityRole="button"
                 testID="cta-login"
                 style={styles.loginWrapper}

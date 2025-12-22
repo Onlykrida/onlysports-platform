@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -14,7 +13,6 @@ import { theme } from '@/constants/theme';
 import { Button } from '@/components/Button';
 import { UserRole } from '@/types';
 
-const { width } = Dimensions.get('window');
 
 interface RoleOption {
   id: UserRole;
@@ -139,7 +137,7 @@ export default function RoleSelectionScreen() {
             size="large"
           />
           <TouchableOpacity
-            onPress={() => router.push('/(auth)/login')}
+            onPress={() => router.push('/(auth)/login' as any)}
             style={styles.loginLink}
           >
             <Text style={styles.loginText}>

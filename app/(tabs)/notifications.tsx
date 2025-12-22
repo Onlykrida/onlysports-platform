@@ -76,7 +76,7 @@ const handleNotificationPress = (notification: Notification) => {
     case 'comment':
     case 'post':
       if (notification.data?.postId) {
-        router.push(`/post/${notification.data.postId}`);
+        router.push({ pathname: '/post/[id]' as any, params: { id: String(notification.data.postId) } });
       }
       break;
     case 'follow':
@@ -84,16 +84,16 @@ const handleNotificationPress = (notification: Notification) => {
     case 'connection_accepted':
     case 'profile_view':
       if (notification.data?.followerId || notification.data?.userId) {
-        router.push(`/user/${notification.data.followerId || notification.data.userId}`);
+        router.push({ pathname: '/user/[id]' as any, params: { id: String(notification.data.followerId || notification.data.userId) } });
       }
       break;
     case 'message':
       if (notification.data?.senderId) {
-        router.push(`/chat/${notification.data.senderId}`);
+        router.push({ pathname: '/chat/[id]' as any, params: { id: String(notification.data.senderId) } });
       }
       break;
     case 'opportunity':
-      router.push('/opportunities');
+      router.push('/(tabs)/opportunities' as any);
       break;
     default:
       break;
@@ -162,7 +162,7 @@ export default function NotificationsTab() {
       <Bell size={48} color={theme.colors.textSecondary} />
       <Text style={styles.emptyTitle}>No notifications yet</Text>
       <Text style={styles.emptyMessage}>
-        You'll see notifications here when people interact with your content
+        You’ll see notifications here when people interact with your content
       </Text>
     </View>
   );

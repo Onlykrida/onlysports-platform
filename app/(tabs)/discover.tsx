@@ -19,7 +19,7 @@ import { SearchResult, User } from '@/types';
 import { useSearch } from '@/hooks/search-context';
 import { useFollow } from '@/hooks/follow-context';
 import { useNotifications } from '@/hooks/notifications-context';
-import { supabase, isSupabaseConfigured } from '@/constants/supabase';
+import { isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from '@/hooks/auth-context';
 import { useUsers } from '@/hooks/users-context';
 
@@ -418,7 +418,7 @@ export default function DiscoverScreen() {
           <Text style={styles.title}>Discover People</Text>
           <TouchableOpacity 
             style={styles.notificationButton}
-            onPress={() => router.push('/notifications')}
+            onPress={() => router.push('/(tabs)/notifications' as any)}
           >
             <Bell size={24} color={theme.colors.text} />
             {unreadCount > 0 && (

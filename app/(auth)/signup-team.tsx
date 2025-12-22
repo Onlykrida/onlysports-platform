@@ -61,8 +61,9 @@ export default function SignupTeamScreen() {
         setErrors({ general: upd.error });
         return;
       }
-      router.replace('/(tabs)/(home)');
-    } catch (e) {
+      router.replace('/');
+    } catch (error) {
+      console.error('Signup team error:', error);
       setErrors({ general: 'Signup failed. Please try again.' });
     } finally {
       setLoading(false);
@@ -101,7 +102,7 @@ export default function SignupTeamScreen() {
 
           <View style={styles.footer}>
             <Button title="Sign Up as Team/Club" onPress={handleSignup} loading={loading} size="large" />
-            <TouchableOpacity onPress={() => router.push('/(auth)/login')} style={styles.loginLink}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login' as any)} style={styles.loginLink}>
               <Text style={styles.loginText}>Already have an account? <Text style={styles.loginTextBold}>Sign In</Text></Text>
             </TouchableOpacity>
           </View>

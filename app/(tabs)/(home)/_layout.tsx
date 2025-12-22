@@ -1,8 +1,6 @@
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
-import BackgroundGradient from '@/components/BackgroundGradient';
 import { Bell } from 'lucide-react-native';
-import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
 import { useNotifications } from '@/hooks/notifications-context';
 
@@ -35,7 +33,7 @@ function HeaderTitle() {
       </View>
       <TouchableOpacity 
         style={{ position: 'relative', padding: 8 }}
-        onPress={() => router.push('/notifications')}
+        onPress={() => router.push('/(tabs)/notifications' as any)}
       >
         <Bell size={24} color={theme.colors.text} />
         {unreadCount > 0 && (

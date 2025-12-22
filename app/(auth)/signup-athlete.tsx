@@ -78,8 +78,9 @@ export default function SignupAthleteScreen() {
         setErrors({ general: upd.error });
         return;
       }
-      router.replace('/(tabs)/(home)');
-    } catch (e) {
+      router.replace('/');
+    } catch (error) {
+      console.error('Signup athlete error:', error);
       setErrors({ general: 'Signup failed. Please try again.' });
     } finally {
       setLoading(false);
@@ -123,7 +124,7 @@ export default function SignupAthleteScreen() {
 
           <View style={styles.footer}>
             <Button title="Sign Up as Athlete" onPress={handleSignup} loading={loading} size="large" />
-            <TouchableOpacity onPress={() => router.push('/(auth)/login')} style={styles.loginLink}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login' as any)} style={styles.loginLink}>
               <Text style={styles.loginText}>Already have an account? <Text style={styles.loginTextBold}>Sign In</Text></Text>
             </TouchableOpacity>
           </View>

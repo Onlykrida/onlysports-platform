@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import BackgroundGradient from '@/components/BackgroundGradient';
+import BgGradient from '@/components/BackgroundGradient';
 import { 
   Zap, 
   MessageSquare, 
@@ -35,9 +34,9 @@ import PostActionsMenu from '@/components/PostActionsMenu';
 import EditPostModal from '@/components/EditPostModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
-const { width } = Dimensions.get('window');
-
 import VideoPlayer from '@/components/VideoPlayer';
+
+const { width } = Dimensions.get('window');
 
 const getRoleIcon = (role: string) => {
   switch (role.toLowerCase()) {
@@ -91,9 +90,9 @@ export default function HomeScreen() {
 
   const handleUserPress = (userId: string) => {
     if (userId === user?.id) {
-      router.push('/profile');
+      router.push('/(tabs)/profile' as any);
     } else {
-      router.push(`/user/${userId}`);
+      router.push({ pathname: '/user/[id]' as any, params: { id: userId } });
     }
   };
 
@@ -214,18 +213,18 @@ export default function HomeScreen() {
 
   if (isLoading && posts.length === 0) {
     return (
-      <BackgroundGradient style={styles.container}>
+      <BgGradient style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={styles.loadingText}>Loading the action...</Text>
         </View>
-      </BackgroundGradient>
+      </BgGradient>
     );
   }
 
   if (!isLoading && posts.length === 0) {
     return (
-      <BackgroundGradient style={styles.container}>
+      <BgGradient style={styles.container}>
         <View style={styles.loadingContainer}>
           <Trophy size={48} color={theme.colors.textSecondary} />
           <Text style={styles.emptyText}>No highlights yet</Text>
@@ -237,12 +236,12 @@ export default function HomeScreen() {
             <Text style={styles.refreshButtonText}>Refresh Feed</Text>
           </TouchableOpacity>
         </View>
-      </BackgroundGradient>
+      </BgGradient>
     );
   }
 
   return (
-    <BackgroundGradient style={styles.container}>
+    <BgGradient style={styles.container}>
       <FlatList
         data={posts}
         renderItem={renderPost}
@@ -333,7 +332,7 @@ export default function HomeScreen() {
           }}
         />
       )}
-    </BackgroundGradient>
+    </BgGradient>
   );
 }
 

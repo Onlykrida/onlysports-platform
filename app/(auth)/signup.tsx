@@ -88,7 +88,7 @@ export default function SignupScreen() {
             return;
           }
         }
-        router.replace('/(tabs)/(home)');
+        router.replace('/');
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -208,7 +208,7 @@ export default function SignupScreen() {
             />
 
             <TouchableOpacity
-              onPress={() => router.push('/(auth)/login')}
+              onPress={() => router.push('/(auth)/login' as any)}
               style={styles.loginLink}
             >
               <Text style={styles.loginText}>

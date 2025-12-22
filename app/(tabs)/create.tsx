@@ -8,7 +8,7 @@ import {
   TextInput,
   Image,
   Alert,
-  Platform,
+  
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -126,7 +126,7 @@ export default function CreateScreen() {
             setContent('');
             setSelectedMedia(null);
             setMediaType(null);
-            router.push('/(tabs)/(home)');
+            router.push('/');
           }
         },
         { 

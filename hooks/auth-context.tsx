@@ -521,7 +521,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         }
         if (/^(file:\/\/|content:\/\/)/i.test(uri)) {
           try {
-            const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+            const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' as const });
             const dataUrl = `data:${mimeGuess};base64,${base64}`;
             const r = await fetch(dataUrl);
             return await r.blob();
