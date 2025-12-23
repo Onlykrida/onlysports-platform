@@ -81,9 +81,9 @@ export default function PostScreen() {
 
   const handleUserPress = (userId: string) => {
     if (userId === user?.id) {
-      router.push('/profile');
+      router.push({ pathname: '/profile' as any });
     } else {
-      router.push(`/user/${userId}`);
+      router.push({ pathname: '/user/[id]' as any, params: { id: userId } });
     }
   };
 

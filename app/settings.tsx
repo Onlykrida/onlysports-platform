@@ -177,7 +177,7 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            router.replace('/welcome');
+            router.replace({ pathname: '/welcome' as any });
           }
         }
       ]
@@ -193,7 +193,7 @@ export default function SettingsScreen() {
           title: 'Edit Profile',
           subtitle: 'Update your personal information',
           icon: <User size={20} color={theme.colors.text} />,
-          onPress: () => router.push('/edit-profile'),
+          onPress: () => router.push({ pathname: '/edit-profile' as any }),
           showChevron: true,
         },
         {

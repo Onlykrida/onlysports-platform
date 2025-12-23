@@ -81,13 +81,14 @@ export default function UserProfileScreen() {
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
-  const loadUserProfile = async () => {
+  const loadUserProfile = React.useCallback(async () => {
     if (!id || !isSupabaseConfigured) return;
 
     try {
       setIsLoading(true);
-      
-      // Load user profile
+
+      console.log('UserProfileScreen: loading profile', { id });
+
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at')
@@ -119,17 +120,16 @@ export default function UserProfileScreen() {
         };
         setProfileUser(user);
 
-        // Load follow counts
         const [followersCountResult, followingCountResult] = await Promise.all([
           getFollowersCount(id),
-          getFollowingCount(id)
+          getFollowingCount(id),
         ]);
+
         setFollowersCount(followersCountResult);
         setFollowingCount(followingCountResult);
       }
 
-      // Load user posts
-      const filteredPosts = posts.filter(post => post.userId === id);
+      const filteredPosts = posts.filter((post) => post.userId === id);
       setUserPosts(filteredPosts);
     } catch (error) {
       console.error('Failed to load user profile:', error);
@@ -137,11 +137,11 @@ export default function UserProfileScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getFollowersCount, getFollowingCount, id, posts]);
 
   useEffect(() => {
-    loadUserProfile();
-  }, [id, posts]);
+    void loadUserProfile();
+  }, [loadUserProfile]);
 
   useEffect(() => {
     const run = async () => {
@@ -192,7 +192,7 @@ export default function UserProfileScreen() {
 
   const handleMessage = () => {
     if (!profileUser) return;
-    router.push(`/chat/${profileUser.id}`);
+    router.push({ pathname: '/chat/[id]' as any, params: { id: profileUser.id } });
   };
 
   if (isLoading) {
