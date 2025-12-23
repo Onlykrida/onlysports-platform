@@ -9,8 +9,13 @@
 --    - videos:   videos/<userId>/<file>
 -- 3) Buckets are public for viewing (SELECT) but writes are restricted to the folder owner
 
--- Ensure RLS is enabled on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- NOTE
+-- storage.objects is owned by a system role in Supabase.
+-- If you see: "ERROR: 42501: must be owner of table objects"
+-- you are not running this as the project owner (postgres/supabase_admin).
+-- Run this file in Supabase Dashboard → SQL Editor while logged in as the project owner.
+--
+-- In most Supabase projects, storage.objects RLS is already enabled by default.
 
 -- -----------------------------------------------------------------------------
 -- Buckets
