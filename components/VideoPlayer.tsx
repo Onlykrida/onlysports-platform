@@ -65,14 +65,21 @@ export default function VideoPlayer({
   const ExpoVideo: any = useMemo(() => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      return require('expo-video');
+      const module = require('expo-video');
+      console.log('[VideoPlayer] expo-video loaded successfully');
+      return module;
     } catch (e) {
-      console.log('[VideoPlayer] expo-video not available');
+      console.error('[VideoPlayer] expo-video not available:', e);
       return null;
     }
   }, []);
 
   const HasVideo = !!ExpoVideo?.Video;
+  
+  useEffect(() => {
+    console.log('[VideoPlayer] HasVideo:', HasVideo);
+    console.log('[VideoPlayer] ExpoVideo:', ExpoVideo ? 'loaded' : 'not loaded');
+  }, [HasVideo, ExpoVideo]);
 
   return (
     <View style={[styles.container, { height, width }, style]} testID={`${testID}-container`}>
@@ -107,6 +114,7 @@ export default function VideoPlayer({
           )}
           <View style={styles.errorOverlay}>
             <Text style={styles.errorText}>📹 Video player unavailable</Text>
+            <Text style={styles.errorSubtext}>expo-video module not loaded</Text>
           </View>
         </View>
       ) : (

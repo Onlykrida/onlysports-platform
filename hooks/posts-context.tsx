@@ -215,10 +215,11 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         return true;
       }
       
+      console.log(`Posts: Available buckets:`, buckets?.map((b: any) => `${b.id || b.name} (public: ${b.public})`).join(', '));
+      
       const bucket = buckets?.find((b: any) => b.id === bucketName || b.name === bucketName);
       if (!bucket) {
         console.error(`Posts: "${bucketName}" bucket not found in list.`);
-        console.error(`Posts: Available buckets:`, buckets?.map((b: any) => b.id || b.name).join(', '));
         console.error(`Posts: If the bucket exists, this might be a permissions issue.`);
         console.error(`Posts: Proceeding with upload anyway - bucket might exist with different name`);
         return true;
