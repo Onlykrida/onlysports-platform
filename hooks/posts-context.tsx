@@ -200,37 +200,37 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
   }, [user]);
 
   // Check if storage bucket is properly configured
-  const checkStorageBucket = useCallback(async (): Promise<boolean> => {
+  const checkStorageBucket = useCallback(async (bucketName: string): Promise<boolean> => {
     if (!isSupabaseConfigured) return false;
     
     try {
-      console.log('Posts: Checking storage bucket configuration...');
+      console.log(`Posts: Checking storage bucket configuration for "${bucketName}"...`);
       
-      // Try to list buckets to see if 'posts' bucket exists
+      // Try to list buckets to see if the bucket exists
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
       if (bucketsError) {
-        console.error('Posts: Failed to list buckets:', bucketsError);
+        console.error(`Posts: Failed to list buckets:`, bucketsError);
         return false;
       }
       
-      const postsBucket = buckets?.find((bucket: any) => bucket.id === 'posts');
-      if (!postsBucket) {
-        console.error('Posts: "posts" bucket does not exist. Please create it in your Supabase dashboard.');
-        console.error('Posts: Go to Storage > Create bucket > Name: "posts" > Public: ON');
+      const bucket = buckets?.find((b: any) => b.id === bucketName);
+      if (!bucket) {
+        console.error(`Posts: "${bucketName}" bucket does not exist. Please create it in your Supabase dashboard.`);
+        console.error(`Posts: Go to Storage > Create bucket > Name: "${bucketName}" > Public: ON`);
         return false;
       }
       
-      console.log('Posts: Storage bucket found:', postsBucket);
+      console.log(`Posts: Storage bucket "${bucketName}" found:`, bucket);
       
-      if (!postsBucket.public) {
-        console.warn('Posts: "posts" bucket is not public. Media may not be visible to other users.');
-        console.warn('Posts: Go to Storage > posts bucket settings > Toggle "Public bucket" ON');
+      if (!bucket.public) {
+        console.warn(`Posts: "${bucketName}" bucket is not public. Media may not be visible to other users.`);
+        console.warn(`Posts: Go to Storage > ${bucketName} bucket settings > Toggle "Public bucket" ON`);
       }
       
       return true;
     } catch (error) {
-      console.error('Posts: Error checking storage bucket:', error);
+      console.error(`Posts: Error checking storage bucket "${bucketName}":`, error);
       return false;
     }
   }, []);
@@ -249,12 +249,14 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     }
 
     try {
-      console.log('Posts: starting media upload', { uri, mType, platform: Platform.OS, userId: user.id });
+      // Determine bucket based on media type
+      const bucketName = mType === 'video' ? 'video' : 'posts';
+      console.log('Posts: starting media upload', { uri, mType, bucket: bucketName, platform: Platform.OS, userId: user.id });
       
       // Check storage bucket configuration first
-      const bucketConfigured = await checkStorageBucket();
+      const bucketConfigured = await checkStorageBucket(bucketName);
       if (!bucketConfigured) {
-        console.warn('Posts: Storage bucket not properly configured, using direct URI');
+        console.warn(`Posts: Storage bucket "${bucketName}" not properly configured, using direct URI`);
         return uri;
       }
       
@@ -263,9 +265,9 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       const randomId = Math.random().toString(36).substring(2, 15);
       const extension = mType === 'image' ? 'jpg' : 'mp4';
       const filename = `${timestamp}-${randomId}.${extension}`;
-      const path = `posts/${user.id}/${filename}`;
+      const path = `${user.id}/${filename}`;
       
-      console.log('Posts: upload path:', path);
+      console.log('Posts: upload path:', path, 'to bucket:', bucketName);
 
       // Fetch the file and create blob
       console.log('Posts: fetching file from URI...');
@@ -291,7 +293,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('posts')
+        .from(bucketName)
         .upload(path, blob, { 
           contentType,
           upsert: false,
@@ -300,6 +302,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
       if (uploadError) {
         console.error('Posts: storage upload failed', {
+          bucket: bucketName,
           error: uploadError,
           message: uploadError.message,
           statusCode: uploadError.statusCode
@@ -308,7 +311,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         // Check if it's a bucket configuration issue
         if (uploadError.message?.includes('bucket') || uploadError.message?.includes('policy')) {
           console.error('Posts: This appears to be a storage bucket configuration issue.');
-          console.error('Posts: Please run the storage setup SQL script in your Supabase dashboard.');
+          console.error(`Posts: Please ensure the "${bucketName}" bucket exists and is public in your Supabase dashboard.`);
         }
         
         return uri; // Fallback to direct URI
@@ -318,7 +321,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
       // Get public URL
       const { data: publicUrlData } = supabase.storage
-        .from('posts')
+        .from(bucketName)
         .getPublicUrl(path);
 
       const publicUrl = publicUrlData?.publicUrl;
