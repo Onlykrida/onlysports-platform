@@ -94,11 +94,18 @@ export default function UserProfileScreen() {
         .from('profiles')
         .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (userError) {
         console.error('Error loading user profile:', userError);
         Alert.alert('Error', 'Failed to load user profile');
+        return;
+      }
+
+      if (!userData) {
+        console.log('UserProfileScreen: User not found in database:', id);
+        setProfileUser(null);
+        setIsLoading(false);
         return;
       }
 
