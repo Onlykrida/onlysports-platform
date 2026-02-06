@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { View, StyleSheet, ViewStyle, Image, Platform, Text, ActivityIndicator } from 'react-native';
+import { Video } from 'expo-video';
 
 interface VideoPlayerProps {
   uri: string;
@@ -62,24 +63,9 @@ export default function VideoPlayer({
     setIsLoading(true);
   }, []);
 
-  const ExpoVideo: any = useMemo(() => {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const module = require('expo-video');
-      console.log('[VideoPlayer] expo-video loaded successfully');
-      return module;
-    } catch (e) {
-      console.error('[VideoPlayer] expo-video not available:', e);
-      return null;
-    }
-  }, []);
-
-  const HasVideo = !!ExpoVideo?.Video;
-  
   useEffect(() => {
-    console.log('[VideoPlayer] HasVideo:', HasVideo);
-    console.log('[VideoPlayer] ExpoVideo:', ExpoVideo ? 'loaded' : 'not loaded');
-  }, [HasVideo, ExpoVideo]);
+    console.log('[VideoPlayer] Video component available:', !!Video);
+  }, []);
 
   return (
     <View style={[styles.container, { height, width }, style]} testID={`${testID}-container`}>
@@ -100,26 +86,9 @@ export default function VideoPlayer({
             <Text style={styles.errorSubtext}>{error}</Text>
           </View>
         </View>
-      ) : !HasVideo ? (
-        <View style={styles.errorContainer}>
-          {posterSource ? (
-            <Image
-              source={posterSource}
-              style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
-              resizeMode={'cover'}
-              testID={`${testID}-poster`}
-            />
-          ) : (
-            <View style={styles.fallback} />
-          )}
-          <View style={styles.errorOverlay}>
-            <Text style={styles.errorText}>📹 Video player unavailable</Text>
-            <Text style={styles.errorSubtext}>expo-video module not loaded</Text>
-          </View>
-        </View>
       ) : (
         <>
-          <ExpoVideo.Video
+          <Video
             ref={ref}
             source={source}
             style={StyleSheet.absoluteFill}
