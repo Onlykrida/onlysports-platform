@@ -211,14 +211,17 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       
       if (bucketsError) {
         console.error(`Posts: Failed to list buckets:`, bucketsError);
-        return false;
+        console.warn(`Posts: Proceeding with upload anyway - bucket might exist but listing failed`);
+        return true;
       }
       
-      const bucket = buckets?.find((b: any) => b.id === bucketName);
+      const bucket = buckets?.find((b: any) => b.id === bucketName || b.name === bucketName);
       if (!bucket) {
-        console.error(`Posts: "${bucketName}" bucket does not exist. Please create it in your Supabase dashboard.`);
-        console.error(`Posts: Go to Storage > Create bucket > Name: "${bucketName}" > Public: ON`);
-        return false;
+        console.error(`Posts: "${bucketName}" bucket not found in list.`);
+        console.error(`Posts: Available buckets:`, buckets?.map((b: any) => b.id || b.name).join(', '));
+        console.error(`Posts: If the bucket exists, this might be a permissions issue.`);
+        console.error(`Posts: Proceeding with upload anyway - bucket might exist with different name`);
+        return true;
       }
       
       console.log(`Posts: Storage bucket "${bucketName}" found:`, bucket);
@@ -231,7 +234,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       return true;
     } catch (error) {
       console.error(`Posts: Error checking storage bucket "${bucketName}":`, error);
-      return false;
+      console.warn(`Posts: Proceeding with upload anyway - bucket might exist`);
+      return true;
     }
   }, []);
 
@@ -253,12 +257,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       const bucketName = mType === 'video' ? 'video' : 'posts';
       console.log('Posts: starting media upload', { uri, mType, bucket: bucketName, platform: Platform.OS, userId: user.id });
       
-      // Check storage bucket configuration first
-      const bucketConfigured = await checkStorageBucket(bucketName);
-      if (!bucketConfigured) {
-        console.warn(`Posts: Storage bucket "${bucketName}" not properly configured, using direct URI`);
-        return uri;
-      }
+      // Check storage bucket configuration first (this is informational, we'll try upload anyway)
+      await checkStorageBucket(bucketName);
       
       // Generate a unique filename
       const timestamp = Date.now();
