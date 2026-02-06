@@ -66,8 +66,6 @@ export default function VideoPlayer({
             errorMsg = status.error;
           } else if (status.error.message) {
             errorMsg = status.error.message;
-          } else if (status.error.localizedDescription) {
-            errorMsg = status.error.localizedDescription;
           }
         }
         
