@@ -116,6 +116,17 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         const profile = post.profiles ?? {};
         const resolvedName = profile.name ?? profile.full_name ?? profile.username ?? profile.email ?? 'Unknown User';
         console.log('Transforming post:', post.id, 'by user:', resolvedName);
+        
+        // Log media information
+        const hasVideo = !!post.video_url;
+        const hasImage = !!post.image_url;
+        if (hasVideo) {
+          console.log('[Posts] Post has video:', post.id, 'URL:', post.video_url);
+        }
+        if (hasImage) {
+          console.log('[Posts] Post has image:', post.id, 'URL:', post.image_url);
+        }
+        
         return {
           id: post.id,
           userId: post.user_id,
