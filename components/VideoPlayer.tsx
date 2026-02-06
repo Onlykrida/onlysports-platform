@@ -57,8 +57,20 @@ export default function VideoPlayer({
         setIsLoading(false);
         setError(null);
       } else if (status.status === 'error') {
-        console.error('[VideoPlayer] Video error:', status.error);
-        const errorMsg = status.error?.message || 'Unable to play this video';
+        console.error('[VideoPlayer] Video error:', JSON.stringify(status.error, null, 2));
+        console.error('[VideoPlayer] Full status:', JSON.stringify(status, null, 2));
+        
+        let errorMsg = 'Unable to play this video';
+        if (status.error) {
+          if (typeof status.error === 'string') {
+            errorMsg = status.error;
+          } else if (status.error.message) {
+            errorMsg = status.error.message;
+          } else if (status.error.localizedDescription) {
+            errorMsg = status.error.localizedDescription;
+          }
+        }
+        
         setError(errorMsg);
         setIsLoading(false);
       }
