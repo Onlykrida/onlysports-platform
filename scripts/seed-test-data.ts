@@ -12,7 +12,7 @@ type Env = {
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const SEED_TAG = process.env.SEED_TAG || 'onlysports-seed';
+const SEED_TAG = process.env.SEED_TAG || 'onlykrida-seed';
 const TOTAL_USERS = Number(process.env.SEED_TOTAL_USERS || 50);
 
 const IMAGE_SOURCES: string[] = [

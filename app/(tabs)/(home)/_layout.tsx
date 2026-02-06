@@ -24,7 +24,7 @@ function HeaderTitle() {
           fontSize: 20, 
           fontWeight: 'bold', 
           color: theme.colors.primary
-        }}>OnlySports</Text>
+        }}>OnlyKrida</Text>
         <Text style={{ 
           fontSize: 16, 
           color: theme.colors.textSecondary,

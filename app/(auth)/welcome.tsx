@@ -60,9 +60,9 @@ export default function WelcomeScreen() {
                 />
                 <View style={styles.logoTextContainer}>
                   <Text accessibilityRole="header" testID="title-shadow" style={styles.logoShadow}>
-                    OnlySports
+                    OnlyKrida
                   </Text>
-                  <Text testID="title" style={styles.logo}>OnlySports</Text>
+                  <Text testID="title" style={styles.logo}>OnlyKrida</Text>
                 </View>
               </View>
               <Text testID="tagline" style={styles.tagline}>

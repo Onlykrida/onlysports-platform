@@ -50,9 +50,9 @@ export default function ShareModal({ visible, onClose, post }: ShareModalProps) 
       const ellipsis = post.content.length > 100 ? '...' : '';
       
       // Create a shareable link to the post
-      const postLink = `https://onlysports-app.vercel.app/post/${post.id}`;
+      const postLink = `https://onlykrida-app.vercel.app/post/${post.id}`;
       
-      const shareMessage = `🏆 Check out this post from ${post.userName}:\n\n"${contentPreview}${ellipsis}"\n\n🔗 View full post: ${postLink}\n\n#OnlySports #${post.userRole}`;
+      const shareMessage = `🏆 Check out this post from ${post.userName}:\n\n"${contentPreview}${ellipsis}"\n\n🔗 View full post: ${postLink}\n\n#OnlyKrida #${post.userRole}`;
       
       const result = await sendMessage(conversation.participantId, shareMessage, post.id);
       

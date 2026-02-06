@@ -1,8 +1,8 @@
-# OnlySports - Complete App Overview
+# OnlyKrida - Complete App Overview
 
 ## 🏆 What We've Built
 
-OnlySports is a fully functional React Native (Expo) mobile app designed to connect athletes, coaches, scouts, teams, and fans in the sports community. The app provides a comprehensive platform for networking, content sharing, opportunity discovery, and real-time communication.
+OnlyKrida is a fully functional React Native (Expo) mobile app designed to connect athletes, coaches, scouts, teams, and fans in the sports community. The app provides a comprehensive platform for networking, content sharing, opportunity discovery, and real-time communication.
 
 ## 🔐 Authentication & User Management
 
@@ -179,6 +179,6 @@ OnlySports is a fully functional React Native (Expo) mobile app designed to conn
 
 ## 🏁 Conclusion
 
-OnlySports is a comprehensive, production-ready mobile application that successfully bridges the gap between athletes, coaches, scouts, teams, and fans. With its robust feature set, modern design, and scalable architecture, the app provides a solid foundation for building a thriving sports community platform.
+OnlyKrida is a comprehensive, production-ready mobile application that successfully bridges the gap between athletes, coaches, scouts, teams, and fans. With its robust feature set, modern design, and scalable architecture, the app provides a solid foundation for building a thriving sports community platform.
 
 The app demonstrates best practices in mobile development, including proper state management, real-time functionality, secure authentication, and user-friendly design. All core features are fully functional and ready for deployment to app stores.

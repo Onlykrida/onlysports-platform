@@ -1,4 +1,4 @@
-# Storage Setup Instructions for OnlySports
+# Storage Setup Instructions for OnlyKrida
 
 ## Problem
 Posts are only visible to the creator because the storage bucket is not properly configured for public access.

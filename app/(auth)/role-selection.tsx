@@ -90,7 +90,7 @@ export default function RoleSelectionScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Choose Your Role</Text>
           <Text style={styles.subtitle}>
-            Select how you want to use OnlySports
+            Select how you want to use OnlyKrida
           </Text>
         </View>
 

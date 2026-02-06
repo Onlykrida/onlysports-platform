@@ -1,8 +1,8 @@
-# OnlySports - Technical Documentation
+# OnlyKrida - Technical Documentation
 
 ## Executive Summary
 
-OnlySports is a comprehensive social networking platform built specifically for the sports community. The application connects athletes, coaches, scouts, teams, trainers, and fans in a unified ecosystem, facilitating networking, opportunity discovery, and content sharing.
+OnlyKrida is a comprehensive social networking platform built specifically for the sports community. The application connects athletes, coaches, scouts, teams, trainers, and fans in a unified ecosystem, facilitating networking, opportunity discovery, and content sharing.
 
 ## Project Overview
 
@@ -48,7 +48,7 @@ OnlySports is a comprehensive social networking platform built specifically for 
 ### Application Structure
 
 ```
-onlysports/
+onlykrida/
 ├── app/                          # Expo Router pages
 │   ├── (auth)/                   # Authentication flows
 │   │   ├── welcome.tsx
@@ -531,7 +531,7 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY
 1. **Clone repository**
    ```bash
    git clone <repository-url>
-   cd onlysports
+   cd onlykrida
    ```
 
 2. **Install dependencies**
@@ -607,7 +607,7 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY
 
 ## Conclusion
 
-OnlySports is a production-ready, scalable social platform built with modern technologies and best practices. The application leverages Supabase for a robust backend infrastructure while maintaining a clean, performant React Native frontend. With comprehensive security measures, real-time capabilities, and a well-structured codebase, the platform is ready for further development and scaling.
+OnlyKrida is a production-ready, scalable social platform built with modern technologies and best practices. The application leverages Supabase for a robust backend infrastructure while maintaining a clean, performant React Native frontend. With comprehensive security measures, real-time capabilities, and a well-structured codebase, the platform is ready for further development and scaling.
 
 ### Key Strengths
 ✅ **Type-safe** - Full TypeScript coverage  

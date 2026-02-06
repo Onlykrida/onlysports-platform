@@ -1,9 +1,9 @@
-# Supabase Setup Guide for OnlySports
+# Supabase Setup Guide for OnlyKrida
 
 ## 1. Get Your Supabase Credentials
 
 1. Go to [supabase.com](https://supabase.com) and sign in to your account
-2. Select your OnlySports project (or create a new one)
+2. Select your OnlyKrida project (or create a new one)
 3. Go to **Settings** → **API**
 4. Copy your:
    - **Project URL** (looks like: `https://your-project-id.supabase.co`)
