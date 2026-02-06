@@ -1,6 +1,6 @@
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, StyleSheet, ViewStyle, Image, Platform, Text, ActivityIndicator } from 'react-native';
-import { Video } from 'expo-video';
+import { VideoView, useVideoPlayer } from 'expo-video';
 
 interface VideoPlayerProps {
   uri: string;
@@ -25,10 +25,16 @@ export default function VideoPlayer({
   style,
   testID = 'video-player',
 }: VideoPlayerProps) {
-  const ref = useRef<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isReady, setIsReady] = useState<boolean>(false);
+  
+  const player = useVideoPlayer(uri, (player) => {
+    player.loop = loop;
+    player.muted = muted;
+    if (autoPlay) {
+      player.play();
+    }
+  });
 
   useEffect(() => {
     console.log('[VideoPlayer] Initializing with URI:', uri);
@@ -36,36 +42,32 @@ export default function VideoPlayer({
     console.log('[VideoPlayer] Platform:', Platform.OS);
     setError(null);
     setIsLoading(true);
-    setIsReady(false);
   }, [uri, poster]);
 
-  const source = useMemo(() => ({ uri }), [uri]);
   const posterSource = useMemo(() => (poster ? { uri: poster } : undefined), [poster]);
 
-  const onError = useCallback((e: unknown) => {
-    console.error('[VideoPlayer] Playback error:', e);
-    const errorMsg = e && typeof e === 'object' && 'message' in e 
-      ? String(e.message) 
-      : 'Unable to play this video';
-    console.error('[VideoPlayer] Error message:', errorMsg);
-    setError(errorMsg);
-    setIsLoading(false);
-  }, []);
-
-  const onLoad = useCallback(() => {
-    console.log('[VideoPlayer] Video loaded successfully');
-    setIsLoading(false);
-    setIsReady(true);
-  }, []);
-
-  const onLoadStart = useCallback(() => {
-    console.log('[VideoPlayer] Video load started');
-    setIsLoading(true);
-  }, []);
-
   useEffect(() => {
-    console.log('[VideoPlayer] Video component available:', !!Video);
-  }, []);
+    if (!player) return;
+
+    const subscription = player.addListener('statusChange', (status) => {
+      console.log('[VideoPlayer] Status:', status);
+      
+      if (status.status === 'readyToPlay') {
+        console.log('[VideoPlayer] Video ready to play');
+        setIsLoading(false);
+        setError(null);
+      } else if (status.status === 'error') {
+        console.error('[VideoPlayer] Video error:', status.error);
+        const errorMsg = status.error?.message || 'Unable to play this video';
+        setError(errorMsg);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [player]);
 
   return (
     <View style={[styles.container, { height, width }, style]} testID={`${testID}-container`}>
@@ -88,18 +90,11 @@ export default function VideoPlayer({
         </View>
       ) : (
         <>
-          <Video
-            ref={ref}
-            source={source}
+          <VideoView
+            player={player}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
-            useNativeControls
-            isLooping={loop}
-            isMuted={muted}
-            shouldPlay={autoPlay}
-            onError={onError}
-            onLoad={onLoad}
-            onLoadStart={onLoadStart}
+            nativeControls
           />
           {isLoading && !error && (
             <View style={styles.loadingOverlay}>
