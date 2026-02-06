@@ -33,6 +33,7 @@ import { useFollow } from '@/hooks/follow-context';
 import { usePosts } from '@/hooks/posts-context';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Button } from '@/components/Button';
+import VideoPlayer from '@/components/VideoPlayer';
 
 const getRoleIcon = (role: string) => {
   switch (role.toLowerCase()) {
@@ -495,9 +496,26 @@ export default function UserProfileScreen() {
           {userPosts.length > 0 ? (
             <View style={styles.postsGrid}>
               {userPosts.map((post) => (
-                <TouchableOpacity key={post.id} style={styles.postItem}>
+                <TouchableOpacity 
+                  key={post.id} 
+                  style={styles.postItem}
+                  onPress={() => router.push({ pathname: '/post/[id]' as any, params: { id: post.id } })}
+                >
                   {post.media ? (
-                    <Image source={{ uri: post.media.url }} style={styles.postImage} />
+                    post.media.type === 'video' ? (
+                      <VideoPlayer
+                        uri={post.media.url}
+                        poster={post.media.thumbnail}
+                        height={120}
+                        width="100%"
+                        autoPlay={false}
+                        loop={false}
+                        muted={true}
+                        testID={`profile-video-${post.id}`}
+                      />
+                    ) : (
+                      <Image source={{ uri: post.media.url }} style={styles.postImage} />
+                    )
                   ) : (
                     <View style={styles.postTextContainer}>
                       <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
