@@ -254,8 +254,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     }
 
     try {
-      // Determine bucket based on media type
-      const bucketName = mType === 'video' ? 'video' : 'posts';
+      // Use a single bucket for all media
+      const bucketName = 'posts';
       console.log('Posts: starting media upload', { uri, mType, bucket: bucketName, platform: Platform.OS, userId: user.id });
       
       // Check storage bucket configuration first (this is informational, we'll try upload anyway)
