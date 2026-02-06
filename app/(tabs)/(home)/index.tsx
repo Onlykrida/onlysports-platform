@@ -78,6 +78,7 @@ export default function HomeScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
+  const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   
   console.log('HomeScreen render - posts:', posts.length, 'isLoading:', isLoading, 'user:', user?.name);
 
@@ -109,6 +110,20 @@ export default function HomeScreen() {
   const openMenu = useCallback((post: Post) => {
     setSelectedPost(post);
     setMenuVisible(true);
+  }, []);
+
+  const handleSaveToggle = useCallback((postId: string) => {
+    setSavedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+        console.log('Post unsaved:', postId);
+      } else {
+        newSet.add(postId);
+        console.log('Post saved:', postId);
+      }
+      return newSet;
+    });
   }, []);
 
   const renderBadge = (role: string, fit?: number) => {
@@ -156,8 +171,16 @@ export default function HomeScreen() {
               <MoreVertical size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.saveButton}>
-            <Star size={20} color={theme.colors.textSecondary} />
+          <TouchableOpacity 
+            style={styles.saveButton}
+            onPress={() => handleSaveToggle(item.id)}
+            testID={`save-button-${item.id}`}
+          >
+            <Star 
+              size={20} 
+              color={savedPosts.has(item.id) ? theme.colors.warning : theme.colors.textSecondary}
+              fill={savedPosts.has(item.id) ? theme.colors.warning : 'transparent'}
+            />
           </TouchableOpacity>
         </View>
       </View>

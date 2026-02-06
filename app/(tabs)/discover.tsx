@@ -9,9 +9,11 @@ import {
   TextInput,
   FlatList,
   ActivityIndicator,
+  Modal,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, Filter, MapPin, UserPlus, UserCheck, Bell, MessageCircle } from 'lucide-react-native';
+import { Search, Filter, MapPin, UserPlus, UserCheck, Bell, MessageCircle, X } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
 import { sports } from '@/mocks/data';
@@ -32,6 +34,11 @@ export default function DiscoverScreen() {
   const [showSearchResults, setShowSearchResults] = useState<boolean>(false);
   const [usersError, setUsersError] = useState<string | null>(null);
   const [hasInitializedFilters, setHasInitializedFilters] = useState<boolean>(false);
+  const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
+  const [tempSport, setTempSport] = useState<string | null>(null);
+  const [tempRole, setTempRole] = useState<string | null>(null);
+  const [locationFilter, setLocationFilter] = useState<string>('');
+  const [verifiedOnly, setVerifiedOnly] = useState<boolean>(false);
 
   const { 
     searchResults, 
@@ -152,6 +159,9 @@ export default function DiscoverScreen() {
         user.role.toLowerCase().includes(q);
       const matchesSport = !selectedSport || user.sport === selectedSport;
       const matchesRole = !selectedRole || user.role === selectedRole;
+      const matchesLocation = !locationFilter || 
+        (user.location && user.location.toLowerCase().includes(locationFilter.toLowerCase()));
+      const matchesVerified = !verifiedOnly || user.verified;
       
       // Additional smart filtering based on current user's role
       let isRelevantMatch = true;
@@ -171,9 +181,9 @@ export default function DiscoverScreen() {
         }
       }
       
-      return matchesSearch && matchesSport && matchesRole && isRelevantMatch;
+      return matchesSearch && matchesSport && matchesRole && matchesLocation && matchesVerified && isRelevantMatch;
     });
-  }, [users, localSearchQuery, selectedSport, selectedRole, currentUser]);
+  }, [users, localSearchQuery, selectedSport, selectedRole, locationFilter, verifiedOnly, currentUser]);
 
   const isInitialLoading = useMemo(() => {
     return (isLoadingUsers || usersIsLoading) && users.length === 0 && !usersError;
@@ -453,8 +463,19 @@ export default function DiscoverScreen() {
               <Text style={styles.clearButtonText}>✕</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.filterButton}>
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => {
+              setTempSport(selectedSport);
+              setTempRole(selectedRole);
+              setShowFilterModal(true);
+            }}
+            testID="filter-button"
+          >
             <Filter size={20} color={theme.colors.primary} />
+            {(locationFilter || verifiedOnly) && (
+              <View style={styles.filterActiveBadge} />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -623,6 +644,124 @@ export default function DiscoverScreen() {
           )}
         </>
       )}
+
+      {/* Advanced Filter Modal */}
+      <Modal
+        visible={showFilterModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Advanced Filters</Text>
+              <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+                <X size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              {/* Sport Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Sport</Text>
+                <View style={styles.filterOptions}>
+                  <TouchableOpacity
+                    style={[styles.filterOption, !tempSport && styles.filterOptionActive]}
+                    onPress={() => setTempSport(null)}
+                  >
+                    <Text style={[styles.filterOptionText, !tempSport && styles.filterOptionTextActive]}>All Sports</Text>
+                  </TouchableOpacity>
+                  {sports.map((sport) => (
+                    <TouchableOpacity
+                      key={sport}
+                      style={[styles.filterOption, tempSport === sport && styles.filterOptionActive]}
+                      onPress={() => setTempSport(sport)}
+                    >
+                      <Text style={[styles.filterOptionText, tempSport === sport && styles.filterOptionTextActive]}>
+                        {sport}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Role Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Role</Text>
+                <View style={styles.filterOptions}>
+                  <TouchableOpacity
+                    style={[styles.filterOption, !tempRole && styles.filterOptionActive]}
+                    onPress={() => setTempRole(null)}
+                  >
+                    <Text style={[styles.filterOptionText, !tempRole && styles.filterOptionTextActive]}>All Roles</Text>
+                  </TouchableOpacity>
+                  {['athlete', 'scout', 'coach', 'trainer'].map((role) => (
+                    <TouchableOpacity
+                      key={role}
+                      style={[styles.filterOption, tempRole === role && styles.filterOptionActive]}
+                      onPress={() => setTempRole(role)}
+                    >
+                      <Text style={[styles.filterOptionText, tempRole === role && styles.filterOptionTextActive]}>
+                        {role.charAt(0).toUpperCase() + role.slice(1)}s
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Location Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Location</Text>
+                <TextInput
+                  style={styles.filterInput}
+                  placeholder="Filter by location..."
+                  value={locationFilter}
+                  onChangeText={setLocationFilter}
+                  placeholderTextColor={theme.colors.textSecondary}
+                />
+              </View>
+
+              {/* Verified Only */}
+              <View style={styles.filterSection}>
+                <View style={styles.filterSwitchRow}>
+                  <Text style={styles.filterSectionTitle}>Verified Only</Text>
+                  <Switch
+                    value={verifiedOnly}
+                    onValueChange={setVerifiedOnly}
+                    trackColor={{ false: theme.colors.border, true: theme.colors.primary + '80' }}
+                    thumbColor={verifiedOnly ? theme.colors.primary : theme.colors.textSecondary}
+                  />
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.clearFiltersModalButton}
+                onPress={() => {
+                  setTempSport(null);
+                  setTempRole(null);
+                  setLocationFilter('');
+                  setVerifiedOnly(false);
+                }}
+              >
+                <Text style={styles.clearFiltersModalButtonText}>Clear All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.applyFiltersButton}
+                onPress={() => {
+                  setSelectedSport(tempSport);
+                  setSelectedRole(tempRole);
+                  setShowFilterModal(false);
+                }}
+              >
+                <Text style={styles.applyFiltersButtonText}>Apply Filters</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -998,5 +1137,123 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
+  },
+  filterActiveBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.danger,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderTopRightRadius: theme.borderRadius.xl,
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  modalTitle: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  modalBody: {
+    flex: 1,
+    padding: theme.spacing.lg,
+  },
+  filterSection: {
+    marginBottom: theme.spacing.xl,
+  },
+  filterSectionTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+  },
+  filterOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+  },
+  filterOption: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  filterOptionActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  filterOptionText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.fontWeight.medium,
+  },
+  filterOptionTextActive: {
+    color: theme.colors.white,
+  },
+  filterInput: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  filterSwitchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    padding: theme.spacing.lg,
+    gap: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  clearFiltersModalButton: {
+    flex: 1,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  clearFiltersModalButtonText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    fontWeight: theme.fontWeight.semibold,
+  },
+  applyFiltersButton: {
+    flex: 1,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+  },
+  applyFiltersButtonText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.white,
+    fontWeight: theme.fontWeight.semibold,
   },
 });
