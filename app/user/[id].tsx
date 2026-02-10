@@ -84,11 +84,11 @@ export default function UserProfileScreen() {
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
-  const { getInterestedForPlayer } = useScouting();
+  const { getInterestedForPlayer, expressInterest, removeInterest, hasExpressedInterest: checkInterest, getInterestedOrganizations } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const { createNotification } = useNotifications();
   const [isInterestLoading, setIsInterestLoading] = useState(false);
-  const [hasExpressedInterest, setHasExpressedInterest] = useState(false);
+  const hasExpressedInterest = checkInterest(id || '');
   const [interestedOrganizations, setInterestedOrganizations] = useState<User[]>([]);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
@@ -152,47 +152,9 @@ export default function UserProfileScreen() {
       
       if (userData?.role === 'athlete') {
         console.log('UserProfile: Loading interested organizations for athlete', id);
-        
-        const { data: followersData, error: followersError } = await supabase
-          .from('follows')
-          .select('follower_id')
-          .eq('following_id', id);
-        
-        console.log('UserProfile: Followers data', { followersData, followersError });
-        
-        if (!followersError && followersData && followersData.length > 0) {
-          const followerIds = followersData.map((f: any) => f.follower_id);
-          console.log('UserProfile: Follower IDs', followerIds);
-          
-          const { data: profilesData, error: profilesError } = await supabase
-            .from('profiles')
-            .select('id, name, avatar, role, sport, verified, role_specific_data')
-            .in('id', followerIds);
-          
-          console.log('UserProfile: Profiles data', { profilesData, profilesError });
-          
-          if (!profilesError && profilesData) {
-            const orgs = profilesData
-              .filter((profile: any) => ['coach', 'scout', 'team', 'academy'].includes(profile.role))
-              .map((profile: any) => ({
-                id: profile.id,
-                name: profile.name,
-                avatar: profile.avatar,
-                role: profile.role,
-                sport: profile.sport,
-                verified: profile.verified,
-                email: '',
-                createdAt: new Date(),
-                roleSpecificData: profile.role_specific_data || {},
-              } as User));
-            
-            console.log('UserProfile: Interested organizations', orgs);
-            setInterestedOrganizations(orgs);
-          }
-        } else {
-          console.log('UserProfile: No followers found');
-          setInterestedOrganizations([]);
-        }
+        const orgs = await getInterestedOrganizations(id);
+        console.log('UserProfile: Interested organizations', orgs);
+        setInterestedOrganizations(orgs);
       }
     } catch (error) {
       console.error('Failed to load user profile:', error);
@@ -200,7 +162,7 @@ export default function UserProfileScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [getFollowersCount, getFollowingCount, id, posts]);
+  }, [getFollowersCount, getFollowingCount, id, posts, getInterestedOrganizations]);
 
   useEffect(() => {
     void loadUserProfile();
@@ -220,91 +182,30 @@ export default function UserProfileScreen() {
     void loadInterestedScouts();
   }, [loadInterestedScouts]);
 
-  useEffect(() => {
-    const checkInterest = async () => {
-      if (!currentUser || !id || !isSupabaseConfigured) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', currentUser.id)
-          .eq('following_id', id)
-          .maybeSingle();
-        
-        if (!error && data) {
-          setHasExpressedInterest(true);
-        }
-      } catch (e) {
-        console.log('Error checking interest:', e);
-      }
-    };
-    checkInterest();
-  }, [currentUser, id]);
+
 
   useEffect(() => {
     if (!id || !isSupabaseConfigured || !profileUser || profileUser.role !== 'athlete') return;
 
     const channel = supabase
       .channel(`profile_changes_${id}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'follows',
-        filter: `following_id=eq.${id}`
-      }, async (payload: any) => {
-        console.log('UserProfile: Follow change detected', payload);
-        
-        if (payload.eventType === 'INSERT') {
-          const followerId = payload.new.follower_id;
-          
-          const { data: followerData, error } = await supabase
-            .from('profiles')
-            .select('id, name, avatar, role, sport, verified, role_specific_data')
-            .eq('id', followerId)
-            .single();
-          
-          if (!error && followerData && ['coach', 'scout', 'team', 'academy'].includes(followerData.role)) {
-            const newOrg: User = {
-              id: followerData.id,
-              name: followerData.name,
-              avatar: followerData.avatar,
-              role: followerData.role,
-              sport: followerData.sport,
-              verified: followerData.verified,
-              email: '',
-              createdAt: new Date(),
-              roleSpecificData: followerData.role_specific_data || {},
-            };
-            
-            setInterestedOrganizations(prev => {
-              const exists = prev.some(org => org.id === newOrg.id);
-              if (exists) return prev;
-              return [newOrg, ...prev];
-            });
-            setFollowersCount(prev => prev + 1);
-          }
-        } else if (payload.eventType === 'DELETE') {
-          const followerId = payload.old.follower_id;
-          setInterestedOrganizations(prev => prev.filter(org => org.id !== followerId));
-          setFollowersCount(prev => Math.max(0, prev - 1));
-        }
-      })
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'ai_recommendations',
         filter: `player_id=eq.${id}`
-      }, () => {
+      }, async () => {
         console.log('UserProfile: AI recommendation changed, refreshing');
         void loadInterestedScouts();
+        const orgs = await getInterestedOrganizations(id);
+        setInterestedOrganizations(orgs);
       })
       .subscribe();
 
     return () => {
       channel.unsubscribe();
     };
-  }, [id, profileUser, loadInterestedScouts]);
+  }, [id, profileUser, loadInterestedScouts, getInterestedOrganizations]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -351,32 +252,22 @@ export default function UserProfileScreen() {
     setIsInterestLoading(true);
     try {
       if (hasExpressedInterest) {
-        const result = await unfollowUser(profileUser.id);
+        const result = await removeInterest(profileUser.id);
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
-          setHasExpressedInterest(false);
-          setFollowersCount(prev => prev - 1);
-          
-          if (isSupabaseConfigured && ['scout'].includes(currentUser.role)) {
-            const { error: delError } = await supabase
-              .from('ai_recommendations')
-              .delete()
-              .eq('scout_id', currentUser.id)
-              .eq('player_id', profileUser.id);
-            
-            if (delError) {
-              console.log('Failed to remove AI recommendation:', delError);
-            }
-          }
+          setInterestedOrganizations(prev => prev.filter(org => org.id !== currentUser.id));
         }
       } else {
-        const result = await followUser(profileUser.id);
+        const result = await expressInterest(profileUser.id);
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
-          setHasExpressedInterest(true);
-          setFollowersCount(prev => prev + 1);
+          setInterestedOrganizations(prev => {
+            const exists = prev.some(org => org.id === currentUser.id);
+            if (exists) return prev;
+            return [currentUser, ...prev];
+          });
           
           const orgTypeLabel = currentUser.role === 'coach' ? 'Coach' : 
                                currentUser.role === 'scout' ? 'Scout' : 
@@ -385,32 +276,11 @@ export default function UserProfileScreen() {
           
           await createNotification(
             profileUser.id,
-            'follow',
+            'profile_view',
             `${orgTypeLabel} Interested in Your Profile`,
             `${currentUser.name}${currentUser.roleSpecificData?.organization ? ` from ${currentUser.roleSpecificData.organization}` : ''} is interested in your athletic profile`,
             { userId: currentUser.id, userRole: currentUser.role }
           );
-          
-          if (isSupabaseConfigured && ['scout'].includes(currentUser.role)) {
-            const { error: recError } = await supabase
-              .from('ai_recommendations')
-              .upsert({
-                scout_id: currentUser.id,
-                player_id: profileUser.id,
-                fit_score: 85,
-                breakdown: {
-                  skill: 85,
-                  speed: 85,
-                  stamina: 85,
-                  positionMatch: 85
-                },
-                notes: 'Manually expressed interest',
-              }, { onConflict: 'scout_id,player_id' });
-            
-            if (recError && recError.code !== 'PGRST205') {
-              console.log('Failed to create AI recommendation:', recError);
-            }
-          }
         }
       }
     } catch (error) {

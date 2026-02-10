@@ -60,6 +60,10 @@ interface ScoutingState {
   getTopForScout: (scoutId: string, limit?: number) => Promise<AIRecommendationRow[]>;
   getInterestedForPlayer: (playerId: string, threshold?: number) => Promise<{ scout: User; rec: AIRecommendationRow }[]>;
   refresh: () => Promise<void>;
+  expressInterest: (athleteId: string) => Promise<{ error?: string }>;
+  removeInterest: (athleteId: string) => Promise<{ error?: string }>;
+  hasExpressedInterest: (athleteId: string) => boolean;
+  getInterestedOrganizations: (athleteId: string) => Promise<User[]>;
 }
 
 const STORAGE_KEY = 'ai_recommendations_cache_v1';
@@ -336,6 +340,119 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     }
   }, [computeForScout, currentUser?.id, currentUser?.role]);
 
+  const expressInterest = useCallback(async (athleteId: string): Promise<{ error?: string }> => {
+    if (!currentUser || !isSupabaseConfigured) {
+      return { error: 'Not authenticated or database not configured' };
+    }
+
+    if (!['coach', 'scout', 'team', 'academy'].includes(currentUser.role)) {
+      return { error: 'Only coaches, scouts, teams, and academies can express interest' };
+    }
+
+    try {
+      const { error: recError } = await supabase
+        .from('ai_recommendations')
+        .upsert({
+          scout_id: currentUser.id,
+          player_id: athleteId,
+          fit_score: 85,
+          breakdown: {
+            skill: 85,
+            speed: 85,
+            stamina: 85,
+            positionMatch: 85
+          },
+          notes: 'Manually expressed interest',
+        }, { onConflict: 'scout_id,player_id' });
+
+      if (recError && recError.code !== 'PGRST205') {
+        console.error('Failed to express interest:', recError);
+        return { error: 'Failed to express interest' };
+      }
+
+      return {};
+    } catch (error) {
+      console.error('Express interest failed:', error);
+      return { error: 'Failed to express interest' };
+    }
+  }, [currentUser]);
+
+  const removeInterest = useCallback(async (athleteId: string): Promise<{ error?: string }> => {
+    if (!currentUser || !isSupabaseConfigured) {
+      return { error: 'Not authenticated or database not configured' };
+    }
+
+    try {
+      const { error } = await supabase
+        .from('ai_recommendations')
+        .delete()
+        .eq('scout_id', currentUser.id)
+        .eq('player_id', athleteId);
+
+      if (error) {
+        console.error('Failed to remove interest:', error);
+        return { error: 'Failed to remove interest' };
+      }
+
+      return {};
+    } catch (error) {
+      console.error('Remove interest failed:', error);
+      return { error: 'Failed to remove interest' };
+    }
+  }, [currentUser]);
+
+  const hasExpressedInterest = useCallback((athleteId: string): boolean => {
+    if (!currentUser) return false;
+    return !!topRecommendations[currentUser.id]?.some(rec => rec.player_id === athleteId);
+  }, [currentUser, topRecommendations]);
+
+  const getInterestedOrganizations = useCallback(async (athleteId: string): Promise<User[]> => {
+    if (!isSupabaseConfigured) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('ai_recommendations')
+        .select('scout_id')
+        .eq('player_id', athleteId);
+      
+      if (error) {
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+          return [];
+        }
+        console.error('Failed to get interested organizations:', error);
+        return [];
+      }
+      
+      const scoutIds = (data || []).map((rec: any) => rec.scout_id);
+      if (scoutIds.length === 0) return [];
+      
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, avatar, role, sport, verified, role_specific_data, email, created_at')
+        .in('id', scoutIds);
+      
+      if (profilesError) {
+        console.error('Failed to get profiles:', profilesError);
+        return [];
+      }
+      
+      return (profilesData || []).map((profile: any) => ({
+        id: profile.id,
+        name: profile.name,
+        avatar: profile.avatar,
+        role: profile.role,
+        sport: profile.sport,
+        verified: profile.verified,
+        email: profile.email,
+        createdAt: new Date(profile.created_at),
+        roleSpecificData: profile.role_specific_data || {},
+      } as User));
+    } catch (error) {
+      console.error('Get interested organizations failed:', error);
+      return [];
+    }
+  }, []);
+
   return useMemo(() => ({
     isReady,
     isComputing,
@@ -345,5 +462,9 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     getTopForScout,
     getInterestedForPlayer,
     refresh,
-  }), [isReady, isComputing, topRecommendations, interestedScouts, computeForScout, getTopForScout, getInterestedForPlayer, refresh]);
+    expressInterest,
+    removeInterest,
+    hasExpressedInterest,
+    getInterestedOrganizations,
+  }), [isReady, isComputing, topRecommendations, interestedScouts, computeForScout, getTopForScout, getInterestedForPlayer, refresh, expressInterest, removeInterest, hasExpressedInterest, getInterestedOrganizations]);
 });
