@@ -84,8 +84,9 @@ export default function UserProfileScreen() {
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
-  const { getInterestedForPlayer, expressInterest, removeInterest, hasExpressedInterest: checkInterest, getInterestedOrganizations } = useScouting();
+  const { getInterestedForPlayer, expressInterest, removeInterest, hasExpressedInterest: checkInterest, getInterestedOrganizations, getTopForScout } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
+  const [recommendedAthletes, setRecommendedAthletes] = useState<User[]>([]);
   const { createNotification } = useNotifications();
   const [isInterestLoading, setIsInterestLoading] = useState(false);
   const hasExpressedInterest = checkInterest(id || '');
@@ -155,6 +156,35 @@ export default function UserProfileScreen() {
         const orgs = await getInterestedOrganizations(id);
         console.log('UserProfile: Interested organizations loaded', { count: orgs.length, orgs });
         setInterestedOrganizations(orgs);
+      }
+      
+      if (userData?.role && ['coach', 'scout', 'team', 'academy'].includes(userData.role)) {
+        console.log('UserProfile: Loading recommended athletes for organization', id);
+        const recommendations = await getTopForScout(id, 20);
+        if (recommendations.length > 0) {
+          const athleteIds = recommendations.map(rec => rec.player_id);
+          const { data: athletesData, error: athletesError } = await supabase
+            .from('profiles')
+            .select('id, name, avatar, role, sport, position, verified, role_specific_data, email, created_at')
+            .in('id', athleteIds);
+          
+          if (athletesData && !athletesError) {
+            const athletes: User[] = athletesData.map((profile: any) => ({
+              id: profile.id,
+              name: profile.name,
+              avatar: profile.avatar,
+              role: profile.role,
+              sport: profile.sport,
+              position: profile.position,
+              verified: profile.verified,
+              email: profile.email,
+              createdAt: new Date(profile.created_at),
+              roleSpecificData: profile.role_specific_data || {},
+            }));
+            console.log('UserProfile: Recommended athletes loaded', { count: athletes.length });
+            setRecommendedAthletes(athletes);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to load user profile:', error);
@@ -494,25 +524,46 @@ export default function UserProfileScreen() {
                     </Text>
                   </View>
                   
-                  <View style={styles.interestedOrgsList}>
-                    {interestedOrganizations.slice(0, 6).map((org, idx) => (
+                  <View style={styles.interestedOrgDetailsList}>
+                    {interestedOrganizations.slice(0, 5).map((org) => (
                       <TouchableOpacity 
                         key={org.id} 
-                        style={styles.interestedOrgItem}
+                        style={styles.interestedOrgDetailItem}
                         onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: org.id } })}
                       >
                         <Image 
                           source={{ uri: org.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
-                          style={styles.interestedOrgAvatar}
+                          style={styles.interestedOrgDetailAvatar}
                         />
-                        <View style={styles.interestedOrgBadge}>
-                          {getRoleIcon(org.role || 'scout')}
+                        <View style={styles.interestedOrgDetailInfo}>
+                          <View style={styles.interestedOrgDetailNameRow}>
+                            <Text style={styles.interestedOrgDetailName}>{org.name}</Text>
+                            {org.verified && <Text style={styles.verified}>✓</Text>}
+                          </View>
+                          <View style={styles.interestedOrgDetailMeta}>
+                            <View style={[styles.interestedOrgDetailRoleBadge, { backgroundColor: getRoleBadgeColor(org.role || 'scout') + '30' }]}>
+                              {getRoleIcon(org.role || 'scout')}
+                              <Text style={[styles.interestedOrgDetailRole, { color: getRoleBadgeColor(org.role || 'scout') }]}>
+                                {org.role ? org.role.charAt(0).toUpperCase() + org.role.slice(1) : 'Organization'}
+                              </Text>
+                            </View>
+                            {org.roleSpecificData?.organization && (
+                              <Text style={styles.interestedOrgDetailTeam} numberOfLines={1}>
+                                {org.roleSpecificData.organization}
+                              </Text>
+                            )}
+                          </View>
+                          {org.sport && (
+                            <Text style={styles.interestedOrgDetailSport}>{org.sport}</Text>
+                          )}
                         </View>
                       </TouchableOpacity>
                     ))}
-                    {interestedOrganizations.length > 6 && (
-                      <View style={styles.interestedOrgMore}>
-                        <Text style={styles.interestedOrgMoreText}>+{interestedOrganizations.length - 6}</Text>
+                    {interestedOrganizations.length > 5 && (
+                      <View style={styles.interestedOrgDetailMore}>
+                        <Text style={styles.interestedOrgDetailMoreText}>
+                          +{interestedOrganizations.length - 5} more {interestedOrganizations.length - 5 === 1 ? 'organization' : 'organizations'}
+                        </Text>
                       </View>
                     )}
                   </View>
@@ -653,28 +704,49 @@ export default function UserProfileScreen() {
           </View>
         </View>
 
-        {/* Interested Scouts for athletes */}
-        {profileUser.role === 'athlete' && (
+        {/* Recommended Athletes for scouts/coaches/organizations */}
+        {['coach', 'scout', 'team', 'academy'].includes(profileUser.role) && recommendedAthletes.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Flame size={20} color={theme.colors.success} />
-              <Text style={styles.sectionTitle}>Scouts Interested in {profileUser.name}</Text>
+              <Star size={20} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>Recommended Athletes</Text>
             </View>
-            {interested.length > 0 ? (
-              interested.slice(0, 5).map((it, idx) => (
-                <View key={`${it.scoutName}-${idx}`} style={styles.achievementItem}>
-                  <Star size={18} color={theme.colors.warning} />
-                  <View style={styles.achievementInfo}>
-                    <Text style={styles.achievementTitle}>{it.scoutName}</Text>
-                    <Text style={styles.achievementDescription}>Fit score {it.score}%</Text>
+            <View style={styles.recommendedAthletesList}>
+              {recommendedAthletes.slice(0, 5).map((athlete) => (
+                <TouchableOpacity 
+                  key={athlete.id} 
+                  style={styles.recommendedAthleteItem}
+                  onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: athlete.id } })}
+                >
+                  <Image 
+                    source={{ uri: athlete.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
+                    style={styles.recommendedAthleteAvatar}
+                  />
+                  <View style={styles.recommendedAthleteInfo}>
+                    <View style={styles.recommendedAthleteNameRow}>
+                      <Text style={styles.recommendedAthleteName}>{athlete.name}</Text>
+                      {athlete.verified && <Text style={styles.verified}>✓</Text>}
+                    </View>
+                    <View style={styles.recommendedAthleteMeta}>
+                      {athlete.sport && (
+                        <Text style={styles.recommendedAthleteSport}>{athlete.sport}</Text>
+                      )}
+                      {athlete.position && (
+                        <Text style={styles.recommendedAthletePosition}>• {athlete.position}</Text>
+                      )}
+                    </View>
+                    {athlete.roleSpecificData?.currentTeam && (
+                      <Text style={styles.recommendedAthleteTeam} numberOfLines={1}>
+                        🏆 {athlete.roleSpecificData.currentTeam}
+                      </Text>
+                    )}
                   </View>
-                </View>
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No interested scouts yet</Text>
-              </View>
-            )}
+                  <View style={styles.recommendedAthleteAction}>
+                    <Star size={16} color={theme.colors.primary} fill={theme.colors.primary} />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         )}
 
@@ -965,50 +1037,75 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'center',
   },
-  interestedOrgsList: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: -theme.spacing.sm,
+  interestedOrgDetailsList: {
+    gap: theme.spacing.sm,
     marginBottom: theme.spacing.lg,
   },
-  interestedOrgItem: {
-    position: 'relative',
-  },
-  interestedOrgAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 3,
-    borderColor: theme.colors.surface,
-  },
-  interestedOrgBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: theme.colors.surface,
+  interestedOrgDetailItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: theme.colors.background,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    gap: theme.spacing.md,
   },
-  interestedOrgMore: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.colors.primary + '20',
-    borderWidth: 3,
-    borderColor: theme.colors.surface,
+  interestedOrgDetailAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  interestedOrgDetailInfo: {
+    flex: 1,
+    gap: theme.spacing.xs,
+  },
+  interestedOrgDetailNameRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: theme.spacing.xs,
   },
-  interestedOrgMoreText: {
-    fontSize: theme.fontSize.sm,
+  interestedOrgDetailName: {
+    fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  interestedOrgDetailMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    flexWrap: 'wrap',
+  },
+  interestedOrgDetailRoleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.full,
+  },
+  interestedOrgDetailRole: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+  },
+  interestedOrgDetailTeam: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  interestedOrgDetailSport: {
+    fontSize: theme.fontSize.sm,
     color: theme.colors.primary,
+    fontWeight: theme.fontWeight.medium,
+  },
+  interestedOrgDetailMore: {
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+  },
+  interestedOrgDetailMoreText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textSecondary,
   },
   orgTypeBreakdown: {
     flexDirection: 'row',
@@ -1291,5 +1388,62 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     lineHeight: 18,
+  },
+  recommendedAthletesList: {
+    gap: theme.spacing.sm,
+  },
+  recommendedAthleteItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    gap: theme.spacing.md,
+  },
+  recommendedAthleteAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  recommendedAthleteInfo: {
+    flex: 1,
+    gap: theme.spacing.xs,
+  },
+  recommendedAthleteNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  recommendedAthleteName: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  recommendedAthleteMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    flexWrap: 'wrap',
+  },
+  recommendedAthleteSport: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.medium,
+  },
+  recommendedAthletePosition: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+  },
+  recommendedAthleteTeam: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+  },
+  recommendedAthleteAction: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primary + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
