@@ -79,6 +79,9 @@ export default function RoleSelectionScreen() {
         team: '/(auth)/signup-team',
         fan: '/(auth)/signup',
         trainer: '/(auth)/signup-trainer',
+        academy: '/(auth)/signup-academy',
+        brand: '/(auth)/signup-brand',
+        gym: '/(auth)/signup-gym',
       };
       router.push({ pathname: routeMap[selectedRole] as any, params: { role: selectedRole } });
     }
