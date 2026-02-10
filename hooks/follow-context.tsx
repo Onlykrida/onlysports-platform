@@ -154,29 +154,7 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
       }
 
       console.log('Successfully followed user:', userId);
-      
-      // Send follow notification (this will be handled by the database trigger)
-      // But we can also send it manually if needed
-      if (createNotification) {
-        try {
-          await createNotification(
-            userId,
-            'follow',
-            'New Follower!',
-            `${user.name || 'Someone'} started following you`,
-            {
-              followerId: user.id,
-              followerName: user.name,
-            }
-          );
-          console.log('Follow notification sent successfully');
-        } catch (notificationError) {
-          console.error('Failed to send follow notification:', notificationError);
-          // Don't fail the follow if notification fails
-        }
-      } else {
-        console.log('Notification system not available, skipping follow notification');
-      }
+      console.log('Follow notification will be handled by database trigger');
       
       // Refresh follows
       await loadFollows();
