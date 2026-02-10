@@ -320,40 +320,20 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
       console.log('Posts: upload successful', uploadData);
 
-      // For videos, use signed URLs for better compatibility with expo-video
-      // For images, use public URLs
-      if (mType === 'video') {
-        console.log('Posts: generating signed URL for video...');
-        const { data: signedUrlData, error: signedError } = await supabase.storage
-          .from(bucketName)
-          .createSignedUrl(path, 3600 * 24 * 365); // 1 year expiry
+      // Use public URLs for all media (videos and images)
+      // Signed URLs cause issues with expo-video on web due to URL safety checks
+      const { data: publicUrlData } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(path);
 
-        if (signedError || !signedUrlData?.signedUrl) {
-          console.error('Posts: failed to get signed URL:', signedError);
-          // Fallback to public URL
-          const { data: publicUrlData } = supabase.storage
-            .from(bucketName)
-            .getPublicUrl(path);
-          return publicUrlData?.publicUrl || uri;
-        }
-
-        console.log('Posts: signed URL generated:', signedUrlData.signedUrl);
-        return signedUrlData.signedUrl;
-      } else {
-        // Use public URL for images
-        const { data: publicUrlData } = supabase.storage
-          .from(bucketName)
-          .getPublicUrl(path);
-
-        const publicUrl = publicUrlData?.publicUrl;
-        if (!publicUrl) {
-          console.error('Posts: failed to get public URL');
-          return uri;
-        }
-
-        console.log('Posts: public URL generated:', publicUrl);
-        return publicUrl;
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) {
+        console.error('Posts: failed to get public URL');
+        return uri;
       }
+
+      console.log(`Posts: public URL generated for ${mType}:`, publicUrl);
+      return publicUrl;
       
     } catch (error) {
       console.error('Posts: upload exception', {
