@@ -22,7 +22,7 @@ interface CreateOpportunityModalProps {
   onClose: () => void;
 }
 
-type OpportunityCategory = 'tryout' | 'tournament' | 'sponsorship' | 'scholarship' | 'job' | 'camp';
+type OpportunityCategory = 'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
 
 interface CategoryConfig {
   id: OpportunityCategory;
@@ -34,46 +34,39 @@ interface CategoryConfig {
 
 const categories: CategoryConfig[] = [
   {
-    id: 'tryout',
+    id: 'tryouts',
     label: 'Tryouts',
     icon: Users,
     color: theme.colors.primary,
     description: 'Team tryouts and player evaluations'
   },
   {
-    id: 'tournament',
+    id: 'tournaments',
     label: 'Tournaments',
     icon: Trophy,
     color: theme.colors.secondary,
     description: 'Competitive tournaments and events'
   },
   {
-    id: 'sponsorship',
+    id: 'sponsorships',
     label: 'Sponsorships',
     icon: DollarSign,
     color: theme.colors.accent,
     description: 'Sponsorship opportunities and partnerships'
   },
   {
-    id: 'scholarship',
+    id: 'scholarships',
     label: 'Scholarships',
     icon: GraduationCap,
     color: theme.colors.success,
     description: 'Educational scholarships and grants'
   },
   {
-    id: 'job',
+    id: 'contracts',
     label: 'Contracts',
     icon: Briefcase,
     color: '#FF6F00',
     description: 'Professional contracts and job opportunities'
-  },
-  {
-    id: 'camp',
-    label: 'Camps',
-    icon: Award,
-    color: '#00E5FF',
-    description: 'Training camps and development programs'
   },
 ];
 
@@ -232,12 +225,12 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
     if (!user?.role) return categories;
     
     const roleRecommendations: Record<string, OpportunityCategory[]> = {
-      coach: ['tryout', 'camp', 'tournament'],
-      scout: ['tryout', 'scholarship', 'tournament'],
-      gym: ['camp', 'tryout'],
-      brand: ['sponsorship', 'tournament'],
-      academy: ['camp', 'scholarship', 'tryout'],
-      team: ['tryout', 'tournament', 'sponsorship'],
+      coach: ['tryouts', 'tournaments'],
+      scout: ['tryouts', 'scholarships', 'tournaments'],
+      gym: ['tryouts'],
+      brand: ['sponsorships', 'tournaments'],
+      academy: ['scholarships', 'tryouts'],
+      team: ['tryouts', 'tournaments', 'sponsorships'],
     };
     
     const recommended = roleRecommendations[user.role] || [];

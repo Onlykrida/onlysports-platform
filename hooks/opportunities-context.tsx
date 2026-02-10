@@ -9,7 +9,7 @@ export interface Opportunity {
   teamId: string;
   title: string;
   description: string;
-  type: 'tryout' | 'tournament' | 'sponsorship' | 'scholarship' | 'job' | 'camp';
+  type: 'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
   sport: string;
   location: string;
   deadline: string;
