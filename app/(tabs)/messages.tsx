@@ -117,8 +117,7 @@ export default function MessagesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Professional Network</Text>
-        <Text style={styles.headerSubtitle}>{user?.role === 'athlete' ? 'Connect with scouts & teams' : 'Connect with talent'}</Text>
+        <Text style={styles.headerTitle}>Messages</Text>
       </View>
 
       <View style={styles.searchContainer}>
@@ -137,11 +136,9 @@ export default function MessagesScreen() {
       {filteredConversations.length === 0 ? (
         <View style={styles.emptyContainer}>
           <MessageCircle size={64} color={theme.colors.textSecondary} />
-          <Text style={styles.emptyTitle}>{user?.role === 'athlete' ? 'Build Your Network' : 'Start Conversations'}</Text>
+          <Text style={styles.emptyTitle}>No conversations yet</Text>
           <Text style={styles.emptySubtitle}>
-            {user?.role === 'athlete' 
-              ? 'Message scouts and coaches to discuss opportunities and get discovered' 
-              : 'Connect with athletes and start meaningful conversations'}
+            Start a conversation by messaging someone from their profile
           </Text>
         </View>
       ) : (
@@ -183,11 +180,6 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
-  },
-  headerSubtitle: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginTop: 2,
   },
   searchContainer: {
     paddingHorizontal: theme.spacing.md,
