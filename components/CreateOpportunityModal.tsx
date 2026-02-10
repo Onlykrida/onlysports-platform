@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, DollarSign, Users, Trophy, Award, Briefcase, GraduationCap } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
+import { useAuth } from '@/hooks/auth-context';
 
 interface CreateOpportunityModalProps {
   visible: boolean;
@@ -101,6 +102,7 @@ interface FormData {
 
 export default function CreateOpportunityModal({ visible, onClose }: CreateOpportunityModalProps) {
   const { createOpportunity } = useOpportunities();
+  const { user } = useAuth();
   const [step, setStep] = useState<'category' | 'form'>('category');
   const [selectedCategory, setSelectedCategory] = useState<OpportunityCategory | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -226,25 +228,61 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
     }
   };
 
+  const getRecommendedCategories = () => {
+    if (!user?.role) return categories;
+    
+    const roleRecommendations: Record<string, OpportunityCategory[]> = {
+      coach: ['tryout', 'camp', 'tournament'],
+      scout: ['tryout', 'scholarship', 'tournament'],
+      gym: ['camp', 'tryout'],
+      brand: ['sponsorship', 'tournament'],
+      academy: ['camp', 'scholarship', 'tryout'],
+      team: ['tryout', 'tournament', 'sponsorship'],
+    };
+    
+    const recommended = roleRecommendations[user.role] || [];
+    return categories.map(cat => ({
+      ...cat,
+      recommended: recommended.includes(cat.id)
+    }));
+  };
+
   const renderCategorySelection = () => (
     <View style={styles.categoryContainer}>
       <Text style={styles.sectionTitle}>Select Opportunity Type</Text>
-      <Text style={styles.sectionSubtitle}>Choose the type of opportunity you want to create</Text>
+      <Text style={styles.sectionSubtitle}>
+        {user?.role === 'coach' && 'As a coach, you can post tryouts, camps, and tournaments'}
+        {user?.role === 'scout' && 'As a scout, you can post tryouts, scholarships, and tournaments'}
+        {user?.role === 'gym' && 'As a gym, you can post camps and training programs'}
+        {user?.role === 'brand' && 'As a brand, you can post sponsorships and tournaments'}
+        {user?.role === 'academy' && 'As an academy, you can post camps, scholarships, and tryouts'}
+        {(!user?.role || !['coach', 'scout', 'gym', 'brand', 'academy'].includes(user.role)) && 'Choose the type of opportunity you want to create'}
+      </Text>
       
       <ScrollView style={styles.categoriesScroll} showsVerticalScrollIndicator={false}>
-        {categories.map((category) => {
+        {getRecommendedCategories().map((category) => {
           const IconComponent = category.icon;
           return (
             <TouchableOpacity
               key={category.id}
-              style={styles.categoryCard}
+              style={[
+                styles.categoryCard,
+                (category as any).recommended && styles.categoryCardRecommended
+              ]}
               onPress={() => handleCategorySelect(category.id)}
             >
               <View style={[styles.categoryIcon, { backgroundColor: category.color }]}>
                 <IconComponent size={24} color={theme.colors.white} />
               </View>
               <View style={styles.categoryContent}>
-                <Text style={styles.categoryTitle}>{category.label}</Text>
+                <View style={styles.categoryHeader}>
+                  <Text style={styles.categoryTitle}>{category.label}</Text>
+                  {(category as any).recommended && (
+                    <View style={styles.recommendedBadge}>
+                      <Text style={styles.recommendedBadgeText}>Recommended</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={styles.categoryDescription}>{category.description}</Text>
               </View>
             </TouchableOpacity>
@@ -725,6 +763,27 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     lineHeight: 18,
+  },
+  categoryCardRecommended: {
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
+  },
+  recommendedBadge: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+  },
+  recommendedBadgeText: {
+    fontSize: 10,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.white,
   },
   formContainer: {
     flex: 1,

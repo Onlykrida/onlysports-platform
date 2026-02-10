@@ -61,6 +61,13 @@ export default function OpportunitiesScreen() {
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  const canCreateOpportunity = user?.role === 'coach' || 
+                                user?.role === 'scout' || 
+                                user?.role === 'team' ||
+                                user?.role === 'gym' ||
+                                user?.role === 'brand' ||
+                                user?.role === 'academy';
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
@@ -519,6 +526,19 @@ export default function OpportunitiesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Stack.Screen 
+        options={{
+          headerRight: () => canCreateOpportunity ? (
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => setShowCreateModal(true)}
+              testID="create-opportunity-button"
+            >
+              <Plus size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
+          ) : null
+        }} 
+      />
       {FiltersBar}
       <FlatList
         data={filteredOpportunities}
@@ -579,7 +599,13 @@ export default function OpportunitiesScreen() {
       </Modal>
 
       {/* Create Opportunity Modal */}
-      <Modal
+      <CreateOpportunityModal 
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
+      
+      {/* Old Modal - Keeping for reference but not used */}
+      {false && <Modal
         visible={showCreateModal}
         transparent
         animationType="slide"
@@ -792,7 +818,7 @@ export default function OpportunitiesScreen() {
             </ScrollView>
           </View>
         </View>
-      </Modal>
+      </Modal>}
     </SafeAreaView>
   );
 }

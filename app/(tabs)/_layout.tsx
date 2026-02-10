@@ -74,10 +74,17 @@ export default function TabLayout() {
           headerTintColor: theme.colors.text,
           headerShadowVisible: false,
           headerRight: () => {
-            return (user?.role === 'coach' || user?.role === 'scout' || user?.role === 'team') ? (
+            const canCreateOpportunity = user?.role === 'coach' || 
+                                         user?.role === 'scout' || 
+                                         user?.role === 'team' ||
+                                         user?.role === 'gym' ||
+                                         user?.role === 'brand' ||
+                                         user?.role === 'academy';
+            return canCreateOpportunity ? (
               <TouchableOpacity 
                 style={{ marginRight: theme.spacing.md }}
-                onPress={() => router.push('/opportunities/create' as any)}
+                onPress={() => {}}
+                testID="create-opportunity-button"
               >
                 <Plus size={24} color={theme.colors.primary} />
               </TouchableOpacity>
