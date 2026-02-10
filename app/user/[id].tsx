@@ -507,129 +507,195 @@ export default function UserProfileScreen() {
         </View>
 
         {/* Interest Signal Section - For Athletes viewing their own profile */}
-        {isOwnProfile && profileUser.role === 'athlete' && (
-          <View style={styles.interestSection}>
-            <View style={styles.interestHeader}>
-              <Zap size={24} color={theme.colors.warning} />
-              <Text style={styles.interestTitle}>Interest & Visibility</Text>
-            </View>
-            
-            {interestedOrganizations.length > 0 ? (
-              <>
-                <View style={styles.interestCard}>
-                  <View style={styles.interestCount}>
-                    <Text style={styles.interestCountNumber}>{interestedOrganizations.length}</Text>
-                    <Text style={styles.interestCountLabel}>
-                      {interestedOrganizations.length === 1 ? 'organization has' : 'organizations have'} shown interest
+        {isOwnProfile && profileUser.role === 'athlete' && (() => {
+          const scouts = interestedOrganizations.filter(org => org.role === 'scout');
+          const organizations = interestedOrganizations.filter(org => ['coach', 'team', 'academy'].includes(org.role));
+          const totalInterest = scouts.length + organizations.length;
+          
+          return (
+            <View style={styles.interestSection}>
+              <View style={styles.interestHeader}>
+                <Zap size={24} color={theme.colors.warning} />
+                <Text style={styles.interestTitle}>Interest & Visibility</Text>
+              </View>
+              
+              {totalInterest > 0 ? (
+                <>
+                  <View style={styles.interestCard}>
+                    <View style={styles.interestCount}>
+                      <Text style={styles.interestCountNumber}>{totalInterest}</Text>
+                      <Text style={styles.interestCountLabel}>
+                        {totalInterest === 1 ? 'party has' : 'parties have'} shown interest
+                      </Text>
+                    </View>
+                    
+                    {scouts.length > 0 && (
+                      <View style={styles.interestCategorySection}>
+                        <View style={styles.interestCategoryHeader}>
+                          <Award size={18} color={theme.colors.warning} />
+                          <Text style={styles.interestCategoryTitle}>Scouts Interested ({scouts.length})</Text>
+                        </View>
+                        <View style={styles.interestedOrgDetailsList}>
+                          {scouts.slice(0, 5).map((scout) => (
+                            <TouchableOpacity 
+                              key={scout.id} 
+                              style={styles.interestedOrgDetailItem}
+                              onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: scout.id } })}
+                            >
+                              <Image 
+                                source={{ uri: scout.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
+                                style={styles.interestedOrgDetailAvatar}
+                              />
+                              <View style={styles.interestedOrgDetailInfo}>
+                                <View style={styles.interestedOrgDetailNameRow}>
+                                  <Text style={styles.interestedOrgDetailName}>{scout.name}</Text>
+                                  {scout.verified && <Text style={styles.verified}>✓</Text>}
+                                </View>
+                                <View style={styles.interestedOrgDetailMeta}>
+                                  <View style={[styles.interestedOrgDetailRoleBadge, { backgroundColor: getRoleBadgeColor('scout') + '30' }]}>
+                                    {getRoleIcon('scout')}
+                                    <Text style={[styles.interestedOrgDetailRole, { color: getRoleBadgeColor('scout') }]}>
+                                      Scout
+                                    </Text>
+                                  </View>
+                                  {scout.roleSpecificData?.organization && (
+                                    <Text style={styles.interestedOrgDetailTeam} numberOfLines={1}>
+                                      {scout.roleSpecificData.organization}
+                                    </Text>
+                                  )}
+                                </View>
+                                {scout.sport && (
+                                  <Text style={styles.interestedOrgDetailSport}>{scout.sport}</Text>
+                                )}
+                              </View>
+                            </TouchableOpacity>
+                          ))}
+                          {scouts.length > 5 && (
+                            <View style={styles.interestedOrgDetailMore}>
+                              <Text style={styles.interestedOrgDetailMoreText}>
+                                +{scouts.length - 5} more {scouts.length - 5 === 1 ? 'scout' : 'scouts'}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    )}
+                    
+                    {organizations.length > 0 && (
+                      <View style={styles.interestCategorySection}>
+                        <View style={styles.interestCategoryHeader}>
+                          <Flame size={18} color={theme.colors.primary} />
+                          <Text style={styles.interestCategoryTitle}>Organizations Interested ({organizations.length})</Text>
+                        </View>
+                        <View style={styles.interestedOrgDetailsList}>
+                          {organizations.slice(0, 5).map((org) => (
+                            <TouchableOpacity 
+                              key={org.id} 
+                              style={styles.interestedOrgDetailItem}
+                              onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: org.id } })}
+                            >
+                              <Image 
+                                source={{ uri: org.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
+                                style={styles.interestedOrgDetailAvatar}
+                              />
+                              <View style={styles.interestedOrgDetailInfo}>
+                                <View style={styles.interestedOrgDetailNameRow}>
+                                  <Text style={styles.interestedOrgDetailName}>{org.name}</Text>
+                                  {org.verified && <Text style={styles.verified}>✓</Text>}
+                                </View>
+                                <View style={styles.interestedOrgDetailMeta}>
+                                  <View style={[styles.interestedOrgDetailRoleBadge, { backgroundColor: getRoleBadgeColor(org.role || 'coach') + '30' }]}>
+                                    {getRoleIcon(org.role || 'coach')}
+                                    <Text style={[styles.interestedOrgDetailRole, { color: getRoleBadgeColor(org.role || 'coach') }]}>
+                                      {org.role ? org.role.charAt(0).toUpperCase() + org.role.slice(1) : 'Organization'}
+                                    </Text>
+                                  </View>
+                                  {org.roleSpecificData?.organization && (
+                                    <Text style={styles.interestedOrgDetailTeam} numberOfLines={1}>
+                                      {org.roleSpecificData.organization}
+                                    </Text>
+                                  )}
+                                </View>
+                                {org.sport && (
+                                  <Text style={styles.interestedOrgDetailSport}>{org.sport}</Text>
+                                )}
+                              </View>
+                            </TouchableOpacity>
+                          ))}
+                          {organizations.length > 5 && (
+                            <View style={styles.interestedOrgDetailMore}>
+                              <Text style={styles.interestedOrgDetailMoreText}>
+                                +{organizations.length - 5} more {organizations.length - 5 === 1 ? 'organization' : 'organizations'}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    )}
+                    
+                    <View style={styles.orgTypeBreakdown}>
+                      {['scout', 'coach', 'team', 'academy'].map(role => {
+                        const count = interestedOrganizations.filter(o => o.role === role).length;
+                        if (count === 0) return null;
+                        return (
+                          <View key={role} style={styles.orgTypeChip}>
+                            {getRoleIcon(role)}
+                            <Text style={styles.orgTypeChipText}>
+                              {count} {role.charAt(0).toUpperCase() + role.slice(1)}{count > 1 ? 's' : ''}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
+                  
+                  <View style={styles.trustBanner}>
+                    <CheckCircle size={16} color={theme.colors.success} />
+                    <Text style={styles.trustBannerText}>
+                      Only verified coaches and organizations can express interest
                     </Text>
                   </View>
                   
-                  <View style={styles.interestedOrgDetailsList}>
-                    {interestedOrganizations.slice(0, 5).map((org) => (
-                      <TouchableOpacity 
-                        key={org.id} 
-                        style={styles.interestedOrgDetailItem}
-                        onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: org.id } })}
-                      >
-                        <Image 
-                          source={{ uri: org.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
-                          style={styles.interestedOrgDetailAvatar}
-                        />
-                        <View style={styles.interestedOrgDetailInfo}>
-                          <View style={styles.interestedOrgDetailNameRow}>
-                            <Text style={styles.interestedOrgDetailName}>{org.name}</Text>
-                            {org.verified && <Text style={styles.verified}>✓</Text>}
-                          </View>
-                          <View style={styles.interestedOrgDetailMeta}>
-                            <View style={[styles.interestedOrgDetailRoleBadge, { backgroundColor: getRoleBadgeColor(org.role || 'scout') + '30' }]}>
-                              {getRoleIcon(org.role || 'scout')}
-                              <Text style={[styles.interestedOrgDetailRole, { color: getRoleBadgeColor(org.role || 'scout') }]}>
-                                {org.role ? org.role.charAt(0).toUpperCase() + org.role.slice(1) : 'Organization'}
-                              </Text>
-                            </View>
-                            {org.roleSpecificData?.organization && (
-                              <Text style={styles.interestedOrgDetailTeam} numberOfLines={1}>
-                                {org.roleSpecificData.organization}
-                              </Text>
-                            )}
-                          </View>
-                          {org.sport && (
-                            <Text style={styles.interestedOrgDetailSport}>{org.sport}</Text>
-                          )}
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                    {interestedOrganizations.length > 5 && (
-                      <View style={styles.interestedOrgDetailMore}>
-                        <Text style={styles.interestedOrgDetailMoreText}>
-                          +{interestedOrganizations.length - 5} more {interestedOrganizations.length - 5 === 1 ? 'organization' : 'organizations'}
-                        </Text>
+                  <View style={styles.actionGuidesSection}>
+                    <Text style={styles.actionGuidesTitle}>Recommended Next Steps</Text>
+                    <TouchableOpacity style={styles.actionGuideCard} onPress={handleShareHighlights}>
+                      <View style={[styles.actionGuideIcon, { backgroundColor: theme.colors.primary + '20' }]}>
+                        <Send size={20} color={theme.colors.primary} />
                       </View>
-                    )}
+                      <View style={styles.actionGuideContent}>
+                        <Text style={styles.actionGuideLabel}>Share Latest Highlights</Text>
+                        <Text style={styles.actionGuideDesc}>Post your recent performances</Text>
+                      </View>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity style={styles.actionGuideCard} onPress={handleUpdateProfile}>
+                      <View style={[styles.actionGuideIcon, { backgroundColor: theme.colors.info + '20' }]}>
+                        <Edit size={20} color={theme.colors.info} />
+                      </View>
+                      <View style={styles.actionGuideContent}>
+                        <Text style={styles.actionGuideLabel}>Update Your Stats</Text>
+                        <Text style={styles.actionGuideDesc}>Keep your profile current</Text>
+                      </View>
+                    </TouchableOpacity>
                   </View>
-                  
-                  <View style={styles.orgTypeBreakdown}>
-                    {['coach', 'scout', 'team', 'academy'].map(role => {
-                      const count = interestedOrganizations.filter(o => o.role === role).length;
-                      if (count === 0) return null;
-                      return (
-                        <View key={role} style={styles.orgTypeChip}>
-                          {getRoleIcon(role)}
-                          <Text style={styles.orgTypeChipText}>
-                            {count} {role.charAt(0).toUpperCase() + role.slice(1)}{count > 1 ? 's' : ''}
-                          </Text>
-                        </View>
-                      );
-                    })}
+                </>
+              ) : (
+                <View style={styles.emptyInterestState}>
+                  <View style={styles.emptyInterestIcon}>
+                    <TrendingUp size={32} color={theme.colors.textSecondary} />
                   </View>
-                </View>
-                
-                <View style={styles.trustBanner}>
-                  <CheckCircle size={16} color={theme.colors.success} />
-                  <Text style={styles.trustBannerText}>
-                    Only verified coaches and organizations can express interest
+                  <Text style={styles.emptyInterestTitle}>Build Your Visibility</Text>
+                  <Text style={styles.emptyInterestDesc}>
+                    Coaches and scouts will discover your profile. Keep sharing highlights and updating your stats to increase your visibility.
                   </Text>
-                </View>
-                
-                <View style={styles.actionGuidesSection}>
-                  <Text style={styles.actionGuidesTitle}>Recommended Next Steps</Text>
-                  <TouchableOpacity style={styles.actionGuideCard} onPress={handleShareHighlights}>
-                    <View style={[styles.actionGuideIcon, { backgroundColor: theme.colors.primary + '20' }]}>
-                      <Send size={20} color={theme.colors.primary} />
-                    </View>
-                    <View style={styles.actionGuideContent}>
-                      <Text style={styles.actionGuideLabel}>Share Latest Highlights</Text>
-                      <Text style={styles.actionGuideDesc}>Post your recent performances</Text>
-                    </View>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity style={styles.actionGuideCard} onPress={handleUpdateProfile}>
-                    <View style={[styles.actionGuideIcon, { backgroundColor: theme.colors.info + '20' }]}>
-                      <Edit size={20} color={theme.colors.info} />
-                    </View>
-                    <View style={styles.actionGuideContent}>
-                      <Text style={styles.actionGuideLabel}>Update Your Stats</Text>
-                      <Text style={styles.actionGuideDesc}>Keep your profile current</Text>
-                    </View>
+                  <TouchableOpacity style={styles.emptyInterestAction} onPress={handleShareHighlights}>
+                    <Text style={styles.emptyInterestActionText}>Share Your First Highlight</Text>
                   </TouchableOpacity>
                 </View>
-              </>
-            ) : (
-              <View style={styles.emptyInterestState}>
-                <View style={styles.emptyInterestIcon}>
-                  <TrendingUp size={32} color={theme.colors.textSecondary} />
-                </View>
-                <Text style={styles.emptyInterestTitle}>Build Your Visibility</Text>
-                <Text style={styles.emptyInterestDesc}>
-                  Coaches and scouts will discover your profile. Keep sharing highlights and updating your stats to increase your visibility.
-                </Text>
-                <TouchableOpacity style={styles.emptyInterestAction} onPress={handleShareHighlights}>
-                  <Text style={styles.emptyInterestActionText}>Share Your First Highlight</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        )}
+              )}
+            </View>
+          );
+        })()}
 
         {/* Stats */}
         <View style={styles.statsContainer}>
@@ -1107,11 +1173,32 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.textSecondary,
   },
+  interestCategorySection: {
+    marginBottom: theme.spacing.lg,
+  },
+  interestCategoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  interestCategoryTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
   orgTypeBreakdown: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing.xs,
     justifyContent: 'center',
+    marginTop: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   orgTypeChip: {
     flexDirection: 'row',
