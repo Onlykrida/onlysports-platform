@@ -227,6 +227,61 @@ export default function UserProfileScreen() {
     checkInterest();
   }, [currentUser, id]);
 
+  useEffect(() => {
+    if (!id || !isSupabaseConfigured || !profileUser || profileUser.role !== 'athlete') return;
+
+    const channel = supabase
+      .channel(`follows_for_athlete_${id}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'follows',
+        filter: `following_id=eq.${id}`
+      }, async (payload: any) => {
+        console.log('UserProfile: Follow change detected', payload);
+        
+        if (payload.eventType === 'INSERT') {
+          const followerId = payload.new.follower_id;
+          
+          const { data: followerData, error } = await supabase
+            .from('profiles')
+            .select('id, name, avatar, role, sport, verified, role_specific_data')
+            .eq('id', followerId)
+            .single();
+          
+          if (!error && followerData && ['coach', 'scout', 'team', 'academy'].includes(followerData.role)) {
+            const newOrg: User = {
+              id: followerData.id,
+              name: followerData.name,
+              avatar: followerData.avatar,
+              role: followerData.role,
+              sport: followerData.sport,
+              verified: followerData.verified,
+              email: '',
+              createdAt: new Date(),
+              roleSpecificData: followerData.role_specific_data || {},
+            };
+            
+            setInterestedOrganizations(prev => {
+              const exists = prev.some(org => org.id === newOrg.id);
+              if (exists) return prev;
+              return [newOrg, ...prev];
+            });
+            setFollowersCount(prev => prev + 1);
+          }
+        } else if (payload.eventType === 'DELETE') {
+          const followerId = payload.old.follower_id;
+          setInterestedOrganizations(prev => prev.filter(org => org.id !== followerId));
+          setFollowersCount(prev => Math.max(0, prev - 1));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [id, profileUser]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadUserProfile();
