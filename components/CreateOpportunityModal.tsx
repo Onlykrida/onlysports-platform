@@ -427,7 +427,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
     if (!selectedCategory) return null;
 
     switch (selectedCategory) {
-      case 'tryout':
+      case 'tryouts':
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Tryout Details</Text>
@@ -469,7 +469,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
           </View>
         );
 
-      case 'tournament':
+      case 'tournaments':
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Tournament Details</Text>
@@ -511,7 +511,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
           </View>
         );
 
-      case 'sponsorship':
+      case 'sponsorships':
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Sponsorship Details</Text>
@@ -542,7 +542,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
           </View>
         );
 
-      case 'scholarship':
+      case 'scholarships':
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Scholarship Details</Text>
@@ -573,7 +573,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
           </View>
         );
 
-      case 'job':
+      case 'contracts':
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Contract Details</Text>
@@ -615,7 +615,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
           </View>
         );
 
-      case 'camp':
+      case 'camps':
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Camp Details</Text>

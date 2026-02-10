@@ -155,6 +155,14 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       const fiveDaysAgo = new Date();
       fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
       
+      const categoryMapping: Record<string, 'tryout' | 'tournament' | 'sponsorship' | 'scholarship' | 'job' | 'camp'> = {
+        'tryouts': 'tryout',
+        'tournaments': 'tournament',
+        'sponsorships': 'sponsorship',
+        'scholarships': 'scholarship',
+        'contracts': 'job',
+      };
+
       const recentOpportunities = opportunities
         .filter(opp => new Date(opp.createdAt) >= fiveDaysAgo)
         .map((opp): Post => ({
@@ -171,8 +179,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           createdAt: new Date(opp.createdAt),
           isOpportunity: true,
           opportunityData: {
-            type: opp.type,
-            sport: opp.sport,
+            type: categoryMapping[opp.category] || 'tryout',
+            sport: opp.sport || '',
             location: opp.location,
             deadline: opp.deadline,
             paid: opp.paid,
