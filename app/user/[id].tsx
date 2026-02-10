@@ -151,33 +151,47 @@ export default function UserProfileScreen() {
       setUserPosts(filteredPosts);
       
       if (userData?.role === 'athlete') {
+        console.log('UserProfile: Loading interested organizations for athlete', id);
+        
         const { data: followersData, error: followersError } = await supabase
           .from('follows')
-          .select(`
-            follower_id,
-            profiles!follows_follower_id_fkey (
-              id, name, avatar, role, sport, verified, role_specific_data
-            )
-          `)
+          .select('follower_id')
           .eq('following_id', id);
         
-        if (!followersError && followersData) {
-          const orgs = followersData
-            .map((item: any) => item.profiles)
-            .filter(Boolean)
-            .filter((profile: any) => ['coach', 'scout', 'team', 'academy'].includes(profile.role))
-            .map((profile: any) => ({
-              id: profile.id,
-              name: profile.name,
-              avatar: profile.avatar,
-              role: profile.role,
-              sport: profile.sport,
-              verified: profile.verified,
-              email: '',
-              createdAt: new Date(),
-              roleSpecificData: profile.role_specific_data || {},
-            } as User));
-          setInterestedOrganizations(orgs);
+        console.log('UserProfile: Followers data', { followersData, followersError });
+        
+        if (!followersError && followersData && followersData.length > 0) {
+          const followerIds = followersData.map((f: any) => f.follower_id);
+          console.log('UserProfile: Follower IDs', followerIds);
+          
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, name, avatar, role, sport, verified, role_specific_data')
+            .in('id', followerIds);
+          
+          console.log('UserProfile: Profiles data', { profilesData, profilesError });
+          
+          if (!profilesError && profilesData) {
+            const orgs = profilesData
+              .filter((profile: any) => ['coach', 'scout', 'team', 'academy'].includes(profile.role))
+              .map((profile: any) => ({
+                id: profile.id,
+                name: profile.name,
+                avatar: profile.avatar,
+                role: profile.role,
+                sport: profile.sport,
+                verified: profile.verified,
+                email: '',
+                createdAt: new Date(),
+                roleSpecificData: profile.role_specific_data || {},
+              } as User));
+            
+            console.log('UserProfile: Interested organizations', orgs);
+            setInterestedOrganizations(orgs);
+          }
+        } else {
+          console.log('UserProfile: No followers found');
+          setInterestedOrganizations([]);
         }
       }
     } catch (error) {
