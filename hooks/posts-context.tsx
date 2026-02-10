@@ -247,8 +247,8 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
   }, [user]);
 
   // Check if storage bucket is properly configured
-  const checkStorageBucket = useCallback(async (bucketName: string): Promise<boolean> => {
-    if (!isSupabaseConfigured) return false;
+  const checkStorageBucket = useCallback(async (bucketName: string): Promise<{ exists: boolean; bucketName: string }> => {
+    if (!isSupabaseConfigured) return { exists: false, bucketName };
     
     try {
       console.log(`Posts: Checking storage bucket configuration for "${bucketName}"...`);
@@ -258,32 +258,53 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       
       if (bucketsError) {
         console.error(`Posts: Failed to list buckets:`, bucketsError);
-        console.warn(`Posts: Proceeding with upload anyway - bucket might exist but listing failed`);
-        return true;
+        return { exists: false, bucketName };
       }
       
       console.log(`Posts: Available buckets:`, buckets?.map((b: any) => `${b.id || b.name} (public: ${b.public})`).join(', '));
       
-      const bucket = buckets?.find((b: any) => b.id === bucketName || b.name === bucketName);
-      if (!bucket) {
-        console.error(`Posts: "${bucketName}" bucket not found in list.`);
-        console.error(`Posts: If the bucket exists, this might be a permissions issue.`);
-        console.error(`Posts: Proceeding with upload anyway - bucket might exist with different name`);
-        return true;
+      // Check multiple possible bucket names
+      const possibleNames = [bucketName, 'post', 'media', 'uploads'];
+      let foundBucket = null;
+      let foundName = bucketName;
+      
+      for (const name of possibleNames) {
+        const bucket = buckets?.find((b: any) => b.id === name || b.name === name);
+        if (bucket) {
+          foundBucket = bucket;
+          foundName = bucket.id || bucket.name;
+          break;
+        }
       }
       
-      console.log(`Posts: Storage bucket "${bucketName}" found:`, bucket);
-      
-      if (!bucket.public) {
-        console.warn(`Posts: "${bucketName}" bucket is not public. Media may not be visible to other users.`);
-        console.warn(`Posts: Go to Storage > ${bucketName} bucket settings > Toggle "Public bucket" ON`);
+      if (!foundBucket) {
+        console.error(`Posts: No suitable storage bucket found.`);
+        console.error(`Posts: Checked: ${possibleNames.join(', ')}`);
+        console.error(`Posts: Available: ${buckets?.map((b: any) => b.id || b.name).join(', ') || 'none'}`);
+        console.error(`\n⚠️  STORAGE SETUP REQUIRED ⚠️`);
+        console.error(`Please create a storage bucket in Supabase:`);
+        console.error(`1. Go to Supabase Dashboard > Storage`);
+        console.error(`2. Click "New bucket"`);
+        console.error(`3. Name it "posts"`);
+        console.error(`4. Toggle "Public bucket" ON`);
+        console.error(`5. Click "Create bucket"`);
+        console.error(`\nOr run the SQL script: supabase-storage-setup.sql\n`);
+        return { exists: false, bucketName };
       }
       
-      return true;
+      console.log(`Posts: Using storage bucket "${foundName}":`, foundBucket);
+      
+      if (!foundBucket.public) {
+        console.warn(`Posts: "${foundName}" bucket is not public. Media may not be visible to other users.`);
+        console.warn(`Posts: Go to Storage > ${foundName} > Settings > Toggle "Public bucket" ON`);
+      } else {
+        console.log(`Posts: ✓ Bucket "${foundName}" is public and ready`);
+      }
+      
+      return { exists: true, bucketName: foundName };
     } catch (error) {
-      console.error(`Posts: Error checking storage bucket "${bucketName}":`, error);
-      console.warn(`Posts: Proceeding with upload anyway - bucket might exist`);
-      return true;
+      console.error(`Posts: Error checking storage bucket:`, error);
+      return { exists: false, bucketName };
     }
   }, []);
 
@@ -301,12 +322,18 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     }
 
     try {
-      // Use a single bucket for all media
-      const bucketName = 'posts';
-      console.log('Posts: starting media upload', { uri, mType, bucket: bucketName, platform: Platform.OS, userId: user.id });
+      console.log('Posts: starting media upload', { uri, mType, platform: Platform.OS, userId: user.id });
       
-      // Check storage bucket configuration first (this is informational, we'll try upload anyway)
-      await checkStorageBucket(bucketName);
+      // Check storage bucket configuration and get the correct bucket name
+      const bucketCheck = await checkStorageBucket('posts');
+      
+      if (!bucketCheck.exists) {
+        console.error('Posts: Storage bucket not configured. Using fallback URI.');
+        return uri;
+      }
+      
+      const bucketName = bucketCheck.bucketName;
+      console.log(`Posts: Using bucket "${bucketName}" for upload`);
       
       // Generate a unique filename
       const timestamp = Date.now();
@@ -353,13 +380,32 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           bucket: bucketName,
           error: uploadError,
           message: uploadError.message,
-          statusCode: uploadError.statusCode
+          statusCode: uploadError.statusCode,
+          name: uploadError.name
         });
         
-        // Check if it's a bucket configuration issue
-        if (uploadError.message?.includes('bucket') || uploadError.message?.includes('policy')) {
-          console.error('Posts: This appears to be a storage bucket configuration issue.');
-          console.error(`Posts: Please ensure the "${bucketName}" bucket exists and is public in your Supabase dashboard.`);
+        // Provide detailed error guidance
+        if (uploadError.message?.includes('bucket') || uploadError.message?.includes('not found')) {
+          console.error(`\n❌ STORAGE BUCKET ERROR ❌`);
+          console.error(`The "${bucketName}" bucket does not exist or is not accessible.`);
+          console.error(`\nTo fix this:`);
+          console.error(`1. Open Supabase Dashboard`);
+          console.error(`2. Go to Storage section`);
+          console.error(`3. Create a new bucket named "posts"`);
+          console.error(`4. Make sure "Public bucket" is enabled`);
+          console.error(`5. Or run: supabase-storage-setup.sql\n`);
+        } else if (uploadError.message?.includes('policy') || uploadError.message?.includes('permission')) {
+          console.error(`\n❌ STORAGE PERMISSIONS ERROR ❌`);
+          console.error(`The "${bucketName}" bucket exists but has permission issues.`);
+          console.error(`\nTo fix this:`);
+          console.error(`1. Open Supabase Dashboard > Storage > ${bucketName}`);
+          console.error(`2. Go to Policies tab`);
+          console.error(`3. Make sure policies allow authenticated users to INSERT`);
+          console.error(`4. Or run: supabase-storage-setup.sql\n`);
+        } else {
+          console.error(`\n❌ STORAGE UPLOAD ERROR ❌`);
+          console.error(`Failed to upload to bucket "${bucketName}"`);
+          console.error(`Error: ${uploadError.message}\n`);
         }
         
         return uri; // Fallback to direct URI
