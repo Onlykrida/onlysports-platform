@@ -23,13 +23,19 @@ import {
   Flame,
   Star,
   Grid,
-  List
+  List,
+  TrendingUp,
+  Send,
+  Edit,
+  CheckCircle,
+  Zap
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { User, Post } from '@/types';
 import { useScouting } from '@/hooks/scouting-context';
 import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';
+import { useNotifications } from '@/hooks/notifications-context';
 import { usePosts } from '@/hooks/posts-context';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Button } from '@/components/Button';
@@ -80,6 +86,10 @@ export default function UserProfileScreen() {
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
   const { getInterestedForPlayer } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
+  const { createNotification } = useNotifications();
+  const [isInterestLoading, setIsInterestLoading] = useState(false);
+  const [hasExpressedInterest, setHasExpressedInterest] = useState(false);
+  const [interestedOrganizations, setInterestedOrganizations] = useState<User[]>([]);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
   const loadUserProfile = React.useCallback(async () => {
@@ -139,6 +149,37 @@ export default function UserProfileScreen() {
 
       const filteredPosts = posts.filter((post) => post.userId === id);
       setUserPosts(filteredPosts);
+      
+      if (userData?.role === 'athlete') {
+        const { data: followersData, error: followersError } = await supabase
+          .from('follows')
+          .select(`
+            follower_id,
+            profiles!follows_follower_id_fkey (
+              id, name, avatar, role, sport, verified, role_specific_data
+            )
+          `)
+          .eq('following_id', id);
+        
+        if (!followersError && followersData) {
+          const orgs = followersData
+            .map((item: any) => item.profiles)
+            .filter(Boolean)
+            .filter((profile: any) => ['coach', 'scout', 'team', 'academy'].includes(profile.role))
+            .map((profile: any) => ({
+              id: profile.id,
+              name: profile.name,
+              avatar: profile.avatar,
+              role: profile.role,
+              sport: profile.sport,
+              verified: profile.verified,
+              email: '',
+              createdAt: new Date(),
+              roleSpecificData: profile.role_specific_data || {},
+            } as User));
+          setInterestedOrganizations(orgs);
+        }
+      }
     } catch (error) {
       console.error('Failed to load user profile:', error);
       Alert.alert('Error', 'Failed to load user profile');
@@ -163,6 +204,28 @@ export default function UserProfileScreen() {
     };
     void run();
   }, [id, getInterestedForPlayer]);
+
+  useEffect(() => {
+    const checkInterest = async () => {
+      if (!currentUser || !id || !isSupabaseConfigured) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', id)
+          .maybeSingle();
+        
+        if (!error && data) {
+          setHasExpressedInterest(true);
+        }
+      } catch (e) {
+        console.log('Error checking interest:', e);
+      }
+    };
+    checkInterest();
+  }, [currentUser, id]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -201,6 +264,57 @@ export default function UserProfileScreen() {
   const handleMessage = () => {
     if (!profileUser) return;
     router.push({ pathname: '/chat/[id]' as any, params: { id: profileUser.id } });
+  };
+
+  const handleExpressInterest = async () => {
+    if (!profileUser || !currentUser) return;
+    
+    setIsInterestLoading(true);
+    try {
+      if (hasExpressedInterest) {
+        const result = await unfollowUser(profileUser.id);
+        if (result.error) {
+          Alert.alert('Error', result.error);
+        } else {
+          setHasExpressedInterest(false);
+          setFollowersCount(prev => prev - 1);
+        }
+      } else {
+        const result = await followUser(profileUser.id);
+        if (result.error) {
+          Alert.alert('Error', result.error);
+        } else {
+          setHasExpressedInterest(true);
+          setFollowersCount(prev => prev + 1);
+          
+          const orgTypeLabel = currentUser.role === 'coach' ? 'Coach' : 
+                               currentUser.role === 'scout' ? 'Scout' : 
+                               currentUser.role === 'team' ? 'Team' : 
+                               currentUser.role === 'academy' ? 'Academy' : 'Organization';
+          
+          await createNotification(
+            profileUser.id,
+            'follow',
+            `${orgTypeLabel} Interested in Your Profile`,
+            `${currentUser.name}${currentUser.roleSpecificData?.organization ? ` from ${currentUser.roleSpecificData.organization}` : ''} is interested in your athletic profile`,
+            { userId: currentUser.id, userRole: currentUser.role }
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Interest action failed:', error);
+      Alert.alert('Error', 'Failed to update interest status');
+    } finally {
+      setIsInterestLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = () => {
+    router.push('/edit-profile' as any);
+  };
+
+  const handleShareHighlights = () => {
+    router.push('/create' as any);
   };
 
   if (isLoading) {
@@ -246,6 +360,11 @@ export default function UserProfileScreen() {
 
   const isOwnProfile = currentUser?.id === profileUser.id;
   const userIsFollowing = isFollowing(profileUser.id);
+  
+  const canExpressInterest = !isOwnProfile && 
+    currentUser && 
+    ['coach', 'scout', 'team', 'academy'].includes(currentUser.role) &&
+    profileUser.role === 'athlete';
 
   const renderRoleSpecificDetails = (user: User) => {
     if (!user?.roleSpecificData) return null;
@@ -358,6 +477,110 @@ export default function UserProfileScreen() {
           <Text style={styles.location}>{profileUser.location || 'Location not set'}</Text>
         </View>
 
+        {/* Interest Signal Section - For Athletes viewing their own profile */}
+        {isOwnProfile && profileUser.role === 'athlete' && (
+          <View style={styles.interestSection}>
+            <View style={styles.interestHeader}>
+              <Zap size={24} color={theme.colors.warning} />
+              <Text style={styles.interestTitle}>Interest & Visibility</Text>
+            </View>
+            
+            {interestedOrganizations.length > 0 ? (
+              <>
+                <View style={styles.interestCard}>
+                  <View style={styles.interestCount}>
+                    <Text style={styles.interestCountNumber}>{interestedOrganizations.length}</Text>
+                    <Text style={styles.interestCountLabel}>
+                      {interestedOrganizations.length === 1 ? 'organization has' : 'organizations have'} shown interest
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.interestedOrgsList}>
+                    {interestedOrganizations.slice(0, 6).map((org, idx) => (
+                      <TouchableOpacity 
+                        key={org.id} 
+                        style={styles.interestedOrgItem}
+                        onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: org.id } })}
+                      >
+                        <Image 
+                          source={{ uri: org.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
+                          style={styles.interestedOrgAvatar}
+                        />
+                        <View style={styles.interestedOrgBadge}>
+                          {getRoleIcon(org.role || 'scout')}
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                    {interestedOrganizations.length > 6 && (
+                      <View style={styles.interestedOrgMore}>
+                        <Text style={styles.interestedOrgMoreText}>+{interestedOrganizations.length - 6}</Text>
+                      </View>
+                    )}
+                  </View>
+                  
+                  <View style={styles.orgTypeBreakdown}>
+                    {['coach', 'scout', 'team', 'academy'].map(role => {
+                      const count = interestedOrganizations.filter(o => o.role === role).length;
+                      if (count === 0) return null;
+                      return (
+                        <View key={role} style={styles.orgTypeChip}>
+                          {getRoleIcon(role)}
+                          <Text style={styles.orgTypeChipText}>
+                            {count} {role.charAt(0).toUpperCase() + role.slice(1)}{count > 1 ? 's' : ''}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+                
+                <View style={styles.trustBanner}>
+                  <CheckCircle size={16} color={theme.colors.success} />
+                  <Text style={styles.trustBannerText}>
+                    Only verified coaches and organizations can express interest
+                  </Text>
+                </View>
+                
+                <View style={styles.actionGuidesSection}>
+                  <Text style={styles.actionGuidesTitle}>Recommended Next Steps</Text>
+                  <TouchableOpacity style={styles.actionGuideCard} onPress={handleShareHighlights}>
+                    <View style={[styles.actionGuideIcon, { backgroundColor: theme.colors.primary + '20' }]}>
+                      <Send size={20} color={theme.colors.primary} />
+                    </View>
+                    <View style={styles.actionGuideContent}>
+                      <Text style={styles.actionGuideLabel}>Share Latest Highlights</Text>
+                      <Text style={styles.actionGuideDesc}>Post your recent performances</Text>
+                    </View>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.actionGuideCard} onPress={handleUpdateProfile}>
+                    <View style={[styles.actionGuideIcon, { backgroundColor: theme.colors.info + '20' }]}>
+                      <Edit size={20} color={theme.colors.info} />
+                    </View>
+                    <View style={styles.actionGuideContent}>
+                      <Text style={styles.actionGuideLabel}>Update Your Stats</Text>
+                      <Text style={styles.actionGuideDesc}>Keep your profile current</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <View style={styles.emptyInterestState}>
+                <View style={styles.emptyInterestIcon}>
+                  <TrendingUp size={32} color={theme.colors.textSecondary} />
+                </View>
+                <Text style={styles.emptyInterestTitle}>Build Your Visibility</Text>
+                <Text style={styles.emptyInterestDesc}>
+                  Coaches and scouts will discover your profile. Keep sharing highlights and updating your stats to increase your visibility.
+                </Text>
+                <TouchableOpacity style={styles.emptyInterestAction} onPress={handleShareHighlights}>
+                  <Text style={styles.emptyInterestActionText}>Share Your First Highlight</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
@@ -459,24 +682,49 @@ export default function UserProfileScreen() {
         {/* Action Buttons */}
         {!isOwnProfile && (
           <View style={styles.actionButtons}>
-            <Button
-              title={userIsFollowing ? 'Unfollow' : 'Follow'}
-              onPress={handleFollow}
-              variant={userIsFollowing ? 'outline' : 'primary'}
-              icon={userIsFollowing ? 
-                <UserMinus size={16} color={theme.colors.primary} /> : 
-                <UserPlus size={16} color={theme.colors.white} />
-              }
-              style={styles.actionButton}
-              loading={isFollowLoading}
-            />
-            <Button
-              title="Message"
-              onPress={handleMessage}
-              variant="outline"
-              icon={<MessageCircle size={16} color={theme.colors.primary} />}
-              style={styles.actionButton}
-            />
+            {canExpressInterest ? (
+              <>
+                <Button
+                  title={hasExpressedInterest ? 'Interest Expressed' : 'Interested in this Athlete'}
+                  onPress={handleExpressInterest}
+                  variant={hasExpressedInterest ? 'outline' : 'primary'}
+                  icon={hasExpressedInterest ? 
+                    <CheckCircle size={16} color={theme.colors.success} /> : 
+                    <Star size={16} color={theme.colors.white} />
+                  }
+                  style={styles.actionButtonFull}
+                  loading={isInterestLoading}
+                />
+                <Button
+                  title="Message"
+                  onPress={handleMessage}
+                  variant="outline"
+                  icon={<MessageCircle size={16} color={theme.colors.primary} />}
+                  style={styles.actionButtonFull}
+                />
+              </>
+            ) : (
+              <>
+                <Button
+                  title={userIsFollowing ? 'Unfollow' : 'Follow'}
+                  onPress={handleFollow}
+                  variant={userIsFollowing ? 'outline' : 'primary'}
+                  icon={userIsFollowing ? 
+                    <UserMinus size={16} color={theme.colors.primary} /> : 
+                    <UserPlus size={16} color={theme.colors.white} />
+                  }
+                  style={styles.actionButton}
+                  loading={isFollowLoading}
+                />
+                <Button
+                  title="Message"
+                  onPress={handleMessage}
+                  variant="outline"
+                  icon={<MessageCircle size={16} color={theme.colors.primary} />}
+                  style={styles.actionButton}
+                />
+              </>
+            )}
           </View>
         )}
 
@@ -675,6 +923,202 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  actionButtonFull: {
+    flex: 1,
+  },
+  interestSection: {
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+  },
+  interestHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  interestTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  interestCard: {
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.md,
+  },
+  interestCount: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  interestCountNumber: {
+    fontSize: theme.fontSize.xxxl,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.warning,
+    marginBottom: theme.spacing.xs,
+  },
+  interestCountLabel: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+  },
+  interestedOrgsList: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: -theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+  },
+  interestedOrgItem: {
+    position: 'relative',
+  },
+  interestedOrgAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: theme.colors.surface,
+  },
+  interestedOrgBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: theme.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.background,
+  },
+  interestedOrgMore: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.primary + '20',
+    borderWidth: 3,
+    borderColor: theme.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  interestedOrgMoreText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.primary,
+  },
+  orgTypeBreakdown: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+    justifyContent: 'center',
+  },
+  orgTypeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
+  },
+  orgTypeChipText: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.textSecondary,
+  },
+  trustBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.success + '15',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.md,
+  },
+  trustBannerText: {
+    flex: 1,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.success,
+    lineHeight: 18,
+  },
+  actionGuidesSection: {
+    gap: theme.spacing.sm,
+  },
+  actionGuidesTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  actionGuideCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+  },
+  actionGuideIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionGuideContent: {
+    flex: 1,
+  },
+  actionGuideLabel: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+    marginBottom: 2,
+  },
+  actionGuideDesc: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+  },
+  emptyInterestState: {
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+  },
+  emptyInterestIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  emptyInterestTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  emptyInterestDesc: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: theme.spacing.lg,
+  },
+  emptyInterestAction: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+  },
+  emptyInterestActionText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.white,
   },
   postsSection: {
     padding: theme.spacing.md,
