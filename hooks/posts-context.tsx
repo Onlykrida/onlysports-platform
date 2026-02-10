@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import { Post } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
+import { useOpportunities } from './opportunities-context';
 import { mockPosts } from '@/mocks/data';
 
 function getErrorMessage(error: unknown): string {
@@ -37,6 +38,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { opportunities } = useOpportunities();
 
   // Load posts from database or use mock data
   const loadPosts = useCallback(async () => {
@@ -148,7 +150,44 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       }) || [];
 
       console.log('Transformed posts:', transformedPosts.length, 'posts');
-      setPosts(transformedPosts);
+      
+      // Add recent opportunities (created within last 5 days) to the feed
+      const fiveDaysAgo = new Date();
+      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+      
+      const recentOpportunities = opportunities
+        .filter(opp => new Date(opp.createdAt) >= fiveDaysAgo)
+        .map((opp): Post => ({
+          id: `opp-${opp.id}`,
+          userId: opp.teamId,
+          userName: opp.teamName || 'Team',
+          userAvatar: opp.teamAvatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+          userRole: 'team' as const,
+          content: opp.description,
+          likes: 0,
+          comments: 0,
+          shares: 0,
+          isLiked: false,
+          createdAt: new Date(opp.createdAt),
+          isOpportunity: true,
+          opportunityData: {
+            type: opp.type,
+            sport: opp.sport,
+            location: opp.location,
+            deadline: opp.deadline,
+            paid: opp.paid,
+            applicationsCount: opp.applicationsCount,
+            hasApplied: opp.hasApplied,
+          },
+        }));
+      
+      console.log('Recent opportunities for feed:', recentOpportunities.length);
+      
+      // Combine posts and opportunities, sort by date
+      const allPosts = [...transformedPosts, ...recentOpportunities]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      setPosts(allPosts);
     } catch (error) {
       console.error('Failed to load posts:', getErrorMessage(error), error);
       setPosts(mockPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));

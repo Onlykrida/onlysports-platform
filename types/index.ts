@@ -115,6 +115,17 @@ export interface Post {
   shares: number;
   isLiked?: boolean;
   createdAt: Date;
+  // Opportunity-specific fields (if this post is an opportunity)
+  isOpportunity?: boolean;
+  opportunityData?: {
+    type: 'tryout' | 'tournament' | 'sponsorship' | 'scholarship' | 'job' | 'camp';
+    sport: string;
+    location: string;
+    deadline: string;
+    paid: boolean;
+    applicationsCount?: number;
+    hasApplied?: boolean;
+  };
 }
 
 export interface Opportunity {

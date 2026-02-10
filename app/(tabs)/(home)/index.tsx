@@ -23,6 +23,7 @@ import {
   Flame
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useOpportunities } from '@/hooks/opportunities-context';
 import { theme } from '@/constants/theme';
 import { Post } from '@/types';
 import { useScouting } from '@/hooks/scouting-context';
@@ -72,6 +73,7 @@ export default function HomeScreen() {
   const { posts, isLoading, refreshPosts, likePost, deletePost, updatePost } = usePosts();
   const { topRecommendations } = useScouting();
   const { user } = useAuth();
+  const { applyToOpportunity } = useOpportunities();
   const [commentsModalVisible, setCommentsModalVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -137,6 +139,28 @@ export default function HomeScreen() {
     );
   };
 
+  const handleApplyToOpportunity = useCallback(async (opportunityId: string) => {
+    if (!user) {
+      alert('Please log in to apply');
+      return;
+    }
+    
+    if (user.role !== 'athlete') {
+      alert('Only athletes can apply to opportunities');
+      return;
+    }
+    
+    const actualId = opportunityId.replace('opp-', '');
+    const { error } = await applyToOpportunity(actualId);
+    
+    if (error) {
+      alert(`Error: ${error}`);
+    } else {
+      alert('Application submitted successfully!');
+      await refreshPosts();
+    }
+  }, [user, applyToOpportunity, refreshPosts]);
+
   const renderPost = ({ item }: { item: Post }) => (
     <View style={styles.postContainer} testID={`post-${item.id}`}>
       <View style={styles.postHeader}>
@@ -185,7 +209,51 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Text style={styles.postContent}>{item.content}</Text>
+      {item.isOpportunity && item.opportunityData ? (
+        <View style={styles.opportunityBanner}>
+          <View style={styles.opportunityHeader}>
+            <View style={[styles.opportunityBadge, { backgroundColor: theme.colors.accent }]}>
+              <Text style={styles.opportunityBadgeText}>OPPORTUNITY</Text>
+            </View>
+            <Text style={styles.opportunityType}>{item.opportunityData.type.toUpperCase()}</Text>
+          </View>
+          <Text style={styles.postContent}>{item.content}</Text>
+          <View style={styles.opportunityDetails}>
+            <View style={styles.opportunityDetailRow}>
+              <Target size={14} color={theme.colors.primary} />
+              <Text style={styles.opportunityDetailText}>{item.opportunityData.sport}</Text>
+            </View>
+            <View style={styles.opportunityDetailRow}>
+              <Zap size={14} color={theme.colors.warning} />
+              <Text style={styles.opportunityDetailText}>{item.opportunityData.location}</Text>
+            </View>
+            <View style={styles.opportunityDetailRow}>
+              <Star size={14} color={item.opportunityData.paid ? theme.colors.success : theme.colors.textSecondary} />
+              <Text style={styles.opportunityDetailText}>{item.opportunityData.paid ? 'Paid' : 'Unpaid'}</Text>
+            </View>
+          </View>
+          <View style={styles.opportunityFooter}>
+            <Text style={styles.opportunityDeadline}>
+              Deadline: {new Date(item.opportunityData.deadline).toLocaleDateString()}
+            </Text>
+            {user?.role === 'athlete' && !item.opportunityData.hasApplied && (
+              <TouchableOpacity 
+                style={styles.applyButton}
+                onPress={() => handleApplyToOpportunity(item.id)}
+              >
+                <Text style={styles.applyButtonText}>Apply Now</Text>
+              </TouchableOpacity>
+            )}
+            {item.opportunityData.hasApplied && (
+              <View style={styles.appliedBadge}>
+                <Text style={styles.appliedBadgeText}>Applied</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      ) : (
+        <Text style={styles.postContent}>{item.content}</Text>
+      )}
 
       {item.media && (
         <View style={styles.mediaContainer}>
@@ -206,7 +274,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <View style={styles.postActions}>
+      {!item.isOpportunity && <View style={styles.postActions}>
         <TouchableOpacity 
           style={[styles.actionButton, item.isLiked && styles.likedButton]}
           onPress={() => likePost(item.id)}
@@ -230,7 +298,7 @@ export default function HomeScreen() {
           <Send size={22} color={theme.colors.textSecondary} />
           <Text style={styles.actionText}>Share</Text>
         </TouchableOpacity>
-      </View>
+      </View>}
     </View>
   );
 
@@ -577,10 +645,97 @@ const styles = StyleSheet.create({
     ...theme.shadow.electric, // Electric blue glow
   },
   refreshButtonText: {
-    color: theme.colors.white, // White text on electric blue
+    color: theme.colors.white,
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.extrabold, // Bold sporty text
+    fontWeight: theme.fontWeight.extrabold,
     textTransform: 'uppercase' as const,
-    letterSpacing: 1, // More spacing for sporty feel
+    letterSpacing: 1,
+  },
+  opportunityBanner: {
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    borderWidth: 2,
+    borderColor: theme.colors.accent,
+  },
+  opportunityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+  },
+  opportunityBadge: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.sm,
+  },
+  opportunityBadgeText: {
+    fontSize: 10,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.white,
+    letterSpacing: 0.5,
+  },
+  opportunityType: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.primary,
+  },
+  opportunityDetails: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+  },
+  opportunityDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  opportunityDetailText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.fontWeight.medium,
+  },
+  opportunityFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  opportunityDeadline: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.fontWeight.medium,
+  },
+  applyButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+  },
+  applyButtonText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.white,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+  },
+  appliedBadge: {
+    backgroundColor: theme.colors.success,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+  },
+  appliedBadgeText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.white,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
 });
