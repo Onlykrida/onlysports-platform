@@ -26,12 +26,13 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Briefcase
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import CreateOpportunityModal from '@/components/CreateOpportunityModal';
 
 type OpportunityCategory = 'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
@@ -384,7 +385,7 @@ export default function OpportunitiesScreen() {
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.title} testID="opportunities-title">Opportunities</Text>
-            <Text style={styles.subtitle}>Find your next big break</Text>
+            <Text style={styles.subtitle}>{user?.role === 'athlete' ? 'Your next career move starts here' : 'Connect with top talent'}</Text>
           </View>
           <TouchableOpacity 
             style={styles.filterToggleButton} 
@@ -531,8 +532,25 @@ export default function OpportunitiesScreen() {
         refreshing={isLoading}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No opportunities found</Text>
-            <Text style={styles.emptySubtext}>Try adjusting your filters or check back later</Text>
+            {user?.role === 'athlete' ? (
+              <>
+                <Briefcase size={64} color={theme.colors.textSecondary} />
+                <Text style={styles.emptyText}>Build Your Career Profile</Text>
+                <Text style={styles.emptySubtext}>Complete your profile to unlock exclusive opportunities from scouts and teams</Text>
+                <TouchableOpacity 
+                  style={styles.ctaButton}
+                  onPress={() => router.push('/edit-profile')}
+                >
+                  <Text style={styles.ctaButtonText}>Complete Profile</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Users size={64} color={theme.colors.textSecondary} />
+                <Text style={styles.emptyText}>No opportunities posted yet</Text>
+                <Text style={styles.emptySubtext}>Be the first to discover top talent</Text>
+              </>
+            )}
           </View>
         }
       />
@@ -1105,6 +1123,21 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     color: theme.colors.textSecondary,
     textAlign: 'center',
+    paddingHorizontal: theme.spacing.xl,
+  },
+  ctaButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    marginTop: theme.spacing.lg,
+  },
+  ctaButtonText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.white,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
   headerButton: {
     marginRight: theme.spacing.md,

@@ -289,10 +289,41 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Stats Section - Priority #1 */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <BarChart3 size={20} color={theme.colors.primary} />
+            <Text style={styles.sectionTitle}>Performance Stats</Text>
+          </View>
+          {user.stats && Object.keys(user.stats).length > 0 ? (
+            <View style={styles.statsGrid}>
+              {Object.entries(user.stats).map(([key, value]) => (
+                <View key={key} style={styles.statCard}>
+                  <Text style={styles.statCardValue}>{String(value)}</Text>
+                  <Text style={styles.statCardLabel}>{key}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyStateCard}>
+              <BarChart3 size={32} color={theme.colors.textSecondary} />
+              <Text style={styles.emptyStateTitle}>Track Your Performance</Text>
+              <Text style={styles.emptyStateText}>{user.role === 'athlete' ? 'Add stats to show scouts your capabilities' : 'Add performance metrics'}</Text>
+              <TouchableOpacity 
+                style={styles.addDataButton}
+                onPress={() => router.push('/edit-profile')}
+              >
+                <Text style={styles.addDataButtonText}>Add Stats</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* Achievements Section - Priority #2 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Award size={20} color={theme.colors.primary} />
-            <Text style={styles.sectionTitle}>Achievements</Text>
+            <Text style={styles.sectionTitle}>Career Highlights</Text>
           </View>
           {user.achievements && user.achievements.length > 0 ? (
             user.achievements.map((achievement, index) => (
@@ -306,8 +337,16 @@ export default function ProfileScreen() {
               </View>
             ))
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No achievements yet</Text>
+            <View style={styles.emptyStateCard}>
+              <Award size={32} color={theme.colors.textSecondary} />
+              <Text style={styles.emptyStateTitle}>Showcase Your Achievements</Text>
+              <Text style={styles.emptyStateText}>{user.role === 'athlete' ? 'Highlight wins, records, and milestones' : 'Document your career wins'}</Text>
+              <TouchableOpacity 
+                style={styles.addDataButton}
+                onPress={() => router.push('/edit-profile')}
+              >
+                <Text style={styles.addDataButtonText}>Add Achievement</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -371,30 +410,10 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <BarChart3 size={20} color={theme.colors.primary} />
-            <Text style={styles.sectionTitle}>Stats</Text>
-          </View>
-          <View style={styles.statsGrid}>
-            {user.stats && Object.keys(user.stats).length > 0 ? (
-              Object.entries(user.stats).map(([key, value]) => (
-                <View key={key} style={styles.statCard}>
-                  <Text style={styles.statCardValue}>{String(value)}</Text>
-                  <Text style={styles.statCardLabel}>{key}</Text>
-                </View>
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No stats available</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
+        {/* Posts Section - Priority #3 */}
         <View style={styles.section}>
           <View style={styles.postsHeader}>
-            <Text style={styles.sectionTitle}>Posts</Text>
+            <Text style={styles.sectionTitle}>Content Portfolio</Text>
             <View style={styles.postsActions}>
               <TouchableOpacity 
                 style={[styles.viewModeButton, postsViewMode === 'grid' && styles.activeViewMode]}
@@ -417,14 +436,19 @@ export default function ProfileScreen() {
             </View>
           </View>
           <View style={styles.postsContainer}>
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No posts yet</Text>
-              <Text style={styles.emptyStateSubtext}>Share your achievements and highlights</Text>
+            <View style={styles.emptyStateCard}>
+              <Trophy size={32} color={theme.colors.textSecondary} />
+              <Text style={styles.emptyStateTitle}>Build Your Presence</Text>
+              <Text style={styles.emptyStateText}>
+                {user.role === 'athlete' 
+                  ? 'Post highlights, training clips, and achievements to get noticed' 
+                  : 'Share insights and connect with the community'}
+              </Text>
               <TouchableOpacity 
                 style={styles.createPostButton}
                 onPress={() => router.push('/create')}
               >
-                <Text style={styles.createPostText}>Create Your First Post</Text>
+                <Text style={styles.createPostText}>Post Your First Highlight</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -694,7 +718,40 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
-    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: theme.spacing.md,
+  },
+  emptyStateCard: {
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderStyle: 'dashed',
+  },
+  emptyStateTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.xs,
+  },
+  addDataButton: {
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    backgroundColor: theme.colors.primary + '20',
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  addDataButtonText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.primary,
+    textTransform: 'uppercase' as const,
   },
   coverImageContainer: {
     position: 'relative',

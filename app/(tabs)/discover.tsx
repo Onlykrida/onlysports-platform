@@ -425,7 +425,7 @@ export default function DiscoverScreen() {
     <SafeAreaView style={styles.container} testID="discover-screen">
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Discover People</Text>
+          <Text style={styles.title}>{user?.role === 'scout' ? 'Discover Athletes' : user?.role === 'athlete' ? 'Connect With Scouts' : 'Discover Talent'}</Text>
           <TouchableOpacity 
             style={styles.notificationButton}
             onPress={() => router.push('/(tabs)/notifications' as any)}
@@ -444,7 +444,7 @@ export default function DiscoverScreen() {
           <Search size={20} color={theme.colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search people, sports..."
+            placeholder={user?.role === 'scout' ? 'Search athletes...' : user?.role === 'athlete' ? 'Search scouts, coaches...' : 'Search talent...'}
             value={localSearchQuery}
             onChangeText={setLocalSearchQuery}
             onSubmitEditing={handleSearchSubmit}
@@ -498,9 +498,13 @@ export default function DiscoverScreen() {
           ) : localSearchQuery.length > 0 ? (
             <View style={styles.noResultsContainer}>
               <Search size={48} color={theme.colors.textSecondary} />
-              <Text style={styles.noResultsTitle}>No results found</Text>
+              <Text style={styles.noResultsTitle}>No matches found</Text>
               <Text style={styles.noResultsMessage}>
-                Try searching for different keywords
+                {user?.role === 'scout' 
+                  ? 'Try broadening your search or adjusting sport filters' 
+                  : user?.role === 'athlete'
+                    ? 'Expand your network by exploring different regions'
+                    : 'Refine your search criteria'}
               </Text>
             </View>
           ) : (
@@ -615,16 +619,16 @@ export default function DiscoverScreen() {
             />
           ) : (
             <View style={styles.noUsersContainer}>
-              <Search size={48} color={theme.colors.textSecondary} />
-              <Text style={styles.noUsersTitle}>No users found</Text>
+              <Users size={64} color={theme.colors.textSecondary} />
+              <Text style={styles.noUsersTitle}>No talent found</Text>
               <Text style={styles.noUsersMessage}>
                 {selectedSport && selectedRole 
-                  ? `No ${selectedRole}s found for ${selectedSport}` 
+                  ? `No ${selectedRole}s available in ${selectedSport}. Try expanding your criteria.` 
                   : selectedSport 
-                    ? `No users found for ${selectedSport}` 
+                    ? `No athletes found for ${selectedSport}. Check other sports.` 
                     : selectedRole 
-                      ? `No ${selectedRole}s found` 
-                      : 'No users available at the moment'}
+                      ? `No ${selectedRole}s match your search. Broaden your filters.` 
+                      : 'Expand your network by adjusting filters'}
               </Text>
               {(selectedSport || selectedRole) && (
                 <TouchableOpacity 

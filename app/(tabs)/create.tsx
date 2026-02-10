@@ -18,6 +18,10 @@ import {
   FileText, 
   X, 
   ImageIcon,
+  Trophy,
+  Target,
+  Award,
+  Zap
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { Button } from '@/components/Button';
@@ -26,7 +30,10 @@ import { usePosts } from '@/hooks/posts-context';
 import { useAuth } from '@/hooks/auth-context';
 import { router } from 'expo-router';
 
+type PostType = 'highlight' | 'training' | 'achievement' | 'update';
+
 export default function CreateScreen() {
+  const [postType, setPostType] = useState<PostType>('highlight');
   const [content, setContent] = useState('');
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
@@ -34,6 +41,29 @@ export default function CreateScreen() {
   
   const { createPost } = usePosts();
   const { user } = useAuth();
+
+  const getPlaceholderForType = (type: PostType): string => {
+    switch (type) {
+      case 'highlight':
+        return user?.role === 'athlete' 
+          ? 'Share your match highlight or game footage...' 
+          : 'Share a key moment...';
+      case 'training':
+        return user?.role === 'athlete' 
+          ? 'Describe your training session or drill...' 
+          : 'Share training insights...';
+      case 'achievement':
+        return user?.role === 'athlete' 
+          ? 'Announce your latest achievement or milestone...' 
+          : 'Share a success story...';
+      case 'update':
+        return user?.role === 'athlete' 
+          ? 'Update your network on your progress...' 
+          : 'Share what\'s new...';
+      default:
+        return 'What\'s on your mind?';
+    }
+  };
 
   const handleMediaSelect = async (type: string) => {
     try {
@@ -152,14 +182,49 @@ export default function CreateScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>Create Post</Text>
-          <Text style={styles.subtitle}>Share your journey with the community</Text>
+          <Text style={styles.title}>Share Your Progress</Text>
+          <Text style={styles.subtitle}>{user?.role === 'athlete' ? 'Build your profile. Get discovered.' : 'Share insights with the community'}</Text>
+        </View>
+
+        {/* Post Type Selector */}
+        <View style={styles.postTypeSelector}>
+          <TouchableOpacity
+            style={[styles.postTypeButton, postType === 'highlight' && styles.postTypeButtonActive]}
+            onPress={() => setPostType('highlight')}
+          >
+            <Trophy size={20} color={postType === 'highlight' ? theme.colors.white : theme.colors.primary} />
+            <Text style={[styles.postTypeText, postType === 'highlight' && styles.postTypeTextActive]}>Highlight</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.postTypeButton, postType === 'training' && styles.postTypeButtonActive]}
+            onPress={() => setPostType('training')}
+          >
+            <Target size={20} color={postType === 'training' ? theme.colors.white : theme.colors.primary} />
+            <Text style={[styles.postTypeText, postType === 'training' && styles.postTypeTextActive]}>Training</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.postTypeButton, postType === 'achievement' && styles.postTypeButtonActive]}
+            onPress={() => setPostType('achievement')}
+          >
+            <Award size={20} color={postType === 'achievement' ? theme.colors.white : theme.colors.primary} />
+            <Text style={[styles.postTypeText, postType === 'achievement' && styles.postTypeTextActive]}>Achievement</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.postTypeButton, postType === 'update' && styles.postTypeButtonActive]}
+            onPress={() => setPostType('update')}
+          >
+            <Zap size={20} color={postType === 'update' ? theme.colors.white : theme.colors.primary} />
+            <Text style={[styles.postTypeText, postType === 'update' && styles.postTypeTextActive]}>Update</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.contentContainer}>
             <TextInput
               style={styles.textInput}
-              placeholder="What's on your mind?"
+              placeholder={getPlaceholderForType(postType)}
               placeholderTextColor={theme.colors.textSecondary}
               multiline
               value={content}
@@ -224,13 +289,15 @@ export default function CreateScreen() {
             </View>
         </View>
 
-        <View style={styles.tips}>
-          <Text style={styles.tipsTitle}>Tips for great content:</Text>
-          <Text style={styles.tip}>• Share your training routines and progress</Text>
-          <Text style={styles.tip}>• Post match highlights and achievements</Text>
-          <Text style={styles.tip}>• Engage with your community</Text>
-          <Text style={styles.tip}>• Use hashtags to increase visibility</Text>
-        </View>
+        {user?.role === 'athlete' && (
+          <View style={styles.careerTips}>
+            <Text style={styles.tipsTitle}>💡 Build Your Profile</Text>
+            <Text style={styles.tip}>✓ Post regularly to stay visible to scouts</Text>
+            <Text style={styles.tip}>✓ Include metrics and achievements</Text>
+            <Text style={styles.tip}>✓ Tag your sport and position</Text>
+            <Text style={styles.tip}>✓ Show training dedication and improvement</Text>
+          </View>
+        )}
 
         <View style={styles.footer}>
           <Button
@@ -338,6 +405,44 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     lineHeight: 20,
     marginBottom: theme.spacing.xs,
+  },
+  postTypeSelector: {
+    flexDirection: 'row',
+    padding: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  postTypeButton: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.xs,
+  },
+  postTypeButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  postTypeText: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase' as const,
+  },
+  postTypeTextActive: {
+    color: theme.colors.white,
+  },
+  careerTips: {
+    backgroundColor: theme.colors.primary + '10',
+    margin: theme.spacing.md,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary,
   },
   footer: {
     padding: theme.spacing.md,

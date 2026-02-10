@@ -1,5 +1,5 @@
 import { Tabs, router } from "expo-router";
-import { Home, Search, Briefcase, User, PlusCircle, MessageCircle, Bell, Plus } from "lucide-react-native";
+import { Home, Search, Briefcase, User, PlusCircle, MessageCircle, Bell, Plus, Trophy, Users } from "lucide-react-native";
 import React from "react";
 import { TouchableOpacity } from "react-native";
 import { useAuth } from "@/hooks/auth-context";
@@ -43,27 +43,6 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="(home)"
-        options={{
-          title: 'Feed',
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="discover"
-        options={{
-          title: 'Discover',
-          tabBarIcon: ({ color, size }) => <Search size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="create"
-        options={{
-          title: 'Create',
-          tabBarIcon: ({ color, size }) => <PlusCircle size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="opportunities"
         options={{
           title: 'Opportunities',
@@ -83,6 +62,27 @@ export default function TabLayout() {
               </TouchableOpacity>
             ) : null;
           }
+        }}
+      />
+      <Tabs.Screen
+        name="discover"
+        options={{
+          title: 'Talent',
+          tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: 'Post',
+          tabBarIcon: ({ color, size }) => <PlusCircle size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="(home)"
+        options={{
+          title: 'Feed',
+          tabBarIcon: ({ color, size }) => <Trophy size={size} color={color} />,
         }}
       />
       <Tabs.Screen
