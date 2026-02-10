@@ -197,7 +197,7 @@ export default function OpportunitiesScreen() {
           </View>
         </View>
 
-        {item.requirements && item.requirements.length > 0 && (
+        {item.requirements && Array.isArray(item.requirements) && item.requirements.length > 0 && (
           <View style={styles.requirements}>
             <Text style={styles.requirementsTitle}>Requirements:</Text>
             {item.requirements.slice(0, 2).map((req, index) => (
