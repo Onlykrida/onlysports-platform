@@ -206,18 +206,19 @@ export default function UserProfileScreen() {
     void loadUserProfile();
   }, [loadUserProfile]);
 
-  useEffect(() => {
-    const run = async () => {
-      if (!id) return;
-      try {
-        const res = await getInterestedForPlayer(id, 70);
-        setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
-      } catch (e) {
-        console.log('UserProfile: interested load failed', e);
-      }
-    };
-    void run();
+  const loadInterestedScouts = React.useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await getInterestedForPlayer(id, 70);
+      setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
+    } catch (e) {
+      console.log('UserProfile: interested load failed', e);
+    }
   }, [id, getInterestedForPlayer]);
+
+  useEffect(() => {
+    void loadInterestedScouts();
+  }, [loadInterestedScouts]);
 
   useEffect(() => {
     const checkInterest = async () => {
@@ -245,7 +246,7 @@ export default function UserProfileScreen() {
     if (!id || !isSupabaseConfigured || !profileUser || profileUser.role !== 'athlete') return;
 
     const channel = supabase
-      .channel(`follows_for_athlete_${id}`)
+      .channel(`profile_changes_${id}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
@@ -289,12 +290,21 @@ export default function UserProfileScreen() {
           setFollowersCount(prev => Math.max(0, prev - 1));
         }
       })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'ai_recommendations',
+        filter: `player_id=eq.${id}`
+      }, () => {
+        console.log('UserProfile: AI recommendation changed, refreshing');
+        void loadInterestedScouts();
+      })
       .subscribe();
 
     return () => {
       channel.unsubscribe();
     };
-  }, [id, profileUser]);
+  }, [id, profileUser, loadInterestedScouts]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -347,6 +357,18 @@ export default function UserProfileScreen() {
         } else {
           setHasExpressedInterest(false);
           setFollowersCount(prev => prev - 1);
+          
+          if (isSupabaseConfigured && ['scout'].includes(currentUser.role)) {
+            const { error: delError } = await supabase
+              .from('ai_recommendations')
+              .delete()
+              .eq('scout_id', currentUser.id)
+              .eq('player_id', profileUser.id);
+            
+            if (delError) {
+              console.log('Failed to remove AI recommendation:', delError);
+            }
+          }
         }
       } else {
         const result = await followUser(profileUser.id);
@@ -368,6 +390,27 @@ export default function UserProfileScreen() {
             `${currentUser.name}${currentUser.roleSpecificData?.organization ? ` from ${currentUser.roleSpecificData.organization}` : ''} is interested in your athletic profile`,
             { userId: currentUser.id, userRole: currentUser.role }
           );
+          
+          if (isSupabaseConfigured && ['scout'].includes(currentUser.role)) {
+            const { error: recError } = await supabase
+              .from('ai_recommendations')
+              .upsert({
+                scout_id: currentUser.id,
+                player_id: profileUser.id,
+                fit_score: 85,
+                breakdown: {
+                  skill: 85,
+                  speed: 85,
+                  stamina: 85,
+                  positionMatch: 85
+                },
+                notes: 'Manually expressed interest',
+              }, { onConflict: 'scout_id,player_id' });
+            
+            if (recError && recError.code !== 'PGRST205') {
+              console.log('Failed to create AI recommendation:', recError);
+            }
+          }
         }
       }
     } catch (error) {

@@ -22,6 +22,7 @@ import { Button } from '@/components/Button';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useScouting, AIRecommendationRow } from '@/hooks/scouting-context';
+import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 
 export default function ProfileScreen() {
   const { user, logout, updateProfile } = useAuth();
@@ -60,34 +61,56 @@ export default function ProfileScreen() {
     loadCounts();
   }, [user, posts, followers, following]);
 
-  React.useEffect(() => {
-    const run = async () => {
-      if (!user) return;
-      if (user.role === 'athlete') {
-        try {
-          const res = await getInterestedForPlayer(user.id, 70);
-          setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
-        } catch (e) {
-          console.log('Profile: interested scouts load failed', e);
-        }
-      } else if (user.role === 'scout') {
-        try {
-          const recs = await getTopForScout(user.id, 10);
-          const players = recs.map((r) => ({
-            playerId: r.player_id,
-            name: (mockAthletes.find(a => a.id === r.player_id)?.name) || 'Player',
-            avatar: mockAthletes.find(a => a.id === r.player_id)?.avatar,
-            position: mockAthletes.find(a => a.id === r.player_id)?.position,
-            score: r.fit_score,
-          }));
-          setTopPlayers(players);
-        } catch (e) {
-          console.log('Profile: top players load failed', e);
-        }
+  const loadRecommendations = React.useCallback(async () => {
+    if (!user) return;
+    if (user.role === 'athlete') {
+      try {
+        const res = await getInterestedForPlayer(user.id, 70);
+        setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
+      } catch (e) {
+        console.log('Profile: interested scouts load failed', e);
       }
-    };
-    void run();
+    } else if (user.role === 'scout') {
+      try {
+        const recs = await getTopForScout(user.id, 10);
+        const players = recs.map((r) => ({
+          playerId: r.player_id,
+          name: (mockAthletes.find(a => a.id === r.player_id)?.name) || 'Player',
+          avatar: mockAthletes.find(a => a.id === r.player_id)?.avatar,
+          position: mockAthletes.find(a => a.id === r.player_id)?.position,
+          score: r.fit_score,
+        }));
+        setTopPlayers(players);
+      } catch (e) {
+        console.log('Profile: top players load failed', e);
+      }
+    }
   }, [user, getInterestedForPlayer, getTopForScout]);
+
+  React.useEffect(() => {
+    void loadRecommendations();
+  }, [loadRecommendations]);
+
+  React.useEffect(() => {
+    if (!user || !isSupabaseConfigured) return;
+
+    const channel = supabase
+      .channel(`profile_realtime_${user.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'ai_recommendations',
+        filter: user.role === 'athlete' ? `player_id=eq.${user.id}` : `scout_id=eq.${user.id}`
+      }, () => {
+        console.log('Profile: AI recommendations changed, refreshing');
+        void loadRecommendations();
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user, loadRecommendations]);
 
   const onRefresh = async () => {
     setRefreshing(true);
