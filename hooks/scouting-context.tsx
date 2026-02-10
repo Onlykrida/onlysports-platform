@@ -220,20 +220,21 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
 
   const getTopForScout = useCallback(async (scoutId: string, limit: number = 10) => {
     if (topRecommendations[scoutId]?.length) {
+      console.log('ScoutingProvider: Returning cached recommendations', { scoutId, count: topRecommendations[scoutId].length });
       return topRecommendations[scoutId].slice(0, limit);
     }
     if (!isSupabaseConfigured) return [];
     
     try {
+      console.log('ScoutingProvider: Fetching recommendations from database', { scoutId, limit });
       const { data, error } = await supabase
         .from('ai_recommendations')
         .select('*')
         .eq('scout_id', scoutId)
         .order('fit_score', { ascending: false })
-        .limit(limit);
+        .limit(Math.max(limit, 50));
       
       if (error) {
-        // If table doesn't exist, return empty array instead of logging error
         if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
           console.log('ScoutingProvider: ai_recommendations table not found, returning empty results');
           return [];
@@ -243,9 +244,10 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
       }
       
       const recs = (data ?? []) as unknown as AIRecommendationRow[];
+      console.log('ScoutingProvider: Recommendations fetched', { scoutId, count: recs.length });
       setTopRecommendations((prev) => ({ ...prev, [scoutId]: recs }));
       void persistCache({ ...topRecommendations, [scoutId]: recs }, interestedScouts);
-      return recs;
+      return recs.slice(0, limit);
     } catch (e) {
       console.log('ScoutingProvider: getTopForScout exception', e);
       return [];
@@ -303,8 +305,16 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
   }, [currentUser?.id, currentUser?.role, computeForScout, loadCache, refreshUsers]);
 
   useEffect(() => {
-    void loadCache().then(() => setIsReady(true));
-  }, [loadCache]);
+    const init = async () => {
+      await loadCache();
+      if (currentUser && ['coach', 'scout', 'team', 'academy'].includes(currentUser.role)) {
+        console.log('ScoutingProvider: Loading recommendations for current user');
+        await getTopForScout(currentUser.id, 20);
+      }
+      setIsReady(true);
+    };
+    void init();
+  }, [loadCache, currentUser?.id, currentUser?.role, getTopForScout]);
 
   useEffect(() => {
     if (!isSupabaseConfigured || subscriptionsSetup.current) return;
@@ -350,6 +360,8 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     }
 
     try {
+      console.log('ScoutingProvider: Expressing interest', { scoutId: currentUser.id, athleteId });
+      
       const { error: recError } = await supabase
         .from('ai_recommendations')
         .upsert({
@@ -370,12 +382,35 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
         return { error: 'Failed to express interest' };
       }
 
+      console.log('ScoutingProvider: Interest expressed successfully');
+      
+      setTopRecommendations((prev) => {
+        const existing = prev[currentUser.id] || [];
+        const alreadyExists = existing.some(rec => rec.player_id === athleteId);
+        if (alreadyExists) return prev;
+        
+        const newRec: AIRecommendationRow = {
+          id: `${currentUser.id}-${athleteId}`,
+          scout_id: currentUser.id,
+          player_id: athleteId,
+          fit_score: 85,
+          breakdown: { skill: 85, speed: 85, stamina: 85, positionMatch: 85 },
+          notes: 'Manually expressed interest',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        const updated = [newRec, ...existing];
+        void persistCache({ ...prev, [currentUser.id]: updated }, interestedScouts);
+        return { ...prev, [currentUser.id]: updated };
+      });
+
       return {};
     } catch (error) {
       console.error('Express interest failed:', error);
       return { error: 'Failed to express interest' };
     }
-  }, [currentUser]);
+  }, [currentUser, persistCache, interestedScouts]);
 
   const removeInterest = useCallback(async (athleteId: string): Promise<{ error?: string }> => {
     if (!currentUser || !isSupabaseConfigured) {
@@ -383,6 +418,8 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     }
 
     try {
+      console.log('ScoutingProvider: Removing interest', { scoutId: currentUser.id, athleteId });
+      
       const { error } = await supabase
         .from('ai_recommendations')
         .delete()
@@ -394,16 +431,27 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
         return { error: 'Failed to remove interest' };
       }
 
+      console.log('ScoutingProvider: Interest removed successfully');
+      
+      setTopRecommendations((prev) => {
+        const existing = prev[currentUser.id] || [];
+        const updated = existing.filter(rec => rec.player_id !== athleteId);
+        void persistCache({ ...prev, [currentUser.id]: updated }, interestedScouts);
+        return { ...prev, [currentUser.id]: updated };
+      });
+
       return {};
     } catch (error) {
       console.error('Remove interest failed:', error);
       return { error: 'Failed to remove interest' };
     }
-  }, [currentUser]);
+  }, [currentUser, persistCache, interestedScouts]);
 
   const hasExpressedInterest = useCallback((athleteId: string): boolean => {
     if (!currentUser) return false;
-    return !!topRecommendations[currentUser.id]?.some(rec => rec.player_id === athleteId);
+    const interested = !!topRecommendations[currentUser.id]?.some(rec => rec.player_id === athleteId);
+    console.log('ScoutingProvider: hasExpressedInterest', { athleteId, interested, recommendations: topRecommendations[currentUser.id]?.length });
+    return interested;
   }, [currentUser, topRecommendations]);
 
   const getInterestedOrganizations = useCallback(async (athleteId: string): Promise<User[]> => {

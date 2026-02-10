@@ -153,7 +153,7 @@ export default function UserProfileScreen() {
       if (userData?.role === 'athlete') {
         console.log('UserProfile: Loading interested organizations for athlete', id);
         const orgs = await getInterestedOrganizations(id);
-        console.log('UserProfile: Interested organizations', orgs);
+        console.log('UserProfile: Interested organizations loaded', { count: orgs.length, orgs });
         setInterestedOrganizations(orgs);
       }
     } catch (error) {
@@ -252,17 +252,22 @@ export default function UserProfileScreen() {
     setIsInterestLoading(true);
     try {
       if (hasExpressedInterest) {
+        console.log('UserProfile: Removing interest', { profileUserId: profileUser.id });
         const result = await removeInterest(profileUser.id);
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
+          console.log('UserProfile: Interest removed, updating UI');
           setInterestedOrganizations(prev => prev.filter(org => org.id !== currentUser.id));
+          Alert.alert('Success', 'Interest removed');
         }
       } else {
+        console.log('UserProfile: Expressing interest', { profileUserId: profileUser.id, currentUserId: currentUser.id });
         const result = await expressInterest(profileUser.id);
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
+          console.log('UserProfile: Interest expressed, updating UI and sending notification');
           setInterestedOrganizations(prev => {
             const exists = prev.some(org => org.id === currentUser.id);
             if (exists) return prev;
@@ -274,12 +279,24 @@ export default function UserProfileScreen() {
                                currentUser.role === 'team' ? 'Team' : 
                                currentUser.role === 'academy' ? 'Academy' : 'Organization';
           
+          const sportInfo = currentUser.sport ? ` (${currentUser.sport})` : '';
+          const orgName = currentUser.roleSpecificData?.organization ? ` from ${currentUser.roleSpecificData.organization}` : '';
+          
           await createNotification(
             profileUser.id,
-            'profile_view',
-            `${orgTypeLabel} Interested in Your Profile`,
-            `${currentUser.name}${currentUser.roleSpecificData?.organization ? ` from ${currentUser.roleSpecificData.organization}` : ''} is interested in your athletic profile`,
-            { userId: currentUser.id, userRole: currentUser.role }
+            'connection_request',
+            `${orgTypeLabel}${sportInfo} Interested in Your Profile`,
+            `${currentUser.name}${orgName} is interested in your athletic profile. This could be a great opportunity!`,
+            { userId: currentUser.id, userRole: currentUser.role, userSport: currentUser.sport }
+          );
+          
+          Alert.alert(
+            'Interest Expressed!',
+            `${profileUser.name} has been notified of your interest. You can now message them directly.`,
+            [
+              { text: 'OK' },
+              { text: 'Message Now', onPress: handleMessage }
+            ]
           );
         }
       }

@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';
 import { usePosts } from '@/hooks/posts-context';
 import { mockAthletes } from '@/mocks/data';
+import { User } from '@/types';
 import { Button } from '@/components/Button';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -28,8 +29,9 @@ export default function ProfileScreen() {
   const { user, logout, updateProfile } = useAuth();
   const { followers, following, getFollowersCount, getFollowingCount } = useFollow();
   const { posts } = usePosts();
-  const { getInterestedForPlayer, getTopForScout } = useScouting();
+  const { getInterestedForPlayer, getTopForScout, getInterestedOrganizations } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
+  const [interestedOrganizations, setInterestedOrganizations] = useState<User[]>([]);
   const [topPlayers, setTopPlayers] = useState<{ playerId: string; name: string; avatar?: string; position?: string; score: number }[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
@@ -67,10 +69,14 @@ export default function ProfileScreen() {
       try {
         const res = await getInterestedForPlayer(user.id, 70);
         setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
+        
+        const orgs = await getInterestedOrganizations(user.id);
+        console.log('Profile: Interested organizations loaded', { count: orgs.length });
+        setInterestedOrganizations(orgs);
       } catch (e) {
         console.log('Profile: interested scouts load failed', e);
       }
-    } else if (user.role === 'scout') {
+    } else if (user.role === 'scout' || user.role === 'coach' || user.role === 'academy' || user.role === 'team') {
       try {
         const recs = await getTopForScout(user.id, 10);
         const players = recs.map((r) => ({
@@ -85,7 +91,7 @@ export default function ProfileScreen() {
         console.log('Profile: top players load failed', e);
       }
     }
-  }, [user, getInterestedForPlayer, getTopForScout]);
+  }, [user, getInterestedForPlayer, getTopForScout, getInterestedOrganizations]);
 
   React.useEffect(() => {
     void loadRecommendations();
@@ -339,31 +345,54 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <BadgeCheck size={20} color={theme.colors.success} />
-              <Text style={styles.sectionTitle}>Scouts Interested in You</Text>
+              <Text style={styles.sectionTitle}>Organizations Interested in You</Text>
             </View>
-            {interested.length > 0 ? (
-              interested.slice(0, 5).map((it, idx) => (
-                <View key={`${it.scoutName}-${idx}`} style={styles.achievementItem} testID={`interested-scout-${idx}`}>
-                  <Sparkles size={18} color={theme.colors.warning} />
-                  <View style={styles.achievementInfo}>
-                    <Text style={styles.achievementTitle}>{it.scoutName}</Text>
-                    <Text style={styles.achievementDescription}>Fit score {it.score}%</Text>
-                  </View>
+            {interestedOrganizations.length > 0 ? (
+              <>
+                <View style={styles.interestSummary}>
+                  <Text style={styles.interestSummaryText}>
+                    {interestedOrganizations.length} {interestedOrganizations.length === 1 ? 'organization has' : 'organizations have'} expressed interest
+                  </Text>
                 </View>
-              ))
+                {interestedOrganizations.slice(0, 5).map((org, idx) => (
+                  <TouchableOpacity 
+                    key={`${org.id}-${idx}`} 
+                    style={styles.achievementItem} 
+                    testID={`interested-org-${idx}`}
+                    onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: org.id } })}
+                  >
+                    <Image 
+                      source={{ uri: org.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }} 
+                      style={{ width: 40, height: 40, borderRadius: 20 }}
+                    />
+                    <View style={styles.achievementInfo}>
+                      <Text style={styles.achievementTitle}>{org.name}</Text>
+                      <Text style={styles.achievementDescription}>
+                        {org.role.charAt(0).toUpperCase() + org.role.slice(1)}
+                        {org.sport ? ` • ${org.sport}` : ''}
+                        {org.roleSpecificData?.organization ? ` • ${org.roleSpecificData.organization}` : ''}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+                {interestedOrganizations.length > 5 && (
+                  <Text style={styles.moreText}>+{interestedOrganizations.length - 5} more organizations</Text>
+                )}
+              </>
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No scouts yet</Text>
+                <Text style={styles.emptyStateText}>No organizations yet</Text>
+                <Text style={styles.emptyStateSubtext}>Keep sharing your highlights to increase visibility</Text>
               </View>
             )}
           </View>
         )}
 
-        {user.role === 'scout' && (
+        {(user.role === 'scout' || user.role === 'coach' || user.role === 'academy' || user.role === 'team') && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <BadgeCheck size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>Recommended Players</Text>
+              <Text style={styles.sectionTitle}>Recommended Athletes</Text>
             </View>
             {topPlayers.length > 0 ? (
               topPlayers.map((p, idx) => (
@@ -378,6 +407,7 @@ export default function ProfileScreen() {
             ) : (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyStateText}>No recommendations yet</Text>
+                <Text style={styles.emptyStateSubtext}>Athletes matching your sport will appear here</Text>
               </View>
             )}
           </View>
@@ -779,5 +809,24 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xs,
     borderWidth: 2,
     borderColor: theme.colors.white,
+  },
+  interestSummary: {
+    backgroundColor: theme.colors.primary + '15',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+  },
+  interestSummaryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.primary,
+    textAlign: 'center',
+  },
+  moreText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: theme.spacing.sm,
+    fontStyle: 'italic' as const,
   },
 });
