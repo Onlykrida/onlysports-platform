@@ -41,6 +41,8 @@ export default function DiscoverScreen() {
   const [tempVerified, setTempVerified] = useState<boolean>(false);
   const [locationFilter, setLocationFilter] = useState<string>('');
   const [verifiedOnly, setVerifiedOnly] = useState<boolean>(false);
+  const [sportDropdownOpen, setSportDropdownOpen] = useState<boolean>(false);
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState<boolean>(false);
 
   const { 
     searchResults, 
@@ -672,31 +674,42 @@ export default function DiscoverScreen() {
                 <View style={styles.dropdownContainer}>
                   <TouchableOpacity
                     style={styles.dropdownButton}
-                    onPress={() => setTempSport(null)}
+                    onPress={() => setSportDropdownOpen(!sportDropdownOpen)}
                   >
                     <Text style={styles.dropdownButtonText}>
                       {tempSport || 'All Sports'}
                     </Text>
+                    <Text style={styles.dropdownArrow}>{sportDropdownOpen ? '▲' : '▼'}</Text>
                   </TouchableOpacity>
-                  <View style={styles.dropdownList}>
-                    <TouchableOpacity
-                      style={[styles.dropdownItem, !tempSport && styles.dropdownItemSelected]}
-                      onPress={() => setTempSport(null)}
-                    >
-                      <Text style={[styles.dropdownItemText, !tempSport && styles.dropdownItemTextSelected]}>All Sports</Text>
-                    </TouchableOpacity>
-                    {sports.map((sport) => (
-                      <TouchableOpacity
-                        key={sport}
-                        style={[styles.dropdownItem, tempSport === sport && styles.dropdownItemSelected]}
-                        onPress={() => setTempSport(sport)}
-                      >
-                        <Text style={[styles.dropdownItemText, tempSport === sport && styles.dropdownItemTextSelected]}>
-                          {sport}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                  {sportDropdownOpen && (
+                    <View style={styles.dropdownList}>
+                      <ScrollView style={styles.dropdownScroll}>
+                        <TouchableOpacity
+                          style={[styles.dropdownItem, !tempSport && styles.dropdownItemSelected]}
+                          onPress={() => {
+                            setTempSport(null);
+                            setSportDropdownOpen(false);
+                          }}
+                        >
+                          <Text style={[styles.dropdownItemText, !tempSport && styles.dropdownItemTextSelected]}>All Sports</Text>
+                        </TouchableOpacity>
+                        {sports.map((sport) => (
+                          <TouchableOpacity
+                            key={sport}
+                            style={[styles.dropdownItem, tempSport === sport && styles.dropdownItemSelected]}
+                            onPress={() => {
+                              setTempSport(sport);
+                              setSportDropdownOpen(false);
+                            }}
+                          >
+                            <Text style={[styles.dropdownItemText, tempSport === sport && styles.dropdownItemTextSelected]}>
+                              {sport}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -706,31 +719,40 @@ export default function DiscoverScreen() {
                 <View style={styles.dropdownContainer}>
                   <TouchableOpacity
                     style={styles.dropdownButton}
-                    onPress={() => setTempRole(null)}
+                    onPress={() => setRoleDropdownOpen(!roleDropdownOpen)}
                   >
                     <Text style={styles.dropdownButtonText}>
                       {tempRole ? formatRoleName(tempRole, true) : 'All Roles'}
                     </Text>
+                    <Text style={styles.dropdownArrow}>{roleDropdownOpen ? '▲' : '▼'}</Text>
                   </TouchableOpacity>
-                  <View style={styles.dropdownList}>
-                    <TouchableOpacity
-                      style={[styles.dropdownItem, !tempRole && styles.dropdownItemSelected]}
-                      onPress={() => setTempRole(null)}
-                    >
-                      <Text style={[styles.dropdownItemText, !tempRole && styles.dropdownItemTextSelected]}>All Roles</Text>
-                    </TouchableOpacity>
-                    {['athlete', 'scout', 'coach', 'trainer'].map((role) => (
+                  {roleDropdownOpen && (
+                    <View style={styles.dropdownList}>
                       <TouchableOpacity
-                        key={role}
-                        style={[styles.dropdownItem, tempRole === role && styles.dropdownItemSelected]}
-                        onPress={() => setTempRole(role)}
+                        style={[styles.dropdownItem, !tempRole && styles.dropdownItemSelected]}
+                        onPress={() => {
+                          setTempRole(null);
+                          setRoleDropdownOpen(false);
+                        }}
                       >
-                        <Text style={[styles.dropdownItemText, tempRole === role && styles.dropdownItemTextSelected]}>
-                          {formatRoleName(role, true)}
-                        </Text>
+                        <Text style={[styles.dropdownItemText, !tempRole && styles.dropdownItemTextSelected]}>All Roles</Text>
                       </TouchableOpacity>
-                    ))}
-                  </View>
+                      {['athlete', 'scout', 'coach', 'trainer'].map((role) => (
+                        <TouchableOpacity
+                          key={role}
+                          style={[styles.dropdownItem, tempRole === role && styles.dropdownItemSelected]}
+                          onPress={() => {
+                            setTempRole(role);
+                            setRoleDropdownOpen(false);
+                          }}
+                        >
+                          <Text style={[styles.dropdownItemText, tempRole === role && styles.dropdownItemTextSelected]}>
+                            {formatRoleName(role, true)}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -1221,6 +1243,9 @@ const styles = StyleSheet.create({
     gap: theme.spacing.xs,
   },
   dropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
@@ -1228,21 +1253,39 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   dropdownButtonText: {
+    flex: 1,
     fontSize: theme.fontSize.md,
     color: theme.colors.text,
     fontWeight: theme.fontWeight.medium,
+  },
+  dropdownArrow: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginLeft: theme.spacing.sm,
   },
   dropdownList: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    marginTop: theme.spacing.xs,
+    overflow: 'hidden',
+  },
+  dropdownScroll: {
     maxHeight: 200,
   },
   dropdownItem: {
     padding: theme.spacing.md,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: theme.colors.border,
+  },
+  dropdownItemText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+  },
+  dropdownItemTextSelected: {
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.semibold,
   },
   dropdownItemSelected: {
     backgroundColor: theme.colors.primary + '20',
