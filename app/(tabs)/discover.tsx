@@ -37,6 +37,8 @@ export default function DiscoverScreen() {
   const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
   const [tempSport, setTempSport] = useState<string | null>(null);
   const [tempRole, setTempRole] = useState<string | null>(null);
+  const [tempLocation, setTempLocation] = useState<string>('');
+  const [tempVerified, setTempVerified] = useState<boolean>(false);
   const [locationFilter, setLocationFilter] = useState<string>('');
   const [verifiedOnly, setVerifiedOnly] = useState<boolean>(false);
 
@@ -468,12 +470,14 @@ export default function DiscoverScreen() {
             onPress={() => {
               setTempSport(selectedSport);
               setTempRole(selectedRole);
+              setTempLocation(locationFilter);
+              setTempVerified(verifiedOnly);
               setShowFilterModal(true);
             }}
             testID="filter-button"
           >
             <Filter size={20} color={theme.colors.primary} />
-            {(locationFilter || verifiedOnly) && (
+            {(selectedSport || selectedRole || locationFilter || verifiedOnly) && (
               <View style={styles.filterActiveBadge} />
             )}
           </TouchableOpacity>
@@ -716,8 +720,8 @@ export default function DiscoverScreen() {
                 <TextInput
                   style={styles.filterInput}
                   placeholder="Filter by location..."
-                  value={locationFilter}
-                  onChangeText={setLocationFilter}
+                  value={tempLocation}
+                  onChangeText={setTempLocation}
                   placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
@@ -727,10 +731,10 @@ export default function DiscoverScreen() {
                 <View style={styles.filterSwitchRow}>
                   <Text style={styles.filterSectionTitle}>Verified Only</Text>
                   <Switch
-                    value={verifiedOnly}
-                    onValueChange={setVerifiedOnly}
+                    value={tempVerified}
+                    onValueChange={setTempVerified}
                     trackColor={{ false: theme.colors.border, true: theme.colors.primary + '80' }}
-                    thumbColor={verifiedOnly ? theme.colors.primary : theme.colors.textSecondary}
+                    thumbColor={tempVerified ? theme.colors.primary : theme.colors.textSecondary}
                   />
                 </View>
               </View>
@@ -742,8 +746,8 @@ export default function DiscoverScreen() {
                 onPress={() => {
                   setTempSport(null);
                   setTempRole(null);
-                  setLocationFilter('');
-                  setVerifiedOnly(false);
+                  setTempLocation('');
+                  setTempVerified(false);
                 }}
               >
                 <Text style={styles.clearFiltersModalButtonText}>Clear All</Text>
@@ -753,6 +757,8 @@ export default function DiscoverScreen() {
                 onPress={() => {
                   setSelectedSport(tempSport);
                   setSelectedRole(tempRole);
+                  setLocationFilter(tempLocation);
+                  setVerifiedOnly(tempVerified);
                   setShowFilterModal(false);
                 }}
               >
