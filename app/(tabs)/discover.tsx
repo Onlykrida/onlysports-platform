@@ -841,13 +841,15 @@ const styles = StyleSheet.create({
   },
   roleFilter: {
     backgroundColor: theme.colors.surface,
-    maxHeight: 60,
+    paddingVertical: theme.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
   sportsFilter: {
     backgroundColor: theme.colors.surface,
-    maxHeight: 60,
+    paddingVertical: theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   filterContent: {
     paddingHorizontal: theme.spacing.md,
@@ -855,22 +857,29 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   filterChip: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
     borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
     marginRight: theme.spacing.sm,
+    minHeight: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterChipActive: {
     backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   filterChipText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    fontWeight: theme.fontWeight.medium,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    fontWeight: theme.fontWeight.semibold,
   },
   filterChipTextActive: {
     color: theme.colors.white,
+    fontWeight: theme.fontWeight.bold,
   },
   listContent: {
     padding: theme.spacing.md,
