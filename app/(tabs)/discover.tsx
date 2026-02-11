@@ -669,48 +669,68 @@ export default function DiscoverScreen() {
               {/* Sport Filter */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionTitle}>Sport</Text>
-                <View style={styles.filterOptions}>
+                <View style={styles.dropdownContainer}>
                   <TouchableOpacity
-                    style={[styles.filterOption, !tempSport && styles.filterOptionActive]}
+                    style={styles.dropdownButton}
                     onPress={() => setTempSport(null)}
                   >
-                    <Text style={[styles.filterOptionText, !tempSport && styles.filterOptionTextActive]}>All Sports</Text>
+                    <Text style={styles.dropdownButtonText}>
+                      {tempSport || 'All Sports'}
+                    </Text>
                   </TouchableOpacity>
-                  {sports.map((sport) => (
+                  <View style={styles.dropdownList}>
                     <TouchableOpacity
-                      key={sport}
-                      style={[styles.filterOption, tempSport === sport && styles.filterOptionActive]}
-                      onPress={() => setTempSport(sport)}
+                      style={[styles.dropdownItem, !tempSport && styles.dropdownItemSelected]}
+                      onPress={() => setTempSport(null)}
                     >
-                      <Text style={[styles.filterOptionText, tempSport === sport && styles.filterOptionTextActive]}>
-                        {sport}
-                      </Text>
+                      <Text style={[styles.dropdownItemText, !tempSport && styles.dropdownItemTextSelected]}>All Sports</Text>
                     </TouchableOpacity>
-                  ))}
+                    {sports.map((sport) => (
+                      <TouchableOpacity
+                        key={sport}
+                        style={[styles.dropdownItem, tempSport === sport && styles.dropdownItemSelected]}
+                        onPress={() => setTempSport(sport)}
+                      >
+                        <Text style={[styles.dropdownItemText, tempSport === sport && styles.dropdownItemTextSelected]}>
+                          {sport}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
               </View>
 
               {/* Role Filter */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionTitle}>Role</Text>
-                <View style={styles.filterOptions}>
+                <View style={styles.dropdownContainer}>
                   <TouchableOpacity
-                    style={[styles.filterOption, !tempRole && styles.filterOptionActive]}
+                    style={styles.dropdownButton}
                     onPress={() => setTempRole(null)}
                   >
-                    <Text style={[styles.filterOptionText, !tempRole && styles.filterOptionTextActive]}>All Roles</Text>
+                    <Text style={styles.dropdownButtonText}>
+                      {tempRole ? formatRoleName(tempRole, true) : 'All Roles'}
+                    </Text>
                   </TouchableOpacity>
-                  {['athlete', 'scout', 'coach', 'trainer'].map((role) => (
+                  <View style={styles.dropdownList}>
                     <TouchableOpacity
-                      key={role}
-                      style={[styles.filterOption, tempRole === role && styles.filterOptionActive]}
-                      onPress={() => setTempRole(role)}
+                      style={[styles.dropdownItem, !tempRole && styles.dropdownItemSelected]}
+                      onPress={() => setTempRole(null)}
                     >
-                      <Text style={[styles.filterOptionText, tempRole === role && styles.filterOptionTextActive]}>
-                        {formatRoleName(role, true)}
-                      </Text>
+                      <Text style={[styles.dropdownItemText, !tempRole && styles.dropdownItemTextSelected]}>All Roles</Text>
                     </TouchableOpacity>
-                  ))}
+                    {['athlete', 'scout', 'coach', 'trainer'].map((role) => (
+                      <TouchableOpacity
+                        key={role}
+                        style={[styles.dropdownItem, tempRole === role && styles.dropdownItemSelected]}
+                        onPress={() => setTempRole(role)}
+                      >
+                        <Text style={[styles.dropdownItemText, tempRole === role && styles.dropdownItemTextSelected]}>
+                          {formatRoleName(role, true)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
               </View>
 
@@ -1197,30 +1217,44 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
   },
-  filterOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.sm,
+  dropdownContainer: {
+    gap: theme.spacing.xs,
   },
-  filterOption: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.full,
+  dropdownButton: {
     backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  filterOptionActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  filterOptionText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+  dropdownButtonText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
     fontWeight: theme.fontWeight.medium,
   },
-  filterOptionTextActive: {
-    color: theme.colors.white,
+  dropdownList: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    padding: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  dropdownItemSelected: {
+    backgroundColor: theme.colors.primary + '20',
+  },
+  dropdownItemText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    fontWeight: theme.fontWeight.medium,
+  },
+  dropdownItemTextSelected: {
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.bold,
   },
   filterInput: {
     backgroundColor: theme.colors.surface,
