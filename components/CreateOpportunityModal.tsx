@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, DollarSign, Users, Trophy, Award, Briefcase, GraduationCap } from 'lucide-react-native';
-import { theme } from '@/constants/theme';
+import { theme, formatRoleName } from '@/constants/theme';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
 
@@ -244,11 +244,11 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
     <View style={styles.categoryContainer}>
       <Text style={styles.sectionTitle}>Select Opportunity Type</Text>
       <Text style={styles.sectionSubtitle}>
-        {user?.role === 'coach' && 'As a coach, you can post tryouts, camps, and tournaments'}
-        {user?.role === 'scout' && 'As a scout, you can post tryouts, scholarships, and tournaments'}
-        {user?.role === 'gym' && 'As a gym, you can post camps and training programs'}
-        {user?.role === 'brand' && 'As a brand, you can post sponsorships and tournaments'}
-        {user?.role === 'academy' && 'As an academy, you can post camps, scholarships, and tryouts'}
+        {user?.role === 'coach' && `As a ${formatRoleName('coach')}, you can post tryouts, camps, and tournaments`}
+        {user?.role === 'scout' && `As a ${formatRoleName('scout')}, you can post tryouts, scholarships, and tournaments`}
+        {user?.role === 'gym' && `As a ${formatRoleName('gym')}, you can post camps and training programs`}
+        {user?.role === 'brand' && `As a ${formatRoleName('brand')}, you can post sponsorships and tournaments`}
+        {user?.role === 'academy' && `As an ${formatRoleName('academy')}, you can post camps, scholarships, and tryouts`}
         {(!user?.role || !['coach', 'scout', 'gym', 'brand', 'academy'].includes(user.role)) && 'Choose the type of opportunity you want to create'}
       </Text>
       

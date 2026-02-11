@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Filter, MapPin, UserPlus, UserCheck, Bell, MessageCircle, X } from 'lucide-react-native';
 import { router } from 'expo-router';
-import { theme } from '@/constants/theme';
+import { theme, formatRoleName } from '@/constants/theme';
 import { sports } from '@/mocks/data';
 import { SearchResult, User } from '@/types';
 import { useSearch } from '@/hooks/search-context';
@@ -235,7 +235,7 @@ export default function DiscoverScreen() {
           <Text style={styles.userName}>{item.name}</Text>
           {item.verified && <Text style={styles.verified}>✓</Text>}
         </View>
-        <Text style={styles.userRole}>{item.role.charAt(0).toUpperCase() + item.role.slice(1)}{item.sport ? ` • ${item.sport}` : ''}</Text>
+        <Text style={styles.userRole}>{formatRoleName(item.role)}{item.sport ? ` • ${item.sport}` : ''}</Text>
         {item.position && (
           <Text style={styles.userPosition}>{item.position}</Text>
         )}
@@ -543,7 +543,7 @@ export default function DiscoverScreen() {
                   onPress={() => setSelectedRole(role)}
                 >
                   <Text style={[styles.filterChipText, selectedRole === role && styles.filterChipTextActive]}>
-                    {role.charAt(0).toUpperCase() + role.slice(1)}s
+                    {formatRoleName(role, true)}
                     {isRecommended && selectedRole !== role && (
                       <Text style={styles.recommendedBadge}> ⭐</Text>
                     )}
@@ -703,7 +703,7 @@ export default function DiscoverScreen() {
                       onPress={() => setTempRole(role)}
                     >
                       <Text style={[styles.filterOptionText, tempRole === role && styles.filterOptionTextActive]}>
-                        {role.charAt(0).toUpperCase() + role.slice(1)}s
+                        {formatRoleName(role, true)}
                       </Text>
                     </TouchableOpacity>
                   ))}

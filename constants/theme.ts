@@ -1,3 +1,28 @@
+export const formatRoleName = (role: string, plural: boolean = false): string => {
+  const roleMap: Record<string, { singular: string; plural: string }> = {
+    athlete: { singular: 'Athlete', plural: 'Athletes' },
+    coach: { singular: 'Coach', plural: 'Coaches' },
+    scout: { singular: 'Scout', plural: 'Scouts' },
+    trainer: { singular: 'Gym Trainer', plural: 'Gym Trainers' },
+    team: { singular: 'Team/Club/Academy', plural: 'Teams/Clubs/Academies' },
+    academy: { singular: 'Academy', plural: 'Academies' },
+    fan: { singular: 'Fan', plural: 'Fans' },
+    brand: { singular: 'Brand', plural: 'Brands' },
+    gym: { singular: 'Gym', plural: 'Gyms' },
+  };
+
+  const roleLower = role.toLowerCase();
+  const roleData = roleMap[roleLower];
+  
+  if (roleData) {
+    return plural ? roleData.plural : roleData.singular;
+  }
+  
+  // Fallback for unknown roles
+  const formatted = role.charAt(0).toUpperCase() + role.slice(1);
+  return plural ? formatted + 's' : formatted;
+};
+
 export const theme = {
   colors: {
     // Dark sporty theme colors

@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { Save, X, Camera, Plus, Trash2 } from 'lucide-react-native';
-import { theme } from '@/constants/theme';
+import { theme, formatRoleName } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -408,7 +408,7 @@ export default function EditProfileScreen() {
         {/* Role-Specific Fields */}
         {user?.role && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{user.role.charAt(0).toUpperCase() + user.role.slice(1)} Information</Text>
+            <Text style={styles.sectionTitle}>{formatRoleName(user.role)} Information</Text>
             {renderRoleSpecificFields()}
           </View>
         )}

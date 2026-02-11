@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Mail, Lock, User as UserIcon, Dumbbell, Quote, Medal } from 'lucide-react-native';
-import { theme } from '@/constants/theme';
+import { theme, formatRoleName } from '@/constants/theme';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { DatabaseSetupChecker } from '@/components/DatabaseSetupChecker';
@@ -111,7 +111,7 @@ export default function SignupScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>
-              Join as {role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Athlete'}
+              Join as {role ? formatRoleName(role) : 'Athlete'}
             </Text>
           </View>
 

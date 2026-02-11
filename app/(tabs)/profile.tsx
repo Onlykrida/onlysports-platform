@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
 import { Settings, Edit3, Award, BarChart3, LogOut, Plus, Grid, List, Camera, Sparkles, BadgeCheck } from 'lucide-react-native';
-import { theme } from '@/constants/theme';
+import { theme, formatRoleName } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';
 import { usePosts } from '@/hooks/posts-context';
@@ -298,7 +298,7 @@ export default function ProfileScreen() {
             <Text style={styles.name}>{user.name}</Text>
             {user.verified && <Text style={styles.verified}>✓</Text>}
           </View>
-          <Text style={styles.role}>{user.role.charAt(0).toUpperCase() + user.role.slice(1)}{user.sport ? ` • ${user.sport}` : ''}{user.position ? ` • ${user.position}` : ''}</Text>
+          <Text style={styles.role}>{formatRoleName(user.role)}{user.sport ? ` • ${user.sport}` : ''}{user.position ? ` • ${user.position}` : ''}</Text>
           <Text style={styles.bio}>{user.bio || 'No bio available'}</Text>
           <Text style={styles.location}>{user.location || 'Location not set'}</Text>
         </View>
@@ -368,7 +368,7 @@ export default function ProfileScreen() {
                     <View style={styles.achievementInfo}>
                       <Text style={styles.achievementTitle}>{org.name}</Text>
                       <Text style={styles.achievementDescription}>
-                        {org.role.charAt(0).toUpperCase() + org.role.slice(1)}
+                        {formatRoleName(org.role)}
                         {org.sport ? ` • ${org.sport}` : ''}
                         {org.roleSpecificData?.organization ? ` • ${org.roleSpecificData.organization}` : ''}
                       </Text>
@@ -418,7 +418,7 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <BadgeCheck size={20} color={theme.colors.secondary} />
-              <Text style={styles.sectionTitle}>{user.role.charAt(0).toUpperCase() + user.role.slice(1)} Details</Text>
+              <Text style={styles.sectionTitle}>{formatRoleName(user.role)} Details</Text>
             </View>
             {renderRoleSpecificDetails()}
           </View>

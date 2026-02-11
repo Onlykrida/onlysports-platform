@@ -30,7 +30,7 @@ import {
   CheckCircle,
   Zap
 } from 'lucide-react-native';
-import { theme } from '@/constants/theme';
+import { theme, formatRoleName } from '@/constants/theme';
 import { User, Post } from '@/types';
 import { useScouting } from '@/hooks/scouting-context';
 import { useAuth } from '@/hooks/auth-context';
@@ -500,7 +500,7 @@ export default function UserProfileScreen() {
             {profileUser.verified && <Text style={styles.verified}>✓</Text>}
           </View>
           <Text style={styles.role}>
-            {profileUser.sport || 'Sport'} • {profileUser.role.charAt(0).toUpperCase() + profileUser.role.slice(1)}
+            {profileUser.sport || 'Sport'} • {formatRoleName(profileUser.role)}
           </Text>
           <Text style={styles.bio}>{profileUser.bio || 'No bio available'}</Text>
           <Text style={styles.location}>{profileUser.location || 'Location not set'}</Text>
@@ -555,7 +555,7 @@ export default function UserProfileScreen() {
                                   <View style={[styles.interestedOrgDetailRoleBadge, { backgroundColor: getRoleBadgeColor('scout') + '30' }]}>
                                     {getRoleIcon('scout')}
                                     <Text style={[styles.interestedOrgDetailRole, { color: getRoleBadgeColor('scout') }]}>
-                                      Scout
+                                      {formatRoleName('scout')}
                                     </Text>
                                   </View>
                                   {scout.roleSpecificData?.organization && (
@@ -607,7 +607,7 @@ export default function UserProfileScreen() {
                                   <View style={[styles.interestedOrgDetailRoleBadge, { backgroundColor: getRoleBadgeColor(org.role || 'coach') + '30' }]}>
                                     {getRoleIcon(org.role || 'coach')}
                                     <Text style={[styles.interestedOrgDetailRole, { color: getRoleBadgeColor(org.role || 'coach') }]}>
-                                      {org.role ? org.role.charAt(0).toUpperCase() + org.role.slice(1) : 'Organization'}
+                                      {org.role ? formatRoleName(org.role) : 'Organization'}
                                     </Text>
                                   </View>
                                   {org.roleSpecificData?.organization && (
@@ -641,7 +641,7 @@ export default function UserProfileScreen() {
                           <View key={role} style={styles.orgTypeChip}>
                             {getRoleIcon(role)}
                             <Text style={styles.orgTypeChipText}>
-                              {count} {role.charAt(0).toUpperCase() + role.slice(1)}{count > 1 ? 's' : ''}
+                              {count} {formatRoleName(role, count > 1)}
                             </Text>
                           </View>
                         );
@@ -742,7 +742,7 @@ export default function UserProfileScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Award size={20} color={theme.colors.secondary} />
-              <Text style={styles.sectionTitle}>{profileUser.role.charAt(0).toUpperCase() + profileUser.role.slice(1)} Details</Text>
+              <Text style={styles.sectionTitle}>{formatRoleName(profileUser.role)} Details</Text>
             </View>
             {renderRoleSpecificDetails(profileUser)}
           </View>
