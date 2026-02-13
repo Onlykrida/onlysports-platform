@@ -1290,15 +1290,7 @@ const styles = StyleSheet.create({
   dropdownItemSelected: {
     backgroundColor: theme.colors.primary + '20',
   },
-  dropdownItemText: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.text,
-    fontWeight: theme.fontWeight.medium,
-  },
-  dropdownItemTextSelected: {
-    color: theme.colors.primary,
-    fontWeight: theme.fontWeight.bold,
-  },
+
   filterInput: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.md,

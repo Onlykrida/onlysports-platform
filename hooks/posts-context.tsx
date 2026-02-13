@@ -180,7 +180,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           createdAt: new Date(opp.createdAt),
           isOpportunity: true,
           opportunityData: {
-            type: categoryMapping[opp.category] || 'tryout',
+            type: categoryMapping[opp.type] || 'tryout',
             sport: opp.sport || '',
             location: opp.location,
             deadline: opp.deadline,

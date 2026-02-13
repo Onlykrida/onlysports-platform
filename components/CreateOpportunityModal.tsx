@@ -615,48 +615,6 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
           </View>
         );
 
-      case 'camps':
-        return (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Camp Details</Text>
-            
-            <View style={styles.row}>
-              <View style={[styles.inputGroup, styles.halfWidth]}>
-                <Text style={styles.label}>Duration</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.duration || ''}
-                  onChangeText={(value) => updateFormData('duration', value)}
-                  placeholder="1 week, 2 weeks, etc."
-                  placeholderTextColor={theme.colors.textSecondary}
-                />
-              </View>
-              
-              <View style={[styles.inputGroup, styles.halfWidth]}>
-                <Text style={styles.label}>Age Group</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.ageGroup || ''}
-                  onChangeText={(value) => updateFormData('ageGroup', value)}
-                  placeholder="8-12, 13-17, etc."
-                  placeholderTextColor={theme.colors.textSecondary}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Skill Level</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.skillLevel || ''}
-                onChangeText={(value) => updateFormData('skillLevel', value)}
-                placeholder="All levels, Beginner, Advanced"
-                placeholderTextColor={theme.colors.textSecondary}
-              />
-            </View>
-          </View>
-        );
-
       default:
         return null;
     }
