@@ -76,7 +76,7 @@ export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user: currentUser } = useAuth();
   const { followUser, unfollowUser, isFollowing, getFollowersCount, getFollowingCount } = useFollow();
-  const { posts, getLikedAthletes } = usePosts();
+  const { posts } = usePosts();
   
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
@@ -85,10 +85,10 @@ export default function UserProfileScreen() {
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
-  const { getInterestedForPlayer, expressInterest, removeInterest, hasExpressedInterest: checkInterest, getInterestedOrganizations, getTopForScout } = useScouting();
+  const { getInterestedForPlayer, expressInterest, removeInterest, hasExpressedInterest: checkInterest, getInterestedOrganizations, getInterestedAthletesForOrg } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const [recommendedAthletes, setRecommendedAthletes] = useState<User[]>([]);
-  const [likedAthletes, setLikedAthletes] = useState<User[]>([]);
+
   const { createNotification } = useNotifications();
   const [isInterestLoading, setIsInterestLoading] = useState(false);
   const hasExpressedInterest = checkInterest(id || '');
@@ -161,39 +161,13 @@ export default function UserProfileScreen() {
       }
       
       if (userData?.role && ['coach', 'scout', 'team', 'academy'].includes(userData.role)) {
-        console.log('UserProfile: Loading recommended athletes for organization', id);
-        const recommendations = await getTopForScout(id, 20);
-        if (recommendations.length > 0) {
-          const athleteIds = recommendations.map(rec => rec.player_id);
-          const { data: athletesData, error: athletesError } = await supabase
-            .from('profiles')
-            .select('id, name, avatar, role, sport, position, verified, role_specific_data, email, created_at')
-            .in('id', athleteIds);
-          
-          if (athletesData && !athletesError) {
-            const athletes: User[] = athletesData.map((profile: any) => ({
-              id: profile.id,
-              name: profile.name,
-              avatar: profile.avatar,
-              role: profile.role,
-              sport: profile.sport,
-              position: profile.position,
-              verified: profile.verified,
-              email: profile.email,
-              createdAt: new Date(profile.created_at),
-              roleSpecificData: profile.role_specific_data || {},
-            }));
-            console.log('UserProfile: Recommended athletes loaded', { count: athletes.length });
-            setRecommendedAthletes(athletes);
-          }
-        }
-
+        console.log('UserProfile: Loading interested athletes for organization', id);
         try {
-          const liked = await getLikedAthletes(id);
-          console.log('UserProfile: Liked athletes loaded', { count: liked.length });
-          setLikedAthletes(liked);
+          const athletes = await getInterestedAthletesForOrg(id);
+          console.log('UserProfile: Interested athletes loaded', { count: athletes.length });
+          setRecommendedAthletes(athletes);
         } catch (e) {
-          console.log('UserProfile: liked athletes load failed', e);
+          console.log('UserProfile: interested athletes load failed', e);
         }
       }
     } catch (error) {
@@ -202,7 +176,7 @@ export default function UserProfileScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [getFollowersCount, getFollowingCount, id, posts, getInterestedOrganizations, getLikedAthletes]);
+  }, [getFollowersCount, getFollowingCount, id, posts, getInterestedOrganizations, getInterestedAthletesForOrg]);
 
   useEffect(() => {
     void loadUserProfile();
@@ -780,68 +754,12 @@ export default function UserProfileScreen() {
           </View>
         </View>
 
-        {/* Liked Athletes for scouts/coaches/organizations */}
-        {['coach', 'scout', 'team', 'academy'].includes(profileUser.role) && likedAthletes.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Heart size={20} color={theme.colors.danger} fill={theme.colors.danger} />
-              <Text style={styles.sectionTitle}>Players Liked</Text>
-            </View>
-            <View style={styles.likedSummary}>
-              <Text style={styles.likedSummaryText}>
-                {likedAthletes.length} {likedAthletes.length === 1 ? 'athlete' : 'athletes'} endorsed
-              </Text>
-            </View>
-            <View style={styles.recommendedAthletesList}>
-              {likedAthletes.slice(0, 8).map((athlete) => (
-                <TouchableOpacity 
-                  key={`liked-${athlete.id}`} 
-                  style={styles.recommendedAthleteItem}
-                  onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: athlete.id } })}
-                >
-                  <Image 
-                    source={{ uri: athlete.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
-                    style={styles.recommendedAthleteAvatar}
-                  />
-                  <View style={styles.recommendedAthleteInfo}>
-                    <View style={styles.recommendedAthleteNameRow}>
-                      <Text style={styles.recommendedAthleteName}>{athlete.name}</Text>
-                      {athlete.verified && <Text style={styles.verified}>✓</Text>}
-                    </View>
-                    <View style={styles.recommendedAthleteMeta}>
-                      {athlete.sport && (
-                        <Text style={styles.recommendedAthleteSport}>{athlete.sport}</Text>
-                      )}
-                      {athlete.position && (
-                        <Text style={styles.recommendedAthletePosition}>• {athlete.position}</Text>
-                      )}
-                    </View>
-                    {athlete.roleSpecificData?.currentTeam && (
-                      <Text style={styles.recommendedAthleteTeam} numberOfLines={1}>
-                        🏆 {athlete.roleSpecificData.currentTeam}
-                      </Text>
-                    )}
-                  </View>
-                  <View style={[styles.recommendedAthleteAction, { backgroundColor: theme.colors.danger + '20' }]}>
-                    <Heart size={16} color={theme.colors.danger} fill={theme.colors.danger} />
-                  </View>
-                </TouchableOpacity>
-              ))}
-              {likedAthletes.length > 8 && (
-                <View style={styles.likedMoreContainer}>
-                  <Text style={styles.likedMoreText}>+{likedAthletes.length - 8} more athletes</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* Recommended Athletes for scouts/coaches/organizations */}
+        {/* Players Interested In for scouts/coaches/organizations */}
         {['coach', 'scout', 'team', 'academy'].includes(profileUser.role) && recommendedAthletes.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Star size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>Recommended Athletes</Text>
+              <Text style={styles.sectionTitle}>Players Interested In</Text>
             </View>
             <View style={styles.recommendedAthletesList}>
               {recommendedAthletes.slice(0, 5).map((athlete) => (

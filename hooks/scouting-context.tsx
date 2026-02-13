@@ -64,6 +64,7 @@ interface ScoutingState {
   removeInterest: (athleteId: string) => Promise<{ error?: string }>;
   hasExpressedInterest: (athleteId: string) => boolean;
   getInterestedOrganizations: (athleteId: string) => Promise<User[]>;
+  getInterestedAthletesForOrg: (orgId: string) => Promise<User[]>;
 }
 
 const STORAGE_KEY = 'ai_recommendations_cache_v1';
@@ -454,6 +455,57 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     return interested;
   }, [currentUser, topRecommendations]);
 
+  const getInterestedAthletesForOrg = useCallback(async (orgId: string): Promise<User[]> => {
+    if (!isSupabaseConfigured) return [];
+
+    try {
+      console.log('ScoutingProvider: getInterestedAthletesForOrg', { orgId });
+      const { data, error } = await supabase
+        .from('ai_recommendations')
+        .select('player_id')
+        .eq('scout_id', orgId);
+
+      if (error) {
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+          return [];
+        }
+        console.error('Failed to get interested athletes:', error);
+        return [];
+      }
+
+      const playerIds = (data || []).map((rec: any) => rec.player_id);
+      if (playerIds.length === 0) return [];
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, avatar, role, sport, position, verified, role_specific_data, email, created_at')
+        .in('id', playerIds)
+        .eq('role', 'athlete');
+
+      if (profilesError) {
+        console.error('Failed to get athlete profiles:', profilesError);
+        return [];
+      }
+
+      console.log('ScoutingProvider: Interested athletes fetched', { orgId, count: (profilesData || []).length });
+      return (profilesData || []).map((profile: any) => ({
+        id: profile.id,
+        name: profile.name,
+        avatar: profile.avatar,
+        role: profile.role,
+        sport: profile.sport,
+        position: profile.position,
+        verified: profile.verified,
+        email: profile.email,
+        createdAt: new Date(profile.created_at),
+        roleSpecificData: profile.role_specific_data || {},
+      } as User));
+    } catch (error) {
+      console.error('Get interested athletes failed:', error);
+      return [];
+    }
+  }, []);
+
   const getInterestedOrganizations = useCallback(async (athleteId: string): Promise<User[]> => {
     if (!isSupabaseConfigured) return [];
     
@@ -514,5 +566,6 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     removeInterest,
     hasExpressedInterest,
     getInterestedOrganizations,
-  }), [isReady, isComputing, topRecommendations, interestedScouts, computeForScout, getTopForScout, getInterestedForPlayer, refresh, expressInterest, removeInterest, hasExpressedInterest, getInterestedOrganizations]);
+    getInterestedAthletesForOrg,
+  }), [isReady, isComputing, topRecommendations, interestedScouts, computeForScout, getTopForScout, getInterestedForPlayer, refresh, expressInterest, removeInterest, hasExpressedInterest, getInterestedOrganizations, getInterestedAthletesForOrg]);
 });
