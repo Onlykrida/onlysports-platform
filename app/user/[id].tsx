@@ -28,7 +28,8 @@ import {
   Send,
   Edit,
   CheckCircle,
-  Zap
+  Zap,
+  Heart
 } from 'lucide-react-native';
 import { theme, formatRoleName } from '@/constants/theme';
 import { User, Post } from '@/types';
@@ -75,7 +76,7 @@ export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user: currentUser } = useAuth();
   const { followUser, unfollowUser, isFollowing, getFollowersCount, getFollowingCount } = useFollow();
-  const { posts } = usePosts();
+  const { posts, getLikedAthletes } = usePosts();
   
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
@@ -87,6 +88,7 @@ export default function UserProfileScreen() {
   const { getInterestedForPlayer, expressInterest, removeInterest, hasExpressedInterest: checkInterest, getInterestedOrganizations, getTopForScout } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const [recommendedAthletes, setRecommendedAthletes] = useState<User[]>([]);
+  const [likedAthletes, setLikedAthletes] = useState<User[]>([]);
   const { createNotification } = useNotifications();
   const [isInterestLoading, setIsInterestLoading] = useState(false);
   const hasExpressedInterest = checkInterest(id || '');
@@ -185,6 +187,14 @@ export default function UserProfileScreen() {
             setRecommendedAthletes(athletes);
           }
         }
+
+        try {
+          const liked = await getLikedAthletes(id);
+          console.log('UserProfile: Liked athletes loaded', { count: liked.length });
+          setLikedAthletes(liked);
+        } catch (e) {
+          console.log('UserProfile: liked athletes load failed', e);
+        }
       }
     } catch (error) {
       console.error('Failed to load user profile:', error);
@@ -192,7 +202,7 @@ export default function UserProfileScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [getFollowersCount, getFollowingCount, id, posts, getInterestedOrganizations]);
+  }, [getFollowersCount, getFollowingCount, id, posts, getInterestedOrganizations, getLikedAthletes]);
 
   useEffect(() => {
     void loadUserProfile();
@@ -769,6 +779,62 @@ export default function UserProfileScreen() {
             )}
           </View>
         </View>
+
+        {/* Liked Athletes for scouts/coaches/organizations */}
+        {['coach', 'scout', 'team', 'academy'].includes(profileUser.role) && likedAthletes.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Heart size={20} color={theme.colors.danger} fill={theme.colors.danger} />
+              <Text style={styles.sectionTitle}>Players Liked</Text>
+            </View>
+            <View style={styles.likedSummary}>
+              <Text style={styles.likedSummaryText}>
+                {likedAthletes.length} {likedAthletes.length === 1 ? 'athlete' : 'athletes'} endorsed
+              </Text>
+            </View>
+            <View style={styles.recommendedAthletesList}>
+              {likedAthletes.slice(0, 8).map((athlete) => (
+                <TouchableOpacity 
+                  key={`liked-${athlete.id}`} 
+                  style={styles.recommendedAthleteItem}
+                  onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: athlete.id } })}
+                >
+                  <Image 
+                    source={{ uri: athlete.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
+                    style={styles.recommendedAthleteAvatar}
+                  />
+                  <View style={styles.recommendedAthleteInfo}>
+                    <View style={styles.recommendedAthleteNameRow}>
+                      <Text style={styles.recommendedAthleteName}>{athlete.name}</Text>
+                      {athlete.verified && <Text style={styles.verified}>✓</Text>}
+                    </View>
+                    <View style={styles.recommendedAthleteMeta}>
+                      {athlete.sport && (
+                        <Text style={styles.recommendedAthleteSport}>{athlete.sport}</Text>
+                      )}
+                      {athlete.position && (
+                        <Text style={styles.recommendedAthletePosition}>• {athlete.position}</Text>
+                      )}
+                    </View>
+                    {athlete.roleSpecificData?.currentTeam && (
+                      <Text style={styles.recommendedAthleteTeam} numberOfLines={1}>
+                        🏆 {athlete.roleSpecificData.currentTeam}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={[styles.recommendedAthleteAction, { backgroundColor: theme.colors.danger + '20' }]}>
+                    <Heart size={16} color={theme.colors.danger} fill={theme.colors.danger} />
+                  </View>
+                </TouchableOpacity>
+              ))}
+              {likedAthletes.length > 8 && (
+                <View style={styles.likedMoreContainer}>
+                  <Text style={styles.likedMoreText}>+{likedAthletes.length - 8} more athletes</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Recommended Athletes for scouts/coaches/organizations */}
         {['coach', 'scout', 'team', 'academy'].includes(profileUser.role) && recommendedAthletes.length > 0 && (
@@ -1532,5 +1598,26 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary + '20',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  likedSummary: {
+    backgroundColor: theme.colors.danger + '12',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+  },
+  likedSummaryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.danger,
+    textAlign: 'center',
+  },
+  likedMoreContainer: {
+    alignItems: 'center',
+    padding: theme.spacing.md,
+  },
+  likedMoreText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic' as const,
   },
 });

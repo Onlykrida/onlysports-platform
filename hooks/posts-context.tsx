@@ -1,7 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
-import { Post } from '@/types';
+import { Post, User } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
 import { useOpportunities } from './opportunities-context';
@@ -32,6 +32,7 @@ interface PostsState {
     postId: string,
     updates: { content?: string; mediaUrl?: string; mediaType?: 'image' | 'video' | null }
   ) => Promise<{ error?: string }>;
+  getLikedAthletes: (userId: string) => Promise<User[]>;
 }
 
 export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
@@ -790,6 +791,70 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     };
   }, [loadPosts]);
 
+  const getLikedAthletes = useCallback(async (userId: string): Promise<User[]> => {
+    if (!isSupabaseConfigured || !userId) return [];
+
+    try {
+      console.log('getLikedAthletes: Fetching liked athletes for user', userId);
+
+      const { data: likesData, error: likesError } = await supabase
+        .from('likes')
+        .select('post_id')
+        .eq('user_id', userId);
+
+      if (likesError || !likesData?.length) {
+        console.log('getLikedAthletes: No likes found or error', likesError);
+        return [];
+      }
+
+      const postIds = likesData.map((l: any) => l.post_id);
+
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select('user_id')
+        .in('id', postIds);
+
+      if (postsError || !postsData?.length) {
+        console.log('getLikedAthletes: No posts found or error', postsError);
+        return [];
+      }
+
+      const authorIds = [...new Set(postsData.map((p: any) => p.user_id as string))].filter(id => id !== userId);
+
+      if (authorIds.length === 0) return [];
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, avatar, role, sport, position, verified, email, created_at, role_specific_data')
+        .in('id', authorIds)
+        .eq('role', 'athlete');
+
+      if (profilesError || !profilesData?.length) {
+        console.log('getLikedAthletes: No athlete profiles found or error', profilesError);
+        return [];
+      }
+
+      const athletes: User[] = profilesData.map((profile: any) => ({
+        id: profile.id,
+        name: profile.name,
+        avatar: profile.avatar,
+        role: profile.role,
+        sport: profile.sport,
+        position: profile.position,
+        verified: profile.verified,
+        email: profile.email,
+        createdAt: new Date(profile.created_at),
+        roleSpecificData: profile.role_specific_data || {},
+      }));
+
+      console.log('getLikedAthletes: Found', athletes.length, 'liked athletes');
+      return athletes;
+    } catch (error) {
+      console.error('getLikedAthletes: Error', error);
+      return [];
+    }
+  }, []);
+
   return useMemo(() => ({
     posts,
     isLoading,
@@ -798,5 +863,6 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     likePost,
     deletePost,
     updatePost,
-  }), [posts, isLoading, refreshPosts, createPost, likePost, deletePost, updatePost]);
+    getLikedAthletes,
+  }), [posts, isLoading, refreshPosts, createPost, likePost, deletePost, updatePost, getLikedAthletes]);
 });

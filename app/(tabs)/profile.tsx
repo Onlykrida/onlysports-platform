@@ -28,11 +28,12 @@ import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 export default function ProfileScreen() {
   const { user, logout, updateProfile } = useAuth();
   const { followers, following, getFollowersCount, getFollowingCount } = useFollow();
-  const { posts } = usePosts();
+  const { posts, getLikedAthletes } = usePosts();
   const { getInterestedForPlayer, getTopForScout, getInterestedOrganizations } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const [interestedOrganizations, setInterestedOrganizations] = useState<User[]>([]);
   const [topPlayers, setTopPlayers] = useState<{ playerId: string; name: string; avatar?: string; position?: string; score: number }[]>([]);
+  const [likedAthletes, setLikedAthletes] = useState<User[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
   const [coverPhoto, setCoverPhoto] = useState<string>('https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200');
@@ -90,8 +91,16 @@ export default function ProfileScreen() {
       } catch (e) {
         console.log('Profile: top players load failed', e);
       }
+
+      try {
+        const athletes = await getLikedAthletes(user.id);
+        console.log('Profile: Liked athletes loaded', { count: athletes.length });
+        setLikedAthletes(athletes);
+      } catch (e) {
+        console.log('Profile: liked athletes load failed', e);
+      }
     }
-  }, [user, getInterestedForPlayer, getTopForScout, getInterestedOrganizations]);
+  }, [user, getInterestedForPlayer, getTopForScout, getInterestedOrganizations, getLikedAthletes]);
 
   React.useEffect(() => {
     void loadRecommendations();
@@ -389,28 +398,65 @@ export default function ProfileScreen() {
         )}
 
         {(user.role === 'scout' || user.role === 'coach' || user.role === 'academy' || user.role === 'team') && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <BadgeCheck size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>Recommended Athletes</Text>
-            </View>
-            {topPlayers.length > 0 ? (
-              topPlayers.map((p, idx) => (
-                <TouchableOpacity key={`${p.playerId}-${idx}`} style={styles.achievementItem} onPress={() => router.push(`/user/${p.playerId}`)}>
-                  <Image source={{ uri: p.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face' }} style={{ width: 40, height: 40, borderRadius: 20 }} />
-                  <View style={styles.achievementInfo}>
-                    <Text style={styles.achievementTitle}>{p.name}</Text>
-                    <Text style={styles.achievementDescription}>{p.position || 'Athlete'} • {p.score}% fit</Text>
-                  </View>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No recommendations yet</Text>
-                <Text style={styles.emptyStateSubtext}>Athletes matching your sport will appear here</Text>
+          <>
+            {likedAthletes.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Sparkles size={20} color={theme.colors.warning} />
+                  <Text style={styles.sectionTitle}>Players You Liked</Text>
+                </View>
+                <View style={styles.likedSummary}>
+                  <Text style={styles.likedSummaryText}>
+                    {likedAthletes.length} {likedAthletes.length === 1 ? 'athlete' : 'athletes'} you&apos;ve endorsed
+                  </Text>
+                </View>
+                {likedAthletes.slice(0, 8).map((athlete, idx) => (
+                  <TouchableOpacity
+                    key={`liked-${athlete.id}-${idx}`}
+                    style={styles.achievementItem}
+                    testID={`liked-athlete-${idx}`}
+                    onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: athlete.id } })}
+                  >
+                    <Image
+                      source={{ uri: athlete.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }}
+                      style={{ width: 40, height: 40, borderRadius: 20 }}
+                    />
+                    <View style={styles.achievementInfo}>
+                      <Text style={styles.achievementTitle}>{athlete.name}</Text>
+                      <Text style={styles.achievementDescription}>
+                        {athlete.position || 'Athlete'}{athlete.sport ? ` • ${athlete.sport}` : ''}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+                {likedAthletes.length > 8 && (
+                  <Text style={styles.moreText}>+{likedAthletes.length - 8} more athletes</Text>
+                )}
               </View>
             )}
-          </View>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <BadgeCheck size={20} color={theme.colors.primary} />
+                <Text style={styles.sectionTitle}>Recommended Athletes</Text>
+              </View>
+              {topPlayers.length > 0 ? (
+                topPlayers.map((p, idx) => (
+                  <TouchableOpacity key={`${p.playerId}-${idx}`} style={styles.achievementItem} onPress={() => router.push(`/user/${p.playerId}`)}>
+                    <Image source={{ uri: p.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face' }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+                    <View style={styles.achievementInfo}>
+                      <Text style={styles.achievementTitle}>{p.name}</Text>
+                      <Text style={styles.achievementDescription}>{p.position || 'Athlete'} • {p.score}% fit</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>No recommendations yet</Text>
+                  <Text style={styles.emptyStateSubtext}>Athletes matching your sport will appear here</Text>
+                </View>
+              )}
+            </View>
+          </>
         )}
 
         {/* Role-Specific Information */}
@@ -828,5 +874,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: theme.spacing.sm,
     fontStyle: 'italic' as const,
+  },
+  likedSummary: {
+    backgroundColor: theme.colors.warning + '15',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+  },
+  likedSummaryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.warning,
+    textAlign: 'center',
   },
 });
