@@ -428,8 +428,12 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
         .eq('player_id', athleteId);
 
       if (error) {
-        console.error('Failed to remove interest:', error);
-        return { error: 'Failed to remove interest' };
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+          console.log('ScoutingProvider: ai_recommendations table not found, removing from local cache only');
+        } else {
+          console.error('Failed to remove interest:', error);
+          return { error: 'Failed to remove interest' };
+        }
       }
 
       console.log('ScoutingProvider: Interest removed successfully');
