@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,9 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
-import { X, Send, Heart } from 'lucide-react-native';
+import { X, Send, Heart, Trash2, MessageCircle } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
 import { usePosts } from '@/hooks/posts-context';
@@ -37,6 +38,33 @@ interface CommentsModalProps {
   postAuthor: string;
 }
 
+// Skeleton placeholder for loading state
+function CommentSkeleton() {
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [pulseAnim]);
+
+  return (
+    <View style={styles.commentItem}>
+      <Animated.View style={[styles.skeletonAvatar, { opacity: pulseAnim }]} />
+      <View style={styles.commentContent}>
+        <Animated.View style={[styles.skeletonNameLine, { opacity: pulseAnim }]} />
+        <Animated.View style={[styles.skeletonTextLine, { opacity: pulseAnim }]} />
+        <Animated.View style={[styles.skeletonTextLineShort, { opacity: pulseAnim }]} />
+      </View>
+    </View>
+  );
+}
+
 export default function CommentsModal({ visible, onClose, postId, postAuthor }: CommentsModalProps) {
   const { user } = useAuth();
   const { refreshPosts } = usePosts();
@@ -44,6 +72,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   const loadComments = async () => {
     if (!postId || !isSupabaseConfigured) {
@@ -53,7 +82,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
 
     try {
       setIsLoading(true);
-      
+
       // Load comments from database
       const { data: commentsData, error } = await supabase
         .from('comments')
@@ -85,7 +114,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
           .select('comment_id')
           .eq('user_id', user.id)
           .in('comment_id', commentsData?.map((c: any) => c.id) || []);
-        
+
         userLikes = likesData?.map((like: any) => like.comment_id) || [];
       }
 
@@ -99,7 +128,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
         isLiked: userLikes.includes(comment.id),
         createdAt: new Date(comment.created_at),
       }));
-      
+
       setComments(formattedComments);
     } catch (error) {
       console.error('Failed to load comments:', error);
@@ -115,7 +144,47 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
     if (visible && postId) {
       loadCommentsCallback();
     }
+    if (!visible) {
+      // Reset state when modal closes
+      setDeletingIds(new Set());
+    }
   }, [visible, postId, loadCommentsCallback]);
+
+  // Real-time subscription for new comments on this post
+  useEffect(() => {
+    if (!visible || !postId || !isSupabaseConfigured) return;
+
+    const channel = supabase
+      .channel(`comments_${postId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'comments', filter: `post_id=eq.${postId}` },
+        (payload: any) => {
+          if (__DEV__) console.log('New comment received via realtime:', payload);
+          // Only reload if the comment was not created by the current user
+          // (we already handle local state for our own comments)
+          if (payload.new?.user_id !== user?.id) {
+            loadCommentsCallback();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'comments', filter: `post_id=eq.${postId}` },
+        (payload: any) => {
+          if (__DEV__) console.log('Comment deleted via realtime:', payload);
+          // Remove the deleted comment from local state
+          if (payload.old?.id) {
+            setComments(prev => prev.filter(c => c.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [visible, postId, user?.id, loadCommentsCallback]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim() || !user || !postId || !isSupabaseConfigured) return;
@@ -140,7 +209,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
       // Clear input and reload comments
       setNewComment('');
       await loadCommentsCallback();
-      
+
       // Refresh posts to update comment count
       await refreshPosts();
     } catch (error) {
@@ -151,11 +220,69 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user || !isSupabaseConfigured) return;
+
+    Alert.alert(
+      'Delete Comment',
+      'Are you sure you want to delete this comment?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingIds(prev => new Set(prev).add(commentId));
+            try {
+              const { error } = await supabase
+                .from('comments')
+                .delete()
+                .eq('id', commentId)
+                .eq('user_id', user.id);
+
+              if (error) {
+                console.error('Error deleting comment:', error);
+                Alert.alert('Error', 'Failed to delete comment');
+                return;
+              }
+
+              // Remove from local state
+              setComments(prev => prev.filter(c => c.id !== commentId));
+
+              // Refresh posts to update comment count
+              await refreshPosts();
+            } catch (error) {
+              console.error('Failed to delete comment:', error);
+              Alert.alert('Error', 'Failed to delete comment');
+            } finally {
+              setDeletingIds(prev => {
+                const next = new Set(prev);
+                next.delete(commentId);
+                return next;
+              });
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleLikeComment = async (commentId: string) => {
     if (!user || !isSupabaseConfigured) return;
 
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return;
+
+    // Optimistic update first
+    setComments(prev => prev.map(c =>
+      c.id === commentId
+        ? {
+            ...c,
+            isLiked: !c.isLiked,
+            likes: c.isLiked ? c.likes - 1 : c.likes + 1
+          }
+        : c
+    ));
 
     try {
       if (comment.isLiked) {
@@ -168,6 +295,12 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
 
         if (error) {
           console.error('Error unliking comment:', error);
+          // Revert optimistic update
+          setComments(prev => prev.map(c =>
+            c.id === commentId
+              ? { ...c, isLiked: comment.isLiked, likes: comment.likes }
+              : c
+          ));
           return;
         }
       } else {
@@ -181,62 +314,97 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
 
         if (error) {
           console.error('Error liking comment:', error);
+          // Revert optimistic update
+          setComments(prev => prev.map(c =>
+            c.id === commentId
+              ? { ...c, isLiked: comment.isLiked, likes: comment.likes }
+              : c
+          ));
           return;
         }
       }
-
-      // Update local state optimistically
-      setComments(prev => prev.map(c => 
-        c.id === commentId 
-          ? { 
-              ...c, 
-              isLiked: !c.isLiked,
-              likes: c.isLiked ? c.likes - 1 : c.likes + 1
-            }
-          : c
-      ));
     } catch (error) {
       console.error('Failed to toggle comment like:', error);
+      // Revert optimistic update
+      setComments(prev => prev.map(c =>
+        c.id === commentId
+          ? { ...c, isLiked: comment.isLiked, likes: comment.likes }
+          : c
+      ));
     }
   };
 
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
-    return `${Math.floor(diffInMinutes / 1440)}d`;
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'just now';
+
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    if (diffInWeeks < 4) return `${diffInWeeks}w ago`;
+
+    const diffInMonths = Math.floor(diffInDays / 30);
+    return `${diffInMonths}mo ago`;
   };
 
-  const renderComment = ({ item }: { item: Comment }) => (
-    <View style={styles.commentItem}>
-      <Image source={{ uri: item.userAvatar }} style={styles.commentAvatar} />
-      <View style={styles.commentContent}>
-        <View style={styles.commentHeader}>
-          <Text style={styles.commentUserName}>{item.userName}</Text>
-          <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt)}</Text>
+  const isOwnComment = (comment: Comment) => user?.id === comment.userId;
+
+  const renderComment = ({ item }: { item: Comment }) => {
+    const isDeleting = deletingIds.has(item.id);
+
+    return (
+      <View style={[styles.commentItem, isDeleting && styles.commentItemDeleting]}>
+        <Image source={{ uri: item.userAvatar }} style={styles.commentAvatar} />
+        <View style={styles.commentContent}>
+          <View style={styles.commentHeader}>
+            <View style={styles.commentHeaderLeft}>
+              <Text style={styles.commentUserName}>{item.userName}</Text>
+              <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt)}</Text>
+            </View>
+            {isOwnComment(item) && (
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDeleteComment(item.id)}
+                disabled={isDeleting}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color={theme.colors.textSecondary} />
+                ) : (
+                  <Trash2 size={14} color={theme.colors.textSecondary} />
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+          <Text style={styles.commentText}>{item.content}</Text>
+          <TouchableOpacity
+            style={styles.commentLikeButton}
+            onPress={() => handleLikeComment(item.id)}
+          >
+            <Heart
+              size={14}
+              color={item.isLiked ? theme.colors.danger : theme.colors.textSecondary}
+              fill={item.isLiked ? theme.colors.danger : 'transparent'}
+            />
+            {item.likes > 0 && (
+              <Text style={[styles.commentLikes, item.isLiked && styles.commentLikesActive]}>
+                {item.likes}
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
-        <Text style={styles.commentText}>{item.content}</Text>
-        <TouchableOpacity 
-          style={styles.commentLikeButton}
-          onPress={() => handleLikeComment(item.id)}
-        >
-          <Heart 
-            size={14} 
-            color={item.isLiked ? theme.colors.danger : theme.colors.textSecondary}
-            fill={item.isLiked ? theme.colors.danger : 'transparent'}
-          />
-          {item.likes > 0 && (
-            <Text style={[styles.commentLikes, item.isLiked && styles.commentLikesActive]}>
-              {item.likes}
-            </Text>
-          )}
-        </TouchableOpacity>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <Modal
@@ -245,7 +413,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
@@ -257,40 +425,49 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
         </View>
 
         {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={styles.loadingText}>Loading comments...</Text>
+          <View style={styles.skeletonContainer}>
+            <CommentSkeleton />
+            <CommentSkeleton />
+            <CommentSkeleton />
+            <CommentSkeleton />
           </View>
         ) : (
           <FlatList
             data={comments}
             renderItem={renderComment}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.commentsList}
+            contentContainerStyle={[
+              styles.commentsList,
+              comments.length === 0 && styles.commentsListEmpty,
+            ]}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.emptyState}>
+                <MessageCircle size={48} color={theme.colors.textMuted} />
                 <Text style={styles.emptyStateText}>No comments yet</Text>
-                <Text style={styles.emptyStateSubtext}>Be the first to comment!</Text>
+                <Text style={styles.emptyStateSubtext}>
+                  Be the first to comment on {postAuthor ? `${postAuthor}'s` : 'this'} post!
+                </Text>
               </View>
             }
           />
         )}
 
         <View style={styles.inputContainer}>
-          <Image 
-            source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }} 
-            style={styles.inputAvatar} 
+          <Image
+            source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }}
+            style={styles.inputAvatar}
           />
           <TextInput
             style={styles.textInput}
             placeholder={`Comment as ${user?.name || 'User'}...`}
+            placeholderTextColor={theme.colors.textMuted}
             value={newComment}
             onChangeText={setNewComment}
             multiline
             maxLength={500}
           />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.sendButton, (!newComment.trim() || isSubmitting) && styles.sendButtonDisabled]}
             onPress={handleSubmitComment}
             disabled={!newComment.trim() || isSubmitting}
@@ -329,22 +506,51 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: theme.spacing.xs,
   },
-  loadingContainer: {
+  // Skeleton loading styles
+  skeletonContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: theme.spacing.md,
   },
-  loadingText: {
-    marginTop: theme.spacing.md,
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
+  skeletonAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.surfaceLight,
+    marginRight: theme.spacing.sm,
+  },
+  skeletonNameLine: {
+    width: 100,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: theme.colors.surfaceLight,
+    marginBottom: theme.spacing.sm,
+  },
+  skeletonTextLine: {
+    width: '90%',
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.colors.surfaceLight,
+    marginBottom: theme.spacing.xs,
+  },
+  skeletonTextLineShort: {
+    width: '60%',
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.colors.surfaceLight,
   },
   commentsList: {
     padding: theme.spacing.md,
   },
+  commentsListEmpty: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
   commentItem: {
     flexDirection: 'row',
     marginBottom: theme.spacing.lg,
+  },
+  commentItemDeleting: {
+    opacity: 0.5,
   },
   commentAvatar: {
     width: 32,
@@ -358,7 +564,13 @@ const styles = StyleSheet.create({
   commentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: theme.spacing.xs,
+  },
+  commentHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   commentUserName: {
     fontSize: theme.fontSize.sm,
@@ -369,6 +581,10 @@ const styles = StyleSheet.create({
   commentTime: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
+  },
+  deleteButton: {
+    padding: theme.spacing.xs,
+    marginLeft: theme.spacing.sm,
   },
   commentText: {
     fontSize: theme.fontSize.sm,
@@ -392,17 +608,20 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: theme.spacing.xl,
+    paddingVertical: theme.spacing.xxl,
   },
   emptyStateText: {
-    fontSize: theme.fontSize.md,
+    fontSize: theme.fontSize.lg,
     color: theme.colors.textSecondary,
-    fontWeight: theme.fontWeight.medium,
+    fontWeight: theme.fontWeight.semibold,
+    marginTop: theme.spacing.md,
   },
   emptyStateSubtext: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    color: theme.colors.textMuted,
     marginTop: theme.spacing.xs,
+    textAlign: 'center',
+    paddingHorizontal: theme.spacing.xl,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -410,7 +629,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
   },
   inputAvatar: {
     width: 32,
@@ -427,6 +646,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm,
     fontSize: theme.fontSize.sm,
     color: theme.colors.text,
+    backgroundColor: theme.colors.surfaceLight,
     maxHeight: 100,
     marginRight: theme.spacing.sm,
   },

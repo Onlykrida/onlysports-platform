@@ -24,7 +24,8 @@ import {
   Globe,
   Trash2,
   Download,
-  Share2
+  Share2,
+  FileText
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
@@ -46,8 +47,6 @@ interface SettingItem {
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
-
 
   useEffect(() => {
     loadSettings();
@@ -56,13 +55,8 @@ export default function SettingsScreen() {
   const loadSettings = async () => {
     try {
       const notifications = await AsyncStorage.getItem('notifications_enabled');
-      const darkMode = await AsyncStorage.getItem('dark_mode_enabled');
-      
       if (notifications !== null) {
         setNotificationsEnabled(JSON.parse(notifications));
-      }
-      if (darkMode !== null) {
-        setDarkModeEnabled(JSON.parse(darkMode));
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -89,16 +83,6 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDarkModeToggle = async (value: boolean) => {
-    setDarkModeEnabled(value);
-    await saveSettings('dark_mode_enabled', value);
-    
-    Alert.alert(
-      'Theme',
-      value ? 'Dark mode enabled (restart app to apply)' : 'Light mode enabled (restart app to apply)'
-    );
-  };
-
   const handleExportData = () => {
     Alert.alert(
       'Export Data',
@@ -108,7 +92,7 @@ export default function SettingsScreen() {
         { 
           text: 'Export', 
           onPress: () => {
-            Alert.alert('Success', 'Data export will be available soon!');
+            Alert.alert('Export Data', 'This feature will be available in a future update.');
           }
         }
       ]
@@ -133,7 +117,7 @@ export default function SettingsScreen() {
   };
 
   const handleContactSupport = () => {
-    const email = 'support@sportsapp.com';
+    const email = 'support@onlykrida.com';
     const subject = 'Support Request';
     const body = `Hi Support Team,\\n\\nI need help with:\\n\\n[Please describe your issue]\\n\\nUser ID: ${user?.id}\\nEmail: ${user?.email}`;
     
@@ -201,7 +185,7 @@ export default function SettingsScreen() {
           title: 'Privacy & Security',
           subtitle: 'Manage your privacy settings',
           icon: <Shield size={20} color={theme.colors.text} />,
-          onPress: () => Alert.alert('Coming Soon', 'Privacy settings will be available soon'),
+          onPress: () => router.push('/privacy-policy'),
           showChevron: true,
         },
       ],
@@ -219,20 +203,17 @@ export default function SettingsScreen() {
           onSwitchChange: handleNotificationToggle,
         },
         {
-          id: 'dark-mode',
-          title: 'Dark Mode',
-          subtitle: 'Switch to dark theme',
+          id: 'theme',
+          title: 'Theme',
+          subtitle: 'Dark',
           icon: <Moon size={20} color={theme.colors.text} />,
-          showSwitch: true,
-          switchValue: darkModeEnabled,
-          onSwitchChange: handleDarkModeToggle,
         },
         {
           id: 'language',
           title: 'Language',
           subtitle: 'English',
           icon: <Globe size={20} color={theme.colors.text} />,
-          onPress: () => Alert.alert('Coming Soon', 'Language settings will be available soon'),
+          onPress: () => Alert.alert('Language', 'This feature will be available in a future update.'),
           showChevron: true,
         },
       ],
@@ -253,7 +234,7 @@ export default function SettingsScreen() {
           title: 'About',
           subtitle: 'App version and information',
           icon: <Info size={20} color={theme.colors.text} />,
-          onPress: () => Alert.alert('About', 'Sports Connect v1.0.0\\nBuilt with React Native'),
+          onPress: () => Alert.alert('About', 'OnlyKrida v1.0.0\nWhere Athletes Get Discovered\nBuilt with React Native & Expo'),
           showChevron: true,
         },
       ],
@@ -274,7 +255,38 @@ export default function SettingsScreen() {
           title: 'Share Profile',
           subtitle: 'Share your profile with others',
           icon: <Share2 size={20} color={theme.colors.text} />,
-          onPress: () => Alert.alert('Share Profile', 'Profile sharing will be available soon!'),
+          onPress: () => {
+            const profileUrl = `https://onlykrida.com/athlete/${user?.id}`;
+            if (Platform.OS === 'web') {
+              navigator.clipboard?.writeText(profileUrl);
+              Alert.alert('Copied!', 'Profile link copied to clipboard.');
+            } else {
+              Alert.alert('Share Profile', `Your profile link:\n${profileUrl}`, [
+                { text: 'OK' },
+              ]);
+            }
+          },
+          showChevron: true,
+        },
+      ],
+    },
+    {
+      title: 'Legal',
+      items: [
+        {
+          id: 'privacy-policy',
+          title: 'Privacy Policy',
+          subtitle: 'How we handle your data',
+          icon: <Shield size={20} color={theme.colors.text} />,
+          onPress: () => router.push('/privacy-policy'),
+          showChevron: true,
+        },
+        {
+          id: 'terms-of-service',
+          title: 'Terms of Service',
+          subtitle: 'Rules for using OnlySports',
+          icon: <FileText size={20} color={theme.colors.text} />,
+          onPress: () => router.push('/terms-of-service'),
           showChevron: true,
         },
       ],
@@ -397,11 +409,11 @@ export default function SettingsScreen() {
         {/* App Version */}
         <View style={styles.footer}>
           <Text style={styles.versionText}>Version 1.0.0</Text>
-          <Text style={styles.copyrightText}>© 2024 Sports Connect</Text>
+          <Text style={styles.copyrightText}>© 2026 OnlyKrida</Text>
           <Text style={styles.buildText}>Build: {Platform.OS === 'web' ? 'Web' : 'Mobile'}</Text>
           <TouchableOpacity 
             style={styles.feedbackButton}
-            onPress={() => Alert.alert('Feedback', 'Thank you for your interest! Feedback system coming soon.')}
+            onPress={() => Alert.alert('Feedback', 'This feature will be available in a future update.')}
           >
             <Text style={styles.feedbackText}>Send Feedback</Text>
           </TouchableOpacity>

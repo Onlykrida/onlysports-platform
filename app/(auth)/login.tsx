@@ -103,7 +103,11 @@ export default function LoginScreen() {
               icon={<Lock size={20} color={theme.colors.textSecondary} />}
             />
 
-            <TouchableOpacity style={styles.forgotPassword}>
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              accessibilityRole="link"
+              accessibilityLabel="Forgot password"
+            >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>
@@ -119,6 +123,8 @@ export default function LoginScreen() {
             <TouchableOpacity
               onPress={() => router.push('/(auth)/role-selection' as any)}
               style={styles.signupLink}
+              accessibilityRole="link"
+              accessibilityLabel="Sign up for a new account"
             >
               <Text style={styles.signupText}>
                 Don&apos;t have an account? <Text style={styles.signupTextBold}>Sign Up</Text>

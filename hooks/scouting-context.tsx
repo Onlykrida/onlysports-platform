@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from '@/hooks/auth-context';
 import { useUsers } from '@/hooks/users-context';
+import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 import { User } from '@/types';
 
 export interface PlayerStatRow {
@@ -72,12 +73,19 @@ const STORAGE_KEY = 'ai_recommendations_cache_v1';
 export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(() => {
   const { user: currentUser } = useAuth();
   const { users, refreshUsers } = useUsers();
+  const { track } = useAnalytics();
 
   const [isReady, setIsReady] = useState<boolean>(false);
   const [isComputing, setIsComputing] = useState<boolean>(false);
   const [topRecommendations, setTopRecommendations] = useState<Record<string, AIRecommendationRow[]>>({});
   const [interestedScouts, setInterestedScouts] = useState<Record<string, { scout: User; rec: AIRecommendationRow }[]>>({});
+  const topRecommendationsRef = useRef<Record<string, AIRecommendationRow[]>>({});
+  const interestedScoutsRef = useRef<Record<string, { scout: User; rec: AIRecommendationRow }[]>>({});
   const subscriptionsSetup = useRef<boolean>(false);
+
+  // Keep refs in sync with state
+  useEffect(() => { topRecommendationsRef.current = topRecommendations; }, [topRecommendations]);
+  useEffect(() => { interestedScoutsRef.current = interestedScouts; }, [interestedScouts]);
 
   const loadCache = useCallback(async () => {
     try {
@@ -88,7 +96,7 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
         setInterestedScouts(parsed.interestedScouts ?? {});
       }
     } catch (e) {
-      console.log('ScoutingProvider: loadCache failed', e);
+      if (__DEV__) console.log('ScoutingProvider: loadCache failed', e);
     }
   }, []);
 
@@ -96,7 +104,7 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ topRecommendations: tr, interestedScouts: is }));
     } catch (e) {
-      console.log('ScoutingProvider: persistCache failed', e);
+      if (__DEV__) console.log('ScoutingProvider: persistCache failed', e);
     }
   }, []);
 
@@ -137,7 +145,7 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
       .eq('scout_id', scoutId)
       .single();
     if (error) {
-      console.log('ScoutingProvider: fetchScoutPrefs error', error);
+      if (__DEV__) console.log('ScoutingProvider: fetchScoutPrefs error', error);
       return null;
     }
     return data as unknown as ScoutPreferencesRow;
@@ -152,7 +160,7 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
       .limit(1000);
     const { data, error } = await query;
     if (error) {
-      console.log('ScoutingProvider: fetchAllPlayerStats error', error);
+      if (__DEV__) console.log('ScoutingProvider: fetchAllPlayerStats error', error);
       return [];
     }
     const rows = (data ?? []) as unknown as PlayerStatRow[];
@@ -174,13 +182,13 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
       if (error) {
         // If table doesn't exist, skip silently
         if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-          console.log('ScoutingProvider: ai_recommendations table not found, skipping upsert');
+          if (__DEV__) console.log('ScoutingProvider: ai_recommendations table not found, skipping upsert');
           return;
         }
-        console.log('ScoutingProvider: upsertRecommendations error', error);
+        if (__DEV__) console.log('ScoutingProvider: upsertRecommendations error', error);
       }
     } catch (e) {
-      console.log('ScoutingProvider: upsertRecommendations exception', e);
+      if (__DEV__) console.log('ScoutingProvider: upsertRecommendations exception', e);
     }
   }, []);
 
@@ -204,56 +212,56 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
         };
       });
       const sorted = [...recs].sort((a, b) => b.fit_score - a.fit_score).slice(0, 20);
+      await upsertRecommendations(recs);
       setTopRecommendations((prev) => {
         const next = { ...prev, [scoutId]: sorted };
-        void persistCache(next, interestedScouts);
+        void persistCache(next, interestedScoutsRef.current);
         return next;
       });
-      await upsertRecommendations(recs);
       return { recommendations: sorted };
     } catch (e) {
-      console.log('ScoutingProvider: computeForScout failed', e);
+      if (__DEV__) console.log('ScoutingProvider: computeForScout failed', e);
       return { recommendations: [] };
     } finally {
       setIsComputing(false);
     }
-  }, [computeFit, fetchAllPlayerStats, fetchScoutPrefs, upsertRecommendations, interestedScouts, persistCache]);
+  }, [computeFit, fetchAllPlayerStats, fetchScoutPrefs, upsertRecommendations, persistCache]);
 
   const getTopForScout = useCallback(async (scoutId: string, limit: number = 10) => {
-    if (topRecommendations[scoutId]?.length) {
-      console.log('ScoutingProvider: Returning cached recommendations', { scoutId, count: topRecommendations[scoutId].length });
-      return topRecommendations[scoutId].slice(0, limit);
+    const cached = topRecommendationsRef.current[scoutId];
+    if (cached?.length) {
+      return cached.slice(0, limit);
     }
     if (!isSupabaseConfigured) return [];
-    
+
     try {
-      console.log('ScoutingProvider: Fetching recommendations from database', { scoutId, limit });
       const { data, error } = await supabase
         .from('ai_recommendations')
         .select('*')
         .eq('scout_id', scoutId)
         .order('fit_score', { ascending: false })
         .limit(Math.max(limit, 50));
-      
+
       if (error) {
         if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-          console.log('ScoutingProvider: ai_recommendations table not found, returning empty results');
           return [];
         }
-        console.log('ScoutingProvider: getTopForScout error', error);
+        if (__DEV__) console.log('ScoutingProvider: getTopForScout error', error);
         return [];
       }
-      
+
       const recs = (data ?? []) as unknown as AIRecommendationRow[];
-      console.log('ScoutingProvider: Recommendations fetched', { scoutId, count: recs.length });
-      setTopRecommendations((prev) => ({ ...prev, [scoutId]: recs }));
-      void persistCache({ ...topRecommendations, [scoutId]: recs }, interestedScouts);
+      setTopRecommendations((prev) => {
+        const next = { ...prev, [scoutId]: recs };
+        void persistCache(next, interestedScoutsRef.current);
+        return next;
+      });
       return recs.slice(0, limit);
     } catch (e) {
-      console.log('ScoutingProvider: getTopForScout exception', e);
+      if (__DEV__) console.log('ScoutingProvider: getTopForScout exception', e);
       return [];
     }
-  }, [topRecommendations, persistCache, interestedScouts]);
+  }, [persistCache]);
 
   const getInterestedForPlayer = useCallback(async (playerId: string, threshold: number = 70) => {
     if (!isSupabaseConfigured) return [];
@@ -271,31 +279,32 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
       if (error) {
         // If table doesn't exist, return empty array instead of logging error
         if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-          console.log('ScoutingProvider: ai_recommendations table not found, returning empty results');
+          if (__DEV__) console.log('ScoutingProvider: ai_recommendations table not found, returning empty results');
           return [];
         }
-        console.log('ScoutingProvider: getInterestedForPlayer error', error);
+        if (__DEV__) console.log('ScoutingProvider: getInterestedForPlayer error', error);
         return [];
       }
       
       const recs = (data ?? []) as unknown as AIRecommendationRow[];
       const map: { scout: User; rec: AIRecommendationRow }[] = recs
-        .map((r) => ({
-          scout: users.find((u) => u.id === r.scout_id && u.role === 'scout') as User,
-          rec: r,
-        }))
-        .filter((x) => !!x.scout);
+        .map((r) => {
+          const scout = users.find((u) => u.id === r.scout_id && u.role === 'scout');
+          if (!scout) return null;
+          return { scout, rec: r };
+        })
+        .filter((x): x is { scout: User; rec: AIRecommendationRow } => x !== null);
       setInterestedScouts((prev) => {
         const next = { ...prev, [playerId]: map };
-        void persistCache(topRecommendations, next);
+        void persistCache(topRecommendationsRef.current, next);
         return next;
       });
       return map;
     } catch (e) {
-      console.log('ScoutingProvider: getInterestedForPlayer exception', e);
+      if (__DEV__) console.log('ScoutingProvider: getInterestedForPlayer exception', e);
       return [];
     }
-  }, [users, topRecommendations, persistCache]);
+  }, [users, persistCache]);
 
   const refresh = useCallback(async () => {
     await loadCache();
@@ -309,13 +318,13 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     const init = async () => {
       await loadCache();
       if (currentUser && ['coach', 'scout', 'team', 'academy'].includes(currentUser.role)) {
-        console.log('ScoutingProvider: Loading recommendations for current user');
         await getTopForScout(currentUser.id, 20);
       }
       setIsReady(true);
     };
     void init();
-  }, [loadCache, currentUser?.id, currentUser?.role, getTopForScout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadCache, currentUser?.id, currentUser?.role]);
 
   useEffect(() => {
     if (!isSupabaseConfigured || subscriptionsSetup.current) return;
@@ -347,7 +356,7 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
         } catch {}
       };
     } catch (e) {
-      console.log('ScoutingProvider: realtime setup failed', e);
+      if (__DEV__) console.log('ScoutingProvider: realtime setup failed', e);
     }
   }, [computeForScout, currentUser?.id, currentUser?.role]);
 
@@ -361,7 +370,7 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     }
 
     try {
-      console.log('ScoutingProvider: Expressing interest', { scoutId: currentUser.id, athleteId });
+      if (__DEV__) console.log('ScoutingProvider: Expressing interest', { scoutId: currentUser.id, athleteId });
       
       const { error: recError } = await supabase
         .from('ai_recommendations')
@@ -383,8 +392,9 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
         return { error: 'Failed to express interest' };
       }
 
-      console.log('ScoutingProvider: Interest expressed successfully');
-      
+      if (__DEV__) console.log('ScoutingProvider: Interest expressed successfully');
+      track(EVENTS.INTEREST_EXPRESSED, { athleteId });
+
       setTopRecommendations((prev) => {
         const existing = prev[currentUser.id] || [];
         const alreadyExists = existing.some(rec => rec.player_id === athleteId);
@@ -402,7 +412,7 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
         };
         
         const updated = [newRec, ...existing];
-        void persistCache({ ...prev, [currentUser.id]: updated }, interestedScouts);
+        void persistCache({ ...prev, [currentUser.id]: updated }, interestedScoutsRef.current);
         return { ...prev, [currentUser.id]: updated };
       });
 
@@ -411,7 +421,7 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
       console.error('Express interest failed:', error);
       return { error: 'Failed to express interest' };
     }
-  }, [currentUser, persistCache, interestedScouts]);
+  }, [currentUser, persistCache]);
 
   const removeInterest = useCallback(async (athleteId: string): Promise<{ error?: string }> => {
     if (!currentUser || !isSupabaseConfigured) {
@@ -419,7 +429,7 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     }
 
     try {
-      console.log('ScoutingProvider: Removing interest', { scoutId: currentUser.id, athleteId });
+      if (__DEV__) console.log('ScoutingProvider: Removing interest', { scoutId: currentUser.id, athleteId });
       
       const { error } = await supabase
         .from('ai_recommendations')
@@ -429,19 +439,19 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
 
       if (error) {
         if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-          console.log('ScoutingProvider: ai_recommendations table not found, removing from local cache only');
+          if (__DEV__) console.log('ScoutingProvider: ai_recommendations table not found, removing from local cache only');
         } else {
           console.error('Failed to remove interest:', error);
           return { error: 'Failed to remove interest' };
         }
       }
 
-      console.log('ScoutingProvider: Interest removed successfully');
+      if (__DEV__) console.log('ScoutingProvider: Interest removed successfully');
       
       setTopRecommendations((prev) => {
         const existing = prev[currentUser.id] || [];
         const updated = existing.filter(rec => rec.player_id !== athleteId);
-        void persistCache({ ...prev, [currentUser.id]: updated }, interestedScouts);
+        void persistCache({ ...prev, [currentUser.id]: updated }, interestedScoutsRef.current);
         return { ...prev, [currentUser.id]: updated };
       });
 
@@ -450,20 +460,18 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
       console.error('Remove interest failed:', error);
       return { error: 'Failed to remove interest' };
     }
-  }, [currentUser, persistCache, interestedScouts]);
+  }, [currentUser, persistCache]);
 
   const hasExpressedInterest = useCallback((athleteId: string): boolean => {
     if (!currentUser) return false;
-    const interested = !!topRecommendations[currentUser.id]?.some(rec => rec.player_id === athleteId);
-    console.log('ScoutingProvider: hasExpressedInterest', { athleteId, interested, recommendations: topRecommendations[currentUser.id]?.length });
-    return interested;
+    return !!topRecommendations[currentUser.id]?.some(rec => rec.player_id === athleteId);
   }, [currentUser, topRecommendations]);
 
   const getInterestedAthletesForOrg = useCallback(async (orgId: string): Promise<User[]> => {
     if (!isSupabaseConfigured) return [];
 
     try {
-      console.log('ScoutingProvider: getInterestedAthletesForOrg', { orgId });
+      if (__DEV__) console.log('ScoutingProvider: getInterestedAthletesForOrg', { orgId });
       const { data, error } = await supabase
         .from('ai_recommendations')
         .select('player_id')
@@ -491,7 +499,7 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
         return [];
       }
 
-      console.log('ScoutingProvider: Interested athletes fetched', { orgId, count: (profilesData || []).length });
+      if (__DEV__) console.log('ScoutingProvider: Interested athletes fetched', { orgId, count: (profilesData || []).length });
       return (profilesData || []).map((profile: any) => ({
         id: profile.id,
         name: profile.name,

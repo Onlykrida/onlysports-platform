@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  StyleProp,
 } from 'react-native';
 import { theme } from '@/constants/theme';
 
@@ -38,14 +39,17 @@ export const Button: React.FC<ButtonProps> = ({
     <TouchableOpacity
       style={[
         styles.base,
-        styles[variant as keyof typeof styles],
-        styles[size as keyof typeof styles],
+        variantStyles[variant],
+        sizeStyles[size],
         isDisabled && styles.disabled,
         style,
-      ]}
+      ] as StyleProp<ViewStyle>}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8} // Slightly less opacity for better feedback
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
     >
       {loading ? (
         <ActivityIndicator
@@ -64,10 +68,10 @@ export const Button: React.FC<ButtonProps> = ({
           <Text
             style={[
               styles.text,
-              styles[`${variant}Text` as keyof typeof styles],
-              styles[`${size}Text` as keyof typeof styles],
+              variantTextStyles[variant],
+              sizeTextStyles[size],
               textStyle,
-            ]}
+            ] as StyleProp<TextStyle>}
           >
             {title}
           </Text>
@@ -179,3 +183,37 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xl,
   },
 });
+
+const variantStyles: Record<NonNullable<ButtonProps['variant']>, ViewStyle> = {
+  primary: styles.primary,
+  secondary: styles.secondary,
+  accent: styles.accent,
+  outline: styles.outline,
+  ghost: styles.ghost,
+  success: styles.success,
+  danger: styles.danger,
+};
+
+const sizeStyles: Record<NonNullable<ButtonProps['size']>, ViewStyle> = {
+  small: styles.small,
+  medium: styles.medium,
+  large: styles.large,
+  xl: styles.xl,
+};
+
+const variantTextStyles: Record<NonNullable<ButtonProps['variant']>, TextStyle> = {
+  primary: styles.primaryText,
+  secondary: styles.secondaryText,
+  accent: styles.accentText,
+  outline: styles.outlineText,
+  ghost: styles.ghostText,
+  success: styles.successText,
+  danger: styles.dangerText,
+};
+
+const sizeTextStyles: Record<NonNullable<ButtonProps['size']>, TextStyle> = {
+  small: styles.smallText,
+  medium: styles.mediumText,
+  large: styles.largeText,
+  xl: styles.xlText,
+};

@@ -29,7 +29,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     
     const initializeAuth = async () => {
       try {
-        console.log('Initializing auth...');
+        if (__DEV__) console.log('Initializing auth...');
         
         // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -42,7 +42,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           return;
         }
         
-        console.log('Initial session:', session?.user?.email || 'No session');
+        if (__DEV__) console.log('Initial session:', session?.user?.email || 'No session');
         
         if (mounted) {
           setSession(session);
@@ -64,7 +64,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: Session | null) => {
-      console.log('Auth state changed:', event, session?.user?.email || 'No session');
+      if (__DEV__) console.log('Auth state changed:', event, session?.user?.email || 'No session');
       
       if (!mounted) return;
       
@@ -113,10 +113,10 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
   const loadUserProfile = async (supabaseUser: SupabaseUser) => {
     try {
       const defaultRole: UserRole = (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
-      console.log('Loading profile for user:', supabaseUser.id);
+      if (__DEV__) console.log('Loading profile for user:', supabaseUser.id);
       
       if (!isSupabaseConfigured) {
-        console.log('Supabase not configured, creating basic user object');
+        if (__DEV__) console.log('Supabase not configured, creating basic user object');
         const basicUser: User = {
           id: supabaseUser.id,
           email: supabaseUser.email || '',
@@ -170,7 +170,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         };
         setUser(basicUser);
       } else if (!profile) {
-        console.log('No profile found for user, attempting to create profile...');
+        if (__DEV__) console.log('No profile found for user, attempting to create profile...');
         try {
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
@@ -204,7 +204,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
             };
             setUser(basicUser);
           } else if (newProfile) {
-            console.log('Profile created successfully:', newProfile);
+            if (__DEV__) console.log('Profile created successfully:', newProfile);
             const user: User = {
               id: newProfile.id,
               email: newProfile.email,
@@ -244,7 +244,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
           setUser(basicUser);
         }
       } else if (profile) {
-        console.log('Profile loaded successfully:', profile);
+        if (__DEV__) console.log('Profile loaded successfully:', profile);
         const user: User = {
           id: profile.id,
           email: profile.email,
@@ -263,7 +263,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         };
         setUser(user);
       } else {
-        console.log('No profile data returned');
+        if (__DEV__) console.log('No profile data returned');
         // Fallback to basic user object
         const basicUser: User = {
           id: supabaseUser.id,
@@ -371,7 +371,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         setSession(authData.session);
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        console.log('Creating profile for user:', authData.user.id);
+        if (__DEV__) console.log('Creating profile for user:', authData.user.id);
         let retryCount = 0;
         const maxRetries = 3;
         
@@ -385,7 +385,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
               .maybeSingle();
             
             if (existingProfile) {
-              console.log('Profile already exists, skipping creation');
+              if (__DEV__) console.log('Profile already exists, skipping creation');
               break;
             }
             
@@ -411,19 +411,19 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
               });
               
               if (profileError.code === '23505') {
-                console.log('Profile already exists (duplicate key), continuing...');
+                if (__DEV__) console.log('Profile already exists (duplicate key), continuing...');
                 break;
               }
               
               if (profileError.code === '23503' && retryCount < maxRetries - 1) {
-                console.log(`Foreign key constraint error, retrying in ${(retryCount + 1) * 1000}ms...`);
+                if (__DEV__) console.log(`Foreign key constraint error, retrying in ${(retryCount + 1) * 1000}ms...`);
                 await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
                 retryCount++;
                 continue;
               }
               
               if (profileError.code === '42501' && retryCount < maxRetries - 1) {
-                console.log(`Permission denied, retrying in ${(retryCount + 1) * 1000}ms...`);
+                if (__DEV__) console.log(`Permission denied, retrying in ${(retryCount + 1) * 1000}ms...`);
                 await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
                 retryCount++;
                 continue;
@@ -441,10 +441,10 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
                 errorMessage = profileError.message;
               }
               
-              console.error('Returning error:', errorMessage);
+              console.error('Profile creation returning error:', errorMessage);
               return { error: errorMessage };
             } else {
-              console.log('Profile created successfully:', profileData);
+              if (__DEV__) console.log('Profile created successfully:', profileData);
               break;
             }
           } catch (retryError) {
@@ -461,7 +461,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         return {};
       }
 
-      console.log('Signup completed without session (likely email verification required).');
+      if (__DEV__) console.log('Signup completed without session (likely email verification required).');
       return {};
     } catch (error) {
       console.error('Signup failed:', error);
@@ -551,7 +551,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
             const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
             const publicUrl: string | undefined = (pub && (pub as any).publicUrl) || undefined;
             avatarUrl = publicUrl ?? inputAvatar;
-            console.log('Avatar uploaded to storage successfully:', { path, publicUrl });
+            if (__DEV__) console.log('Avatar uploaded to storage successfully:', { path, publicUrl });
           } else {
             console.warn('Storage upload failed, falling back to direct URI', uploadError);
             avatarUrl = inputAvatar;
@@ -625,7 +625,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     }
 
     try {
-      console.log('Deleting user account:', user.id);
+      if (__DEV__) console.log('Deleting user account:', user.id);
       
       // First delete the profile (this will cascade delete all related data)
       const { error: profileError } = await supabase
@@ -638,20 +638,18 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
         return { error: 'Failed to delete profile. Please try again.' };
       }
 
-      // Then delete the auth user (this should happen automatically with CASCADE, but let's be explicit)
-      const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
-      
-      if (authError) {
-        console.error('Error deleting auth user:', authError);
-        // Profile is already deleted, so we should still sign out
-      }
+      // Soft-delete: clear personal data from profile (admin API cannot be called from client)
+      await supabase
+        .from('profiles')
+        .update({ name: 'Deleted User', bio: '', avatar: null, email: '', location: '' })
+        .eq('id', user.id);
 
       // Sign out the user
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
       
-      console.log('Account deleted successfully');
+      if (__DEV__) console.log('Account deleted successfully');
       return {};
     } catch (error) {
       console.error('Account deletion failed:', error);

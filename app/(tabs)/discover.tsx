@@ -24,6 +24,7 @@ import { useNotifications } from '@/hooks/notifications-context';
 import { isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from '@/hooks/auth-context';
 import { useUsers } from '@/hooks/users-context';
+import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 
 export default function DiscoverScreen() {
   const [localSearchQuery, setLocalSearchQuery] = useState<string>('');
@@ -56,11 +57,16 @@ export default function DiscoverScreen() {
   const { followUser, unfollowUser, isFollowing } = useFollow();
   const { unreadCount } = useNotifications();
   const { user: currentUser } = useAuth();
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(EVENTS.SCREEN_VIEW, { screen: 'discover' });
+  }, []);
 
   // Initialize filters based on current user's profile
   useEffect(() => {
     if (currentUser && !hasInitializedFilters) {
-      console.log('Discover: Initializing filters based on user profile', {
+      if (__DEV__) console.log('Discover: Initializing filters based on user profile', {
         userRole: currentUser.role,
         userSport: currentUser.sport
       });
@@ -107,19 +113,19 @@ export default function DiscoverScreen() {
   const { users: cachedUsers, isLoading: usersIsLoading, refreshUsers } = useUsers();
 
   const loadUsers = useCallback(async () => {
-    console.log('Discover: loadUsers start', { isSupabaseConfigured, currentUserId: currentUser?.id });
+    if (__DEV__) console.log('Discover: loadUsers start', { isSupabaseConfigured, currentUserId: currentUser?.id });
     setUsersError(null);
 
     try {
       setIsLoadingUsers(true);
       if (!isSupabaseConfigured) {
-        console.log('Discover: using cached users only');
+        if (__DEV__) console.log('Discover: using cached users only');
         setUsers(cachedUsers);
         return;
       }
 
       await refreshUsers();
-      console.log('Discover: refreshUsers requested');
+      if (__DEV__) console.log('Discover: refreshUsers requested');
     } catch (error) {
       const msg = getErrorMessage(error);
       console.error('Failed to load users:', msg, error);
@@ -135,12 +141,12 @@ export default function DiscoverScreen() {
   useEffect(() => {
     if (didLoadRef.current) return;
     didLoadRef.current = true;
-    console.log('Discover: trigger initial loadUsers');
+    if (__DEV__) console.log('Discover: trigger initial loadUsers');
     loadUsers();
   }, [loadUsers]);
 
   useEffect(() => {
-    console.log('Discover: sync local users with cachedUsers', { cachedCount: cachedUsers.length });
+    if (__DEV__) console.log('Discover: sync local users with cachedUsers', { cachedCount: cachedUsers.length });
     setUsers(cachedUsers);
   }, [cachedUsers]);
 
@@ -209,17 +215,20 @@ export default function DiscoverScreen() {
 
   const handleSearchSubmit = () => {
     if (localSearchQuery.trim()) {
+      track(EVENTS.SEARCH, { query: localSearchQuery.trim() });
       addRecentSearch(localSearchQuery);
     }
   };
 
   const handleFollowToggle = useCallback(async (userId: string) => {
     if (isFollowing(userId)) {
+      track(EVENTS.UNFOLLOW, { targetUserId: userId });
       await unfollowUser(userId);
     } else {
+      track(EVENTS.FOLLOW, { targetUserId: userId });
       await followUser(userId);
     }
-  }, [isFollowing, unfollowUser, followUser]);
+  }, [isFollowing, unfollowUser, followUser, track]);
 
   const renderUser = useCallback(({ item }: { item: User }) => (
     <TouchableOpacity 
@@ -230,9 +239,11 @@ export default function DiscoverScreen() {
         params: { id: item.id }
       })}
     >
-      <Image 
-        source={{ uri: item.avatar || 'https://via.placeholder.com/80' }} 
-        style={styles.userImage} 
+      <Image
+        source={{ uri: item.avatar || 'https://via.placeholder.com/80' }}
+        style={styles.userImage}
+        accessibilityLabel={`${item.name}'s photo`}
+        accessibilityRole="image"
       />
       <View style={styles.userInfo}>
         <View style={styles.userHeader}>
@@ -262,7 +273,7 @@ export default function DiscoverScreen() {
               e.stopPropagation();
               router.push({
                 pathname: '/chat/[id]' as any,
-                params: { 
+                params: {
                   id: item.id,
                   name: item.name,
                   avatar: item.avatar || '',
@@ -270,6 +281,8 @@ export default function DiscoverScreen() {
                 }
               });
             }}
+            accessibilityRole="button"
+            accessibilityLabel={`Message ${item.name}`}
           >
             <MessageCircle size={16} color={theme.colors.primary} />
             <Text style={styles.messageButtonText}>Message</Text>
@@ -280,6 +293,8 @@ export default function DiscoverScreen() {
               e.stopPropagation();
               handleFollowToggle(item.id);
             }}
+            accessibilityRole="button"
+            accessibilityLabel={isFollowing(item.id) ? `Unfollow ${item.name}` : `Follow ${item.name}`}
           >
             {isFollowing(item.id) ? (
               <UserCheck size={16} color={theme.colors.white} />
@@ -303,9 +318,11 @@ export default function DiscoverScreen() {
         params: { id: item.id }
       })}
     >
-      <Image 
-        source={{ uri: item.avatar || 'https://via.placeholder.com/40' }} 
-        style={styles.searchResultAvatar} 
+      <Image
+        source={{ uri: item.avatar || 'https://via.placeholder.com/40' }}
+        style={styles.searchResultAvatar}
+        accessibilityLabel={`${item.name}'s photo`}
+        accessibilityRole="image"
       />
       <View style={styles.searchResultInfo}>
         <View style={styles.searchResultHeader}>
@@ -323,7 +340,7 @@ export default function DiscoverScreen() {
             e.stopPropagation();
             router.push({
               pathname: '/chat/[id]' as any,
-              params: { 
+              params: {
                 id: item.id,
                 name: item.name,
                 avatar: item.avatar || '',
@@ -331,6 +348,8 @@ export default function DiscoverScreen() {
               }
             });
           }}
+          accessibilityRole="button"
+          accessibilityLabel={`Message ${item.name}`}
         >
           <MessageCircle size={18} color={theme.colors.primary} />
         </TouchableOpacity>
@@ -340,6 +359,8 @@ export default function DiscoverScreen() {
             e.stopPropagation();
             handleFollowToggle(item.id);
           }}
+          accessibilityRole="button"
+          accessibilityLabel={isFollowing(item.id) ? `Unfollow ${item.name}` : `Follow ${item.name}`}
         >
           {isFollowing(item.id) ? (
             <UserCheck size={20} color={theme.colors.primary} />
@@ -430,9 +451,11 @@ export default function DiscoverScreen() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Discover People</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.notificationButton}
             onPress={() => router.push('/(tabs)/notifications' as any)}
+            accessibilityRole="button"
+            accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
           >
             <Bell size={24} color={theme.colors.text} />
             {unreadCount > 0 && (
@@ -444,7 +467,7 @@ export default function DiscoverScreen() {
             )}
           </TouchableOpacity>
         </View>
-        <View style={styles.searchContainer}>
+        <View style={styles.searchContainer} accessible={true} accessibilityRole="search">
           <Search size={20} color={theme.colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
@@ -454,20 +477,23 @@ export default function DiscoverScreen() {
             onSubmitEditing={handleSearchSubmit}
             placeholderTextColor={theme.colors.textSecondary}
             testID="discover-search-input"
+            accessibilityLabel="Search people and sports"
           />
           {localSearchQuery.length > 0 && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.clearButton}
               onPress={() => {
                 setLocalSearchQuery('');
                 setShowSearchResults(false);
                 clearSearch();
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
             >
               <Text style={styles.clearButtonText}>✕</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.filterButton}
             onPress={() => {
               setTempSport(selectedSport);
@@ -477,6 +503,9 @@ export default function DiscoverScreen() {
               setShowFilterModal(true);
             }}
             testID="filter-button"
+            accessibilityRole="button"
+            accessibilityLabel="Open filters"
+            accessibilityHint="Opens advanced filter options"
           >
             <Filter size={20} color={theme.colors.primary} />
             {(selectedSport || selectedRole || locationFilter || verifiedOnly) && (
@@ -662,7 +691,7 @@ export default function DiscoverScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Advanced Filters</Text>
-              <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+              <TouchableOpacity onPress={() => setShowFilterModal(false)} accessibilityRole="button" accessibilityLabel="Close filters">
                 <X size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>

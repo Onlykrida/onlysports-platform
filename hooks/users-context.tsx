@@ -26,7 +26,7 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     } catch (e) {
-      console.log('UsersProvider: persist failed', e);
+      if (__DEV__) console.log('UsersProvider: persist failed', e);
     }
   }, []);
 
@@ -41,7 +41,7 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
       }
       return null;
     } catch (e) {
-      console.log('UsersProvider: loadFromStorage failed', e);
+      if (__DEV__) console.log('UsersProvider: loadFromStorage failed', e);
       return null;
     }
   }, []);
@@ -55,7 +55,7 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
         .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at')
         .limit(200);
       if (error) {
-        console.log('UsersProvider: remote load error', error);
+        if (__DEV__) console.log('UsersProvider: remote load error', error);
         return;
       }
       const remoteUsers: User[] = (data ?? []).map((p: any) => ({
@@ -85,12 +85,12 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
           }
         });
         const merged = Array.from(map.values());
-        console.log('UsersProvider: merged users count:', merged.length, 'remote:', remoteUsers.length, 'cached:', prev.length);
+        if (__DEV__) console.log('UsersProvider: merged users count:', merged.length, 'remote:', remoteUsers.length, 'cached:', prev.length);
         void persist(merged);
         return merged;
       });
     } catch (e) {
-      console.log('UsersProvider: remote load failed', e);
+      if (__DEV__) console.log('UsersProvider: remote load failed', e);
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +99,7 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
   useEffect(() => {
     loadFromStorage().then((loaded) => {
       if (!loaded && !isSupabaseConfigured) {
-        console.log('UsersProvider: seeding mock users (20)');
+        if (__DEV__) console.log('UsersProvider: seeding mock users (20)');
         setUsers(mockUsers);
         void persist(mockUsers);
         return;
@@ -120,7 +120,7 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
             // Handle user deletion
             const deletedUserId = payload.old?.id;
             if (deletedUserId) {
-              console.log('UsersProvider: User deleted, removing from cache:', deletedUserId);
+              if (__DEV__) console.log('UsersProvider: User deleted, removing from cache:', deletedUserId);
               setUsers((prev) => {
                 const filtered = prev.filter((u) => u.id !== deletedUserId);
                 void persist(filtered);
@@ -155,7 +155,7 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
             return list;
           });
         } catch (e) {
-          console.log('UsersProvider: profiles change handling failed', e);
+          if (__DEV__) console.log('UsersProvider: profiles change handling failed', e);
         }
       })
       .subscribe();

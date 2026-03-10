@@ -166,6 +166,8 @@ export interface Application {
   // Populated fields
   athleteName?: string;
   athleteAvatar?: string;
+  athleteSport?: string;
+  athletePosition?: string;
   opportunityTitle?: string;
 }
 
@@ -226,6 +228,41 @@ export interface Conversation {
   lastMessage?: string;
   lastMessageTime?: Date;
   unreadCount: number;
+}
+
+export interface GroupMessage {
+  id: string;
+  groupId: string;
+  senderId: string;
+  content: string;
+  mediaUrl?: string;
+  createdAt: Date;
+  senderName?: string;
+  senderAvatar?: string;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  avatar?: string;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+  memberCount: number;
+  lastMessage?: string;
+  lastMessageTime?: Date;
+  lastMessageSender?: string;
+  unreadCount: number;
+}
+
+export interface GroupMember {
+  id: string;
+  groupId: string;
+  userId: string;
+  role: 'admin' | 'member';
+  joinedAt: Date;
+  userName?: string;
+  userAvatar?: string;
 }
 
 export interface SearchResult {

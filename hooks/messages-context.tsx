@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
 import { useNotifications } from './notifications-context';
+import { useAnalytics, EVENTS } from './useAnalytics';
 
 export interface Message {
   id: string;
@@ -42,6 +43,7 @@ interface MessagesState {
 export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(() => {
   const { user } = useAuth();
   const { createNotification } = useNotifications();
+  const { track } = useAnalytics();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<{ [conversationId: string]: Message[] }>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -196,13 +198,15 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
       // Refresh messages for this conversation
       await loadMessages(receiverId);
       await loadConversations();
-      
+
+      track(EVENTS.MESSAGE_SENT, { receiverId });
+
       return {};
     } catch (error) {
       console.error('Failed to send message:', error);
       return { error: 'Failed to send message' };
     }
-  }, [user, createNotification, loadMessages, loadConversations]);
+  }, [user, createNotification, loadMessages, loadConversations, track]);
 
   const markAsRead = useCallback(async (conversationId: string) => {
     if (!user || !isSupabaseConfigured) return;

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -12,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
-import { Settings, Edit3, Award, BarChart3, LogOut, Plus, Grid, List, Camera, BadgeCheck } from 'lucide-react-native';
+import { Settings, Edit3, Award, BarChart3, LogOut, Plus, Grid, List, Camera, BadgeCheck, Target, Activity } from 'lucide-react-native';
 import { theme, formatRoleName } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';
@@ -23,18 +24,36 @@ import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useScouting } from '@/hooks/scouting-context';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
+import { ProfileSkeleton } from '@/components/SkeletonScreens';
+import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 
 export default function ProfileScreen() {
   const { user, logout, updateProfile } = useAuth();
   const { followers, following, getFollowersCount, getFollowingCount } = useFollow();
   const { posts } = usePosts();
   const { getInterestedForPlayer, getInterestedOrganizations, getInterestedAthletesForOrg } = useScouting();
+  const { track } = useAnalytics();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const [interestedOrganizations, setInterestedOrganizations] = useState<User[]>([]);
   const [topPlayers, setTopPlayers] = useState<{ playerId: string; name: string; avatar?: string; position?: string; score: number }[]>([]);
 
   const [refreshing, setRefreshing] = useState(false);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
+  const userPosts = useMemo(() => posts.filter((p) => p.userId === user?.id), [posts, user?.id]);
+
+  useEffect(() => {
+    track(EVENTS.SCREEN_VIEW, { screen: 'profile' });
+    track(EVENTS.PROFILE_VIEWED, { userId: user?.id });
+  }, []);
+
+  // Load persisted cover photo
+  useEffect(() => {
+    if (user?.id) {
+      AsyncStorage.getItem(`onlysports_cover_${user.id}`).then((saved) => {
+        if (saved) setCoverPhoto(saved);
+      }).catch(() => {});
+    }
+  }, [user?.id]);
   const [coverPhoto, setCoverPhoto] = useState<string>('https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200');
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -71,10 +90,10 @@ export default function ProfileScreen() {
         setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
         
         const orgs = await getInterestedOrganizations(user.id);
-        console.log('Profile: Interested organizations loaded', { count: orgs.length });
+        if (__DEV__) console.log('Profile: Interested organizations loaded', { count: orgs.length });
         setInterestedOrganizations(orgs);
       } catch (e) {
-        console.log('Profile: interested scouts load failed', e);
+        if (__DEV__) console.log('Profile: interested scouts load failed', e);
       }
     } else if (user.role === 'scout' || user.role === 'coach' || user.role === 'academy' || user.role === 'team') {
       try {
@@ -86,10 +105,10 @@ export default function ProfileScreen() {
           position: a.position,
           score: 85,
         }));
-        console.log('Profile: Interested athletes loaded', { count: players.length });
+        if (__DEV__) console.log('Profile: Interested athletes loaded', { count: players.length });
         setTopPlayers(players);
       } catch (e) {
-        console.log('Profile: interested athletes load failed', e);
+        if (__DEV__) console.log('Profile: interested athletes load failed', e);
       }
     }
   }, [user, getInterestedForPlayer, getInterestedOrganizations, getInterestedAthletesForOrg]);
@@ -109,7 +128,7 @@ export default function ProfileScreen() {
         table: 'ai_recommendations',
         filter: user.role === 'athlete' ? `player_id=eq.${user.id}` : `scout_id=eq.${user.id}`
       }, () => {
-        console.log('Profile: AI recommendations changed, refreshing');
+        if (__DEV__) console.log('Profile: AI recommendations changed, refreshing');
         void loadRecommendations();
       })
       .subscribe();
@@ -129,9 +148,7 @@ export default function ProfileScreen() {
     return (
       <BackgroundGradient style={styles.container}>
         <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading profile...</Text>
-          </View>
+          <ProfileSkeleton />
         </SafeAreaView>
       </BackgroundGradient>
     );
@@ -244,7 +261,11 @@ export default function ProfileScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setCoverPhoto(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        setCoverPhoto(uri);
+        if (user?.id) {
+          AsyncStorage.setItem(`onlysports_cover_${user.id}`, uri).catch(() => {});
+        }
         Alert.alert('Success', 'Cover photo updated!');
       }
     } catch (error) {
@@ -263,10 +284,12 @@ export default function ProfileScreen() {
         }
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={pickCoverImage} style={styles.coverImageContainer}>
+          <TouchableOpacity onPress={pickCoverImage} style={styles.coverImageContainer} accessibilityRole="button" accessibilityLabel="Change cover photo" accessibilityHint="Opens image picker to select a new cover photo">
             <Image
               source={{ uri: coverPhoto }}
               style={styles.coverImage}
+              accessibilityLabel="Profile cover photo"
+              accessibilityRole="image"
             />
             <View style={styles.coverImageOverlay}>
               <Camera size={20} color={theme.colors.white} />
@@ -274,20 +297,24 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
           <View style={styles.profileSection}>
-            <TouchableOpacity onPress={pickProfileImage} style={styles.avatarContainer}>
-              <Image 
-                source={{ 
-                  uri: user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face' 
-                }} 
-                style={styles.avatar} 
+            <TouchableOpacity onPress={pickProfileImage} style={styles.avatarContainer} accessibilityRole="button" accessibilityLabel="Change profile picture" accessibilityHint="Opens image picker to select a new profile picture">
+              <Image
+                source={{
+                  uri: user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face'
+                }}
+                style={styles.avatar}
+                accessibilityLabel={`${user.name}'s profile picture`}
+                accessibilityRole="image"
               />
               <View style={styles.avatarOverlay}>
                 <Camera size={16} color={theme.colors.white} />
               </View>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.editButton}
               onPress={() => router.push('/edit-profile')}
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
             >
               <Edit3 size={16} color={theme.colors.white} />
             </TouchableOpacity>
@@ -305,15 +332,15 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.statsContainer}>
-          <TouchableOpacity style={styles.statItem}>
+          <TouchableOpacity style={styles.statItem} accessibilityRole="button" accessibilityLabel={`${followersCount} followers`}>
             <Text style={styles.statValue}>{followersCount}</Text>
             <Text style={styles.statLabel}>Followers</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.statItem}>
+          <TouchableOpacity style={styles.statItem} accessibilityRole="button" accessibilityLabel={`${followingCount} following`}>
             <Text style={styles.statValue}>{followingCount}</Text>
             <Text style={styles.statLabel}>Following</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.statItem}>
+          <TouchableOpacity style={styles.statItem} accessibilityRole="button" accessibilityLabel={`${userPostsCount} posts`}>
             <Text style={styles.statValue}>{userPostsCount}</Text>
             <Text style={styles.statLabel}>Posts</Text>
           </TouchableOpacity>
@@ -439,9 +466,10 @@ export default function ProfileScreen() {
                 </View>
               ))
             ) : (
-              <View style={styles.emptyState}>
+              <TouchableOpacity style={styles.emptyState} onPress={() => router.push('/player-stats')} accessibilityRole="button" accessibilityLabel="Add your stats">
                 <Text style={styles.emptyStateText}>No stats available</Text>
-              </View>
+                <Text style={styles.emptyStateSubtext}>Tap to add your stats</Text>
+              </TouchableOpacity>
             )}
           </View>
         </View>
@@ -450,39 +478,130 @@ export default function ProfileScreen() {
           <View style={styles.postsHeader}>
             <Text style={styles.sectionTitle}>Posts</Text>
             <View style={styles.postsActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.viewModeButton, postsViewMode === 'grid' && styles.activeViewMode]}
                 onPress={() => setPostsViewMode('grid')}
+                accessibilityRole="button"
+                accessibilityLabel="Grid view"
+                accessibilityState={{ selected: postsViewMode === 'grid' }}
               >
                 <Grid size={16} color={postsViewMode === 'grid' ? theme.colors.primary : theme.colors.textSecondary} />
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.viewModeButton, postsViewMode === 'list' && styles.activeViewMode]}
                 onPress={() => setPostsViewMode('list')}
+                accessibilityRole="button"
+                accessibilityLabel="List view"
+                accessibilityState={{ selected: postsViewMode === 'list' }}
               >
                 <List size={16} color={postsViewMode === 'list' ? theme.colors.primary : theme.colors.textSecondary} />
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.addPostButton}
                 onPress={() => router.push('/create')}
+                accessibilityRole="button"
+                accessibilityLabel="Create new post"
               >
                 <Plus size={16} color={theme.colors.primary} />
               </TouchableOpacity>
             </View>
           </View>
           <View style={styles.postsContainer}>
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No posts yet</Text>
-              <Text style={styles.emptyStateSubtext}>Share your achievements and highlights</Text>
-              <TouchableOpacity 
-                style={styles.createPostButton}
-                onPress={() => router.push('/create')}
-              >
-                <Text style={styles.createPostText}>Create Your First Post</Text>
-              </TouchableOpacity>
-            </View>
+            {userPosts.length > 0 ? (
+              postsViewMode === 'grid' ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 2 }}>
+                  {userPosts.map((post) => (
+                    <TouchableOpacity
+                      key={post.id}
+                      style={{ width: '32.8%', aspectRatio: 1, backgroundColor: theme.colors.surface, borderRadius: 4, overflow: 'hidden' }}
+                      onPress={() => router.push(`/post/${post.id}`)}
+                    >
+                      {post.media?.url ? (
+                        <Image source={{ uri: post.media.url }} style={{ width: '100%', height: '100%' }} />
+                      ) : (
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 8 }}>
+                          <Text style={{ color: theme.colors.textSecondary, fontSize: 12 }} numberOfLines={3}>{post.content}</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <View style={{ gap: 12 }}>
+                  {userPosts.map((post) => (
+                    <TouchableOpacity
+                      key={post.id}
+                      style={{ backgroundColor: theme.colors.surface, borderRadius: 8, padding: 12 }}
+                      onPress={() => router.push(`/post/${post.id}`)}
+                    >
+                      <Text style={{ color: theme.colors.text, fontSize: 14 }} numberOfLines={2}>{post.content}</Text>
+                      <Text style={{ color: theme.colors.textSecondary, fontSize: 12, marginTop: 4 }}>{post.likes} likes · {post.comments} comments</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No posts yet</Text>
+                <Text style={styles.emptyStateSubtext}>Share your achievements and highlights</Text>
+                <TouchableOpacity
+                  style={styles.createPostButton}
+                  onPress={() => router.push('/create')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create your first post"
+                >
+                  <Text style={styles.createPostText}>Create Your First Post</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
+
+        {/* Scouting Actions */}
+        {user.role === 'athlete' && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Activity size={20} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>Performance</Text>
+            </View>
+            <Button
+              title="Edit My Stats"
+              onPress={() => router.push('/player-stats')}
+              variant="outline"
+              icon={<Activity size={16} color={theme.colors.primary} />}
+            />
+          </View>
+        )}
+
+        {(user.role === 'scout' || user.role === 'coach' || user.role === 'team' || user.role === 'academy') && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Target size={20} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>Scouting</Text>
+            </View>
+            <Button
+              title="Scouting Preferences"
+              onPress={() => router.push('/scout-preferences')}
+              variant="outline"
+              icon={<Target size={16} color={theme.colors.primary} />}
+            />
+          </View>
+        )}
+
+        {['team', 'coach', 'scout', 'gym', 'academy', 'brand'].includes(user.role) && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <BarChart3 size={20} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>Management</Text>
+            </View>
+            <Button
+              title="Team Dashboard"
+              onPress={() => router.push('/team-dashboard')}
+              variant="outline"
+              icon={<BarChart3 size={16} color={theme.colors.primary} />}
+            />
+          </View>
+        )}
 
         <View style={styles.actions}>
           <Button

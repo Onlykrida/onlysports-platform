@@ -1,24 +1,25 @@
 {
   "expo": {
-    "name": "OnlySports Platform",
+    "name": "OnlyKrida",
     "slug": "onlysports-vd08a76",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "onlykrida",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0a0f1a"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.rork.onlysports-vd08a76",
+      "bundleIdentifier": "com.onlysports.app",
       "infoPlist": {
         "UIBackgroundModes": [
-          "audio"
+          "audio",
+          "remote-notification"
         ],
         "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
@@ -28,9 +29,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0a0f1a"
       },
-      "package": "app.rork.onlysports-vd08a76",
+      "package": "com.onlysports.app",
       "manifest": {
         "android:supportsPictureInPicture": true
       },
@@ -48,7 +49,7 @@
       [
         "expo-router",
         {
-          "origin": "https://rork.com/"
+          "origin": "https://onlysports.app/"
         }
       ],
       [
@@ -62,6 +63,14 @@
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#1a8cff",
+          "sounds": []
         }
       ]
     ],

@@ -25,15 +25,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { usePosts } from '@/hooks/posts-context';
 import { useAuth } from '@/hooks/auth-context';
 import { router } from 'expo-router';
+import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 
 export default function CreateScreen() {
   const [content, setContent] = useState('');
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [isPosting, setIsPosting] = useState(false);
-  
+
   const { createPost } = usePosts();
   const { user } = useAuth();
+  const { track } = useAnalytics();
 
   const handleMediaSelect = async (type: string) => {
     try {
@@ -118,6 +120,8 @@ export default function CreateScreen() {
         Alert.alert('Error', result.error);
         return;
       }
+
+      track(EVENTS.POST_CREATED);
 
       Alert.alert('Success', 'Your post has been created and will appear in the feed!', [
         { 

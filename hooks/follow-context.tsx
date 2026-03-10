@@ -4,6 +4,7 @@ import { User } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
 import { useNotifications } from './notifications-context';
+import { useAnalytics, EVENTS } from './useAnalytics';
 
 interface FollowState {
   followers: User[];
@@ -24,6 +25,7 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
   const { user } = useAuth();
   const notificationsContext = useNotifications();
   const createNotification = notificationsContext?.createNotification;
+  const { track } = useAnalytics();
 
   const loadFollows = useCallback(async () => {
     if (!user || !isSupabaseConfigured) return;
@@ -107,7 +109,7 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
 
     // Prevent users from following themselves
     if (user.id === userId) {
-      console.log('Attempted self-follow blocked for user:', user.id);
+      if (__DEV__) console.log('Attempted self-follow blocked for user:', user.id);
       return { error: 'You cannot follow yourself' };
     }
 
@@ -117,7 +119,7 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
     }
 
     try {
-      console.log('Attempting to follow user:', userId, 'by user:', user.id);
+      if (__DEV__) console.log('Attempting to follow user:', userId, 'by user:', user.id);
       
       // First check if the target user exists
       const { data: targetUser, error: userError } = await supabase
@@ -153,8 +155,9 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
         return { error: 'Failed to follow user. Please try again.' };
       }
 
-      console.log('Successfully followed user:', userId);
-      console.log('Follow notification will be handled by database trigger');
+      if (__DEV__) console.log('Successfully followed user:', userId);
+      if (__DEV__) console.log('Follow notification will be handled by database trigger');
+      track(EVENTS.FOLLOW, { targetUserId: userId });
       
       // Refresh follows
       await loadFollows();
@@ -163,7 +166,7 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
       console.error('Follow failed:', error);
       return { error: 'Failed to follow user' };
     }
-  }, [user, loadFollows, isFollowing, createNotification]);
+  }, [user, loadFollows, isFollowing, createNotification, track]);
 
   const unfollowUser = useCallback(async (userId: string) => {
     if (!user || !isSupabaseConfigured) {
@@ -187,6 +190,7 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
         return { error: error.message };
       }
 
+      track(EVENTS.UNFOLLOW, { targetUserId: userId });
       // Refresh follows
       await loadFollows();
       return {};
@@ -194,7 +198,7 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
       console.error('Unfollow failed:', error);
       return { error: 'Failed to unfollow user' };
     }
-  }, [user, loadFollows]);
+  }, [user, loadFollows, track]);
 
   const getFollowersCount = useCallback(async (userId: string) => {
     if (!isSupabaseConfigured) return 0;

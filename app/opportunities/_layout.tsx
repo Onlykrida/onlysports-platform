@@ -22,6 +22,20 @@ export default function OpportunitiesLayout() {
           presentation: "modal",
         }}
       />
+      <Stack.Screen
+        name="my-applications"
+        options={{
+          title: "My Applications",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="manage-applications"
+        options={{
+          title: "Manage Applications",
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

@@ -1,30 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Get Supabase credentials from environment variables
-let supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-let supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-
-// Fallback to direct credentials if environment variables are not loaded
-if (!supabaseUrl || !supabaseAnonKey) {
-  supabaseUrl = 'https://dcixlerneuuyhsftnifm.supabase.co';
-  supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaXhsZXJuZXV1eWhzZnRuaWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3MDc4NTIsImV4cCI6MjA3MTI4Mzg1Mn0.VN7zdfRWHIhTSWQ0HMEhuBKZ49J7Ks4PHtOB140Yn-c';
-  console.log('🔄 Using fallback Supabase credentials');
-}
-
-// Debug environment variables
-console.log('🔍 Environment variables debug:');
-console.log('EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl);
-console.log('EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Present' : 'Missing');
+// Get Supabase credentials from environment variables only
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 // Check if Supabase is properly configured
-const isSupabaseConfigured = 
-  supabaseUrl && 
-  supabaseAnonKey && 
+const isSupabaseConfigured =
+  supabaseUrl &&
+  supabaseAnonKey &&
   supabaseUrl !== 'https://your-project-ref.supabase.co' &&
   supabaseAnonKey !== 'your-anon-key-here' &&
   !supabaseUrl.includes('dummy');
-
-console.log('🔧 Supabase configured:', isSupabaseConfigured);
 
 let supabase: any;
 
@@ -37,18 +23,14 @@ if (isSupabaseConfigured) {
         detectSessionInUrl: true,
       },
     });
-    console.log('✅ Supabase client initialized successfully');
   } catch (error) {
     console.error('❌ Failed to create Supabase client:', error);
     supabase = createMockClient();
   }
 } else {
-  console.warn('⚠️ Supabase not configured. Please update your .env file with valid credentials.');
-  console.warn('📝 Instructions:');
-  console.warn('1. Go to https://supabase.com/dashboard');
-  console.warn('2. Create a new project or select existing one');
-  console.warn('3. Go to Settings > API');
-  console.warn('4. Copy the Project URL and anon key to your .env file');
+  if (__DEV__) {
+    console.warn('Supabase not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to your .env file.');
+  }
   supabase = createMockClient();
 }
 
@@ -113,7 +95,7 @@ export interface Database {
           id: string;
           email: string;
           name: string;
-          role: 'athlete' | 'coach' | 'scout' | 'team' | 'fan';
+          role: 'athlete' | 'coach' | 'scout' | 'team' | 'fan' | 'trainer' | 'gym' | 'brand' | 'academy';
           avatar?: string;
           bio?: string;
           location?: string;
@@ -129,7 +111,7 @@ export interface Database {
           id: string;
           email: string;
           name: string;
-          role: 'athlete' | 'coach' | 'scout' | 'team' | 'fan';
+          role: 'athlete' | 'coach' | 'scout' | 'team' | 'fan' | 'trainer' | 'gym' | 'brand' | 'academy';
           avatar?: string;
           bio?: string;
           location?: string;
@@ -143,7 +125,7 @@ export interface Database {
           id?: string;
           email?: string;
           name?: string;
-          role?: 'athlete' | 'coach' | 'scout' | 'team' | 'fan';
+          role?: 'athlete' | 'coach' | 'scout' | 'team' | 'fan' | 'trainer' | 'gym' | 'brand' | 'academy';
           avatar?: string;
           bio?: string;
           location?: string;

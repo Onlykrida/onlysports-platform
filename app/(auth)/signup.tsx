@@ -46,8 +46,10 @@ export default function SignupScreen() {
 
     if (!password) {
       newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    } else if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      newErrors.password = 'Password must include uppercase, lowercase, and a number';
     }
 
     if (password !== confirmPassword) {
@@ -210,6 +212,8 @@ export default function SignupScreen() {
             <TouchableOpacity
               onPress={() => router.push('/(auth)/login' as any)}
               style={styles.loginLink}
+              accessibilityRole="link"
+              accessibilityLabel="Sign in to existing account"
             >
               <Text style={styles.loginText}>
                 Already have an account? <Text style={styles.loginTextBold}>Sign In</Text>

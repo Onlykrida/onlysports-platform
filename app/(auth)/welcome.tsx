@@ -8,7 +8,6 @@ import {
   Platform,
   Animated,
   Pressable,
-  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -19,7 +18,6 @@ import { Globe2, Handshake, Rocket, Trophy } from 'lucide-react-native';
 const { height } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
-  console.log('WelcomeScreen: render');
   const scale = useRef(new Animated.Value(1)).current;
 
   const bgUri = useMemo(() => (
@@ -53,11 +51,9 @@ export default function WelcomeScreen() {
           <View style={styles.content}>
             <View style={styles.header}>
               <View style={styles.logoContainer}>
-                <Image 
-                  source={{ uri: 'https://r2-pub.rork.com/generated-images/ad75ea0e-6774-4791-b63d-3c24452a4a85.png' }}
-                  style={styles.logoImage}
-                  resizeMode="contain"
-                />
+                <View style={[styles.logoImage, { backgroundColor: theme.colors.primary, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }]}>
+                  <Text style={{ color: theme.colors.white, fontWeight: 'bold' as const, fontSize: 28 }}>OK</Text>
+                </View>
                 <View style={styles.logoTextContainer}>
                   <Text accessibilityRole="header" testID="title-shadow" style={styles.logoShadow}>
                     OnlyKrida

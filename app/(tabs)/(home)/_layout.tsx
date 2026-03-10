@@ -1,5 +1,5 @@
 import { Stack, router } from 'expo-router';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Bell } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useNotifications } from '@/hooks/notifications-context';
@@ -10,16 +10,17 @@ function HeaderTitle() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Image 
-          source={{ uri: 'https://r2-pub.rork.com/generated-images/ad75ea0e-6774-4791-b63d-3c24452a4a85.png' }}
-          style={{ 
-            width: 32, 
-            height: 32, 
+        <View style={{
+            width: 32,
+            height: 32,
             marginRight: 8,
-            borderRadius: 6
-          }}
-          resizeMode="contain"
-        />
+            borderRadius: 6,
+            backgroundColor: theme.colors.primary,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+          <Text style={{ color: theme.colors.white, fontWeight: 'bold', fontSize: 16 }}>OK</Text>
+        </View>
         <Text style={{ 
           fontSize: 20, 
           fontWeight: 'bold', 

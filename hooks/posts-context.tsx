@@ -21,10 +21,15 @@ function getErrorMessage(error: unknown): string {
   }
 }
 
+const PAGE_SIZE = 20;
+
 interface PostsState {
   posts: Post[];
   isLoading: boolean;
+  hasMore: boolean;
+  isLoadingMore: boolean;
   refreshPosts: () => Promise<void>;
+  loadMore: () => Promise<void>;
   createPost: (content: string, mediaUrl?: string, mediaType?: 'image' | 'video') => Promise<{ error?: string }>;
   likePost: (postId: string) => Promise<void>;
   deletePost: (postId: string) => Promise<{ error?: string }>;
@@ -38,6 +43,8 @@ interface PostsState {
 export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { user } = useAuth();
   const { opportunities } = useOpportunities();
 
@@ -45,12 +52,12 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
   const loadPosts = useCallback(async () => {
     try {
       setIsLoading(true);
-      console.log('Loading posts... isSupabaseConfigured:', isSupabaseConfigured);
+      if (__DEV__) console.log('Loading posts... isSupabaseConfigured:', isSupabaseConfigured);
       
       if (!isSupabaseConfigured) {
         // Use mock data when database is not configured
         const sortedMockPosts = mockPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        console.log('Using mock posts:', sortedMockPosts.length, 'posts');
+        if (__DEV__) console.log('Using mock posts:', sortedMockPosts.length, 'posts');
         setPosts(sortedMockPosts);
         return;
       }
@@ -68,11 +75,12 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       for (const fields of profileFieldSets) {
         try {
           const selectStr = `*, profiles!posts_user_id_fkey (${fields.join(',')})`;
-          console.log('Trying select with fields:', fields.join(','));
+          if (__DEV__) console.log('Trying select with fields:', fields.join(','));
           const { data, error } = await supabase
             .from('posts')
             .select(selectStr)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .limit(PAGE_SIZE);
 
           if (!error) {
             postsData = data as any[];
@@ -92,12 +100,12 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         const msg = getErrorMessage(lastError);
         console.error('Error loading posts from database:', msg, lastError);
         const sortedMockPosts = mockPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        console.log('Falling back to mock posts:', sortedMockPosts.length, 'posts');
+        if (__DEV__) console.log('Falling back to mock posts:', sortedMockPosts.length, 'posts');
         setPosts(sortedMockPosts);
         return;
       }
 
-      console.log('Raw posts data from database:', postsData?.length || 0, 'posts');
+      if (__DEV__) console.log('Raw posts data from database:', postsData?.length || 0, 'posts');
       
       // Check which posts the current user has liked
       let userLikes: string[] = [];
@@ -118,16 +126,16 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       }).map((post: any) => {
         const profile = post.profiles ?? {};
         const resolvedName = profile.name ?? profile.full_name ?? profile.username ?? profile.email ?? 'Unknown User';
-        console.log('Transforming post:', post.id, 'by user:', resolvedName);
+        if (__DEV__) console.log('Transforming post:', post.id, 'by user:', resolvedName);
         
         // Log media information
         const hasVideo = !!post.video_url;
         const hasImage = !!post.image_url;
         if (hasVideo) {
-          console.log('[Posts] Post has video:', post.id, 'URL:', post.video_url);
+          if (__DEV__) console.log('[Posts] Post has video:', post.id, 'URL:', post.video_url);
         }
         if (hasImage) {
-          console.log('[Posts] Post has image:', post.id, 'URL:', post.image_url);
+          if (__DEV__) console.log('[Posts] Post has image:', post.id, 'URL:', post.image_url);
         }
         
         return {
@@ -150,8 +158,11 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         };
       }) || [];
 
-      console.log('Transformed posts:', transformedPosts.length, 'posts');
-      
+      if (__DEV__) console.log('Transformed posts:', transformedPosts.length, 'posts');
+
+      // Determine if there are more posts to load
+      setHasMore((postsData?.length ?? 0) >= PAGE_SIZE);
+
       // Add recent opportunities (created within last 5 days) to the feed
       const fiveDaysAgo = new Date();
       fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
@@ -190,7 +201,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           },
         }));
       
-      console.log('Recent opportunities for feed:', recentOpportunities.length);
+      if (__DEV__) console.log('Recent opportunities for feed:', recentOpportunities.length);
       
       // Combine posts and opportunities, sort by date
       const allPosts = [...transformedPosts, ...recentOpportunities]
@@ -204,6 +215,105 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       setIsLoading(false);
     }
   }, [user]);
+
+  // Load more posts (cursor-based pagination)
+  const loadMore = useCallback(async () => {
+    if (!hasMore || isLoadingMore || !isSupabaseConfigured) return;
+
+    const dbPosts = posts.filter(p => !p.id.startsWith('opp-'));
+    if (dbPosts.length === 0) return;
+
+    const lastPost = dbPosts[dbPosts.length - 1];
+    const cursor = new Date(lastPost.createdAt).toISOString();
+
+    setIsLoadingMore(true);
+    try {
+      let postsData: any[] | null = null;
+      let lastError: any = null;
+
+      const profileFieldSets = [
+        ['id', 'name', 'avatar', 'role'],
+        ['id', 'full_name', 'avatar', 'role'],
+        ['id', 'username', 'avatar', 'role'],
+        ['id', 'email', 'avatar', 'role'],
+      ];
+
+      for (const fields of profileFieldSets) {
+        try {
+          const selectStr = `*, profiles!posts_user_id_fkey (${fields.join(',')})`;
+          const { data, error } = await supabase
+            .from('posts')
+            .select(selectStr)
+            .order('created_at', { ascending: false })
+            .lt('created_at', cursor)
+            .limit(PAGE_SIZE);
+
+          if (!error) {
+            postsData = data as any[];
+            lastError = null;
+            break;
+          }
+          lastError = error;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      if (lastError || !postsData?.length) {
+        if (!postsData?.length) setHasMore(false);
+        return;
+      }
+
+      // Check which posts the current user has liked
+      let userLikes: string[] = [];
+      if (user && postsData.length) {
+        const { data: likesData } = await supabase
+          .from('likes')
+          .select('post_id')
+          .eq('user_id', user.id)
+          .in('post_id', postsData.map((p: any) => p.id));
+        userLikes = likesData?.map((like: any) => like.post_id) || [];
+      }
+
+      const newPosts: Post[] = postsData.filter((post: any) => post.profiles !== null).map((post: any) => {
+        const profile = post.profiles ?? {};
+        const resolvedName = profile.name ?? profile.full_name ?? profile.username ?? profile.email ?? 'Unknown User';
+        return {
+          id: post.id,
+          userId: post.user_id,
+          userName: resolvedName,
+          userAvatar: profile.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+          userRole: profile.role || 'athlete',
+          content: post.description || post.title,
+          media: post.image_url || post.video_url ? {
+            type: post.video_url ? 'video' as const : 'image' as const,
+            url: post.video_url || post.image_url,
+            thumbnail: post.image_url
+          } : undefined,
+          likes: post.likes_count || 0,
+          comments: post.comments_count || 0,
+          shares: 0,
+          isLiked: userLikes.includes(post.id),
+          createdAt: new Date(post.created_at),
+        };
+      });
+
+      if (postsData.length < PAGE_SIZE) {
+        setHasMore(false);
+      }
+
+      setPosts(prev => {
+        const existingIds = new Set(prev.map(p => p.id));
+        const uniqueNew = newPosts.filter(p => !existingIds.has(p.id));
+        const combined = [...prev, ...uniqueNew];
+        return combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      });
+    } catch (error) {
+      console.error('Failed to load more posts:', getErrorMessage(error), error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [hasMore, isLoadingMore, posts, user]);
 
   // Ensure user profile exists in database
   const ensureUserProfile = useCallback(async () => {
@@ -219,7 +329,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       
       if (checkError && checkError.code === 'PGRST116') {
         // Profile doesn't exist, create it
-        console.log('Profile not found, creating profile for user:', user.id);
+        if (__DEV__) console.log('Profile not found, creating profile for user:', user.id);
         const { error: createError } = await supabase
           .from('profiles')
           .insert({
@@ -232,7 +342,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           return false;
         }
         
-        console.log('Profile created successfully');
+        if (__DEV__) console.log('Profile created successfully');
         return true;
       } else if (checkError) {
         console.error('Error checking profile:', getErrorMessage(checkError), checkError);
@@ -252,7 +362,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     if (!isSupabaseConfigured) return false;
     
     try {
-      console.log('Posts: Checking "posts" bucket configuration...');
+      if (__DEV__) console.log('Posts: Checking "posts" bucket configuration...');
       
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
@@ -261,25 +371,25 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         return false;
       }
       
-      console.log('Posts: Available buckets:', buckets?.map((b: any) => `${b.id || b.name} (public: ${b.public})`).join(', '));
+      if (__DEV__) console.log('Posts: Available buckets:', buckets?.map((b: any) => `${b.id || b.name} (public: ${b.public})`).join(', '));
       
       const postsBucket = buckets?.find((b: any) => b.id === 'posts' || b.name === 'posts');
       
       if (!postsBucket) {
         console.error('Posts: "posts" bucket not found.');
         console.error('Posts: Available buckets:', buckets?.map((b: any) => b.id || b.name).join(', ') || 'none');
-        console.error('\n⚠️  STORAGE SETUP REQUIRED ⚠️');
+        console.error('\nSTORAGE SETUP REQUIRED');
         console.error('Please create a storage bucket named "posts" in Supabase Dashboard');
         return false;
       }
       
-      console.log('Posts: ✓ "posts" bucket found:', postsBucket);
+      if (__DEV__) console.log('Posts: "posts" bucket found:', postsBucket);
       
       if (!postsBucket.public) {
         console.warn('Posts: "posts" bucket is not public. Media may not be visible.');
         console.warn('Posts: Go to Storage > posts > Settings > Toggle "Public bucket" ON');
       } else {
-        console.log('Posts: ✓ "posts" bucket is public and ready');
+        if (__DEV__) console.log('Posts: "posts" bucket is public and ready');
       }
       
       return true;
@@ -293,7 +403,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
   const uploadMediaIfNeeded = useCallback(async (uri?: string, mType?: 'image' | 'video'): Promise<string | undefined> => {
     if (!uri || !mType) return undefined;
     if (!isSupabaseConfigured) {
-      console.log('Posts: Supabase not configured, using direct URI');
+      if (__DEV__) console.log('Posts: Supabase not configured, using direct URI');
       return uri;
     }
 
@@ -303,7 +413,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     }
 
     try {
-      console.log('Posts: Starting media upload', { uri, mType, platform: Platform.OS, userId: user.id });
+      if (__DEV__) console.log('Posts: Starting media upload', { uri, mType, platform: Platform.OS, userId: user.id });
       
       // Check if posts bucket exists
       const bucketExists = await checkStorageBucket();
@@ -321,18 +431,18 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
       const mediaFolder = mType === 'image' ? 'images' : 'videos';
       const path = `${mediaFolder}/${user.id}/${filename}`;
       
-      console.log('Posts: Upload path:', path, '| Bucket: posts');
+      if (__DEV__) console.log('Posts: Upload path:', path, '| Bucket: posts');
 
       // Fetch the file and create blob
-      console.log('Posts: fetching file from URI...');
+      if (__DEV__) console.log('Posts: fetching file from URI...');
       const response = await fetch(uri);
       if (!response.ok) {
         throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
       }
       
       const blob = await response.blob();
-      console.log('Posts: blob created', { 
-        size: blob.size, 
+      if (__DEV__) console.log('Posts: blob created', {
+        size: blob.size,
         type: blob.type,
         sizeInMB: (blob.size / (1024 * 1024)).toFixed(2)
       });
@@ -343,7 +453,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
       // Set content type based on media type
       const contentType = mType === 'image' ? 'image/jpeg' : 'video/mp4';
-      console.log('Posts: uploading with content type:', contentType);
+      if (__DEV__) console.log('Posts: uploading with content type:', contentType);
 
       // Upload to Supabase Storage - posts bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -363,7 +473,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         });
         
         if (uploadError.message?.includes('policy') || uploadError.message?.includes('permission')) {
-          console.error('❌ STORAGE PERMISSIONS ERROR');
+          console.error('STORAGE PERMISSIONS ERROR');
           console.error('The "posts" bucket has permission issues.');
           console.error('Check: Supabase Dashboard > Storage > posts > Policies');
         }
@@ -371,7 +481,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         return uri;
       }
 
-      console.log('Posts: ✓ Upload successful', { path, size: blob.size });
+      if (__DEV__) console.log('Posts: Upload successful', { path, size: blob.size });
 
       // Get public URL for the uploaded file
       const { data: publicUrlData } = supabase.storage
@@ -384,7 +494,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         return uri;
       }
 
-      console.log(`Posts: ✓ Public URL generated for ${mType}:`, publicUrl);
+      if (__DEV__) console.log(`Posts: Public URL generated for ${mType}:`, publicUrl);
       return publicUrl;
       
     } catch (error) {
@@ -469,17 +579,17 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
   // Like/unlike a post
   const likePost = useCallback(async (postId: string) => {
     if (!user) {
-      console.log('User not authenticated, cannot like post');
+      if (__DEV__) console.log('User not authenticated, cannot like post');
       return;
     }
 
     const post = posts.find(p => p.id === postId);
     if (!post) {
-      console.log('Post not found:', postId);
+      if (__DEV__) console.log('Post not found:', postId);
       return;
     }
 
-    console.log('Toggling like for post:', postId, 'current isLiked:', post.isLiked, 'current likes:', post.likes);
+    if (__DEV__) console.log('Toggling like for post:', postId, 'current isLiked:', post.isLiked, 'current likes:', post.likes);
 
     if (!isSupabaseConfigured) {
       // Optimistically update the UI for mock data
@@ -488,7 +598,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           if (p.id === postId) {
             const newIsLiked = !p.isLiked;
             const newLikes = newIsLiked ? p.likes + 1 : p.likes - 1;
-            console.log('Mock data update - newIsLiked:', newIsLiked, 'newLikes:', newLikes);
+            if (__DEV__) console.log('Mock data update - newIsLiked:', newIsLiked, 'newLikes:', newLikes);
             return {
               ...p,
               isLiked: newIsLiked,
@@ -522,7 +632,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     try {
       if (wasLiked) {
         // Unlike post
-        console.log('Unliking post:', postId);
+        if (__DEV__) console.log('Unliking post:', postId);
         const { error } = await supabase
           .from('likes')
           .delete()
@@ -546,10 +656,10 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           );
           return;
         }
-        console.log('Successfully unliked post');
+        if (__DEV__) console.log('Successfully unliked post');
       } else {
         // Like post
-        console.log('Liking post:', postId);
+        if (__DEV__) console.log('Liking post:', postId);
         const { error } = await supabase
           .from('likes')
           .insert({
@@ -575,7 +685,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
           return;
         }
         
-        console.log('Successfully liked post');
+        if (__DEV__) console.log('Successfully liked post');
         
         // Notification will be sent automatically by database trigger
       }
@@ -719,6 +829,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
 
   // Refresh posts
   const refreshPosts = useCallback(async () => {
+    setHasMore(true);
     await loadPosts();
   }, [loadPosts]);
 
@@ -734,12 +845,12 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     const channel = supabase
       .channel('posts_and_profiles_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, (payload: any) => {
-        console.log('Posts change detected:', payload);
+        if (__DEV__) console.log('Posts change detected:', payload);
         // Reload posts for any post changes except optimistic like updates
         loadPosts();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, (payload: any) => {
-        console.log('Likes change detected:', payload);
+        if (__DEV__) console.log('Likes change detected:', payload);
         // When likes change, update the specific post's like count and status
         if (payload.eventType === 'INSERT' && payload.new) {
           const { post_id, user_id } = payload.new;
@@ -772,12 +883,12 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {
-        console.log('Profile change detected (reload posts to refresh author meta):', payload?.new?.id || payload?.old?.id);
+        if (__DEV__) console.log('Profile change detected (reload posts to refresh author meta):', payload?.new?.id || payload?.old?.id);
         if (payload.eventType === 'DELETE') {
           // When a user is deleted, remove their posts from the local state immediately
           const deletedUserId = payload.old?.id;
           if (deletedUserId) {
-            console.log('User deleted, removing their posts from local state:', deletedUserId);
+            if (__DEV__) console.log('User deleted, removing their posts from local state:', deletedUserId);
             setPosts(prevPosts => prevPosts.filter(post => post.userId !== deletedUserId));
           }
         }
@@ -795,7 +906,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     if (!isSupabaseConfigured || !userId) return [];
 
     try {
-      console.log('getLikedAthletes: Fetching liked athletes for user', userId);
+      if (__DEV__) console.log('getLikedAthletes: Fetching liked athletes for user', userId);
 
       const { data: likesData, error: likesError } = await supabase
         .from('likes')
@@ -803,7 +914,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         .eq('user_id', userId);
 
       if (likesError || !likesData?.length) {
-        console.log('getLikedAthletes: No likes found or error', likesError);
+        if (__DEV__) console.log('getLikedAthletes: No likes found or error', likesError);
         return [];
       }
 
@@ -815,7 +926,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         .in('id', postIds);
 
       if (postsError || !postsData?.length) {
-        console.log('getLikedAthletes: No posts found or error', postsError);
+        if (__DEV__) console.log('getLikedAthletes: No posts found or error', postsError);
         return [];
       }
 
@@ -830,7 +941,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         .eq('role', 'athlete');
 
       if (profilesError || !profilesData?.length) {
-        console.log('getLikedAthletes: No athlete profiles found or error', profilesError);
+        if (__DEV__) console.log('getLikedAthletes: No athlete profiles found or error', profilesError);
         return [];
       }
 
@@ -847,7 +958,7 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
         roleSpecificData: profile.role_specific_data || {},
       }));
 
-      console.log('getLikedAthletes: Found', athletes.length, 'liked athletes');
+      if (__DEV__) console.log('getLikedAthletes: Found', athletes.length, 'liked athletes');
       return athletes;
     } catch (error) {
       console.error('getLikedAthletes: Error', error);
@@ -858,11 +969,14 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
   return useMemo(() => ({
     posts,
     isLoading,
+    hasMore,
+    isLoadingMore,
     refreshPosts,
+    loadMore,
     createPost,
     likePost,
     deletePost,
     updatePost,
     getLikedAthletes,
-  }), [posts, isLoading, refreshPosts, createPost, likePost, deletePost, updatePost, getLikedAthletes]);
+  }), [posts, isLoading, hasMore, isLoadingMore, refreshPosts, loadMore, createPost, likePost, deletePost, updatePost, getLikedAthletes]);
 });

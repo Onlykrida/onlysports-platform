@@ -83,7 +83,7 @@ export default function TabLayout() {
             return canCreateOpportunity ? (
               <TouchableOpacity 
                 style={{ marginRight: theme.spacing.md }}
-                onPress={() => {}}
+                onPress={() => router.push('/opportunities/create')}
                 testID="create-opportunity-button"
               >
                 <Plus size={24} color={theme.colors.primary} />

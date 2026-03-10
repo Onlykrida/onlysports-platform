@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -34,8 +34,10 @@ import ShareModal from '@/components/ShareModal';
 import PostActionsMenu from '@/components/PostActionsMenu';
 import EditPostModal from '@/components/EditPostModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 
 import VideoPlayer from '@/components/VideoPlayer';
+import { PostSkeletonList } from '@/components/SkeletonScreens';
 
 const { width } = Dimensions.get('window');
 
@@ -70,7 +72,7 @@ const getRoleBadgeColor = (role: string) => {
 };
 
 export default function HomeScreen() {
-  const { posts, isLoading, refreshPosts, likePost, deletePost, updatePost } = usePosts();
+  const { posts, isLoading, refreshPosts, likePost, deletePost, updatePost, loadMore, hasMore, isLoadingMore } = usePosts();
   const { topRecommendations } = useScouting();
   const { user } = useAuth();
   const { applyToOpportunity } = useOpportunities();
@@ -81,8 +83,11 @@ export default function HomeScreen() {
   const [editVisible, setEditVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
-  
-  console.log('HomeScreen render - posts:', posts.length, 'isLoading:', isLoading, 'user:', user?.name);
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(EVENTS.SCREEN_VIEW, { screen: 'home' });
+  }, []);
 
   const handleDeletePost = useCallback(async (postId: string) => {
     const result = await deletePost(postId);
@@ -100,6 +105,7 @@ export default function HomeScreen() {
   };
 
   const handleCommentsPress = (post: Post) => {
+    track(EVENTS.POST_COMMENTED, { postId: post.id });
     setSelectedPost(post);
     setCommentsModalVisible(true);
   };
@@ -164,9 +170,9 @@ export default function HomeScreen() {
   const renderPost = ({ item }: { item: Post }) => (
     <View style={styles.postContainer} testID={`post-${item.id}`}>
       <View style={styles.postHeader}>
-        <TouchableOpacity style={styles.userInfo} onPress={() => handleUserPress(item.userId)}>
+        <TouchableOpacity style={styles.userInfo} onPress={() => handleUserPress(item.userId)} accessibilityRole="button" accessibilityLabel={`View ${item.userName}'s profile`}>
           <View style={styles.avatarContainer}>
-            <Image source={{ uri: item.userAvatar }} style={styles.avatar} />
+            <Image source={{ uri: item.userAvatar }} style={styles.avatar} accessibilityLabel={`${item.userName}'s avatar`} />
             <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(item.userRole) }]}>
               {getRoleIcon(item.userRole)}
             </View>
@@ -187,18 +193,22 @@ export default function HomeScreen() {
         {renderBadge(item.userRole, topRecommendations[user?.id ?? '']?.find(r => r.player_id === item.userId)?.fit_score)}
         <View style={styles.headerActions}>
           {user?.id === item.userId && (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => openMenu(item)}
               style={styles.menuButton}
               testID={`post-menu-${item.id}`}
+              accessibilityRole="button"
+              accessibilityLabel="Post options"
             >
               <MoreVertical size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.saveButton}
             onPress={() => handleSaveToggle(item.id)}
             testID={`save-button-${item.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={savedPosts.has(item.id) ? 'Unsave post' : 'Save post'}
           >
             <Star 
               size={20} 
@@ -237,9 +247,12 @@ export default function HomeScreen() {
               Deadline: {new Date(item.opportunityData.deadline).toLocaleDateString()}
             </Text>
             {user?.role === 'athlete' && !item.opportunityData.hasApplied && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.applyButton}
                 onPress={() => handleApplyToOpportunity(item.id)}
+                accessibilityRole="button"
+                accessibilityLabel="Apply to opportunity"
+                accessibilityHint="Submits your application for this opportunity"
               >
                 <Text style={styles.applyButtonText}>Apply Now</Text>
               </TouchableOpacity>
@@ -258,7 +271,7 @@ export default function HomeScreen() {
       {item.media && (
         <View style={styles.mediaContainer}>
           {item.media.type === 'image' ? (
-            <Image source={{ uri: item.media.url }} style={styles.postImage} />
+            <Image source={{ uri: item.media.url }} style={styles.postImage} accessibilityLabel="Post image" accessibilityRole="image" />
           ) : (
             <VideoPlayer
               uri={item.media.url ?? ''}
@@ -275,9 +288,11 @@ export default function HomeScreen() {
       )}
 
       {!item.isOpportunity && <View style={styles.postActions}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.actionButton, item.isLiked && styles.likedButton]}
-          onPress={() => likePost(item.id)}
+          onPress={() => { track(EVENTS.POST_LIKED, { postId: item.id }); likePost(item.id); }}
+          accessibilityRole="button"
+          accessibilityLabel={item.isLiked ? `Unlike post, ${item.likes} likes` : `Like post, ${item.likes} likes`}
         >
           <Zap 
             size={24} 
@@ -289,12 +304,12 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleCommentsPress(item)}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => handleCommentsPress(item)} accessibilityRole="button" accessibilityLabel={`Comments, ${item.comments}`}>
           <MessageSquare size={22} color={theme.colors.textSecondary} />
           <Text style={styles.actionText}>{item.comments}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleSharePress(item)}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => handleSharePress(item)} accessibilityRole="button" accessibilityLabel="Share post">
           <Send size={22} color={theme.colors.textSecondary} />
           <Text style={styles.actionText}>Share</Text>
         </TouchableOpacity>
@@ -305,10 +320,7 @@ export default function HomeScreen() {
   if (isLoading && posts.length === 0) {
     return (
       <BgGradient style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading the action...</Text>
-        </View>
+        <PostSkeletonList />
       </BgGradient>
     );
   }
@@ -320,9 +332,11 @@ export default function HomeScreen() {
           <Trophy size={48} color={theme.colors.textSecondary} />
           <Text style={styles.emptyText}>No highlights yet</Text>
           <Text style={styles.emptySubtext}>Be the first to share your sports moment!</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.refreshButton}
             onPress={refreshPosts}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh feed"
           >
             <Text style={styles.refreshButtonText}>Refresh Feed</Text>
           </TouchableOpacity>
@@ -347,6 +361,15 @@ export default function HomeScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
+        onEndReached={() => loadMore()}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          isLoadingMore ? (
+            <View style={styles.footerLoader}>
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            </View>
+          ) : null
+        }
       />
       
       {/* Comments Modal */}
@@ -737,5 +760,10 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
+  },
+  footerLoader: {
+    paddingVertical: theme.spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

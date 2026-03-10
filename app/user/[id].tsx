@@ -40,6 +40,7 @@ import { useNotifications } from '@/hooks/notifications-context';
 import { usePosts } from '@/hooks/posts-context';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Button } from '@/components/Button';
+import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 import VideoPlayer from '@/components/VideoPlayer';
 
 const getRoleIcon = (role: string) => {
@@ -94,6 +95,13 @@ export default function UserProfileScreen() {
   const hasExpressedInterest = checkInterest(id || '');
   const [interestedOrganizations, setInterestedOrganizations] = useState<User[]>([]);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    if (id) {
+      track(EVENTS.PROFILE_VIEWED, { viewedUserId: id });
+    }
+  }, [id]);
 
   const loadUserProfile = React.useCallback(async () => {
     if (!id || !isSupabaseConfigured) return;
@@ -101,7 +109,7 @@ export default function UserProfileScreen() {
     try {
       setIsLoading(true);
 
-      console.log('UserProfileScreen: loading profile', { id });
+      if (__DEV__) console.log('UserProfileScreen: loading profile', { id });
 
       const { data: userData, error: userError } = await supabase
         .from('profiles')
@@ -116,7 +124,7 @@ export default function UserProfileScreen() {
       }
 
       if (!userData) {
-        console.log('UserProfileScreen: User not found in database:', id);
+        if (__DEV__) console.log('UserProfileScreen: User not found in database:', id);
         setProfileUser(null);
         setIsLoading(false);
         return;
@@ -154,20 +162,20 @@ export default function UserProfileScreen() {
       setUserPosts(filteredPosts);
       
       if (userData?.role === 'athlete') {
-        console.log('UserProfile: Loading interested organizations for athlete', id);
+        if (__DEV__) console.log('UserProfile: Loading interested organizations for athlete', id);
         const orgs = await getInterestedOrganizations(id);
-        console.log('UserProfile: Interested organizations loaded', { count: orgs.length, orgs });
+        if (__DEV__) console.log('UserProfile: Interested organizations loaded', { count: orgs.length, orgs });
         setInterestedOrganizations(orgs);
       }
       
       if (userData?.role && ['coach', 'scout', 'team', 'academy'].includes(userData.role)) {
-        console.log('UserProfile: Loading interested athletes for organization', id);
+        if (__DEV__) console.log('UserProfile: Loading interested athletes for organization', id);
         try {
           const athletes = await getInterestedAthletesForOrg(id);
-          console.log('UserProfile: Interested athletes loaded', { count: athletes.length });
+          if (__DEV__) console.log('UserProfile: Interested athletes loaded', { count: athletes.length });
           setRecommendedAthletes(athletes);
         } catch (e) {
-          console.log('UserProfile: interested athletes load failed', e);
+          if (__DEV__) console.log('UserProfile: interested athletes load failed', e);
         }
       }
     } catch (error) {
@@ -186,9 +194,13 @@ export default function UserProfileScreen() {
     if (!id) return;
     try {
       const res = await getInterestedForPlayer(id, 70);
-      setInterested(res.map((x) => ({ scoutName: x.scout.name, score: x.rec.fit_score })));
+      setInterested(
+        res
+          .filter((x) => x.scout != null)
+          .map((x) => ({ scoutName: x.scout?.name ?? 'Unknown', score: x.rec.fit_score }))
+      );
     } catch (e) {
-      console.log('UserProfile: interested load failed', e);
+      if (__DEV__) console.log('UserProfile: interested load failed', e);
     }
   }, [id, getInterestedForPlayer]);
 
@@ -209,7 +221,7 @@ export default function UserProfileScreen() {
         table: 'ai_recommendations',
         filter: `player_id=eq.${id}`
       }, async () => {
-        console.log('UserProfile: AI recommendation changed, refreshing');
+        if (__DEV__) console.log('UserProfile: AI recommendation changed, refreshing');
         void loadInterestedScouts();
         const orgs = await getInterestedOrganizations(id);
         setInterestedOrganizations(orgs);
@@ -266,22 +278,22 @@ export default function UserProfileScreen() {
     setIsInterestLoading(true);
     try {
       if (hasExpressedInterest) {
-        console.log('UserProfile: Removing interest', { profileUserId: profileUser.id });
+        if (__DEV__) console.log('UserProfile: Removing interest', { profileUserId: profileUser.id });
         const result = await removeInterest(profileUser.id);
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
-          console.log('UserProfile: Interest removed, updating UI');
+          if (__DEV__) console.log('UserProfile: Interest removed, updating UI');
           setInterestedOrganizations(prev => prev.filter(org => org.id !== currentUser.id));
           Alert.alert('Success', 'Interest removed');
         }
       } else {
-        console.log('UserProfile: Expressing interest', { profileUserId: profileUser.id, currentUserId: currentUser.id });
+        if (__DEV__) console.log('UserProfile: Expressing interest', { profileUserId: profileUser.id, currentUserId: currentUser.id });
         const result = await expressInterest(profileUser.id);
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
-          console.log('UserProfile: Interest expressed, updating UI and sending notification');
+          if (__DEV__) console.log('UserProfile: Interest expressed, updating UI and sending notification');
           setInterestedOrganizations(prev => {
             const exists = prev.some(org => org.id === currentUser.id);
             if (exists) return prev;

@@ -35,18 +35,22 @@ export interface Application {
   // Populated fields
   athleteName?: string;
   athleteAvatar?: string;
+  athleteSport?: string;
+  athletePosition?: string;
   opportunityTitle?: string;
 }
 
 interface OpportunitiesState {
   opportunities: Opportunity[];
   myApplications: Application[];
+  receivedApplications: Application[];
   isLoading: boolean;
   createOpportunity: (opportunity: Omit<Opportunity, 'id' | 'createdAt' | 'updatedAt' | 'teamId'>) => Promise<{ error?: string }>;
   applyToOpportunity: (opportunityId: string) => Promise<{ error?: string }>;
   updateApplicationStatus: (applicationId: string, status: Application['status']) => Promise<{ error?: string }>;
   loadOpportunities: () => Promise<void>;
   loadMyApplications: () => Promise<void>;
+  loadReceivedApplications: () => Promise<void>;
   refreshOpportunities: () => Promise<void>;
 }
 
@@ -55,6 +59,7 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
   const { createNotification } = useNotifications();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [myApplications, setMyApplications] = useState<Application[]>([]);
+  const [receivedApplications, setReceivedApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadOpportunities = useCallback(async () => {
@@ -138,6 +143,58 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
       setMyApplications(formattedApplications);
     } catch (error) {
       console.error('Failed to load applications:', error);
+    }
+  }, [user]);
+
+  const loadReceivedApplications = useCallback(async () => {
+    if (!user || !isSupabaseConfigured) return;
+
+    try {
+      // First get opportunity IDs owned by the current user
+      const { data: myOpportunities, error: oppError } = await supabase
+        .from('opportunities')
+        .select('id')
+        .eq('team_id', user.id);
+
+      if (oppError || !myOpportunities?.length) {
+        setReceivedApplications([]);
+        return;
+      }
+
+      const oppIds = myOpportunities.map((o: any) => o.id);
+
+      const { data: applicationsData, error } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          opportunity:opportunities(title, team_id),
+          athlete:profiles!applications_athlete_id_fkey(name, avatar, sport, position)
+        `)
+        .in('opportunity_id', oppIds)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading received applications:', error);
+        return;
+      }
+
+      const formattedApplications: Application[] = applicationsData?.map((app: any) => ({
+        id: app.id,
+        opportunityId: app.opportunity_id,
+        athleteId: app.athlete_id,
+        status: app.status,
+        createdAt: new Date(app.created_at),
+        updatedAt: new Date(app.updated_at || app.created_at),
+        athleteName: app.athlete?.name,
+        athleteAvatar: app.athlete?.avatar,
+        athleteSport: app.athlete?.sport,
+        athletePosition: app.athlete?.position,
+        opportunityTitle: app.opportunity?.title,
+      })) || [];
+
+      setReceivedApplications(formattedApplications);
+    } catch (error) {
+      console.error('Failed to load received applications:', error);
     }
   }, [user]);
 
@@ -272,24 +329,27 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
       }
 
       await loadMyApplications();
+      await loadReceivedApplications();
       return {};
     } catch (error) {
       console.error('Failed to update application status:', error);
       return { error: 'Failed to update application status' };
     }
-  }, [user, createNotification, loadMyApplications]);
+  }, [user, createNotification, loadMyApplications, loadReceivedApplications]);
 
   const refreshOpportunities = useCallback(async () => {
     await loadOpportunities();
     await loadMyApplications();
-  }, [loadOpportunities, loadMyApplications]);
+    await loadReceivedApplications();
+  }, [loadOpportunities, loadMyApplications, loadReceivedApplications]);
 
   useEffect(() => {
     if (user) {
       loadOpportunities();
       loadMyApplications();
+      loadReceivedApplications();
     }
-  }, [user, loadOpportunities, loadMyApplications]);
+  }, [user, loadOpportunities, loadMyApplications, loadReceivedApplications]);
 
   // Real-time updates for opportunities and applications
   useEffect(() => {
@@ -303,6 +363,7 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
       .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, () => {
         loadOpportunities();
         loadMyApplications();
+        loadReceivedApplications();
       })
       .subscribe();
 
@@ -314,12 +375,14 @@ export const [OpportunitiesProvider, useOpportunities] = createContextHook<Oppor
   return useMemo(() => ({
     opportunities,
     myApplications,
+    receivedApplications,
     isLoading,
     createOpportunity,
     applyToOpportunity,
     updateApplicationStatus,
     loadOpportunities,
     loadMyApplications,
+    loadReceivedApplications,
     refreshOpportunities,
-  }), [opportunities, myApplications, isLoading, createOpportunity, applyToOpportunity, updateApplicationStatus, loadOpportunities, loadMyApplications, refreshOpportunities]);
+  }), [opportunities, myApplications, receivedApplications, isLoading, createOpportunity, applyToOpportunity, updateApplicationStatus, loadOpportunities, loadMyApplications, loadReceivedApplications, refreshOpportunities]);
 });

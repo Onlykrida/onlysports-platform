@@ -4,11 +4,13 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider, useAuth } from "@/hooks/auth-context";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PostsProvider } from "@/hooks/posts-context";
 import { SearchProvider } from "@/hooks/search-context";
 import { FollowProvider } from "@/hooks/follow-context";
 import { NotificationProvider } from "@/hooks/notifications-context";
 import { MessagesProvider } from "@/hooks/messages-context";
+import { GroupsProvider } from "@/hooks/group-messages-context";
 import { UsersProvider } from "@/hooks/users-context";
 import { OpportunitiesProvider } from "@/hooks/opportunities-context";
 import { View, ActivityIndicator, StatusBar } from "react-native";
@@ -21,10 +23,16 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
+function PushNotificationRegistrar() {
+  // Only registers when user is authenticated (useAuth inside usePushNotifications)
+  usePushNotifications();
+  return null;
+}
+
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  console.log("RootLayoutNav: isAuthenticated:", isAuthenticated, "isLoading:", isLoading);
+  if (__DEV__) console.log("RootLayoutNav: isAuthenticated:", isAuthenticated, "isLoading:", isLoading);
 
   if (isLoading) {
     return (
@@ -38,6 +46,7 @@ function RootLayoutNav() {
 
   return (
     <BackgroundGradient>
+      {isAuthenticated && <PushNotificationRegistrar />}
       <Stack
         screenOptions={{
           headerBackTitle: "Back",
@@ -51,6 +60,7 @@ function RootLayoutNav() {
         <Stack.Screen name="settings" options={{ title: "Settings", presentation: "modal" }} />
         <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
         <Stack.Screen name="user/[id]" options={{ title: "Profile" }} />
+        <Stack.Screen name="team-dashboard" options={{ title: "Team Dashboard", headerShown: false }} />
         <Stack.Screen name="chat" options={{ headerShown: false }} />
       </Stack>
     </BackgroundGradient>
@@ -70,6 +80,7 @@ export default function RootLayout() {
           <NotificationProvider>
             <FollowProvider>
               <MessagesProvider>
+                <GroupsProvider>
                 <OpportunitiesProvider>
                   <UsersProvider>
                     <PostsProvider>
@@ -82,6 +93,7 @@ export default function RootLayout() {
                     </PostsProvider>
                   </UsersProvider>
                 </OpportunitiesProvider>
+              </GroupsProvider>
               </MessagesProvider>
             </FollowProvider>
           </NotificationProvider>

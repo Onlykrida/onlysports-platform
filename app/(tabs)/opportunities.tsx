@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -13,11 +13,11 @@ import {
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  DollarSign, 
+import {
+  Calendar,
+  MapPin,
+  Users,
+  DollarSign,
   Plus,
   Trophy,
   FileSignature,
@@ -26,13 +26,17 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  SlidersHorizontal
+  SlidersHorizontal,
+  ClipboardList,
+  Settings2,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import CreateOpportunityModal from '@/components/CreateOpportunityModal';
+import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
+import { OpportunitySkeletonList } from '@/components/SkeletonScreens';
 
 type OpportunityCategory = 'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
 type OpportunityType = 'paid' | 'unpaid' | 'local' | 'national' | 'short-term' | 'long-term';
@@ -61,7 +65,12 @@ export default function OpportunitiesScreen() {
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(EVENTS.SCREEN_VIEW, { screen: 'opportunities' });
+  }, []);
+
   const canCreateOpportunity = user?.role === 'coach' || 
                                 user?.role === 'scout' || 
                                 user?.role === 'team' ||
@@ -98,7 +107,7 @@ export default function OpportunitiesScreen() {
     }
     
     if (selectedSport) {
-      list = list.filter((opp) => opp.sport.toLowerCase() === selectedSport.toLowerCase());
+      list = list.filter((opp) => opp.sport?.toLowerCase() === selectedSport.toLowerCase());
     }
     
     if (selectedPayment) {
@@ -141,6 +150,7 @@ export default function OpportunitiesScreen() {
       if (error) {
         Alert.alert('Error', error);
       } else {
+        track(EVENTS.OPPORTUNITY_APPLIED, { opportunityId });
         Alert.alert('Success', 'Your application has been submitted!');
       }
     } catch (error) {
@@ -148,14 +158,16 @@ export default function OpportunitiesScreen() {
     } finally {
       setApplyingTo(null);
     }
-  }, [user, applyToOpportunity]);
+  }, [user, applyToOpportunity, track]);
 
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'tryout': return theme.colors.primary;
       case 'tournament': return theme.colors.secondary;
       case 'sponsorship': return theme.colors.accent;
+      case 'scholarship': return theme.colors.accent;
       case 'job': return theme.colors.success;
+      case 'camp': return theme.colors.success;
       default: return theme.colors.textSecondary;
     }
   };
@@ -165,7 +177,7 @@ export default function OpportunitiesScreen() {
     const canApply = user?.role === 'athlete' && !item.hasApplied;
     
     return (
-      <TouchableOpacity style={styles.opportunityCard}>
+      <TouchableOpacity style={styles.opportunityCard} onPress={() => track(EVENTS.OPPORTUNITY_VIEWED, { opportunityId: item.id })}>
         <View style={styles.cardHeader}>
           <View style={[styles.typeTag, { backgroundColor: getTypeColor(item.type) }]}>
             <Text style={styles.typeText}>{item.type.toUpperCase()}</Text>
@@ -411,6 +423,30 @@ export default function OpportunitiesScreen() {
             )}
           </TouchableOpacity>
         </View>
+        <View style={styles.navButtonsRow}>
+          {user?.role === 'athlete' && (
+            <TouchableOpacity
+              style={styles.navButton}
+              onPress={() => router.push('/opportunities/my-applications')}
+              testID="my-applications-button"
+            >
+              <ClipboardList size={16} color={theme.colors.primary} />
+              <Text style={styles.navButtonText}>My Applications</Text>
+              <ChevronRight size={16} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+          {canCreateOpportunity && (
+            <TouchableOpacity
+              style={styles.navButton}
+              onPress={() => router.push('/opportunities/manage-applications')}
+              testID="manage-applications-button"
+            >
+              <Settings2 size={16} color={theme.colors.primary} />
+              <Text style={styles.navButtonText}>Manage Applications</Text>
+              <ChevronRight size={16} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       <Animated.View style={[styles.filtersWrap, { maxHeight: filterMaxHeight, opacity: filterOpacity }]}>
         <ScrollView
@@ -516,10 +552,7 @@ export default function OpportunitiesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         {FiltersBar}
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading opportunities...</Text>
-        </View>
+        <OpportunitySkeletonList />
       </SafeAreaView>
     );
   }
@@ -1131,6 +1164,28 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     color: theme.colors.textSecondary,
     textAlign: 'center',
+  },
+  navButtonsRow: {
+    flexDirection: 'column',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
+  },
+  navButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.sm,
+  },
+  navButtonText: {
+    flex: 1,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.text,
   },
   headerButton: {
     marginRight: theme.spacing.md,

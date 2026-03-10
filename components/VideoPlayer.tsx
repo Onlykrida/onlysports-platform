@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { View, StyleSheet, ViewStyle, Image, Platform, Text, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ViewStyle, Image, Platform, Text, ActivityIndicator, DimensionValue } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 
 interface VideoPlayerProps {
@@ -37,9 +37,9 @@ export default function VideoPlayer({
   });
 
   useEffect(() => {
-    console.log('[VideoPlayer] Initializing with URI:', uri);
-    console.log('[VideoPlayer] Poster:', poster);
-    console.log('[VideoPlayer] Platform:', Platform.OS);
+    if (__DEV__) console.log('[VideoPlayer] Initializing with URI:', uri);
+    if (__DEV__) console.log('[VideoPlayer] Poster:', poster);
+    if (__DEV__) console.log('[VideoPlayer] Platform:', Platform.OS);
     setError(null);
     setIsLoading(true);
   }, [uri, poster]);
@@ -50,10 +50,10 @@ export default function VideoPlayer({
     if (!player) return;
 
     const subscription = player.addListener('statusChange', (status) => {
-      console.log('[VideoPlayer] Status:', status);
-      
+      if (__DEV__) console.log('[VideoPlayer] Status:', status);
+
       if (status.status === 'readyToPlay') {
-        console.log('[VideoPlayer] Video ready to play');
+        if (__DEV__) console.log('[VideoPlayer] Video ready to play');
         setIsLoading(false);
         setError(null);
       } else if (status.status === 'error') {
@@ -80,7 +80,7 @@ export default function VideoPlayer({
   }, [player]);
 
   return (
-    <View style={[styles.container, { height, width }, style]} testID={`${testID}-container`}>
+    <View style={[styles.container, { height, width: width as DimensionValue }, style]} testID={`${testID}-container`}>
       {error ? (
         <View style={styles.errorContainer}>
           {posterSource ? (
