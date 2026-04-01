@@ -61,7 +61,21 @@ interface GroupsState {
   refreshGroups: () => Promise<void>;
 }
 
-export const [GroupsProvider, useGroups] = createContextHook<GroupsState>(() => {
+const GROUPS_DEFAULTS: GroupsState = {
+  groups: [],
+  groupMessages: {},
+  isLoading: false,
+  createGroup: async () => ({}),
+  sendGroupMessage: async () => ({}),
+  loadGroupMessages: async () => {},
+  addMember: async () => ({}),
+  removeMember: async () => ({}),
+  leaveGroup: async () => ({}),
+  getGroupMembers: async () => [],
+  refreshGroups: async () => {},
+};
+
+const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
   const { user } = useAuth();
   const { createNotification } = useNotifications();
   const [groups, setGroups] = useState<Group[]>([]);
@@ -536,3 +550,6 @@ export const [GroupsProvider, useGroups] = createContextHook<GroupsState>(() => 
     ],
   );
 });
+
+export { GroupsProvider };
+export const useGroups = () => _useGroups() ?? GROUPS_DEFAULTS;

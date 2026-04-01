@@ -18,7 +18,19 @@ interface FollowState {
   refreshFollows: () => Promise<void>;
 }
 
-export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => {
+const FOLLOW_DEFAULTS: FollowState = {
+  followers: [],
+  following: [],
+  isLoading: false,
+  followUser: async () => ({}),
+  unfollowUser: async () => ({}),
+  isFollowing: () => false,
+  getFollowersCount: async () => 0,
+  getFollowingCount: async () => 0,
+  refreshFollows: async () => {},
+};
+
+const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
   const [followers, setFollowers] = useState<User[]>([]);
   const [following, setFollowing] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -35,12 +47,14 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
       // Load following
       const { data: followingData, error: followingError } = await supabase
         .from('follows')
-        .select(`
+        .select(
+          `
           following_id,
           profiles!follows_following_id_fkey (
             id, name, avatar, role, sport, verified
           )
-        `)
+        `,
+        )
         .eq('follower_id', user.id);
 
       if (followingError) {
@@ -63,12 +77,14 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
       // Load followers
       const { data: followersData, error: followersError } = await supabase
         .from('follows')
-        .select(`
+        .select(
+          `
           follower_id,
           profiles!follows_follower_id_fkey (
             id, name, avatar, role, sport, verified
           )
-        `)
+        `,
+        )
         .eq('following_id', user.id);
 
       if (followersError) {
@@ -98,107 +114,114 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
     loadFollows();
   }, [loadFollows]);
 
-  const isFollowing = useCallback((userId: string) => {
-    return following.some(user => user.id === userId);
-  }, [following]);
+  const isFollowing = useCallback(
+    (userId: string) => {
+      return following.some((user) => user.id === userId);
+    },
+    [following],
+  );
 
-  const followUser = useCallback(async (userId: string) => {
-    if (!user || !isSupabaseConfigured) {
-      return { error: 'Not authenticated or database not configured' };
-    }
-
-    // Prevent users from following themselves
-    if (user.id === userId) {
-      if (__DEV__) console.log('Attempted self-follow blocked for user:', user.id);
-      return { error: 'You cannot follow yourself' };
-    }
-
-    // Check if already following
-    if (isFollowing(userId)) {
-      return { error: 'You are already following this user' };
-    }
-
-    try {
-      if (__DEV__) console.log('Attempting to follow user:', userId, 'by user:', user.id);
-      
-      // First check if the target user exists
-      const { data: targetUser, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .single();
-
-      if (userError || !targetUser) {
-        console.error('Target user not found:', userError);
-        return { error: 'User not found' };
+  const followUser = useCallback(
+    async (userId: string) => {
+      if (!user || !isSupabaseConfigured) {
+        return { error: 'Not authenticated or database not configured' };
       }
-      
-      const { error } = await supabase
-        .from('follows')
-        .insert({
+
+      // Prevent users from following themselves
+      if (user.id === userId) {
+        if (__DEV__) console.log('Attempted self-follow blocked for user:', user.id);
+        return { error: 'You cannot follow yourself' };
+      }
+
+      // Check if already following
+      if (isFollowing(userId)) {
+        return { error: 'You are already following this user' };
+      }
+
+      try {
+        if (__DEV__) console.log('Attempting to follow user:', userId, 'by user:', user.id);
+
+        // First check if the target user exists
+        const { data: targetUser, error: userError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', userId)
+          .single();
+
+        if (userError || !targetUser) {
+          console.error('Target user not found:', userError);
+          return { error: 'User not found' };
+        }
+
+        const { error } = await supabase.from('follows').insert({
           follower_id: user.id,
           following_id: userId,
         });
 
-      if (error) {
-        console.error('Follow error:', error);
-        // Handle specific constraint violations
-        if (error.code === '23514' && error.message.includes('follows_no_self_follow')) {
-          return { error: 'You cannot follow yourself' };
+        if (error) {
+          console.error('Follow error:', error);
+          // Handle specific constraint violations
+          if (error.code === '23514' && error.message.includes('follows_no_self_follow')) {
+            return { error: 'You cannot follow yourself' };
+          }
+          if (error.code === '23505') {
+            return { error: 'You are already following this user' };
+          }
+          if (error.code === '23503') {
+            return { error: 'User not found' };
+          }
+          return { error: 'Failed to follow user. Please try again.' };
         }
-        if (error.code === '23505') {
-          return { error: 'You are already following this user' };
-        }
-        if (error.code === '23503') {
-          return { error: 'User not found' };
-        }
-        return { error: 'Failed to follow user. Please try again.' };
+
+        if (__DEV__) console.log('Successfully followed user:', userId);
+        if (__DEV__) console.log('Follow notification will be handled by database trigger');
+        track(EVENTS.FOLLOW, { targetUserId: userId });
+
+        // Refresh follows
+        await loadFollows();
+        return {};
+      } catch (error) {
+        console.error('Follow failed:', error);
+        return { error: 'Failed to follow user' };
+      }
+    },
+    [user, loadFollows, isFollowing, createNotification, track],
+  );
+
+  const unfollowUser = useCallback(
+    async (userId: string) => {
+      if (!user || !isSupabaseConfigured) {
+        return { error: 'Not authenticated or database not configured' };
       }
 
-      if (__DEV__) console.log('Successfully followed user:', userId);
-      if (__DEV__) console.log('Follow notification will be handled by database trigger');
-      track(EVENTS.FOLLOW, { targetUserId: userId });
-      
-      // Refresh follows
-      await loadFollows();
-      return {};
-    } catch (error) {
-      console.error('Follow failed:', error);
-      return { error: 'Failed to follow user' };
-    }
-  }, [user, loadFollows, isFollowing, createNotification, track]);
-
-  const unfollowUser = useCallback(async (userId: string) => {
-    if (!user || !isSupabaseConfigured) {
-      return { error: 'Not authenticated or database not configured' };
-    }
-
-    // Prevent users from unfollowing themselves (shouldn't happen, but safety check)
-    if (user.id === userId) {
-      return { error: 'You cannot unfollow yourself' };
-    }
-
-    try {
-      const { error } = await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', user.id)
-        .eq('following_id', userId);
-
-      if (error) {
-        console.error('Unfollow error:', error);
-        return { error: error.message };
+      // Prevent users from unfollowing themselves (shouldn't happen, but safety check)
+      if (user.id === userId) {
+        return { error: 'You cannot unfollow yourself' };
       }
 
-      track(EVENTS.UNFOLLOW, { targetUserId: userId });
-      // Refresh follows
-      await loadFollows();
-      return {};
-    } catch (error) {
-      console.error('Unfollow failed:', error);
-      return { error: 'Failed to unfollow user' };
-    }
-  }, [user, loadFollows, track]);
+      try {
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', userId);
+
+        if (error) {
+          console.error('Unfollow error:', error);
+          return { error: error.message };
+        }
+
+        track(EVENTS.UNFOLLOW, { targetUserId: userId });
+        // Refresh follows
+        await loadFollows();
+        return {};
+      } catch (error) {
+        console.error('Unfollow failed:', error);
+        return { error: 'Failed to unfollow user' };
+      }
+    },
+    [user, loadFollows, track],
+  );
 
   const getFollowersCount = useCallback(async (userId: string) => {
     if (!isSupabaseConfigured) return 0;
@@ -246,15 +269,31 @@ export const [FollowProvider, useFollow] = createContextHook<FollowState>(() => 
     await loadFollows();
   }, [loadFollows]);
 
-  return useMemo(() => ({
-    followers,
-    following,
-    isLoading,
-    followUser,
-    unfollowUser,
-    isFollowing,
-    getFollowersCount,
-    getFollowingCount,
-    refreshFollows,
-  }), [followers, following, isLoading, followUser, unfollowUser, isFollowing, getFollowersCount, getFollowingCount, refreshFollows]);
+  return useMemo(
+    () => ({
+      followers,
+      following,
+      isLoading,
+      followUser,
+      unfollowUser,
+      isFollowing,
+      getFollowersCount,
+      getFollowingCount,
+      refreshFollows,
+    }),
+    [
+      followers,
+      following,
+      isLoading,
+      followUser,
+      unfollowUser,
+      isFollowing,
+      getFollowersCount,
+      getFollowingCount,
+      refreshFollows,
+    ],
+  );
 });
+
+export { FollowProvider };
+export const useFollow = () => _useFollow() ?? FOLLOW_DEFAULTS;

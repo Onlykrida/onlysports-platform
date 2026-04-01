@@ -24,7 +24,19 @@ interface AuthState {
   deleteAccount: () => Promise<{ error?: string }>;
 }
 
-export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
+const AUTH_DEFAULTS: AuthState = {
+  user: null,
+  session: null,
+  isLoading: false,
+  isAuthenticated: false,
+  login: async () => ({}),
+  signup: async () => ({}),
+  logout: async () => {},
+  updateProfile: async () => ({}),
+  deleteAccount: async () => ({}),
+};
+
+const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -742,3 +754,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthState>(() => {
     [user, session, isLoading, login, signup, logout, updateProfile, deleteAccount],
   );
 });
+
+export { AuthProvider };
+export const useAuth = () => _useAuth() ?? AUTH_DEFAULTS;

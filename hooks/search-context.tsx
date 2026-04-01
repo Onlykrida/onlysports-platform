@@ -15,7 +15,19 @@ interface SearchState {
   clearRecentSearches: () => void;
 }
 
-export const [SearchProvider, useSearch] = createContextHook<SearchState>(() => {
+const SEARCH_DEFAULTS: SearchState = {
+  searchQuery: '',
+  searchResults: [],
+  isSearching: false,
+  recentSearches: [],
+  setSearchQuery: () => {},
+  searchUsers: async () => {},
+  clearSearch: () => {},
+  addRecentSearch: () => {},
+  clearRecentSearches: () => {},
+};
+
+const [SearchProvider, _useSearch] = createContextHook<SearchState>(() => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
@@ -102,3 +114,6 @@ export const [SearchProvider, useSearch] = createContextHook<SearchState>(() => 
     ],
   );
 });
+
+export { SearchProvider };
+export const useSearch = () => _useSearch() ?? SEARCH_DEFAULTS;

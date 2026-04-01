@@ -11,8 +11,6 @@ import { Post, User } from '@/types';
 import { useScouting } from '@/hooks/scouting-context';
 import { usePosts } from '@/hooks/posts-context';
 import { useAuth } from '@/hooks/auth-context';
-import { useFitnessTest } from '@/hooks/fitness-test-context';
-import { FitnessTestCard } from '@/components/BeepTestCard';
 import CommentsModal from '@/components/CommentsModal';
 import ShareModal from '@/components/ShareModal';
 import PostActionsMenu from '@/components/PostActionsMenu';
@@ -43,7 +41,6 @@ export default function AthleteHome() {
   const { getInterestedOrganizations, topRecommendations } = useScouting();
   const { applyToOpportunity } = useOpportunities();
   const { track } = useAnalytics();
-  const { latestByType, history } = useFitnessTest();
 
   const [interestedOrgs, setInterestedOrgs] = useState<User[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
@@ -213,22 +210,6 @@ export default function AthleteHome() {
         highlightViews={highlightViews}
       />
       <AthleteQuickActions />
-      {user?.role === 'athlete' && (
-        <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
-          <FitnessTestCard
-            variant={Object.keys(latestByType).length > 0 ? 'athlete' : 'empty'}
-            latestByType={latestByType}
-            history={history}
-            onTakeTest={() => router.push('/beep-test' as any)}
-            onViewHistory={() =>
-              router.push({
-                pathname: '/beep-test-history' as any,
-                params: { athleteId: user.id, athleteName: user.name },
-              })
-            }
-          />
-        </View>
-      )}
       <AthleteFeedHeader />
     </View>
   );

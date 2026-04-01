@@ -45,7 +45,17 @@ interface MessagesState {
   refreshConversations: () => Promise<void>;
 }
 
-export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(() => {
+const MESSAGES_DEFAULTS: MessagesState = {
+  conversations: [],
+  messages: {},
+  isLoading: false,
+  sendMessage: async () => ({}),
+  markAsRead: async () => {},
+  loadMessages: async () => {},
+  refreshConversations: async () => {},
+};
+
+const [MessagesProvider, _useMessages] = createContextHook<MessagesState>(() => {
   const { user } = useAuth();
   const { createNotification } = useNotifications();
   const { track } = useAnalytics();
@@ -384,3 +394,6 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
     ],
   );
 });
+
+export { MessagesProvider };
+export const useMessages = () => _useMessages() ?? MESSAGES_DEFAULTS;

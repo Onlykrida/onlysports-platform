@@ -152,7 +152,38 @@ interface ScoutingState {
 const STORAGE_KEY = 'ai_recommendations_cache_v1';
 const SHORTLIST_STORAGE_KEY = 'scout_shortlist_cache_v1';
 
-export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(() => {
+const SCOUTING_DEFAULTS: ScoutingState = {
+  isReady: false,
+  isComputing: false,
+  topRecommendations: {},
+  interestedScouts: {},
+  computeForScout: async () => ({ recommendations: [] }),
+  getTopForScout: async () => [],
+  getInterestedForPlayer: async () => [],
+  refresh: async () => {},
+  expressInterest: async () => ({}),
+  removeInterest: async () => ({}),
+  hasExpressedInterest: () => false,
+  getInterestedOrganizations: async () => [],
+  getInterestedAthletesForOrg: async () => [],
+  shortlist: [],
+  shortlistAthlete: async () => ({}),
+  removeFromShortlist: async () => ({}),
+  updateShortlistNotes: async () => ({}),
+  getShortlist: () => [],
+  isShortlisted: () => false,
+  getScoutDashboard: async () => ({
+    matchedAthletes: [],
+    shortlistCount: 0,
+    viewedCount: 0,
+    contactedCount: 0,
+    recentActivity: [],
+  }),
+  dashboardData: null,
+  isDashboardLoading: false,
+};
+
+const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => {
   const { user: currentUser } = useAuth();
   const { users, refreshUsers } = useUsers();
   const { track } = useAnalytics();
@@ -1185,3 +1216,6 @@ export const [ScoutingProvider, useScouting] = createContextHook<ScoutingState>(
     ],
   );
 });
+
+export { ScoutingProvider };
+export const useScouting = () => _useScouting() ?? SCOUTING_DEFAULTS;

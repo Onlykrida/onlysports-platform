@@ -60,7 +60,27 @@ interface AIState {
   isConfigured: boolean;
 }
 
-export const [AIProvider, useAI] = createContextHook<AIState>(() => {
+const AI_DEFAULTS: AIState = {
+  aiMessages: [],
+  sendAIMessage: async () => {},
+  clearChat: () => {},
+  isChatLoading: false,
+  profileSummary: null,
+  generateSummary: async () => {},
+  isSummaryLoading: false,
+  profileTips: [],
+  getProfileTips: async () => {},
+  isTipsLoading: false,
+  opportunityMatches: [],
+  matchOpportunities: async () => {},
+  isMatchingLoading: false,
+  scoutRecommendations: [],
+  getRecommendations: async () => {},
+  isRecommendationsLoading: false,
+  isConfigured: false,
+};
+
+const [AIProvider, _useAI] = createContextHook<AIState>(() => {
   const { user } = useAuth();
 
   // Chat state
@@ -220,3 +240,6 @@ export const [AIProvider, useAI] = createContextHook<AIState>(() => {
     isConfigured: isAIConfigured(),
   };
 });
+
+export { AIProvider };
+export const useAI = () => _useAI() ?? AI_DEFAULTS;

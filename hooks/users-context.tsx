@@ -17,7 +17,16 @@ interface UsersState {
 
 const STORAGE_KEY = 'users_cache_v2'; // Updated to clear old duplicates
 
-export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
+const USERS_DEFAULTS: UsersState = {
+  users: [],
+  isLoading: false,
+  addOrUpdateUser: async () => {},
+  findByRole: () => [],
+  refreshUsers: async () => {},
+  clearAll: async () => {},
+};
+
+const [UsersProvider, _useUsers] = createContextHook<UsersState>(() => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { user: authUser } = useAuth();
@@ -211,3 +220,6 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
     [users, isLoading, addOrUpdateUser, findByRole, refreshUsers, clearAll],
   );
 });
+
+export { UsersProvider };
+export const useUsers = () => _useUsers() ?? USERS_DEFAULTS;
