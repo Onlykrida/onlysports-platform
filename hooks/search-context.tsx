@@ -29,10 +29,11 @@ export const [SearchProvider, useSearch] = createContextHook<SearchState>(() => 
 
     setIsSearching(true);
     try {
+      const sanitized = query.replace(/[,%()\\]/g, '');
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('id, name, email, role, avatar, sport, verified')
-        .or(`name.ilike.%${query}%,email.ilike.%${query}%,sport.ilike.%${query}%`)
+        .or(`name.ilike.%${sanitized}%,email.ilike.%${sanitized}%,sport.ilike.%${sanitized}%`)
         .limit(20);
 
       if (error) {
@@ -66,9 +67,9 @@ export const [SearchProvider, useSearch] = createContextHook<SearchState>(() => 
 
   const addRecentSearch = useCallback((query: string) => {
     if (!query.trim()) return;
-    
-    setRecentSearches(prev => {
-      const filtered = prev.filter(item => item !== query);
+
+    setRecentSearches((prev) => {
+      const filtered = prev.filter((item) => item !== query);
       return [query, ...filtered].slice(0, 10); // Keep only 10 recent searches
     });
   }, []);
@@ -77,15 +78,27 @@ export const [SearchProvider, useSearch] = createContextHook<SearchState>(() => 
     setRecentSearches([]);
   }, []);
 
-  return useMemo(() => ({
-    searchQuery,
-    searchResults,
-    isSearching,
-    recentSearches,
-    setSearchQuery,
-    searchUsers,
-    clearSearch,
-    addRecentSearch,
-    clearRecentSearches,
-  }), [searchQuery, searchResults, isSearching, recentSearches, searchUsers, clearSearch, addRecentSearch, clearRecentSearches]);
+  return useMemo(
+    () => ({
+      searchQuery,
+      searchResults,
+      isSearching,
+      recentSearches,
+      setSearchQuery,
+      searchUsers,
+      clearSearch,
+      addRecentSearch,
+      clearRecentSearches,
+    }),
+    [
+      searchQuery,
+      searchResults,
+      isSearching,
+      recentSearches,
+      searchUsers,
+      clearSearch,
+      addRecentSearch,
+      clearRecentSearches,
+    ],
+  );
 });

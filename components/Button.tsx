@@ -37,13 +37,15 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <TouchableOpacity
-      style={[
-        styles.base,
-        variantStyles[variant],
-        sizeStyles[size],
-        isDisabled && styles.disabled,
-        style,
-      ] as StyleProp<ViewStyle>}
+      style={
+        [
+          styles.base,
+          variantStyles[variant],
+          sizeStyles[size],
+          isDisabled && styles.disabled,
+          style,
+        ] as StyleProp<ViewStyle>
+      }
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8} // Slightly less opacity for better feedback
@@ -54,11 +56,11 @@ export const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           color={
-            variant === 'outline' || variant === 'ghost' 
-              ? theme.colors.primary 
+            variant === 'outline' || variant === 'ghost'
+              ? theme.colors.primary
               : variant === 'secondary' || variant === 'success'
-              ? theme.colors.black
-              : theme.colors.white
+                ? theme.colors.black
+                : theme.colors.white
           }
           size="small"
         />
@@ -66,12 +68,14 @@ export const Button: React.FC<ButtonProps> = ({
         <>
           {icon}
           <Text
-            style={[
-              styles.text,
-              variantTextStyles[variant],
-              sizeTextStyles[size],
-              textStyle,
-            ] as StyleProp<TextStyle>}
+            style={
+              [
+                styles.text,
+                variantTextStyles[variant],
+                sizeTextStyles[size],
+                textStyle,
+              ] as StyleProp<TextStyle>
+            }
           >
             {title}
           </Text>
@@ -89,37 +93,34 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.xl, // Large, bold, rounded buttons
     gap: theme.spacing.sm,
   },
-  // Electric Blue - energetic, professional, fresh (for buttons & highlights)
   primary: {
     backgroundColor: theme.colors.primary,
-    ...theme.shadow.electric, // Electric blue glow
+    shadowColor: '#30D158',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  // Neon Green - sporty, modern, dynamic (for success states or highlights)
   secondary: {
     backgroundColor: theme.colors.secondary,
-    ...theme.shadow.glow, // Neon green glow
   },
-  // Crimson Red - passion, energy, urgency (great for CTAs or accents)
   accent: {
     backgroundColor: theme.colors.accent,
-    ...theme.shadow.fire, // Crimson red glow
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: theme.colors.primary,
-    ...theme.shadow.electric,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   ghost: {
     backgroundColor: theme.colors.surface,
   },
   success: {
     backgroundColor: theme.colors.success,
-    ...theme.shadow.glow,
   },
   danger: {
     backgroundColor: theme.colors.danger,
-    ...theme.shadow.fire,
   },
   small: {
     paddingHorizontal: theme.spacing.lg,

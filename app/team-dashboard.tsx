@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
@@ -24,11 +23,14 @@ import {
   Zap,
 } from 'lucide-react-native';
 import { theme, formatRoleName } from '@/constants/theme';
+import CachedImage from '@/components/CachedImage';
 import { useAuth } from '@/hooks/auth-context';
 import { useOpportunities } from '@/hooks/opportunities-context';
 import { useScouting } from '@/hooks/scouting-context';
-import { User } from '@/types';
+import { User, FitnessTestResult } from '@/types';
 import { router } from 'expo-router';
+import { useFitnessTest } from '@/hooks/fitness-test-context';
+import { getZone } from '@/constants/fitness-test-data';
 
 const ORG_ROLES = ['team', 'coach', 'scout', 'gym', 'academy', 'brand'];
 
@@ -43,24 +45,43 @@ export default function TeamDashboardScreen() {
   } = useOpportunities();
   const { getInterestedAthletesForOrg, computeForScout, isComputing } = useScouting();
 
+  const { fetchLatestBatch } = useFitnessTest();
   const [interestedAthletes, setInterestedAthletes] = useState<User[]>([]);
+  const [fitnessTestMap, setFitnessTestMap] = useState<Map<string, FitnessTestResult>>(new Map());
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [updatingAppId, setUpdatingAppId] = useState<string | null>(null);
 
   // Filter to only this org's opportunities
-  const myOpportunities = opportunities.filter((o) => o.teamId === user?.id);
+  const myOpportunities = useMemo(
+    () => opportunities.filter((o) => o.teamId === user?.id),
+    [opportunities, user?.id],
+  );
 
   // Group applications by status
-  const pendingApps = receivedApplications.filter((a) => a.status === 'pending');
-  const acceptedApps = receivedApplications.filter((a) => a.status === 'accepted');
-  const rejectedApps = receivedApplications.filter((a) => a.status === 'rejected');
+  const pendingApps = useMemo(
+    () => receivedApplications.filter((a) => a.status === 'pending'),
+    [receivedApplications],
+  );
+  const acceptedApps = useMemo(
+    () => receivedApplications.filter((a) => a.status === 'accepted'),
+    [receivedApplications],
+  );
+  const rejectedApps = useMemo(
+    () => receivedApplications.filter((a) => a.status === 'rejected'),
+    [receivedApplications],
+  );
 
   const loadData = useCallback(async () => {
     if (!user) return;
     try {
       const athletes = await getInterestedAthletesForOrg(user.id);
       setInterestedAthletes(athletes);
+      // Batch-fetch fitness test results for zone badges
+      if (athletes.length > 0) {
+        const ftMap = await fetchLatestBatch(athletes.map((a) => a.id));
+        setFitnessTestMap(ftMap);
+      }
       await loadReceivedApplications();
       await loadOpportunities();
     } catch (e) {
@@ -189,16 +210,11 @@ export default function TeamDashboardScreen() {
                 <TouchableOpacity
                   key={athlete.id}
                   style={styles.athleteRow}
-                  onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: athlete.id } })}
+                  onPress={() =>
+                    router.push({ pathname: '/user/[id]' as any, params: { id: athlete.id } })
+                  }
                 >
-                  <Image
-                    source={{
-                      uri:
-                        athlete.avatar ||
-                        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-                    }}
-                    style={styles.athleteAvatar}
-                  />
+                  <CachedImage source={athlete.avatar} size={44} placeholder="avatar" />
                   <View style={styles.athleteInfo}>
                     <Text style={styles.athleteName}>{athlete.name}</Text>
                     <Text style={styles.athleteDetail}>
@@ -206,6 +222,23 @@ export default function TeamDashboardScreen() {
                       {athlete.position ? ` \u00B7 ${athlete.position}` : ''}
                     </Text>
                   </View>
+                  {fitnessTestMap.has(athlete.id) &&
+                    (() => {
+                      const ft = fitnessTestMap.get(athlete.id)!;
+                      const zone = getZone(ft.total_distance ?? 0);
+                      return (
+                        <View
+                          style={[
+                            styles.zoneBadge,
+                            { backgroundColor: zone.color + '22', borderColor: zone.color },
+                          ]}
+                        >
+                          <Text style={[styles.zoneBadgeText, { color: zone.color }]}>
+                            {zone.name.toUpperCase()}
+                          </Text>
+                        </View>
+                      );
+                    })()}
                   <ChevronRight size={18} color={theme.colors.textMuted} />
                 </TouchableOpacity>
               ))
@@ -253,14 +286,7 @@ export default function TeamDashboardScreen() {
               pendingApps.map((app) => (
                 <View key={app.id} style={styles.applicationCard}>
                   <View style={styles.appCardHeader}>
-                    <Image
-                      source={{
-                        uri:
-                          app.athleteAvatar ||
-                          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-                      }}
-                      style={styles.appAvatar}
-                    />
+                    <CachedImage source={app.athleteAvatar} size={40} placeholder="avatar" />
                     <View style={styles.appInfo}>
                       <Text style={styles.appName}>{app.athleteName || 'Unknown Athlete'}</Text>
                       <Text style={styles.appDetail}>
@@ -368,10 +394,7 @@ export default function TeamDashboardScreen() {
                         ]}
                       >
                         <Text
-                          style={[
-                            styles.oppTypeText,
-                            isExpired && { color: theme.colors.danger },
-                          ]}
+                          style={[styles.oppTypeText, isExpired && { color: theme.colors.danger }]}
                         >
                           {isExpired ? 'Expired' : opp.type}
                         </Text>
@@ -581,6 +604,19 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     marginTop: 2,
+  },
+  zoneBadge: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+    borderWidth: 1,
+    marginRight: theme.spacing.xs,
+  },
+  zoneBadgeText: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.black,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   // Status tabs

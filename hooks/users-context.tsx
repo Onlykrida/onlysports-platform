@@ -52,7 +52,9 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at')
+        .select(
+          'id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, followers_count, following_count, created_at',
+        )
         .limit(200);
       if (error) {
         if (__DEV__) console.log('UsersProvider: remote load error', error);
@@ -72,23 +74,14 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
         achievements: p.achievements ?? [],
         stats: p.stats ?? {},
         roleSpecificData: p.role_specific_data ?? {},
+        followersCount: p.followers_count ?? 0,
+        followingCount: p.following_count ?? 0,
         createdAt: new Date(p.created_at ?? Date.now()),
       }));
-      setUsers((prev) => {
-        const map = new Map<string, User>();
-        // First add remote users (they are more up-to-date)
-        remoteUsers.forEach((u) => map.set(u.id, u));
-        // Then add cached users only if they don't exist in remote
-        prev.forEach((u) => {
-          if (!map.has(u.id)) {
-            map.set(u.id, u);
-          }
-        });
-        const merged = Array.from(map.values());
-        if (__DEV__) console.log('UsersProvider: merged users count:', merged.length, 'remote:', remoteUsers.length, 'cached:', prev.length);
-        void persist(merged);
-        return merged;
-      });
+      // Replace local cache entirely with remote data (no stale mock/test users)
+      if (__DEV__) console.log('UsersProvider: loaded', remoteUsers.length, 'users from Supabase');
+      setUsers(remoteUsers);
+      void persist(remoteUsers);
     } catch (e) {
       if (__DEV__) console.log('UsersProvider: remote load failed', e);
     } finally {
@@ -97,67 +90,71 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
   }, [persist]);
 
   useEffect(() => {
-    loadFromStorage().then((loaded) => {
-      if (!loaded && !isSupabaseConfigured) {
-        if (__DEV__) console.log('UsersProvider: seeding mock users (20)');
-        setUsers(mockUsers);
-        void persist(mockUsers);
-        return;
-      }
-      if (isSupabaseConfigured) {
-        void loadFromRemote();
-      }
-    });
+    if (isSupabaseConfigured) {
+      // When DB is configured, load from remote directly (skip stale cache)
+      void loadFromRemote();
+    } else {
+      loadFromStorage().then((loaded) => {
+        if (!loaded) {
+          if (__DEV__) console.log('UsersProvider: seeding mock users (20)');
+          setUsers(mockUsers);
+          void persist(mockUsers);
+        }
+      });
+    }
   }, [loadFromStorage, loadFromRemote, persist]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
     const channel = supabase
       .channel('profiles_changes_users')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {
-        try {
-          if (payload.eventType === 'DELETE') {
-            // Handle user deletion
-            const deletedUserId = payload.old?.id;
-            if (deletedUserId) {
-              if (__DEV__) console.log('UsersProvider: User deleted, removing from cache:', deletedUserId);
-              setUsers((prev) => {
-                const filtered = prev.filter((u) => u.id !== deletedUserId);
-                void persist(filtered);
-                return filtered;
-              });
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        (payload: any) => {
+          try {
+            if (payload.eventType === 'DELETE') {
+              // Handle user deletion
+              const deletedUserId = payload.old?.id;
+              if (deletedUserId) {
+                if (__DEV__)
+                  console.log('UsersProvider: User deleted, removing from cache:', deletedUserId);
+                setUsers((prev) => prev.filter((u) => u.id !== deletedUserId));
+              }
+              return;
             }
-            return;
+
+            const row = (payload.new ?? payload.old) as any;
+            if (!row) return;
+            const updated: User = {
+              id: row.id,
+              email: row.email,
+              name: row.name,
+              role: row.role,
+              avatar: row.avatar ?? undefined,
+              bio: row.bio ?? undefined,
+              location: row.location ?? undefined,
+              verified: row.verified ?? false,
+              sport: row.sport ?? undefined,
+              position: row.position ?? undefined,
+              achievements: row.achievements ?? [],
+              stats: row.stats ?? {},
+              roleSpecificData: row.role_specific_data ?? {},
+              followersCount: row.followers_count ?? 0,
+              followingCount: row.following_count ?? 0,
+              createdAt: new Date(row.created_at ?? Date.now()),
+            };
+            setUsers((prev) => {
+              const exists = prev.some((u) => u.id === updated.id);
+              return exists
+                ? prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u))
+                : [updated, ...prev];
+            });
+          } catch (e) {
+            if (__DEV__) console.log('UsersProvider: profiles change handling failed', e);
           }
-          
-          const row = (payload.new ?? payload.old) as any;
-          if (!row) return;
-          const updated: User = {
-            id: row.id,
-            email: row.email,
-            name: row.name,
-            role: row.role,
-            avatar: row.avatar ?? undefined,
-            bio: row.bio ?? undefined,
-            location: row.location ?? undefined,
-            verified: row.verified ?? false,
-            sport: row.sport ?? undefined,
-            position: row.position ?? undefined,
-            achievements: row.achievements ?? [],
-            stats: row.stats ?? {},
-            roleSpecificData: row.role_specific_data ?? {},
-            createdAt: new Date(row.created_at ?? Date.now()),
-          };
-          setUsers((prev) => {
-            const exists = prev.some((u) => u.id === updated.id);
-            const list = exists ? prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u)) : [updated, ...prev];
-            void persist(list);
-            return list;
-          });
-        } catch (e) {
-          if (__DEV__) console.log('UsersProvider: profiles change handling failed', e);
-        }
-      })
+        },
+      )
       .subscribe();
 
     return () => {
@@ -178,18 +175,25 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
     }
   }, [authUser, persist]);
 
-  const addOrUpdateUser = useCallback(async (u: User) => {
-    setUsers((prev) => {
-      const idx = prev.findIndex((x) => x.id === u.id);
-      const list = idx >= 0 ? prev.map((x) => (x.id === u.id ? { ...x, ...u } : x)) : [u, ...prev];
-      void persist(list);
-      return list;
-    });
-  }, [persist]);
+  const addOrUpdateUser = useCallback(
+    async (u: User) => {
+      setUsers((prev) => {
+        const idx = prev.findIndex((x) => x.id === u.id);
+        const list =
+          idx >= 0 ? prev.map((x) => (x.id === u.id ? { ...x, ...u } : x)) : [u, ...prev];
+        void persist(list);
+        return list;
+      });
+    },
+    [persist],
+  );
 
-  const findByRole = useCallback((role: UserRole) => {
-    return users.filter((u) => u.role === role);
-  }, [users]);
+  const findByRole = useCallback(
+    (role: UserRole) => {
+      return users.filter((u) => u.role === role);
+    },
+    [users],
+  );
 
   const refreshUsers = useCallback(async () => {
     await loadFromRemote();
@@ -202,5 +206,8 @@ export const [UsersProvider, useUsers] = createContextHook<UsersState>(() => {
     setUsers([]);
   }, []);
 
-  return useMemo(() => ({ users, isLoading, addOrUpdateUser, findByRole, refreshUsers, clearAll }), [users, isLoading, addOrUpdateUser, findByRole, refreshUsers, clearAll]);
+  return useMemo(
+    () => ({ users, isLoading, addOrUpdateUser, findByRole, refreshUsers, clearAll }),
+    [users, isLoading, addOrUpdateUser, findByRole, refreshUsers, clearAll],
+  );
 });

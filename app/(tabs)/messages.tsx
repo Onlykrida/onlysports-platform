@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
   TextInput,
   RefreshControl,
   ActivityIndicator,
@@ -14,10 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, MessageCircle, Users, Plus } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
+import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { useMessages, Conversation } from '@/hooks/messages-context';
 import { useGroups, Group } from '@/hooks/group-messages-context';
 import { useAuth } from '@/hooks/auth-context';
 import { MessageSkeletonList } from '@/components/SkeletonScreens';
+import { BackgroundGradient } from '@/components/BackgroundGradient';
+import CachedImage from '@/components/CachedImage';
 
 type TabType = 'dms' | 'groups';
 
@@ -28,15 +30,15 @@ export default function MessagesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('dms');
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.participantName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredConversations = conversations.filter((conv) =>
+    conv.participantName.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const filteredGroups = groups.filter(g =>
-    g.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredGroups = groups.filter((g) =>
+    g.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleConversationPress = (conversation: Conversation) => {
+  const handleConversationPress = useCallback((conversation: Conversation) => {
     router.push({
       pathname: '/chat/[id]' as any,
       params: {
@@ -44,23 +46,23 @@ export default function MessagesScreen() {
         name: conversation.participantName,
         avatar: conversation.participantAvatar || '',
         role: conversation.participantRole || '',
-      }
+      },
     });
-  };
+  }, []);
 
-  const handleGroupPress = (group: Group) => {
+  const handleGroupPress = useCallback((group: Group) => {
     router.push({
       pathname: '/chat/group/[id]' as any,
       params: {
         id: group.id,
         name: group.name,
-      }
+      },
     });
-  };
+  }, []);
 
-  const handleCreateGroup = () => {
+  const handleCreateGroup = useCallback(() => {
     router.push('/chat/create-group' as any);
-  };
+  }, []);
 
   const handleRefresh = async () => {
     if (activeTab === 'dms') {
@@ -70,7 +72,7 @@ export default function MessagesScreen() {
     }
   };
 
-  const formatTime = (date: Date) => {
+  const formatTime = useCallback((date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
@@ -82,98 +84,105 @@ export default function MessagesScreen() {
     if (hours < 24) return `${hours}h`;
     if (days < 7) return `${days}d`;
     return date.toLocaleDateString();
-  };
+  }, []);
 
-  const renderConversation = ({ item }: { item: Conversation }) => (
-    <TouchableOpacity
-      style={styles.conversationItem}
-      onPress={() => handleConversationPress(item)}
-      testID={`conversation-${item.id}`}
-    >
-      <View style={styles.avatarContainer}>
-        <Image
-          source={{
-            uri: item.participantAvatar || 'https://via.placeholder.com/50x50/E5E7EB/9CA3AF?text=U'
-          }}
-          style={styles.avatar}
-        />
-        {item.unreadCount > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadBadgeText}>
-              {item.unreadCount > 99 ? '99+' : item.unreadCount}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.conversationContent}>
-        <View style={styles.conversationHeader}>
-          <Text style={styles.participantName}>{item.participantName}</Text>
-          <Text style={styles.participantRole}>{item.participantRole}</Text>
-          {item.lastMessageTime && (
-            <Text style={styles.timestamp}>
-              {formatTime(item.lastMessageTime)}
-            </Text>
+  const renderConversation = useCallback(
+    ({ item }: { item: Conversation }) => (
+      <TouchableOpacity
+        style={styles.conversationItem}
+        onPress={() => handleConversationPress(item)}
+        testID={`conversation-${item.id}`}
+      >
+        <View style={styles.avatarContainer}>
+          <CachedImage source={item.participantAvatar} size={50} placeholder="avatar" />
+          {item.unreadCount > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadBadgeText}>
+                {item.unreadCount > 99 ? '99+' : item.unreadCount}
+              </Text>
+            </View>
           )}
         </View>
 
-        {item.lastMessage && (
-          <Text
-            style={[
-              styles.lastMessage,
-              item.unreadCount > 0 && styles.unreadMessage
-            ]}
-            numberOfLines={1}
-          >
-            {item.lastMessage}
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
+        <View style={styles.conversationContent}>
+          <View style={styles.conversationHeader}>
+            <Text style={styles.participantName} numberOfLines={1} ellipsizeMode="tail">
+              {item.participantName}
+            </Text>
+            <Text style={styles.participantRole} numberOfLines={1} ellipsizeMode="tail">
+              {item.participantRole}
+            </Text>
+            {item.lastMessageTime && (
+              <Text style={styles.timestamp} numberOfLines={1} ellipsizeMode="tail">
+                {formatTime(item.lastMessageTime)}
+              </Text>
+            )}
+          </View>
+
+          {item.lastMessage && (
+            <Text
+              style={[styles.lastMessage, item.unreadCount > 0 && styles.unreadMessage]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {item.lastMessage}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    ),
+    [handleConversationPress, formatTime],
   );
 
-  const renderGroup = ({ item }: { item: Group }) => (
-    <TouchableOpacity
-      style={styles.conversationItem}
-      onPress={() => handleGroupPress(item)}
-      testID={`group-${item.id}`}
-    >
-      <View style={styles.avatarContainer}>
-        {item.avatar ? (
-          <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.groupAvatarPlaceholder]}>
-            <Users size={24} color={theme.colors.primary} />
-          </View>
-        )}
-        {item.unreadCount > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadBadgeText}>
-              {item.unreadCount > 99 ? '99+' : item.unreadCount}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.conversationContent}>
-        <View style={styles.conversationHeader}>
-          <Text style={styles.participantName}>{item.name}</Text>
-          <Text style={styles.memberCount}>{item.memberCount} members</Text>
-          {item.lastMessageTime && (
-            <Text style={styles.timestamp}>
-              {formatTime(item.lastMessageTime)}
-            </Text>
+  const renderGroup = useCallback(
+    ({ item }: { item: Group }) => (
+      <TouchableOpacity
+        style={styles.conversationItem}
+        onPress={() => handleGroupPress(item)}
+        testID={`group-${item.id}`}
+      >
+        <View style={styles.avatarContainer}>
+          {item.avatar ? (
+            <CachedImage source={item.avatar} size={50} placeholder="avatar" />
+          ) : (
+            <View style={[styles.avatar, styles.groupAvatarPlaceholder]}>
+              <Users size={24} color={theme.colors.primary} />
+            </View>
+          )}
+          {item.unreadCount > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadBadgeText}>
+                {item.unreadCount > 99 ? '99+' : item.unreadCount}
+              </Text>
+            </View>
           )}
         </View>
 
-        {item.lastMessage && (
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessageSender ? `${item.lastMessageSender}: ` : ''}
-            {item.lastMessage}
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
+        <View style={styles.conversationContent}>
+          <View style={styles.conversationHeader}>
+            <Text style={styles.participantName} numberOfLines={1} ellipsizeMode="tail">
+              {item.name}
+            </Text>
+            <Text style={styles.memberCount} numberOfLines={1} ellipsizeMode="tail">
+              {item.memberCount} members
+            </Text>
+            {item.lastMessageTime && (
+              <Text style={styles.timestamp} numberOfLines={1} ellipsizeMode="tail">
+                {formatTime(item.lastMessageTime)}
+              </Text>
+            )}
+          </View>
+
+          {item.lastMessage && (
+            <Text style={styles.lastMessage} numberOfLines={1} ellipsizeMode="tail">
+              {item.lastMessageSender ? `${item.lastMessageSender}: ` : ''}
+              {item.lastMessage}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    ),
+    [handleGroupPress, formatTime],
   );
 
   const isLoading = activeTab === 'dms' ? isLoadingDMs : isLoadingGroups;
@@ -181,102 +190,111 @@ export default function MessagesScreen() {
 
   if (showSkeleton) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Messages</Text>
-          <TouchableOpacity style={styles.createGroupButton} onPress={handleCreateGroup}>
-            <Plus size={22} color={theme.colors.primary} />
-          </TouchableOpacity>
-        </View>
-        <MessageSkeletonList />
-      </SafeAreaView>
+      <BackgroundGradient>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Messages</Text>
+            <TouchableOpacity style={styles.createGroupButton} onPress={handleCreateGroup}>
+              <Plus size={22} color="#000" />
+            </TouchableOpacity>
+          </View>
+          <MessageSkeletonList />
+        </SafeAreaView>
+      </BackgroundGradient>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
-        <TouchableOpacity style={styles.createGroupButton} onPress={handleCreateGroup}>
-          <Plus size={22} color={theme.colors.primary} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'dms' && styles.activeTab]}
-          onPress={() => setActiveTab('dms')}
-        >
-          <MessageCircle size={16} color={activeTab === 'dms' ? theme.colors.primary : theme.colors.textSecondary} />
-          <Text style={[styles.tabText, activeTab === 'dms' && styles.activeTabText]}>
-            Direct Messages
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'groups' && styles.activeTab]}
-          onPress={() => setActiveTab('groups')}
-        >
-          <Users size={16} color={activeTab === 'groups' ? theme.colors.primary : theme.colors.textSecondary} />
-          <Text style={[styles.tabText, activeTab === 'groups' && styles.activeTabText]}>
-            Groups
-          </Text>
-          {groups.length > 0 && (
-            <View style={styles.tabBadge}>
-              <Text style={styles.tabBadgeText}>{groups.length}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Search size={20} color={theme.colors.textSecondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={activeTab === 'dms' ? 'Search conversations...' : 'Search groups...'}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor={theme.colors.textSecondary}
-          />
+    <BackgroundGradient>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Messages</Text>
+          <TouchableOpacity style={styles.createGroupButton} onPress={handleCreateGroup}>
+            <Plus size={22} color="#000" />
+          </TouchableOpacity>
         </View>
-      </View>
 
-      {activeTab === 'dms' ? (
-        filteredConversations.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <MessageCircle size={64} color={theme.colors.textSecondary} />
-            <Text style={styles.emptyTitle}>No conversations yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Start a conversation by messaging someone from their profile
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'dms' ? styles.activeTab : styles.inactiveTab]}
+            onPress={() => setActiveTab('dms')}
+          >
+            <MessageCircle size={16} color={activeTab === 'dms' ? '#000' : '#888'} />
+            <Text
+              style={[styles.tabText, activeTab === 'dms' && styles.activeTabText]}
+              numberOfLines={1}
+            >
+              DMs
             </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'groups' ? styles.activeTab : styles.inactiveTab]}
+            onPress={() => setActiveTab('groups')}
+          >
+            <Users size={16} color={activeTab === 'groups' ? '#000' : '#888'} />
+            <Text
+              style={[styles.tabText, activeTab === 'groups' && styles.activeTabText]}
+              numberOfLines={1}
+            >
+              Groups
+            </Text>
+            {groups.length > 0 && (
+              <View style={styles.tabBadge}>
+                <Text style={styles.tabBadgeText}>{groups.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <Search size={20} color="#888" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={activeTab === 'dms' ? 'Search conversations...' : 'Search groups...'}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor="#666"
+            />
           </View>
-        ) : (
-          <FlatList
-            data={filteredConversations}
-            renderItem={renderConversation}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={isLoadingDMs}
-                onRefresh={handleRefresh}
-                tintColor={theme.colors.primary}
-              />
-            }
-            showsVerticalScrollIndicator={false}
-          />
-        )
-      ) : (
-        filteredGroups.length === 0 ? (
+        </View>
+
+        {activeTab === 'dms' ? (
+          filteredConversations.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <MessageCircle size={64} color="#888" />
+              <Text style={styles.emptyTitle}>NO CONVERSATIONS YET</Text>
+              <Text style={styles.emptySubtitle}>
+                Start a conversation by messaging someone from their profile
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredConversations}
+              renderItem={renderConversation}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.listContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isLoadingDMs}
+                  onRefresh={handleRefresh}
+                  tintColor={theme.colors.primary}
+                />
+              }
+              showsVerticalScrollIndicator={false}
+              {...FLATLIST_PERF_PROPS}
+            />
+          )
+        ) : filteredGroups.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Users size={64} color={theme.colors.textSecondary} />
-            <Text style={styles.emptyTitle}>No groups yet</Text>
+            <Users size={64} color="#888" />
+            <Text style={styles.emptyTitle}>NO GROUPS YET</Text>
             <Text style={styles.emptySubtitle}>
               Create a group to start chatting with multiple people
             </Text>
             <TouchableOpacity style={styles.emptyCreateButton} onPress={handleCreateGroup}>
-              <Plus size={18} color={theme.colors.white} />
+              <Plus size={18} color="#000" />
               <Text style={styles.emptyCreateButtonText}>Create Group</Text>
             </TouchableOpacity>
           </View>
@@ -294,17 +312,18 @@ export default function MessagesScreen() {
               />
             }
             showsVerticalScrollIndicator={false}
+            {...FLATLIST_PERF_PROPS}
           />
-        )
-      )}
-    </SafeAreaView>
+        )}
+      </SafeAreaView>
+    </BackgroundGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
@@ -312,54 +331,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#0a0a0a',
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   headerTitle: {
     fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
+    fontWeight: '900' as const,
     color: theme.colors.text,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   createGroupButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.primaryLight,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#30D158',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#30D158',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
     paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    backgroundColor: '#0a0a0a',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: theme.spacing.md,
+    paddingVertical: 10,
     gap: theme.spacing.xs,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    borderRadius: 8,
   },
   activeTab: {
-    borderBottomColor: theme.colors.primary,
+    backgroundColor: '#30D158',
+  },
+  inactiveTab: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   tabText: {
     fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
-    color: theme.colors.textSecondary,
+    fontWeight: '700' as const,
+    color: '#888',
   },
   activeTabText: {
-    color: theme.colors.primary,
-    fontWeight: theme.fontWeight.semibold,
+    color: '#000',
+    fontWeight: '900' as const,
   },
   tabBadge: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.orange,
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -368,20 +401,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   tabBadgeText: {
-    color: theme.colors.white,
+    color: '#000',
     fontSize: 10,
-    fontWeight: theme.fontWeight.bold,
+    fontWeight: '800' as const,
   },
   searchContainer: {
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
   },
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.inputBackground,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: '#111',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     gap: theme.spacing.sm,
@@ -399,21 +432,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.cardBg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.08)',
+    marginHorizontal: 12,
+    marginBottom: 8,
   },
   avatarContainer: {
     position: 'relative',
     marginRight: theme.spacing.md,
+    flexShrink: 0,
   },
   avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#30D158',
   },
   groupAvatarPlaceholder: {
-    backgroundColor: theme.colors.primaryLight,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1.5,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -421,7 +464,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#FF9F0A',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -430,9 +473,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   unreadBadgeText: {
-    color: theme.colors.white,
+    color: '#000',
     fontSize: 10,
-    fontWeight: theme.fontWeight.bold,
+    fontWeight: '800' as const,
   },
   conversationContent: {
     flex: 1,
@@ -445,38 +488,40 @@ const styles = StyleSheet.create({
   },
   participantName: {
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
+    fontWeight: '900' as const,
+    color: '#f0f0f0',
+    letterSpacing: 0.5,
+    flex: 1,
   },
   participantRole: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    textTransform: 'capitalize',
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: theme.spacing.xs,
-    paddingVertical: 2,
-    borderRadius: theme.borderRadius.sm,
+    fontSize: 10,
+    color: '#FF9F0A',
+    fontWeight: '800' as const,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    flexShrink: 0,
   },
   memberCount: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: theme.spacing.xs,
-    paddingVertical: 2,
-    borderRadius: theme.borderRadius.sm,
+    fontSize: 10,
+    color: '#FF9F0A',
+    fontWeight: '800' as const,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    flexShrink: 0,
   },
   timestamp: {
     fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
+    color: '#888',
     marginLeft: 'auto',
+    flexShrink: 0,
   },
   lastMessage: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    color: '#666',
   },
   unreadMessage: {
-    color: theme.colors.text,
-    fontWeight: theme.fontWeight.medium,
+    color: '#f0f0f0',
+    fontWeight: '700' as const,
   },
   loadingContainer: {
     flex: 1,
@@ -496,30 +541,42 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.semibold,
+    fontWeight: '900' as const,
     color: theme.colors.text,
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    maxWidth: '100%',
   },
   emptySubtitle: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
+    color: '#888',
     textAlign: 'center',
     lineHeight: 22,
+    maxWidth: '100%',
   },
   emptyCreateButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#30D158',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     marginTop: theme.spacing.lg,
     gap: theme.spacing.sm,
+    shadowColor: '#30D158',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   emptyCreateButtonText: {
-    color: theme.colors.white,
+    color: '#000',
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.semibold,
+    fontWeight: '900' as const,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 });

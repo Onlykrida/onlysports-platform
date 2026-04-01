@@ -34,7 +34,12 @@ interface MessagesState {
   conversations: Conversation[];
   messages: { [conversationId: string]: Message[] };
   isLoading: boolean;
-  sendMessage: (receiverId: string, content: string, mediaUrl?: string, postId?: string) => Promise<{ error?: string }>;
+  sendMessage: (
+    receiverId: string,
+    content: string,
+    mediaUrl?: string,
+    postId?: string,
+  ) => Promise<{ error?: string }>;
   markAsRead: (conversationId: string) => Promise<void>;
   loadMessages: (conversationId: string) => Promise<void>;
   refreshConversations: () => Promise<void>;
@@ -53,11 +58,12 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
 
     try {
       setIsLoading(true);
-      
+
       // Get all messages where user is sender or receiver
       const { data: messagesData, error } = await supabase
         .from('messages')
-        .select(`
+        .select(
+          `
           id,
           sender_id,
           receiver_id,
@@ -67,9 +73,11 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
           created_at,
           sender:profiles!messages_sender_id_fkey(name, avatar, role),
           receiver:profiles!messages_receiver_id_fkey(name, avatar, role)
-        `)
+        `,
+        )
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500);
 
       if (error) {
         console.error('Error loading conversations:', error);
@@ -78,12 +86,12 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
 
       // Group messages by conversation (other participant)
       const conversationMap = new Map<string, Conversation>();
-      
+
       messagesData?.forEach((msg: any) => {
         const isFromUser = msg.sender_id === user.id;
         const otherParticipantId = isFromUser ? msg.receiver_id : msg.sender_id;
         const otherParticipant = isFromUser ? msg.receiver : msg.sender;
-        
+
         if (!conversationMap.has(otherParticipantId)) {
           conversationMap.set(otherParticipantId, {
             id: otherParticipantId,
@@ -96,7 +104,7 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
             unreadCount: 0,
           });
         }
-        
+
         // Count unread messages (messages sent to current user that are unread)
         if (!isFromUser && msg.status !== 'read') {
           const conv = conversationMap.get(otherParticipantId)!;
@@ -112,13 +120,15 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
     }
   }, [user]);
 
-  const loadMessages = useCallback(async (conversationId: string) => {
-    if (!user || !isSupabaseConfigured) return;
+  const loadMessages = useCallback(
+    async (conversationId: string) => {
+      if (!user || !isSupabaseConfigured) return;
 
-    try {
-      const { data: messagesData, error } = await supabase
-        .from('messages')
-        .select(`
+      try {
+        const { data: messagesData, error } = await supabase
+          .from('messages')
+          .select(
+            `
           id,
           sender_id,
           receiver_id,
@@ -126,47 +136,54 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
           media_url,
           status,
           created_at,
+          updated_at,
           sender:profiles!messages_sender_id_fkey(name, avatar)
-        `)
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${conversationId}),and(sender_id.eq.${conversationId},receiver_id.eq.${user.id})`)
-        .order('created_at', { ascending: true });
+        `,
+          )
+          .or(
+            `and(sender_id.eq.${user.id},receiver_id.eq.${conversationId}),and(sender_id.eq.${conversationId},receiver_id.eq.${user.id})`,
+          )
+          .order('created_at', { ascending: true })
+          .limit(100);
 
-      if (error) {
-        console.error('Error loading messages:', error);
-        return;
+        if (error) {
+          console.error('Error loading messages:', error);
+          return;
+        }
+
+        const formattedMessages: Message[] =
+          messagesData?.map((msg: any) => ({
+            id: msg.id,
+            senderId: msg.sender_id,
+            receiverId: msg.receiver_id,
+            content: msg.content,
+            mediaUrl: msg.media_url,
+            status: msg.status,
+            createdAt: new Date(msg.created_at),
+            updatedAt: new Date(msg.updated_at || msg.created_at),
+            senderName: msg.sender?.name,
+            senderAvatar: msg.sender?.avatar,
+          })) || [];
+
+        setMessages((prev) => ({
+          ...prev,
+          [conversationId]: formattedMessages,
+        }));
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+      }
+    },
+    [user],
+  );
+
+  const sendMessage = useCallback(
+    async (receiverId: string, content: string, mediaUrl?: string, postId?: string) => {
+      if (!user || !isSupabaseConfigured) {
+        return { error: 'Not authenticated or database not configured' };
       }
 
-      const formattedMessages: Message[] = messagesData?.map((msg: any) => ({
-        id: msg.id,
-        senderId: msg.sender_id,
-        receiverId: msg.receiver_id,
-        content: msg.content,
-        mediaUrl: msg.media_url,
-        status: msg.status,
-        createdAt: new Date(msg.created_at),
-        updatedAt: new Date(msg.updated_at || msg.created_at),
-        senderName: msg.sender?.name,
-        senderAvatar: msg.sender?.avatar,
-      })) || [];
-
-      setMessages(prev => ({
-        ...prev,
-        [conversationId]: formattedMessages,
-      }));
-    } catch (error) {
-      console.error('Failed to load messages:', error);
-    }
-  }, [user]);
-
-  const sendMessage = useCallback(async (receiverId: string, content: string, mediaUrl?: string, postId?: string) => {
-    if (!user || !isSupabaseConfigured) {
-      return { error: 'Not authenticated or database not configured' };
-    }
-
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .insert({
+      try {
+        const { error } = await supabase.from('messages').insert({
           sender_id: user.id,
           receiver_id: receiverId,
           content,
@@ -175,67 +192,68 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
           status: 'sent',
         });
 
-      if (error) {
-        console.error('Error sending message:', error);
-        return { error: error.message };
-      }
-
-      // Send notification to receiver about new message
-      if (createNotification) {
-        try {
-          await createNotification(
-            receiverId,
-            'message',
-            'New Message',
-            `${user.name} sent you a message`,
-            { senderId: user.id, content: content.substring(0, 50), messageId: null }
-          );
-        } catch (notificationError) {
-          console.error('Failed to send message notification:', notificationError);
+        if (error) {
+          console.error('Error sending message:', error);
+          return { error: error.message };
         }
+
+        // Send notification to receiver about new message
+        if (createNotification) {
+          try {
+            await createNotification(
+              receiverId,
+              'message',
+              'New Message',
+              `${user.name} sent you a message`,
+              { senderId: user.id, content: content.substring(0, 50), messageId: null },
+            );
+          } catch (notificationError) {
+            console.error('Failed to send message notification:', notificationError);
+          }
+        }
+
+        // Refresh messages for this conversation
+        // loadConversations is omitted here — the real-time subscription handles it
+        await loadMessages(receiverId);
+
+        track(EVENTS.MESSAGE_SENT, { receiverId });
+
+        return {};
+      } catch (error) {
+        console.error('Failed to send message:', error);
+        return { error: 'Failed to send message' };
       }
+    },
+    [user, createNotification, loadMessages, track],
+  );
 
-      // Refresh messages for this conversation
-      await loadMessages(receiverId);
-      await loadConversations();
+  const markAsRead = useCallback(
+    async (conversationId: string) => {
+      if (!user || !isSupabaseConfigured) return;
 
-      track(EVENTS.MESSAGE_SENT, { receiverId });
+      try {
+        const { error } = await supabase
+          .from('messages')
+          .update({ status: 'read' })
+          .eq('sender_id', conversationId)
+          .eq('receiver_id', user.id)
+          .neq('status', 'read');
 
-      return {};
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      return { error: 'Failed to send message' };
-    }
-  }, [user, createNotification, loadMessages, loadConversations, track]);
+        if (error) {
+          console.error('Error marking messages as read:', error);
+          return;
+        }
 
-  const markAsRead = useCallback(async (conversationId: string) => {
-    if (!user || !isSupabaseConfigured) return;
-
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .update({ status: 'read' })
-        .eq('sender_id', conversationId)
-        .eq('receiver_id', user.id)
-        .neq('status', 'read');
-
-      if (error) {
-        console.error('Error marking messages as read:', error);
-        return;
+        // Update local state
+        setConversations((prev) =>
+          prev.map((conv) => (conv.id === conversationId ? { ...conv, unreadCount: 0 } : conv)),
+        );
+      } catch (error) {
+        console.error('Failed to mark messages as read:', error);
       }
-
-      // Update local state
-      setConversations(prev => 
-        prev.map(conv => 
-          conv.id === conversationId 
-            ? { ...conv, unreadCount: 0 }
-            : conv
-        )
-      );
-    } catch (error) {
-      console.error('Failed to mark messages as read:', error);
-    }
-  }, [user]);
+    },
+    [user],
+  );
 
   const refreshConversations = useCallback(async () => {
     await loadConversations();
@@ -253,61 +271,91 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
 
     const channel = supabase
       .channel('messages_and_profiles_changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload: any) => {
-        const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; media_url?: string; status: string; created_at: string; updated_at?: string };
-        
-        // Only process messages involving current user
-        if (msg.sender_id !== user.id && msg.receiver_id !== user.id) return;
-        
-        const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-
-        setMessages(prev => {
-          const prevList = prev[otherId] || [];
-          const nextItem: Message = {
-            id: msg.id,
-            senderId: msg.sender_id,
-            receiverId: msg.receiver_id,
-            content: msg.content,
-            mediaUrl: msg.media_url,
-            status: msg.status as Message['status'],
-            createdAt: new Date(msg.created_at),
-            updatedAt: new Date(msg.updated_at || msg.created_at),
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload: any) => {
+          const msg = payload.new as {
+            id: string;
+            sender_id: string;
+            receiver_id: string;
+            content: string;
+            media_url?: string;
+            status: string;
+            created_at: string;
+            updated_at?: string;
           };
-          return { ...prev, [otherId]: [...prevList, nextItem] };
-        });
 
-        loadConversations();
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload: any) => {
-        const msg = payload.new as { id: string; sender_id: string; receiver_id: string; content: string; media_url?: string; status: string; created_at: string; updated_at?: string };
-        
-        // Only process messages involving current user
-        if (msg.sender_id !== user.id && msg.receiver_id !== user.id) return;
-        
-        const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+          // Only process messages involving current user
+          if (msg.sender_id !== user.id && msg.receiver_id !== user.id) return;
 
-        setMessages(prev => {
-          const prevList = prev[otherId] || [];
-          const updatedList = prevList.map(message => 
-            message.id === msg.id 
-              ? {
-                  ...message,
-                  content: msg.content,
-                  mediaUrl: msg.media_url,
-                  status: msg.status as Message['status'],
-                  updatedAt: new Date(msg.updated_at || msg.created_at),
-                }
-              : message
-          );
-          return { ...prev, [otherId]: updatedList };
-        });
+          const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
 
-        loadConversations();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (_payload: any) => {
-        // When any profile changes, refresh conversations to get latest names/avatars
-        loadConversations();
-      })
+          setMessages((prev) => {
+            const prevList = prev[otherId] || [];
+            const nextItem: Message = {
+              id: msg.id,
+              senderId: msg.sender_id,
+              receiverId: msg.receiver_id,
+              content: msg.content,
+              mediaUrl: msg.media_url,
+              status: msg.status as Message['status'],
+              createdAt: new Date(msg.created_at),
+              updatedAt: new Date(msg.updated_at || msg.created_at),
+            };
+            return { ...prev, [otherId]: [...prevList, nextItem] };
+          });
+
+          loadConversations();
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages' },
+        (payload: any) => {
+          const msg = payload.new as {
+            id: string;
+            sender_id: string;
+            receiver_id: string;
+            content: string;
+            media_url?: string;
+            status: string;
+            created_at: string;
+            updated_at?: string;
+          };
+
+          // Only process messages involving current user
+          if (msg.sender_id !== user.id && msg.receiver_id !== user.id) return;
+
+          const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+
+          setMessages((prev) => {
+            const prevList = prev[otherId] || [];
+            const updatedList = prevList.map((message) =>
+              message.id === msg.id
+                ? {
+                    ...message,
+                    content: msg.content,
+                    mediaUrl: msg.media_url,
+                    status: msg.status as Message['status'],
+                    updatedAt: new Date(msg.updated_at || msg.created_at),
+                  }
+                : message,
+            );
+            return { ...prev, [otherId]: updatedList };
+          });
+
+          loadConversations();
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        (_payload: any) => {
+          // When any profile changes, refresh conversations to get latest names/avatars
+          loadConversations();
+        },
+      )
       .subscribe();
 
     return () => {
@@ -315,13 +363,24 @@ export const [MessagesProvider, useMessages] = createContextHook<MessagesState>(
     };
   }, [user, loadConversations]);
 
-  return useMemo(() => ({
-    conversations,
-    messages,
-    isLoading,
-    sendMessage,
-    markAsRead,
-    loadMessages,
-    refreshConversations,
-  }), [conversations, messages, isLoading, sendMessage, markAsRead, loadMessages, refreshConversations]);
+  return useMemo(
+    () => ({
+      conversations,
+      messages,
+      isLoading,
+      sendMessage,
+      markAsRead,
+      loadMessages,
+      refreshConversations,
+    }),
+    [
+      conversations,
+      messages,
+      isLoading,
+      sendMessage,
+      markAsRead,
+      loadMessages,
+      refreshConversations,
+    ],
+  );
 });

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,22 +13,38 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '@/constants/theme';
-import { Globe2, Handshake, Rocket, Trophy } from 'lucide-react-native';
+import { Globe2, Handshake, Rocket, Trophy, Sparkles } from 'lucide-react-native';
+import Logo from '@/components/Logo';
 
 const { height } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   const scale = useRef(new Animated.Value(1)).current;
+  const fadeIn = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(30)).current;
 
-  const bgUri = useMemo(() => (
-    'https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1920&auto=format&fit=crop'
-  ), []);
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeIn, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.timing(slideUp, { toValue: 0, duration: 800, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const bgUri = useMemo(
+    () =>
+      'https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1920&auto=format&fit=crop',
+    [],
+  );
 
   const onPressIn = () => {
     Animated.spring(scale, { toValue: 0.98, useNativeDriver: Platform.OS !== 'web' }).start();
   };
   const onPressOut = () => {
-    Animated.spring(scale, { toValue: 1, friction: 5, useNativeDriver: Platform.OS !== 'web' }).start();
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 5,
+      useNativeDriver: Platform.OS !== 'web',
+    }).start();
   };
 
   return (
@@ -40,54 +56,47 @@ export default function WelcomeScreen() {
       testID="welcome-bg"
     >
       <LinearGradient
-        colors={[
-          'rgba(4, 11, 22, 0.85)',
-          'rgba(4, 11, 22, 0.92)',
-          'rgba(4, 11, 22, 0.96)',
-        ]}
+        colors={['rgba(10, 10, 10, 0.80)', 'rgba(10, 10, 10, 0.90)', 'rgba(10, 10, 10, 0.97)']}
         style={styles.gradient}
       >
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.content}>
-            <View style={styles.header}>
-              <View style={styles.logoContainer}>
-                <View style={[styles.logoImage, { backgroundColor: theme.colors.primary, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={{ color: theme.colors.white, fontWeight: 'bold' as const, fontSize: 28 }}>OK</Text>
-                </View>
-                <View style={styles.logoTextContainer}>
-                  <Text accessibilityRole="header" testID="title-shadow" style={styles.logoShadow}>
-                    OnlyKrida
-                  </Text>
-                  <Text testID="title" style={styles.logo}>OnlyKrida</Text>
-                </View>
-              </View>
+            <Animated.View
+              style={[styles.header, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}
+            >
+              <Logo size="large" showText={true} />
               <Text testID="tagline" style={styles.tagline}>
-                Where Athletes Get Discovered. Where Scouts Find Talent.
+                YOUR TALENT DESERVES A STAGE.
               </Text>
-            </View>
+
+              <View style={styles.aiBadge}>
+                <Sparkles size={14} color={theme.colors.primary} />
+                <Text style={styles.aiBadgeText}>Powered by AI</Text>
+              </View>
+            </Animated.View>
 
             <View style={styles.features}>
               <FeatureCard
                 testID="feature-talent"
-                icon={<Trophy color={theme.colors.secondary} size={28} />}
+                icon={<Trophy color={theme.colors.secondary} size={22} />}
                 title="Showcase Your Talent"
                 subtitle="Upload reels, highlights, achievements"
               />
               <FeatureCard
                 testID="feature-connect"
-                icon={<Handshake color={theme.colors.secondary} size={28} />}
+                icon={<Handshake color={theme.colors.secondary} size={22} />}
                 title="Connect with Scouts & Teams"
                 subtitle="Follow, endorse, and network"
               />
               <FeatureCard
                 testID="feature-career"
-                icon={<Rocket color={theme.colors.secondary} size={28} />}
+                icon={<Rocket color={theme.colors.secondary} size={22} />}
                 title="Build Your Career"
                 subtitle="Sponsorships, exposure, contracts"
               />
               <FeatureCard
                 testID="feature-global"
-                icon={<Globe2 color={theme.colors.secondary} size={28} />}
+                icon={<Globe2 color={theme.colors.secondary} size={22} />}
                 title="Global Opportunities"
                 subtitle="Starting in India & Dubai, scaling worldwide"
               />
@@ -108,7 +117,7 @@ export default function WelcomeScreen() {
                     end={{ x: 1, y: 1 }}
                     style={styles.ctaGradient}
                   >
-                    <Text style={styles.ctaText}>Get Started – Join Now</Text>
+                    <Text style={styles.ctaText}>GET EARLY ACCESS</Text>
                   </LinearGradient>
                 </Pressable>
               </Animated.View>
@@ -160,81 +169,59 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'space-between',
-    padding: theme.spacing.lg,
+    padding: theme.spacing.md,
   },
-  header: { alignItems: 'center', marginTop: height * 0.08 },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  logoImage: {
-    width: 64,
-    height: 64,
-    marginRight: theme.spacing.md,
-  },
-  logoTextContainer: {
-    position: 'relative',
-  },
-  logoShadow: {
-    position: 'absolute',
-    top: 0,
-    fontSize: 46,
-    fontWeight: theme.fontWeight.extrabold as any,
-    color: '#0ea5e9',
-    opacity: 0.25,
-    textShadowColor: '#22d3ee',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 16,
-  },
-  logo: {
-    fontSize: 46,
-    fontWeight: theme.fontWeight.extrabold as any,
-    color: theme.colors.white,
-  },
+  header: { alignItems: 'center', marginTop: height * 0.04 },
   tagline: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.secondary,
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.orange,
     textAlign: 'center',
     maxWidth: 700,
+    fontWeight: theme.fontWeight.bold as any,
+    letterSpacing: 3,
   },
-  features: { gap: theme.spacing.md, marginTop: theme.spacing.lg },
+  features: { gap: theme.spacing.sm, marginTop: theme.spacing.md },
   feature: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(26, 26, 26, 0.9)',
     padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.lg ?? theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 2,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   featureTextWrap: { marginLeft: theme.spacing.md, flex: 1 },
   featureTitle: {
     fontSize: theme.fontSize.md,
     color: theme.colors.white,
-    fontWeight: theme.fontWeight.semibold as any,
+    fontWeight: theme.fontWeight.black as any,
+    letterSpacing: 1,
+    textTransform: 'uppercase' as const,
   },
   featureSubtitle: {
     marginTop: 2,
     fontSize: theme.fontSize.sm,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.6)',
   },
   buttons: { gap: theme.spacing.md },
   ctaGradient: {
     borderRadius: theme.borderRadius.lg ?? theme.borderRadius.md,
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#30D158',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 6,
   },
   ctaText: {
     color: theme.colors.white,
     fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.semibold as any,
+    fontWeight: theme.fontWeight.black as any,
+    letterSpacing: 3,
   },
   loginWrapper: {
     flexDirection: 'row',
@@ -246,8 +233,28 @@ const styles = StyleSheet.create({
   loginLink: { color: theme.colors.secondary, fontWeight: theme.fontWeight.semibold as any },
   footer: {
     marginTop: theme.spacing.xs,
-    color: 'rgba(255,255,255,0.6)',
+    color: '#30D158',
     textAlign: 'center',
+    fontSize: theme.fontSize.xs,
+    letterSpacing: 2,
+    textTransform: 'uppercase' as const,
+    fontWeight: theme.fontWeight.bold as any,
+  },
+  aiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: theme.spacing.md,
+    backgroundColor: 'rgba(48, 209, 88, 0.1)',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(48, 209, 88, 0.2)',
+  },
+  aiBadgeText: {
     fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.semibold as any,
   },
 });

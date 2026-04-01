@@ -1,17 +1,10 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { Save, X, Camera, Plus, Trash2 } from 'lucide-react-native';
 import { theme, formatRoleName } from '@/constants/theme';
+import CachedImage from '@/components/CachedImage';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -19,18 +12,53 @@ import { Achievement } from '@/types';
 import * as ImagePicker from 'expo-image-picker';
 
 const SPORTS = [
-  'Football', 'Basketball', 'Soccer', 'Baseball', 'Tennis', 'Golf',
-  'Swimming', 'Track & Field', 'Volleyball', 'Hockey', 'Wrestling',
-  'Boxing', 'MMA', 'Cricket', 'Rugby', 'Other'
+  'Football',
+  'Basketball',
+  'Soccer',
+  'Baseball',
+  'Tennis',
+  'Golf',
+  'Swimming',
+  'Track & Field',
+  'Volleyball',
+  'Hockey',
+  'Wrestling',
+  'Boxing',
+  'MMA',
+  'Cricket',
+  'Rugby',
+  'Other',
 ];
 
 const POSITIONS = {
-  Football: ['Quarterback', 'Running Back', 'Wide Receiver', 'Tight End', 'Offensive Line', 'Defensive Line', 'Linebacker', 'Cornerback', 'Safety', 'Kicker', 'Punter'],
+  Football: [
+    'Quarterback',
+    'Running Back',
+    'Wide Receiver',
+    'Tight End',
+    'Offensive Line',
+    'Defensive Line',
+    'Linebacker',
+    'Cornerback',
+    'Safety',
+    'Kicker',
+    'Punter',
+  ],
   Basketball: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center'],
   Soccer: ['Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Striker'],
-  Baseball: ['Pitcher', 'Catcher', 'First Base', 'Second Base', 'Third Base', 'Shortstop', 'Left Field', 'Center Field', 'Right Field'],
+  Baseball: [
+    'Pitcher',
+    'Catcher',
+    'First Base',
+    'Second Base',
+    'Third Base',
+    'Shortstop',
+    'Left Field',
+    'Center Field',
+    'Right Field',
+  ],
   Tennis: ['Singles', 'Doubles'],
-  Other: ['Player', 'Athlete']
+  Other: ['Player', 'Athlete'],
 };
 
 export default function EditProfileScreen() {
@@ -38,7 +66,7 @@ export default function EditProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [showSportPicker, setShowSportPicker] = useState(false);
   const [showPositionPicker, setShowPositionPicker] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: user?.name || '',
     bio: user?.bio || '',
@@ -56,7 +84,7 @@ export default function EditProfileScreen() {
     title: '',
     description: '',
     date: '',
-    icon: '🏆'
+    icon: '🏆',
   });
 
   const [newStat, setNewStat] = useState({ key: '', value: '' });
@@ -80,14 +108,14 @@ export default function EditProfileScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets[0]) {
-        setFormData(prev => ({ ...prev, avatar: result.assets[0].uri }));
+        setFormData((prev) => ({ ...prev, avatar: result.assets[0].uri }));
       }
     } catch (error) {
       console.error('Error picking profile image:', error);
@@ -104,14 +132,14 @@ export default function EditProfileScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets[0]) {
-        setFormData(prev => ({ ...prev, coverPhoto: result.assets[0].uri }));
+        setFormData((prev) => ({ ...prev, coverPhoto: result.assets[0].uri }));
       }
     } catch (error) {
       console.error('Error picking cover image:', error);
@@ -129,13 +157,13 @@ export default function EditProfileScreen() {
     try {
       const result = await updateProfile({
         ...formData,
-        roleSpecificData: formData.roleSpecificData
+        roleSpecificData: formData.roleSpecificData,
       });
       if (result.error) {
         Alert.alert('Error', result.error);
       } else {
         Alert.alert('Success', 'Profile updated successfully!', [
-          { text: 'OK', onPress: () => router.back() }
+          { text: 'OK', onPress: () => router.back() },
         ]);
       }
     } catch {
@@ -156,12 +184,12 @@ export default function EditProfileScreen() {
       title: newAchievement.title,
       description: newAchievement.description,
       date: newAchievement.date || new Date().toLocaleDateString(),
-      icon: newAchievement.icon
+      icon: newAchievement.icon,
     };
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      achievements: [...prev.achievements, achievement]
+      achievements: [...prev.achievements, achievement],
     }));
 
     setNewAchievement({ title: '', description: '', date: '', icon: '🏆' });
@@ -169,9 +197,9 @@ export default function EditProfileScreen() {
   };
 
   const removeAchievement = (id: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      achievements: prev.achievements.filter(a => a.id !== id)
+      achievements: prev.achievements.filter((a) => a.id !== id),
     }));
   };
 
@@ -181,12 +209,12 @@ export default function EditProfileScreen() {
       return;
     }
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       stats: {
         ...prev.stats,
-        [newStat.key]: newStat.value
-      }
+        [newStat.key]: newStat.value,
+      },
     }));
 
     setNewStat({ key: '', value: '' });
@@ -196,16 +224,16 @@ export default function EditProfileScreen() {
   const removeStat = (key: string) => {
     const newStats = { ...formData.stats };
     delete newStats[key];
-    setFormData(prev => ({ ...prev, stats: newStats }));
+    setFormData((prev) => ({ ...prev, stats: newStats }));
   };
 
   const updateRoleSpecificData = (key: string, value: any) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       roleSpecificData: {
         ...prev.roleSpecificData,
-        [key]: value
-      }
+        [key]: value,
+      },
     }));
   };
 
@@ -261,13 +289,23 @@ export default function EditProfileScreen() {
             <Input
               label="Scouting Regions"
               value={formData.roleSpecificData?.scoutingRegions?.join(', ') || ''}
-              onChangeText={(text) => updateRoleSpecificData('scoutingRegions', text.split(',').map(r => r.trim()))}
+              onChangeText={(text) =>
+                updateRoleSpecificData(
+                  'scoutingRegions',
+                  text.split(',').map((r) => r.trim()),
+                )
+              }
               placeholder="e.g., South Asia, Europe"
             />
             <Input
               label="Athlete Levels"
               value={formData.roleSpecificData?.athleteLevels?.join(', ') || ''}
-              onChangeText={(text) => updateRoleSpecificData('athleteLevels', text.split(',').map(l => l.trim()))}
+              onChangeText={(text) =>
+                updateRoleSpecificData(
+                  'athleteLevels',
+                  text.split(',').map((l) => l.trim()),
+                )
+              }
               placeholder="e.g., High School, College"
             />
             <Input
@@ -298,7 +336,12 @@ export default function EditProfileScreen() {
             <Input
               label="Team History"
               value={formData.roleSpecificData?.teamHistory?.join(', ') || ''}
-              onChangeText={(text) => updateRoleSpecificData('teamHistory', text.split(',').map(t => t.trim()))}
+              onChangeText={(text) =>
+                updateRoleSpecificData(
+                  'teamHistory',
+                  text.split(',').map((t) => t.trim()),
+                )
+              }
               placeholder="Previous teams coached"
             />
           </>
@@ -309,13 +352,23 @@ export default function EditProfileScreen() {
             <Input
               label="Specialties"
               value={formData.roleSpecificData?.specialties?.join(', ') || ''}
-              onChangeText={(text) => updateRoleSpecificData('specialties', text.split(',').map(s => s.trim()))}
+              onChangeText={(text) =>
+                updateRoleSpecificData(
+                  'specialties',
+                  text.split(',').map((s) => s.trim()),
+                )
+              }
               placeholder="e.g., Strength Training, Conditioning"
             />
             <Input
               label="Certifications"
               value={formData.roleSpecificData?.certifications?.join(', ') || ''}
-              onChangeText={(text) => updateRoleSpecificData('certifications', text.split(',').map(c => c.trim()))}
+              onChangeText={(text) =>
+                updateRoleSpecificData(
+                  'certifications',
+                  text.split(',').map((c) => c.trim()),
+                )
+              }
               placeholder="e.g., ACE, NSCA, ACSM"
             />
           </>
@@ -325,11 +378,13 @@ export default function EditProfileScreen() {
     }
   };
 
-  const availablePositions = formData.sport ? (POSITIONS[formData.sport as keyof typeof POSITIONS] || POSITIONS.Other) : POSITIONS.Other;
+  const availablePositions = formData.sport
+    ? POSITIONS[formData.sport as keyof typeof POSITIONS] || POSITIONS.Other
+    : POSITIONS.Other;
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           title: 'Edit Profile',
           headerLeft: () => (
@@ -344,14 +399,17 @@ export default function EditProfileScreen() {
           ),
         }}
       />
-      
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Cover Photo Section */}
         <View style={styles.coverSection}>
           <TouchableOpacity onPress={pickCoverImage} style={styles.coverImageContainer}>
-            <Image 
-              source={{ uri: formData.coverPhoto }} 
-              style={styles.coverImage} 
+            <CachedImage
+              source={formData.coverPhoto}
+              size={150}
+              placeholder="cover"
+              borderRadius={0}
+              style={{ width: '100%', height: 150 }}
             />
             <View style={styles.coverImageOverlay}>
               <Camera size={20} color={theme.colors.white} />
@@ -363,12 +421,7 @@ export default function EditProfileScreen() {
         {/* Profile Picture Section */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarContainer}>
-            <Image 
-              source={{ 
-                uri: formData.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face' 
-              }} 
-              style={styles.avatar} 
-            />
+            <CachedImage source={formData.avatar} size={100} placeholder="avatar" />
             <TouchableOpacity style={styles.cameraButton} onPress={pickProfileImage}>
               <Camera size={16} color={theme.colors.white} />
             </TouchableOpacity>
@@ -379,28 +432,28 @@ export default function EditProfileScreen() {
         {/* Basic Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
-          
+
           <Input
             label="Name"
             value={formData.name}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+            onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
             placeholder="Enter your name"
           />
-          
+
           <Input
             label="Bio"
             value={formData.bio}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, bio: text }))}
+            onChangeText={(text) => setFormData((prev) => ({ ...prev, bio: text }))}
             placeholder="Tell us about yourself"
             multiline
             numberOfLines={3}
             style={styles.textArea}
           />
-          
+
           <Input
             label="Location"
             value={formData.location}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, location: text }))}
+            onChangeText={(text) => setFormData((prev) => ({ ...prev, location: text }))}
             placeholder="City, State/Country"
           />
         </View>
@@ -416,10 +469,10 @@ export default function EditProfileScreen() {
         {/* Sport & Position */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sport Information</Text>
-          
+
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Sport</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.picker}
               onPress={() => setShowSportPicker(!showSportPicker)}
             >
@@ -427,7 +480,7 @@ export default function EditProfileScreen() {
                 {formData.sport || 'Select your sport'}
               </Text>
             </TouchableOpacity>
-            
+
             {showSportPicker && (
               <View style={styles.pickerOptions}>
                 {SPORTS.map((sport) => (
@@ -435,7 +488,7 @@ export default function EditProfileScreen() {
                     key={sport}
                     style={styles.pickerOption}
                     onPress={() => {
-                      setFormData(prev => ({ ...prev, sport, position: '' }));
+                      setFormData((prev) => ({ ...prev, sport, position: '' }));
                       setShowSportPicker(false);
                     }}
                   >
@@ -449,7 +502,7 @@ export default function EditProfileScreen() {
           {formData.sport && (
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Position</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.picker}
                 onPress={() => setShowPositionPicker(!showPositionPicker)}
               >
@@ -457,7 +510,7 @@ export default function EditProfileScreen() {
                   {formData.position || 'Select your position'}
                 </Text>
               </TouchableOpacity>
-              
+
               {showPositionPicker && (
                 <View style={styles.pickerOptions}>
                   {availablePositions.map((position) => (
@@ -465,7 +518,7 @@ export default function EditProfileScreen() {
                       key={position}
                       style={styles.pickerOption}
                       onPress={() => {
-                        setFormData(prev => ({ ...prev, position }));
+                        setFormData((prev) => ({ ...prev, position }));
                         setShowPositionPicker(false);
                       }}
                     >
@@ -482,10 +535,7 @@ export default function EditProfileScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Achievements</Text>
-            <TouchableOpacity 
-              style={styles.addButton}
-              onPress={() => setShowAddAchievement(true)}
-            >
+            <TouchableOpacity style={styles.addButton} onPress={() => setShowAddAchievement(true)}>
               <Plus size={20} color={theme.colors.primary} />
             </TouchableOpacity>
           </View>
@@ -498,7 +548,7 @@ export default function EditProfileScreen() {
                 <Text style={styles.achievementDescription}>{achievement.description}</Text>
                 <Text style={styles.achievementDate}>{achievement.date}</Text>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.removeButton}
                 onPress={() => removeAchievement(achievement.id)}
               >
@@ -512,19 +562,21 @@ export default function EditProfileScreen() {
               <Input
                 label="Achievement Title"
                 value={newAchievement.title}
-                onChangeText={(text) => setNewAchievement(prev => ({ ...prev, title: text }))}
+                onChangeText={(text) => setNewAchievement((prev) => ({ ...prev, title: text }))}
                 placeholder="e.g., State Championship Winner"
               />
               <Input
                 label="Description"
                 value={newAchievement.description}
-                onChangeText={(text) => setNewAchievement(prev => ({ ...prev, description: text }))}
+                onChangeText={(text) =>
+                  setNewAchievement((prev) => ({ ...prev, description: text }))
+                }
                 placeholder="Brief description"
               />
               <Input
                 label="Date"
                 value={newAchievement.date}
-                onChangeText={(text) => setNewAchievement(prev => ({ ...prev, date: text }))}
+                onChangeText={(text) => setNewAchievement((prev) => ({ ...prev, date: text }))}
                 placeholder="MM/DD/YYYY"
               />
               <View style={styles.formActions}>
@@ -537,11 +589,7 @@ export default function EditProfileScreen() {
                   variant="ghost"
                   style={styles.actionButton}
                 />
-                <Button
-                  title="Add"
-                  onPress={addAchievement}
-                  style={styles.actionButton}
-                />
+                <Button title="Add" onPress={addAchievement} style={styles.actionButton} />
               </View>
             </View>
           )}
@@ -551,10 +599,7 @@ export default function EditProfileScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Stats</Text>
-            <TouchableOpacity 
-              style={styles.addButton}
-              onPress={() => setShowAddStat(true)}
-            >
+            <TouchableOpacity style={styles.addButton} onPress={() => setShowAddStat(true)}>
               <Plus size={20} color={theme.colors.primary} />
             </TouchableOpacity>
           </View>
@@ -562,10 +607,7 @@ export default function EditProfileScreen() {
           <View style={styles.statsGrid}>
             {Object.entries(formData.stats).map(([key, value]) => (
               <View key={key} style={styles.statCard}>
-                <TouchableOpacity 
-                  style={styles.statRemoveButton}
-                  onPress={() => removeStat(key)}
-                >
+                <TouchableOpacity style={styles.statRemoveButton} onPress={() => removeStat(key)}>
                   <X size={12} color={theme.colors.danger} />
                 </TouchableOpacity>
                 <Text style={styles.statCardValue}>{String(value)}</Text>
@@ -579,13 +621,13 @@ export default function EditProfileScreen() {
               <Input
                 label="Stat Name"
                 value={newStat.key}
-                onChangeText={(text) => setNewStat(prev => ({ ...prev, key: text }))}
+                onChangeText={(text) => setNewStat((prev) => ({ ...prev, key: text }))}
                 placeholder="e.g., Goals, Points, Wins"
               />
               <Input
                 label="Value"
                 value={newStat.value}
-                onChangeText={(text) => setNewStat(prev => ({ ...prev, value: text }))}
+                onChangeText={(text) => setNewStat((prev) => ({ ...prev, value: text }))}
                 placeholder="e.g., 25, 1250, 15"
               />
               <View style={styles.formActions}>
@@ -598,11 +640,7 @@ export default function EditProfileScreen() {
                   variant="ghost"
                   style={styles.actionButton}
                 />
-                <Button
-                  title="Add"
-                  onPress={addStat}
-                  style={styles.actionButton}
-                />
+                <Button title="Add" onPress={addStat} style={styles.actionButton} />
               </View>
             </View>
           )}

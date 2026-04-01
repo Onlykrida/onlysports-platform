@@ -8,57 +8,59 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
-  Image,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  CheckCircle,
-  XCircle,
-  Clock,
-  ChevronLeft,
-  User,
-} from 'lucide-react-native';
+import { CheckCircle, XCircle, Clock, ChevronLeft } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import CachedImage from '@/components/CachedImage';
+import { FLATLIST_PERF_PROPS } from '@/constants/performance';
+
+const ItemSeparator = () => <View style={{ height: theme.spacing.sm }} />;
 import { useOpportunities, Application } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
 import { router } from 'expo-router';
 
 export default function ManageApplicationsScreen() {
   const { user } = useAuth();
-  const { receivedApplications, isLoading, loadReceivedApplications, updateApplicationStatus } = useOpportunities();
+  const { receivedApplications, isLoading, loadReceivedApplications, updateApplicationStatus } =
+    useOpportunities();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const handleUpdateStatus = useCallback(async (applicationId: string, status: 'accepted' | 'rejected', athleteName?: string) => {
-    const action = status === 'accepted' ? 'accept' : 'reject';
-    const actionPast = status === 'accepted' ? 'accepted' : 'rejected';
+  const handleUpdateStatus = useCallback(
+    async (applicationId: string, status: 'accepted' | 'rejected', athleteName?: string) => {
+      const action = status === 'accepted' ? 'accept' : 'reject';
+      const actionPast = status === 'accepted' ? 'accepted' : 'rejected';
 
-    Alert.alert(
-      `${action.charAt(0).toUpperCase() + action.slice(1)} Application`,
-      `Are you sure you want to ${action} ${athleteName || 'this applicant'}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: action.charAt(0).toUpperCase() + action.slice(1),
-          style: status === 'rejected' ? 'destructive' : 'default',
-          onPress: async () => {
-            setProcessingId(applicationId);
-            try {
-              const { error } = await updateApplicationStatus(applicationId, status);
-              if (error) {
-                Alert.alert('Error', error);
-              } else {
-                Alert.alert('Success', `Application has been ${actionPast}.`);
+      Alert.alert(
+        `${action.charAt(0).toUpperCase() + action.slice(1)} Application`,
+        `Are you sure you want to ${action} ${athleteName || 'this applicant'}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: action.charAt(0).toUpperCase() + action.slice(1),
+            style: status === 'rejected' ? 'destructive' : 'default',
+            onPress: async () => {
+              setProcessingId(applicationId);
+              try {
+                const { error } = await updateApplicationStatus(applicationId, status);
+                if (error) {
+                  Alert.alert('Error', error);
+                } else {
+                  Alert.alert('Success', `Application has been ${actionPast}.`);
+                }
+              } catch {
+                Alert.alert('Error', `Failed to ${action} application.`);
+              } finally {
+                setProcessingId(null);
               }
-            } catch {
-              Alert.alert('Error', `Failed to ${action} application.`);
-            } finally {
-              setProcessingId(null);
-            }
+            },
           },
-        },
-      ]
-    );
-  }, [updateApplicationStatus]);
+        ],
+      );
+    },
+    [updateApplicationStatus],
+  );
 
   const getStatusColor = (status: Application['status']) => {
     switch (status) {
@@ -73,89 +75,87 @@ export default function ManageApplicationsScreen() {
     }
   };
 
-  const renderApplication = useCallback(({ item }: { item: Application }) => {
-    const statusColor = getStatusColor(item.status);
-    const isProcessing = processingId === item.id;
+  const renderApplication = useCallback(
+    ({ item }: { item: Application }) => {
+      const statusColor = getStatusColor(item.status);
+      const isProcessing = processingId === item.id;
 
-    return (
-      <View style={styles.applicationCard}>
-        <View style={styles.cardTop}>
-          <View style={styles.applicantRow}>
-            {item.athleteAvatar ? (
-              <Image source={{ uri: item.athleteAvatar }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <User size={20} color={theme.colors.textSecondary} />
+      return (
+        <View style={styles.applicationCard}>
+          <View style={styles.cardTop}>
+            <View style={styles.applicantRow}>
+              <CachedImage source={item.athleteAvatar} size={44} placeholder="avatar" />
+              <View style={styles.applicantInfo}>
+                <Text style={styles.applicantName}>{item.athleteName || 'Unknown Athlete'}</Text>
+                <View style={styles.applicantMeta}>
+                  {item.athleteSport && <Text style={styles.metaText}>{item.athleteSport}</Text>}
+                  {item.athleteSport && item.athletePosition && (
+                    <Text style={styles.metaDot}> / </Text>
+                  )}
+                  {item.athletePosition && (
+                    <Text style={styles.metaText}>{item.athletePosition}</Text>
+                  )}
+                </View>
               </View>
-            )}
-            <View style={styles.applicantInfo}>
-              <Text style={styles.applicantName}>
-                {item.athleteName || 'Unknown Athlete'}
-              </Text>
-              <View style={styles.applicantMeta}>
-                {item.athleteSport && (
-                  <Text style={styles.metaText}>{item.athleteSport}</Text>
-                )}
-                {item.athleteSport && item.athletePosition && (
-                  <Text style={styles.metaDot}> / </Text>
-                )}
-                {item.athletePosition && (
-                  <Text style={styles.metaText}>{item.athletePosition}</Text>
-                )}
+              <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
+                {item.status === 'pending' && <Clock size={14} color={statusColor} />}
+                {item.status === 'accepted' && <CheckCircle size={14} color={statusColor} />}
+                {item.status === 'rejected' && <XCircle size={14} color={statusColor} />}
+                <Text style={[styles.statusText, { color: statusColor }]}>
+                  {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                </Text>
               </View>
-            </View>
-            <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-              {item.status === 'pending' && <Clock size={14} color={statusColor} />}
-              {item.status === 'accepted' && <CheckCircle size={14} color={statusColor} />}
-              {item.status === 'rejected' && <XCircle size={14} color={statusColor} />}
-              <Text style={[styles.statusText, { color: statusColor }]}>
-                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-              </Text>
             </View>
           </View>
-        </View>
 
-        <View style={styles.opportunityRow}>
-          <Text style={styles.opportunityLabel}>For:</Text>
-          <Text style={styles.opportunityTitle} numberOfLines={1}>
-            {item.opportunityTitle || 'Untitled Opportunity'}
+          <View style={styles.opportunityRow}>
+            <Text style={styles.opportunityLabel}>For:</Text>
+            <Text style={styles.opportunityTitle} numberOfLines={1}>
+              {item.opportunityTitle || 'Untitled Opportunity'}
+            </Text>
+          </View>
+
+          <Text style={styles.dateText}>
+            Applied {new Date(item.createdAt).toLocaleDateString()}
           </Text>
+
+          {item.status === 'pending' && (
+            <View style={styles.actionsRow}>
+              {isProcessing ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={styles.acceptButton}
+                    onPress={() => handleUpdateStatus(item.id, 'accepted', item.athleteName)}
+                  >
+                    <CheckCircle size={16} color={theme.colors.white} />
+                    <Text style={styles.acceptButtonText}>Accept</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.rejectButton}
+                    onPress={() => handleUpdateStatus(item.id, 'rejected', item.athleteName)}
+                  >
+                    <XCircle size={16} color={theme.colors.danger} />
+                    <Text style={styles.rejectButtonText}>Reject</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
         </View>
+      );
+    },
+    [processingId, handleUpdateStatus],
+  );
 
-        <Text style={styles.dateText}>
-          Applied {new Date(item.createdAt).toLocaleDateString()}
-        </Text>
-
-        {item.status === 'pending' && (
-          <View style={styles.actionsRow}>
-            {isProcessing ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={styles.acceptButton}
-                  onPress={() => handleUpdateStatus(item.id, 'accepted', item.athleteName)}
-                >
-                  <CheckCircle size={16} color={theme.colors.white} />
-                  <Text style={styles.acceptButtonText}>Accept</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.rejectButton}
-                  onPress={() => handleUpdateStatus(item.id, 'rejected', item.athleteName)}
-                >
-                  <XCircle size={16} color={theme.colors.danger} />
-                  <Text style={styles.rejectButtonText}>Reject</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        )}
-      </View>
-    );
-  }, [processingId, handleUpdateStatus]);
-
-  const canManage = user?.role === 'coach' || user?.role === 'scout' || user?.role === 'team' ||
-    user?.role === 'gym' || user?.role === 'brand' || user?.role === 'academy';
+  const canManage =
+    user?.role === 'coach' ||
+    user?.role === 'scout' ||
+    user?.role === 'team' ||
+    user?.role === 'gym' ||
+    user?.role === 'brand' ||
+    user?.role === 'academy';
 
   if (!user || !canManage) {
     return (
@@ -194,7 +194,8 @@ export default function ManageApplicationsScreen() {
           renderItem={renderApplication}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={ItemSeparator}
+          {...FLATLIST_PERF_PROPS}
           refreshControl={
             <RefreshControl
               refreshing={isLoading}

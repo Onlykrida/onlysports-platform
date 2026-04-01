@@ -7,7 +7,6 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -16,6 +15,8 @@ import {
 } from 'react-native';
 import { X, Send, Heart, Trash2, MessageCircle } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { FLATLIST_PERF_PROPS } from '@/constants/performance';
+import CachedImage from '@/components/CachedImage';
 import { useAuth } from '@/hooks/auth-context';
 import { usePosts } from '@/hooks/posts-context';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
@@ -47,7 +48,7 @@ function CommentSkeleton() {
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
-      ])
+      ]),
     );
     animation.start();
     return () => animation.stop();
@@ -65,7 +66,12 @@ function CommentSkeleton() {
   );
 }
 
-export default function CommentsModal({ visible, onClose, postId, postAuthor }: CommentsModalProps) {
+export default function CommentsModal({
+  visible,
+  onClose,
+  postId,
+  postAuthor,
+}: CommentsModalProps) {
   const { user } = useAuth();
   const { refreshPosts } = usePosts();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -86,7 +92,8 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
       // Load comments from database
       const { data: commentsData, error } = await supabase
         .from('comments')
-        .select(`
+        .select(
+          `
           id,
           content,
           likes_count,
@@ -96,7 +103,8 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
             name,
             avatar
           )
-        `)
+        `,
+        )
         .eq('post_id', postId)
         .order('created_at', { ascending: false });
 
@@ -122,7 +130,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
         id: comment.id,
         userId: comment.user_id,
         userName: comment.profiles?.name || 'Unknown User',
-        userAvatar: comment.profiles?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+        userAvatar: comment.profiles?.avatar || '',
         content: comment.content,
         likes: comment.likes_count || 0,
         isLiked: userLikes.includes(comment.id),
@@ -166,7 +174,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
           if (payload.new?.user_id !== user?.id) {
             loadCommentsCallback();
           }
-        }
+        },
       )
       .on(
         'postgres_changes',
@@ -175,9 +183,9 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
           if (__DEV__) console.log('Comment deleted via realtime:', payload);
           // Remove the deleted comment from local state
           if (payload.old?.id) {
-            setComments(prev => prev.filter(c => c.id !== payload.old.id));
+            setComments((prev) => prev.filter((c) => c.id !== payload.old.id));
           }
-        }
+        },
       )
       .subscribe();
 
@@ -192,13 +200,11 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
     setIsSubmitting(true);
     try {
       // Insert comment into database
-      const { error } = await supabase
-        .from('comments')
-        .insert({
-          post_id: postId,
-          user_id: user.id,
-          content: newComment.trim(),
-        });
+      const { error } = await supabase.from('comments').insert({
+        post_id: postId,
+        user_id: user.id,
+        content: newComment.trim(),
+      });
 
       if (error) {
         console.error('Error creating comment:', error);
@@ -223,66 +229,64 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
   const handleDeleteComment = async (commentId: string) => {
     if (!user || !isSupabaseConfigured) return;
 
-    Alert.alert(
-      'Delete Comment',
-      'Are you sure you want to delete this comment?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeletingIds(prev => new Set(prev).add(commentId));
-            try {
-              const { error } = await supabase
-                .from('comments')
-                .delete()
-                .eq('id', commentId)
-                .eq('user_id', user.id);
+    Alert.alert('Delete Comment', 'Are you sure you want to delete this comment?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setDeletingIds((prev) => new Set(prev).add(commentId));
+          try {
+            const { error } = await supabase
+              .from('comments')
+              .delete()
+              .eq('id', commentId)
+              .eq('user_id', user.id);
 
-              if (error) {
-                console.error('Error deleting comment:', error);
-                Alert.alert('Error', 'Failed to delete comment');
-                return;
-              }
-
-              // Remove from local state
-              setComments(prev => prev.filter(c => c.id !== commentId));
-
-              // Refresh posts to update comment count
-              await refreshPosts();
-            } catch (error) {
-              console.error('Failed to delete comment:', error);
+            if (error) {
+              console.error('Error deleting comment:', error);
               Alert.alert('Error', 'Failed to delete comment');
-            } finally {
-              setDeletingIds(prev => {
-                const next = new Set(prev);
-                next.delete(commentId);
-                return next;
-              });
+              return;
             }
-          },
+
+            // Remove from local state
+            setComments((prev) => prev.filter((c) => c.id !== commentId));
+
+            // Refresh posts to update comment count
+            await refreshPosts();
+          } catch (error) {
+            console.error('Failed to delete comment:', error);
+            Alert.alert('Error', 'Failed to delete comment');
+          } finally {
+            setDeletingIds((prev) => {
+              const next = new Set(prev);
+              next.delete(commentId);
+              return next;
+            });
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleLikeComment = async (commentId: string) => {
     if (!user || !isSupabaseConfigured) return;
 
-    const comment = comments.find(c => c.id === commentId);
+    const comment = comments.find((c) => c.id === commentId);
     if (!comment) return;
 
     // Optimistic update first
-    setComments(prev => prev.map(c =>
-      c.id === commentId
-        ? {
-            ...c,
-            isLiked: !c.isLiked,
-            likes: c.isLiked ? c.likes - 1 : c.likes + 1
-          }
-        : c
-    ));
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? {
+              ...c,
+              isLiked: !c.isLiked,
+              likes: c.isLiked ? c.likes - 1 : c.likes + 1,
+            }
+          : c,
+      ),
+    );
 
     try {
       if (comment.isLiked) {
@@ -296,41 +300,39 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
         if (error) {
           console.error('Error unliking comment:', error);
           // Revert optimistic update
-          setComments(prev => prev.map(c =>
-            c.id === commentId
-              ? { ...c, isLiked: comment.isLiked, likes: comment.likes }
-              : c
-          ));
+          setComments((prev) =>
+            prev.map((c) =>
+              c.id === commentId ? { ...c, isLiked: comment.isLiked, likes: comment.likes } : c,
+            ),
+          );
           return;
         }
       } else {
         // Like comment
-        const { error } = await supabase
-          .from('comment_likes')
-          .insert({
-            user_id: user.id,
-            comment_id: commentId,
-          });
+        const { error } = await supabase.from('comment_likes').insert({
+          user_id: user.id,
+          comment_id: commentId,
+        });
 
         if (error) {
           console.error('Error liking comment:', error);
           // Revert optimistic update
-          setComments(prev => prev.map(c =>
-            c.id === commentId
-              ? { ...c, isLiked: comment.isLiked, likes: comment.likes }
-              : c
-          ));
+          setComments((prev) =>
+            prev.map((c) =>
+              c.id === commentId ? { ...c, isLiked: comment.isLiked, likes: comment.likes } : c,
+            ),
+          );
           return;
         }
       }
     } catch (error) {
       console.error('Failed to toggle comment like:', error);
       // Revert optimistic update
-      setComments(prev => prev.map(c =>
-        c.id === commentId
-          ? { ...c, isLiked: comment.isLiked, likes: comment.likes }
-          : c
-      ));
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId ? { ...c, isLiked: comment.isLiked, likes: comment.likes } : c,
+        ),
+      );
     }
   };
 
@@ -358,53 +360,56 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
 
   const isOwnComment = (comment: Comment) => user?.id === comment.userId;
 
-  const renderComment = ({ item }: { item: Comment }) => {
-    const isDeleting = deletingIds.has(item.id);
+  const renderComment = useCallback(
+    ({ item }: { item: Comment }) => {
+      const isDeleting = deletingIds.has(item.id);
 
-    return (
-      <View style={[styles.commentItem, isDeleting && styles.commentItemDeleting]}>
-        <Image source={{ uri: item.userAvatar }} style={styles.commentAvatar} />
-        <View style={styles.commentContent}>
-          <View style={styles.commentHeader}>
-            <View style={styles.commentHeaderLeft}>
-              <Text style={styles.commentUserName}>{item.userName}</Text>
-              <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt)}</Text>
+      return (
+        <View style={[styles.commentItem, isDeleting && styles.commentItemDeleting]}>
+          <CachedImage source={item.userAvatar} size={32} placeholder="avatar" />
+          <View style={styles.commentContent}>
+            <View style={styles.commentHeader}>
+              <View style={styles.commentHeaderLeft}>
+                <Text style={styles.commentUserName}>{item.userName}</Text>
+                <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt)}</Text>
+              </View>
+              {isOwnComment(item) && (
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteComment(item.id)}
+                  disabled={isDeleting}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {isDeleting ? (
+                    <ActivityIndicator size="small" color={theme.colors.textSecondary} />
+                  ) : (
+                    <Trash2 size={14} color={theme.colors.textSecondary} />
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
-            {isOwnComment(item) && (
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDeleteComment(item.id)}
-                disabled={isDeleting}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                {isDeleting ? (
-                  <ActivityIndicator size="small" color={theme.colors.textSecondary} />
-                ) : (
-                  <Trash2 size={14} color={theme.colors.textSecondary} />
-                )}
-              </TouchableOpacity>
-            )}
+            <Text style={styles.commentText}>{item.content}</Text>
+            <TouchableOpacity
+              style={styles.commentLikeButton}
+              onPress={() => handleLikeComment(item.id)}
+            >
+              <Heart
+                size={14}
+                color={item.isLiked ? theme.colors.danger : theme.colors.textSecondary}
+                fill={item.isLiked ? theme.colors.danger : 'transparent'}
+              />
+              {item.likes > 0 && (
+                <Text style={[styles.commentLikes, item.isLiked && styles.commentLikesActive]}>
+                  {item.likes}
+                </Text>
+              )}
+            </TouchableOpacity>
           </View>
-          <Text style={styles.commentText}>{item.content}</Text>
-          <TouchableOpacity
-            style={styles.commentLikeButton}
-            onPress={() => handleLikeComment(item.id)}
-          >
-            <Heart
-              size={14}
-              color={item.isLiked ? theme.colors.danger : theme.colors.textSecondary}
-              fill={item.isLiked ? theme.colors.danger : 'transparent'}
-            />
-            {item.likes > 0 && (
-              <Text style={[styles.commentLikes, item.isLiked && styles.commentLikesActive]}>
-                {item.likes}
-              </Text>
-            )}
-          </TouchableOpacity>
         </View>
-      </View>
-    );
-  };
+      );
+    },
+    [deletingIds, handleDeleteComment, handleLikeComment, user?.id],
+  );
 
   return (
     <Modal
@@ -441,6 +446,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
               comments.length === 0 && styles.commentsListEmpty,
             ]}
             showsVerticalScrollIndicator={false}
+            {...FLATLIST_PERF_PROPS}
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <MessageCircle size={48} color={theme.colors.textMuted} />
@@ -454,10 +460,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
         )}
 
         <View style={styles.inputContainer}>
-          <Image
-            source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }}
-            style={styles.inputAvatar}
-          />
+          <CachedImage source={user?.avatar} size={32} placeholder="avatar" />
           <TextInput
             style={styles.textInput}
             placeholder={`Comment as ${user?.name || 'User'}...`}
@@ -468,7 +471,10 @@ export default function CommentsModal({ visible, onClose, postId, postAuthor }: 
             maxLength={500}
           />
           <TouchableOpacity
-            style={[styles.sendButton, (!newComment.trim() || isSubmitting) && styles.sendButtonDisabled]}
+            style={[
+              styles.sendButton,
+              (!newComment.trim() || isSubmitting) && styles.sendButtonDisabled,
+            ]}
             onPress={handleSubmitComment}
             disabled={!newComment.trim() || isSubmitting}
           >

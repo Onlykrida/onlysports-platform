@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  TextInput,
-  View,
-  Text,
-  StyleSheet,
-  TextInputProps,
-  TouchableOpacity,
-} from 'react-native';
+import { TextInput, View, Text, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 
@@ -42,10 +35,7 @@ export const Input: React.FC<InputProps> = ({
           {...props}
         />
         {isPassword && (
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeIcon}
-          >
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
             {showPassword ? (
               <EyeOff size={20} color={theme.colors.textSecondary} />
             ) : (
@@ -74,16 +64,16 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.lg,
-    backgroundColor: theme.colors.inputBackground,
+    borderWidth: 0,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 0,
+    backgroundColor: '#111',
     paddingHorizontal: theme.spacing.lg,
     minHeight: 52,
   },
   inputError: {
-    borderColor: theme.colors.danger,
-    ...theme.shadow.fire,
+    borderBottomColor: theme.colors.danger,
   },
   input: {
     flex: 1,

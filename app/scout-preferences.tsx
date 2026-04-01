@@ -18,20 +18,66 @@ import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { ScoutPreferencesRow, useScouting } from '@/hooks/scouting-context';
 
 const SPORTS = [
-  'Football', 'Basketball', 'Soccer', 'Baseball', 'Tennis', 'Golf',
-  'Swimming', 'Track & Field', 'Volleyball', 'Hockey', 'Wrestling',
-  'Boxing', 'MMA', 'Cricket', 'Rugby', 'Other'
+  'Football',
+  'Basketball',
+  'Soccer',
+  'Baseball',
+  'Tennis',
+  'Golf',
+  'Swimming',
+  'Track & Field',
+  'Volleyball',
+  'Hockey',
+  'Wrestling',
+  'Boxing',
+  'MMA',
+  'Cricket',
+  'Rugby',
+  'Other',
 ];
 
 const POSITIONS: Record<string, string[]> = {
-  Football: ['Quarterback', 'Running Back', 'Wide Receiver', 'Tight End', 'Offensive Line', 'Defensive Line', 'Linebacker', 'Cornerback', 'Safety', 'Kicker', 'Punter'],
+  Football: [
+    'Quarterback',
+    'Running Back',
+    'Wide Receiver',
+    'Tight End',
+    'Offensive Line',
+    'Defensive Line',
+    'Linebacker',
+    'Cornerback',
+    'Safety',
+    'Kicker',
+    'Punter',
+  ],
   Basketball: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center'],
   Soccer: ['Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Striker'],
-  Baseball: ['Pitcher', 'Catcher', 'First Base', 'Second Base', 'Third Base', 'Shortstop', 'Left Field', 'Center Field', 'Right Field'],
+  Baseball: [
+    'Pitcher',
+    'Catcher',
+    'First Base',
+    'Second Base',
+    'Third Base',
+    'Shortstop',
+    'Left Field',
+    'Center Field',
+    'Right Field',
+  ],
   Tennis: ['Singles', 'Doubles'],
   Cricket: ['Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper'],
   Hockey: ['Goalie', 'Defender', 'Midfielder', 'Forward'],
-  Rugby: ['Prop', 'Hooker', 'Lock', 'Flanker', 'Number Eight', 'Scrum-Half', 'Fly-Half', 'Centre', 'Wing', 'Fullback'],
+  Rugby: [
+    'Prop',
+    'Hooker',
+    'Lock',
+    'Flanker',
+    'Number Eight',
+    'Scrum-Half',
+    'Fly-Half',
+    'Centre',
+    'Wing',
+    'Fullback',
+  ],
   Volleyball: ['Setter', 'Libero', 'Outside Hitter', 'Middle Blocker', 'Opposite Hitter'],
   Other: ['Player', 'Athlete'],
 };
@@ -45,21 +91,23 @@ export default function ScoutPreferencesScreen() {
 
   const [sport, setSport] = useState('');
   const [preferredPositions, setPreferredPositions] = useState<string[]>([]);
-  const [weightSkill, setWeightSkill] = useState(0.35);
-  const [weightSpeed, setWeightSpeed] = useState(0.25);
-  const [weightStamina, setWeightStamina] = useState(0.20);
-  const [weightPositionMatch, setWeightPositionMatch] = useState(0.20);
+  const [weightSkill, setWeightSkill] = useState(0.3);
+  const [weightSpeed, setWeightSpeed] = useState(0.2);
+  const [weightStamina, setWeightStamina] = useState(0.15);
+  const [weightPositionMatch, setWeightPositionMatch] = useState(0.2);
+  const [weightEndurance, setWeightEndurance] = useState(0.15);
 
   const [showSportPicker, setShowSportPicker] = useState(false);
 
-  const availablePositions = sport ? (POSITIONS[sport] || POSITIONS.Other) : [];
+  const availablePositions = sport ? POSITIONS[sport] || POSITIONS.Other : [];
 
-  const weightSum = weightSkill + weightSpeed + weightStamina + weightPositionMatch;
+  const weightSum =
+    weightSkill + weightSpeed + weightStamina + weightPositionMatch + weightEndurance;
   const isWeightBalanced = Math.abs(weightSum - 1.0) < 0.05;
 
   const togglePosition = (pos: string) => {
     setPreferredPositions((prev) =>
-      prev.includes(pos) ? prev.filter((p) => p !== pos) : [...prev, pos]
+      prev.includes(pos) ? prev.filter((p) => p !== pos) : [...prev, pos],
     );
   };
 
@@ -77,7 +125,11 @@ export default function ScoutPreferencesScreen() {
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116' || error.code === 'PGRST205' || error.message?.includes('Could not find')) {
+        if (
+          error.code === 'PGRST116' ||
+          error.code === 'PGRST205' ||
+          error.message?.includes('Could not find')
+        ) {
           // No row found or table doesn't exist
         } else {
           console.log('ScoutPreferences: load error', error);
@@ -91,10 +143,11 @@ export default function ScoutPreferencesScreen() {
         setExistingId(row.id);
         if (row.sport) setSport(row.sport);
         if (row.preferred_positions) setPreferredPositions(row.preferred_positions);
-        setWeightSkill(row.weight_skill ?? 0.35);
-        setWeightSpeed(row.weight_speed ?? 0.25);
-        setWeightStamina(row.weight_stamina ?? 0.20);
-        setWeightPositionMatch(row.weight_position_match ?? 0.20);
+        setWeightSkill(row.weight_skill ?? 0.3);
+        setWeightSpeed(row.weight_speed ?? 0.2);
+        setWeightStamina(row.weight_stamina ?? 0.15);
+        setWeightPositionMatch(row.weight_position_match ?? 0.2);
+        setWeightEndurance(row.weight_endurance ?? 0.15);
       }
     } catch (e) {
       console.log('ScoutPreferences: load exception', e);
@@ -119,7 +172,10 @@ export default function ScoutPreferencesScreen() {
     }
 
     if (!isWeightBalanced) {
-      Alert.alert('Warning', `Your importance weights sum to ${weightSum.toFixed(2)} instead of ~1.0. Adjust them before saving.`);
+      Alert.alert(
+        'Warning',
+        `Your importance weights sum to ${weightSum.toFixed(2)} instead of ~1.0. Adjust them before saving.`,
+      );
       return;
     }
 
@@ -139,15 +195,13 @@ export default function ScoutPreferencesScreen() {
         weight_speed: parseFloat(weightSpeed.toFixed(2)),
         weight_stamina: parseFloat(weightStamina.toFixed(2)),
         weight_position_match: parseFloat(weightPositionMatch.toFixed(2)),
+        weight_endurance: parseFloat(weightEndurance.toFixed(2)),
         updated_at: new Date().toISOString(),
       };
 
       let result;
       if (existingId) {
-        result = await supabase
-          .from('scout_preferences')
-          .update(payload)
-          .eq('id', existingId);
+        result = await supabase.from('scout_preferences').update(payload).eq('id', existingId);
       } else {
         result = await supabase
           .from('scout_preferences')
@@ -155,8 +209,14 @@ export default function ScoutPreferencesScreen() {
       }
 
       if (result.error) {
-        if (result.error.code === 'PGRST205' || result.error.message?.includes('Could not find the table')) {
-          Alert.alert('Setup Required', 'The scout_preferences table has not been created yet. Please run the database migration first.');
+        if (
+          result.error.code === 'PGRST205' ||
+          result.error.message?.includes('Could not find the table')
+        ) {
+          Alert.alert(
+            'Setup Required',
+            'The scout_preferences table has not been created yet. Please run the database migration first.',
+          );
         } else {
           Alert.alert('Error', result.error.message || 'Failed to save preferences.');
         }
@@ -238,7 +298,14 @@ export default function ScoutPreferencesScreen() {
                         setShowSportPicker(false);
                       }}
                     >
-                      <Text style={[styles.pickerOptionText, s === sport && styles.pickerOptionTextSelected]}>{s}</Text>
+                      <Text
+                        style={[
+                          styles.pickerOptionText,
+                          s === sport && styles.pickerOptionTextSelected,
+                        ]}
+                      >
+                        {s}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -250,7 +317,9 @@ export default function ScoutPreferencesScreen() {
           {sport ? (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Preferred Positions</Text>
-              <Text style={styles.sectionHint}>Tap to select the positions you are looking for</Text>
+              <Text style={styles.sectionHint}>
+                Tap to select the positions you are looking for
+              </Text>
               <View style={styles.chipsContainer}>
                 {availablePositions.map((pos) => {
                   const selected = preferredPositions.includes(pos);
@@ -260,14 +329,17 @@ export default function ScoutPreferencesScreen() {
                       style={[styles.chip, selected && styles.chipSelected]}
                       onPress={() => togglePosition(pos)}
                     >
-                      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{pos}</Text>
+                      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                        {pos}
+                      </Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
               {preferredPositions.length > 0 && (
                 <Text style={styles.selectedCount}>
-                  {preferredPositions.length} position{preferredPositions.length !== 1 ? 's' : ''} selected
+                  {preferredPositions.length} position{preferredPositions.length !== 1 ? 's' : ''}{' '}
+                  selected
                 </Text>
               )}
             </View>
@@ -286,10 +358,36 @@ export default function ScoutPreferencesScreen() {
               </Text>
             </View>
 
-            <WeightSlider label="Skill Importance" value={weightSkill} onChange={setWeightSkill} color={theme.colors.primary} />
-            <WeightSlider label="Speed Importance" value={weightSpeed} onChange={setWeightSpeed} color={theme.colors.info} />
-            <WeightSlider label="Stamina Importance" value={weightStamina} onChange={setWeightStamina} color={theme.colors.warning} />
-            <WeightSlider label="Position Match" value={weightPositionMatch} onChange={setWeightPositionMatch} color={theme.colors.success} />
+            <WeightSlider
+              label="Skill Importance"
+              value={weightSkill}
+              onChange={setWeightSkill}
+              color={theme.colors.primary}
+            />
+            <WeightSlider
+              label="Speed Importance"
+              value={weightSpeed}
+              onChange={setWeightSpeed}
+              color={theme.colors.info}
+            />
+            <WeightSlider
+              label="Stamina Importance"
+              value={weightStamina}
+              onChange={setWeightStamina}
+              color={theme.colors.warning}
+            />
+            <WeightSlider
+              label="Position Match"
+              value={weightPositionMatch}
+              onChange={setWeightPositionMatch}
+              color={theme.colors.success}
+            />
+            <WeightSlider
+              label="Endurance (Beep Test)"
+              value={weightEndurance}
+              onChange={setWeightEndurance}
+              color="#FF9F0A"
+            />
           </View>
 
           {/* Save Button */}
@@ -300,11 +398,7 @@ export default function ScoutPreferencesScreen() {
               loading={isSaving}
               variant="primary"
             />
-            <Button
-              title="Cancel"
-              onPress={() => router.back()}
-              variant="ghost"
-            />
+            <Button title="Cancel" onPress={() => router.back()} variant="ghost" />
           </View>
         </ScrollView>
       )}

@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OnlyKrida — Where Athletes Get Discovered</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;700;900&family=Caveat:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- CURSOR DOT -->
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+
+    <!-- SCROLL PROGRESS BAR -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- NOISE OVERLAY -->
+    <div class="noise-overlay" aria-hidden="true"></div>
+
+    <!-- FLOATING SPORT NAMES BACKGROUND -->
+    <div class="sport-bg" aria-hidden="true">
+      <div class="sport-bg__layer sport-bg__layer--1">
+        FOOTBALL · CRICKET · BASKETBALL · MMA · BOXING · KABADDI · ATHLETICS · WRESTLING · HOCKEY ·
+        TENNIS · BADMINTON · SWIMMING · VOLLEYBALL · TABLE TENNIS · ARCHERY · JUDO · FENCING ·
+        CYCLING · ROWING · WEIGHTLIFTING
+      </div>
+      <div class="sport-bg__layer sport-bg__layer--2">
+        JAVELIN · SHOT PUT · DISCUS · HIGH JUMP · LONG JUMP · HURDLES · RELAY · MARATHON · TRIATHLON
+        · DECATHLON · GYMNASTICS · DIVING · WATER POLO · SURFING · SKATEBOARDING · CLIMBING · KARATE
+        · TAEKWONDO · WUSHU · KORFBALL
+      </div>
+      <div class="sport-bg__layer sport-bg__layer--3">
+        CRICKET · FOOTBALL · HOCKEY · BOXING · ATHLETICS · KABADDI · WRESTLING · SWIMMING ·
+        BADMINTON · TENNIS · BASKETBALL · MMA · CYCLING · ARCHERY · JUDO · FENCING · ROWING ·
+        VOLLEYBALL · SURFING · SKATEBOARDING
+      </div>
+    </div>
+
+    <!-- NAV -->
+    <nav class="nav" id="nav">
+      <div class="nav__logo" data-magnetic>ONLY<span>KRIDA</span></div>
+      <div class="nav__links">
+        <a href="#features" class="nav__link">FEATURES</a>
+        <a href="#culture" class="nav__link">CULTURE</a>
+        <a href="#roles" class="nav__link">FOR YOU</a>
+      </div>
+      <a href="#cta" class="nav__btn" data-magnetic>JOIN THE MOVEMENT</a>
+      <a href="#cta" class="nav__btn nav__btn--app" data-magnetic>LAUNCHING SOON</a>
+    </nav>
+
+    <!-- ========== HERO ========== -->
+    <section class="hero" id="hero">
+      <div class="hero__bg-text" aria-hidden="true">KRIDA</div>
+
+      <!-- Floating particles -->
+      <canvas class="hero__particles" id="heroParticles"></canvas>
+
+      <!-- Floating sport emojis -->
+      <div class="hero__floaters" aria-hidden="true">
+        <span class="floater" style="--x: 8%; --y: 15%; --dur: 18s; --delay: 0s; --size: 2.5rem"
+          >&#9917;</span
+        >
+        <span class="floater" style="--x: 88%; --y: 20%; --dur: 22s; --delay: -3s; --size: 2rem"
+          >&#127936;</span
+        >
+        <span class="floater" style="--x: 5%; --y: 55%; --dur: 20s; --delay: -7s; --size: 2.2rem"
+          >&#127941;</span
+        >
+        <span class="floater" style="--x: 92%; --y: 60%; --dur: 16s; --delay: -2s; --size: 1.8rem"
+          >&#127947;</span
+        >
+        <span class="floater" style="--x: 15%; --y: 80%; --dur: 24s; --delay: -5s; --size: 2rem"
+          >&#129354;</span
+        >
+        <span class="floater" style="--x: 82%; --y: 85%; --dur: 19s; --delay: -8s; --size: 2.3rem"
+          >&#127939;</span
+        >
+        <span class="floater" style="--x: 3%; --y: 35%; --dur: 21s; --delay: -1s; --size: 1.6rem"
+          >&#127955;</span
+        >
+        <span class="floater" style="--x: 95%; --y: 40%; --dur: 17s; --delay: -6s; --size: 1.9rem"
+          >&#127942;</span
+        >
+        <span class="floater" style="--x: 12%; --y: 70%; --dur: 23s; --delay: -4s; --size: 1.7rem"
+          >&#9971;</span
+        >
+        <span class="floater" style="--x: 90%; --y: 75%; --dur: 15s; --delay: -9s; --size: 2.1rem"
+          >&#127952;</span
+        >
+      </div>
+
+      <!-- Paint splatters -->
+      <div class="hero__splatters" aria-hidden="true">
+        <div class="splatter splatter--1"></div>
+        <div class="splatter splatter--2"></div>
+        <div class="splatter splatter--3"></div>
+        <div class="splatter splatter--4"></div>
+        <div class="splatter splatter--5"></div>
+      </div>
+
+      <div class="hero__zoom-layer" id="heroZoom">
+        <div class="hero__content">
+          <div class="hero__badge">
+            <span class="hero__badge-dot"></span>
+            LAUNCHING 2026
+          </div>
+          <div class="hero__title">
+            <span class="hero__thin" data-split>YOUR</span>
+            <span class="hero__bold-italic" data-scramble>TALENT</span>
+            <span class="hero__thin" data-split>DESERVES</span>
+            <span class="hero__stage" data-text="A STAGE">A STAGE</span>
+          </div>
+          <p class="hero__sub">Where Athletes Get Discovered</p>
+          <div class="hero__stickers">
+            <div class="sticker sticker--est" data-magnetic>EST. 2026</div>
+            <div class="sticker sticker--loc" data-magnetic>MADE IN INDIA &#127470;&#127475;</div>
+            <div class="sticker sticker--sports" data-magnetic>50+ SPORTS</div>
+            <div class="sticker sticker--free" data-magnetic>100% FREE</div>
+          </div>
+          <a href="#cta" class="hero__cta-btn" data-magnetic data-text="GET EARLY ACCESS">
+            <span>GET EARLY ACCESS</span>
+          </a>
+        </div>
+      </div>
+      <div class="hero__silhouettes" aria-hidden="true">
+        <div class="silhouette silhouette--1"></div>
+        <div class="silhouette silhouette--2"></div>
+        <div class="silhouette silhouette--3"></div>
+        <div class="silhouette silhouette--4"></div>
+      </div>
+      <div class="hero__scroll-hint">
+        <span>SCROLL</span>
+        <div class="hero__scroll-line"></div>
+      </div>
+    </section>
+
+    <!-- ========== MARQUEE ========== -->
+    <section class="marquee-section">
+      <div class="marquee-row marquee-row--1">
+        <div class="marquee-track marquee-track--left">
+          <span
+            >FOOTBALL &bull; CRICKET &bull; BASKETBALL &bull; MMA &bull; BOXING &bull; KABADDI
+            &bull; ATHLETICS &bull; WRESTLING &bull; HOCKEY &bull; TENNIS &bull; BADMINTON &bull;
+            SWIMMING &bull;&nbsp;</span
+          >
+          <span
+            >FOOTBALL &bull; CRICKET &bull; BASKETBALL &bull; MMA &bull; BOXING &bull; KABADDI
+            &bull; ATHLETICS &bull; WRESTLING &bull; HOCKEY &bull; TENNIS &bull; BADMINTON &bull;
+            SWIMMING &bull;&nbsp;</span
+          >
+        </div>
+      </div>
+      <div class="marquee-row marquee-row--2">
+        <div class="marquee-track marquee-track--right">
+          <span
+            >HUSTLE HARDER &bull; NO SHORTCUTS &bull; PROVE THEM WRONG &bull; BUILT DIFFERENT &bull;
+            FROM THE GROUND UP &bull; NEXT GEN &bull; UNDERDOG MENTALITY &bull;&nbsp;</span
+          >
+          <span
+            >HUSTLE HARDER &bull; NO SHORTCUTS &bull; PROVE THEM WRONG &bull; BUILT DIFFERENT &bull;
+            FROM THE GROUND UP &bull; NEXT GEN &bull; UNDERDOG MENTALITY &bull;&nbsp;</span
+          >
+        </div>
+      </div>
+      <div class="marquee-row marquee-row--3">
+        <div class="marquee-track marquee-track--left">
+          <span
+            >0 ATHLETES &bull; 0 SCOUTS &bull; 50+ SPORTS &bull; 2 COUNTRIES &bull; 1 PLATFORM
+            &bull; INFINITE POTENTIAL &bull; WE'RE JUST GETTING STARTED &bull;&nbsp;</span
+          >
+          <span
+            >0 ATHLETES &bull; 0 SCOUTS &bull; 50+ SPORTS &bull; 2 COUNTRIES &bull; 1 PLATFORM
+            &bull; INFINITE POTENTIAL &bull; WE'RE JUST GETTING STARTED &bull;&nbsp;</span
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== THE PROBLEM ========== -->
+    <section class="problem" id="problem">
+      <div class="problem__inner">
+        <div class="problem__stat">
+          <span class="problem__number" data-count-up="78">0</span
+          ><span class="problem__percent">%</span>
+          <span class="problem__of">of athletes</span>
+          <span class="problem__handwritten">never get scouted.</span>
+        </div>
+        <div class="problem__reason">
+          <span class="problem__crossed">BECAUSE NOBODY'S WATCHING</span>
+          <span class="problem__replaced" data-text="UNTIL NOW.">UNTIL NOW.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== MANIFESTO ========== -->
+    <section class="manifesto">
+      <div class="manifesto__inner">
+        <div class="manifesto__line" data-animate data-delay="0">
+          WE DIDN'T BUILD THIS IN A BOARDROOM.
+        </div>
+        <div class="manifesto__line" data-animate data-delay="200">
+          WE BUILT IT ON <span class="manifesto__highlight">DUSTY GROUNDS</span>,
+        </div>
+        <div class="manifesto__line" data-animate data-delay="400">
+          IN <span class="manifesto__highlight--orange">CRAMPED GYMS</span>,
+        </div>
+        <div class="manifesto__line" data-animate data-delay="600">
+          ON <span class="manifesto__highlight--cyan">BROKEN COURTS</span>.
+        </div>
+        <div class="manifesto__line manifesto__line--big" data-animate data-delay="900">
+          FOR THE ONES WHO NEVER QUIT.
+        </div>
+        <div class="manifesto__scribble" data-animate data-delay="1200">— that's you, btw</div>
+      </div>
+    </section>
+
+    <!-- ========== BEEP TEST SPLASH ========== -->
+    <section class="beep-splash" id="beeptest">
+      <div class="beep-splash__drip beep-splash__drip--1" aria-hidden="true"></div>
+      <div class="beep-splash__drip beep-splash__drip--2" aria-hidden="true"></div>
+      <div class="beep-splash__drip beep-splash__drip--3" aria-hidden="true"></div>
+
+      <div class="beep-splash__inner">
+        <div class="beep-splash__headline" data-animate>
+          <span class="beep-splash__how">HOW FIT</span>
+          <span class="beep-splash__are">ARE YOU</span>
+          <span class="beep-splash__q">?</span>
+        </div>
+
+        <p class="beep-splash__scribble" data-animate data-delay="300">— the beep test don't lie</p>
+
+        <p class="beep-splash__copy" data-animate data-delay="500">
+          Our AI doesn't just watch your highlights.<br />
+          It tests your <strong>lungs</strong>, your <strong>legs</strong>, your
+          <strong>heart</strong>.<br />
+          VO2max. Endurance zones. Real data scouts actually trust.
+        </p>
+
+        <!-- Level counter -->
+        <div class="beep-splash__counter" data-animate data-delay="700">
+          <div class="beep-splash__pulse"></div>
+          <span class="beep-splash__level-label">LEVEL</span>
+          <span class="beep-splash__level-num" id="beepLevelCounter">1</span>
+        </div>
+
+        <!-- Zone stickers scattered -->
+        <div class="beep-splash__zones">
+          <div
+            class="beep-splash__zone beep-splash__zone--starter"
+            style="--rot: -6deg; --delay: 0.8s"
+            data-animate
+          >
+            STARTER
+          </div>
+          <div
+            class="beep-splash__zone beep-splash__zone--building"
+            style="--rot: 4deg; --delay: 1s"
+            data-animate
+          >
+            BUILDING
+          </div>
+          <div
+            class="beep-splash__zone beep-splash__zone--rising"
+            style="--rot: -3deg; --delay: 1.2s"
+            data-animate
+          >
+            RISING
+          </div>
+          <div
+            class="beep-splash__zone beep-splash__zone--strong"
+            style="--rot: 5deg; --delay: 1.4s"
+            data-animate
+          >
+            STRONG
+          </div>
+          <div
+            class="beep-splash__zone beep-splash__zone--elite"
+            style="--rot: -7deg; --delay: 1.6s"
+            data-animate
+          >
+            ELITE
+          </div>
+          <div
+            class="beep-splash__zone beep-splash__zone--unstoppable"
+            style="--rot: 3deg; --delay: 1.8s"
+            data-animate
+          >
+            UNSTOPPABLE
+          </div>
+        </div>
+
+        <a href="#cta" class="beep-splash__cta" data-magnetic data-text="GET TESTED">
+          <span>GET TESTED</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ========== WHAT WE DO (HORIZONTAL SCROLL) ========== -->
+    <section class="features" id="features">
+      <h2 class="section-title section-title--slanted">WHAT WE DO</h2>
+      <p class="features__drag-hint">
+        <span class="features__drag-arrow">&larr;</span>
+        DRAG TO EXPLORE
+        <span class="features__drag-arrow">&rarr;</span>
+      </p>
+      <div class="features__track" id="featuresTrack">
+        <div class="feature-card" data-tilt>
+          <div class="feature-card__number">01</div>
+          <span class="feature-card__emoji">&#127941;</span>
+          <h3>AI SCOUTING</h3>
+          <p>Machine learning spots talent scouts miss. Your highlights, analyzed 24/7.</p>
+          <div class="feature-card__glow"></div>
+        </div>
+        <div class="feature-card" data-tilt>
+          <div class="feature-card__number">02</div>
+          <span class="feature-card__emoji">&#128172;</span>
+          <h3>DIRECT MESSAGING</h3>
+          <p>Talk to coaches, scouts, and teams. No middlemen. No agents taking cuts.</p>
+          <div class="feature-card__glow"></div>
+        </div>
+        <div class="feature-card" data-tilt>
+          <div class="feature-card__number">03</div>
+          <span class="feature-card__emoji">&#128200;</span>
+          <h3>STATS TRACKER</h3>
+          <p>Log every game, every rep, every PB. Build your profile with real data.</p>
+          <div class="feature-card__glow"></div>
+        </div>
+        <div class="feature-card" data-tilt>
+          <div class="feature-card__number">04</div>
+          <span class="feature-card__emoji">&#127919;</span>
+          <h3>OPPORTUNITY BOARD</h3>
+          <p>Trials, scholarships, sponsorships — all in one feed. Never miss a chance.</p>
+          <div class="feature-card__glow"></div>
+        </div>
+        <div class="feature-card" data-tilt>
+          <div class="feature-card__number">05</div>
+          <span class="feature-card__emoji">&#127909;</span>
+          <h3>HIGHLIGHT REELS</h3>
+          <p>Upload clips. Tag your sport. Let the world see what you're made of.</p>
+          <div class="feature-card__glow"></div>
+        </div>
+        <div class="feature-card" data-tilt>
+          <div class="feature-card__number">06</div>
+          <span class="feature-card__emoji">&#129309;</span>
+          <h3>TEAM CONNECT</h3>
+          <p>Find teammates, join squads, build your crew. Strength in numbers.</p>
+          <div class="feature-card__glow"></div>
+        </div>
+        <div class="feature-card" data-tilt>
+          <div class="feature-card__number">07</div>
+          <span class="feature-card__emoji">&#9201;</span>
+          <h3>FITNESS TESTING</h3>
+          <p>
+            Built-in beep test. Know your VO2max, your endurance zone, and where you stand. Scouts
+            see real fitness data, not guesses.
+          </p>
+          <div class="feature-card__glow"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== APP PREVIEW ========== -->
+    <section class="app-preview" id="app">
+      <div class="app-preview__inner">
+        <div class="app-preview__text">
+          <h2 class="section-title section-title--left" data-animate>
+            YOUR WHOLE<br /><span class="app-preview__accent">CAREER</span><br />IN YOUR POCKET
+          </h2>
+          <div class="app-preview__features">
+            <div class="app-preview__feat" data-animate data-delay="100">
+              <span class="app-preview__feat-icon">&#9889;</span>
+              <div>
+                <strong>INSTANT MATCH</strong>
+                <p>Get matched with scouts in your sport, your area, your level.</p>
+              </div>
+            </div>
+            <div class="app-preview__feat" data-animate data-delay="200">
+              <span class="app-preview__feat-icon">&#128202;</span>
+              <div>
+                <strong>LIVE DASHBOARD</strong>
+                <p>Track profile views, scout interest, and engagement in real time.</p>
+              </div>
+            </div>
+            <div class="app-preview__feat" data-animate data-delay="300">
+              <span class="app-preview__feat-icon">&#127942;</span>
+              <div>
+                <strong>ACHIEVEMENT BADGES</strong>
+                <p>Earn badges for milestones. Show off your grind.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="app-preview__phone" data-animate>
+          <div class="app-preview__phone-frame" data-tilt>
+            <div class="app-preview__phone-notch"></div>
+            <div class="app-preview__phone-screen">
+              <div class="app-preview__phone-header">
+                <span class="app-preview__phone-logo">OK</span>
+                <span class="app-preview__phone-user">&#128100; Arjun D.</span>
+              </div>
+              <div class="app-preview__phone-stats">
+                <div class="app-preview__phone-stat">
+                  <span class="app-preview__phone-stat-val" data-count-up="847">0</span>
+                  <span class="app-preview__phone-stat-label">VIEWS</span>
+                </div>
+                <div class="app-preview__phone-stat">
+                  <span class="app-preview__phone-stat-val" data-count-up="23">0</span>
+                  <span class="app-preview__phone-stat-label">SCOUTS</span>
+                </div>
+                <div class="app-preview__phone-stat">
+                  <span class="app-preview__phone-stat-val">4.8</span>
+                  <span class="app-preview__phone-stat-label">RATING</span>
+                </div>
+              </div>
+              <div class="app-preview__phone-card app-preview__phone-card--slide">
+                <span class="app-preview__phone-card-badge">&#127919; NEW TRIAL</span>
+                <span class="app-preview__phone-card-text">Dubai FC U-23 Trials</span>
+                <span class="app-preview__phone-card-date">Mar 15, 2026</span>
+              </div>
+              <div
+                class="app-preview__phone-card app-preview__phone-card--alt app-preview__phone-card--slide"
+              >
+                <span class="app-preview__phone-card-badge app-preview__phone-card-badge--green"
+                  >&#128172; MESSAGE</span
+                >
+                <span class="app-preview__phone-card-text">Coach Ravi wants to connect</span>
+                <span class="app-preview__phone-card-date">Just now</span>
+              </div>
+              <div class="app-preview__phone-card app-preview__phone-card--slide">
+                <span class="app-preview__phone-card-badge app-preview__phone-card-badge--cyan"
+                  >&#127941; AI MATCH</span
+                >
+                <span class="app-preview__phone-card-text"
+                  >92% match — ISL Scout looking for strikers</span
+                >
+                <span class="app-preview__phone-card-date">2 min ago</span>
+              </div>
+            </div>
+          </div>
+          <div class="app-preview__phone-glow"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== VELOCITY NUMBERS (horizontal scroll-linked) ========== -->
+    <section class="velocity" id="velocity">
+      <div class="velocity__track">
+        <div class="velocity__item">
+          <span class="velocity__big">0</span>
+          <span class="velocity__label">ATHLETES ON<br />THE PLATFORM</span>
+        </div>
+        <div class="velocity__divider"></div>
+        <div class="velocity__item">
+          <span class="velocity__big">0</span>
+          <span class="velocity__label">SCOUTS &<br />COACHES</span>
+        </div>
+        <div class="velocity__divider"></div>
+        <div class="velocity__item">
+          <span class="velocity__big" data-count-up="50">0</span>
+          <span class="velocity__plus">+</span>
+          <span class="velocity__label">SPORTS<br />COVERED</span>
+        </div>
+        <div class="velocity__divider"></div>
+        <div class="velocity__item">
+          <span class="velocity__big velocity__flag">&#127470;&#127475;</span>
+          <span class="velocity__label">MADE IN<br />INDIA</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== WHO'S IT FOR ========== -->
+    <section class="roles" id="roles">
+      <h2 class="section-title">WHO'S IT FOR</h2>
+      <div class="roles__grid">
+        <div class="role" data-animate data-tilt>
+          <div class="role__icon">&#127939;</div>
+          <h3 class="role__title">ATHLETES</h3>
+          <p class="role__desc">
+            Upload highlights, build your profile, get seen by scouts and coaches worldwide. Your
+            talent is the ticket.
+          </p>
+          <div class="role__tag">FREE TO JOIN</div>
+          <div class="role__glow"></div>
+        </div>
+        <div class="role" data-animate data-delay="150" data-tilt>
+          <div class="role__icon">&#128270;</div>
+          <h3 class="role__title">SCOUTS</h3>
+          <p class="role__desc">
+            AI-powered talent discovery across 50+ sports. Filter by location, age, position, stats.
+            Find diamonds in the rough.
+          </p>
+          <div class="role__tag role__tag--orange">EARLY ACCESS</div>
+          <div class="role__glow role__glow--orange"></div>
+        </div>
+        <div class="role" data-animate data-delay="300" data-tilt>
+          <div class="role__icon">&#127947;</div>
+          <h3 class="role__title">COACHES</h3>
+          <p class="role__desc">
+            Build your team. Post trials. Message athletes directly. No more word-of-mouth guessing
+            games.
+          </p>
+          <div class="role__tag role__tag--cyan">COMING SOON</div>
+          <div class="role__glow role__glow--cyan"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== WHAT WE'RE SOLVING ========== -->
+    <section class="culture" id="culture">
+      <h2 class="section-title">WHAT WE'RE SOLVING</h2>
+      <div class="polaroid-grid">
+        <div class="polaroid" style="--rot: -5deg" data-tilt>
+          <div class="polaroid__caption">
+            <span class="polaroid__name">NO VISIBILITY</span>
+            <span class="polaroid__sport">The Problem</span>
+            <p class="polaroid__quote">
+              Millions of athletes train in silence. No scouts watching, no cameras rolling. Talent
+              dies in obscurity — not because it's lacking, but because nobody's looking.
+            </p>
+          </div>
+        </div>
+        <div class="polaroid" style="--rot: 3deg" data-tilt>
+          <div class="polaroid__caption">
+            <span class="polaroid__name">BROKEN SCOUTING</span>
+            <span class="polaroid__sport">The Problem</span>
+            <p class="polaroid__quote">
+              Scouting is still word-of-mouth, connections, and luck. If you're not in the right
+              city or the right academy, you're invisible. That's not a system — that's a lottery.
+            </p>
+          </div>
+        </div>
+        <div class="polaroid" style="--rot: -2deg" data-tilt>
+          <div class="polaroid__caption">
+            <span class="polaroid__name">NO REAL DATA</span>
+            <span class="polaroid__sport">The Problem</span>
+            <p class="polaroid__quote">
+              Coaches guess. Scouts rely on highlights. Nobody has objective fitness data, verified
+              stats, or endurance metrics. We're changing that with AI-powered assessments and real
+              numbers.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== HYPE MARQUEE ========== -->
+    <section class="marquee-section marquee-section--hype">
+      <div class="marquee-row marquee-row--4">
+        <div class="marquee-track marquee-track--left marquee-track--fast">
+          <span
+            >NO CONNECTIONS? NO PROBLEM. &bull; TALENT OVER EVERYTHING &bull; YOUR HIGHLIGHT REEL IS
+            YOUR RESUME &bull; THE STREETS ARE WATCHING &bull; BUILD YOUR LEGACY &bull;&nbsp;</span
+          >
+          <span
+            >NO CONNECTIONS? NO PROBLEM. &bull; TALENT OVER EVERYTHING &bull; YOUR HIGHLIGHT REEL IS
+            YOUR RESUME &bull; THE STREETS ARE WATCHING &bull; BUILD YOUR LEGACY &bull;&nbsp;</span
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CTA ========== -->
+    <section class="cta" id="cta">
+      <div class="cta__inner">
+        <h2 class="cta__title">
+          <span class="cta__line1" data-split>STOP DREAMING.</span>
+          <span class="cta__line2" data-text="START PLAYING.">START PLAYING.</span>
+        </h2>
+        <p class="cta__sub">Join the waitlist. Be first on the field.</p>
+        <form class="cta__form" id="ctaForm">
+          <input type="email" placeholder="YOUR EMAIL" class="cta__input" required />
+          <button type="submit" class="cta__btn" data-magnetic data-text="GET EARLY ACCESS">
+            <span>GET EARLY ACCESS</span>
+          </button>
+        </form>
+        <div class="cta__confirmation" id="ctaConfirmation">
+          <span class="cta__check">&#10003;</span> YOU'RE IN. WE'LL BE IN TOUCH.
+        </div>
+        <div class="cta__app-link">
+          <p class="cta__or">OR</p>
+          <a href="#cta" class="cta__app-btn" data-magnetic data-text="LAUNCHING SOON">
+            <span>LAUNCHING SOON</span>
+          </a>
+        </div>
+        <div class="cta__trust">
+          <span>&#128274; No spam, ever.</span>
+          <span>&#9889; Early access perks.</span>
+          <span>&#127941; Be the first to know.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+      <div class="footer__inner">
+        <div class="footer__left">
+          <div class="footer__logo">ONLY<span>KRIDA</span></div>
+          <p class="footer__tagline">Where Athletes Get Discovered</p>
+        </div>
+        <div class="footer__center">
+          <p class="footer__manifesto">
+            NO AGENTS. NO MIDDLEMEN.<br />JUST TALENT MEETING OPPORTUNITY.
+          </p>
+        </div>
+        <div class="footer__right">
+          <a href="#" class="footer__link" data-magnetic>INSTAGRAM</a>
+          <a href="#" class="footer__link" data-magnetic>TWITTER</a>
+          <a href="#" class="footer__link" data-magnetic>DISCORD</a>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <p>&copy; 2026 ONLYKRIDA. ALL RIGHTS RESERVED. BUILT FROM THE STREETS.</p>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

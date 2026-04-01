@@ -1,21 +1,18 @@
 import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-// Sport theme gradient colors
+import { theme } from '@/constants/theme';
 
 interface BackgroundGradientProps {
   children: React.ReactNode;
   style?: ViewStyle;
 }
 
-export const BackgroundGradient: React.FC<BackgroundGradientProps> = ({ 
-  children, 
-  style 
-}) => {
+export const BackgroundGradient: React.FC<BackgroundGradientProps> = ({ children, style }) => {
   return (
     <View style={[styles.container, style]}>
       <LinearGradient
-        colors={['#003300', '#000000']}
+        colors={theme.colors.backgroundGradient as [string, string]}
         style={styles.gradient}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}

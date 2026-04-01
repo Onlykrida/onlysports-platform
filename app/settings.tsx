@@ -12,20 +12,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
-import { 
-  User, 
-  Bell, 
-  Shield, 
-  HelpCircle, 
-  Info, 
-  LogOut, 
+import {
+  User,
+  Bell,
+  Shield,
+  HelpCircle,
+  Info,
+  LogOut,
   ChevronRight,
   Moon,
   Globe,
   Trash2,
   Download,
   Share2,
-  FileText
+  FileText,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
@@ -74,12 +74,9 @@ export default function SettingsScreen() {
   const handleNotificationToggle = async (value: boolean) => {
     setNotificationsEnabled(value);
     await saveSettings('notifications_enabled', value);
-    
+
     if (Platform.OS !== 'web') {
-      Alert.alert(
-        'Notifications',
-        value ? 'Notifications enabled' : 'Notifications disabled'
-      );
+      Alert.alert('Notifications', value ? 'Notifications enabled' : 'Notifications disabled');
     }
   };
 
@@ -89,13 +86,13 @@ export default function SettingsScreen() {
       'This feature will export your profile data, achievements, and stats.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Export', 
+        {
+          text: 'Export',
           onPress: () => {
             Alert.alert('Export Data', 'This feature will be available in a future update.');
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
@@ -105,14 +102,14 @@ export default function SettingsScreen() {
       'Are you sure you want to delete your account? This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
+        {
+          text: 'Delete',
           style: 'destructive',
           onPress: () => {
             Alert.alert('Account Deletion', 'Please contact support to delete your account.');
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
@@ -120,9 +117,9 @@ export default function SettingsScreen() {
     const email = 'support@onlykrida.com';
     const subject = 'Support Request';
     const body = `Hi Support Team,\\n\\nI need help with:\\n\\n[Please describe your issue]\\n\\nUser ID: ${user?.id}\\nEmail: ${user?.email}`;
-    
+
     const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
+
     Linking.canOpenURL(mailtoUrl)
       .then((supported) => {
         if (supported) {
@@ -133,15 +130,15 @@ export default function SettingsScreen() {
             `Please email us at: ${email}\\n\\nOr copy this email address to your clipboard.`,
             [
               { text: 'OK' },
-              { 
-                text: 'Copy Email', 
+              {
+                text: 'Copy Email',
                 onPress: () => {
                   if (Platform.OS !== 'web') {
                     Alert.alert('Copied', 'Email address copied to clipboard');
                   }
-                }
-              }
-            ]
+                },
+              },
+            ],
           );
         }
       })
@@ -151,21 +148,17 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            router.replace({ pathname: '/welcome' as any });
-          }
-        }
-      ]
-    );
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          router.replace({ pathname: '/(auth)/welcome' as any });
+        },
+      },
+    ]);
   };
 
   const settingSections: { title: string; items: SettingItem[] }[] = [
@@ -213,7 +206,8 @@ export default function SettingsScreen() {
           title: 'Language',
           subtitle: 'English',
           icon: <Globe size={20} color={theme.colors.text} />,
-          onPress: () => Alert.alert('Language', 'This feature will be available in a future update.'),
+          onPress: () =>
+            Alert.alert('Language', 'This feature will be available in a future update.'),
           showChevron: true,
         },
       ],
@@ -234,7 +228,11 @@ export default function SettingsScreen() {
           title: 'About',
           subtitle: 'App version and information',
           icon: <Info size={20} color={theme.colors.text} />,
-          onPress: () => Alert.alert('About', 'OnlyKrida v1.0.0\nWhere Athletes Get Discovered\nBuilt with React Native & Expo'),
+          onPress: () =>
+            Alert.alert(
+              'About',
+              'OnlyKrida v1.0.0\nWhere Athletes Get Discovered\nBuilt with React Native & Expo',
+            ),
           showChevron: true,
         },
       ],
@@ -261,9 +259,7 @@ export default function SettingsScreen() {
               navigator.clipboard?.writeText(profileUrl);
               Alert.alert('Copied!', 'Profile link copied to clipboard.');
             } else {
-              Alert.alert('Share Profile', `Your profile link:\n${profileUrl}`, [
-                { text: 'OK' },
-              ]);
+              Alert.alert('Share Profile', `Your profile link:\n${profileUrl}`, [{ text: 'OK' }]);
             }
           },
           showChevron: true,
@@ -323,19 +319,11 @@ export default function SettingsScreen() {
       onPress={item.onPress}
       disabled={!item.onPress && !item.showSwitch}
     >
-      <View style={styles.settingIcon}>
-        {item.icon}
-      </View>
-      
+      <View style={styles.settingIcon}>{item.icon}</View>
+
       <View style={styles.settingContent}>
-        <Text style={[styles.settingTitle, item.danger && styles.dangerText]}>
-          {item.title}
-        </Text>
-        {item.subtitle && (
-          <Text style={styles.settingSubtitle}>
-            {item.subtitle}
-          </Text>
-        )}
+        <Text style={[styles.settingTitle, item.danger && styles.dangerText]}>{item.title}</Text>
+        {item.subtitle && <Text style={styles.settingSubtitle}>{item.subtitle}</Text>}
       </View>
 
       <View style={styles.settingAction}>
@@ -343,17 +331,17 @@ export default function SettingsScreen() {
           <Switch
             value={item.switchValue}
             onValueChange={item.onSwitchChange}
-            trackColor={{ 
-              false: theme.colors.border, 
-              true: theme.colors.primary + '40' 
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.primary + '40',
             }}
             thumbColor={item.switchValue ? theme.colors.primary : theme.colors.surface}
           />
         )}
         {item.showChevron && (
-          <ChevronRight 
-            size={20} 
-            color={item.danger ? theme.colors.danger : theme.colors.textSecondary} 
+          <ChevronRight
+            size={20}
+            color={item.danger ? theme.colors.danger : theme.colors.textSecondary}
           />
         )}
       </View>
@@ -362,7 +350,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           title: 'Settings',
           headerStyle: {
@@ -373,14 +361,12 @@ export default function SettingsScreen() {
           },
         }}
       />
-      
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* User Info Header */}
         <View style={styles.userHeader}>
           <View style={styles.userAvatar}>
-            <Text style={styles.userInitial}>
-              {user?.name?.charAt(0).toUpperCase() || 'U'}
-            </Text>
+            <Text style={styles.userInitial}>{user?.name?.charAt(0).toUpperCase() || 'U'}</Text>
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{user?.name || 'User'}</Text>
@@ -397,9 +383,7 @@ export default function SettingsScreen() {
               {section.items.map((item, itemIndex) => (
                 <View key={item.id}>
                   {renderSettingItem(item)}
-                  {itemIndex < section.items.length - 1 && (
-                    <View style={styles.separator} />
-                  )}
+                  {itemIndex < section.items.length - 1 && <View style={styles.separator} />}
                 </View>
               ))}
             </View>
@@ -411,9 +395,11 @@ export default function SettingsScreen() {
           <Text style={styles.versionText}>Version 1.0.0</Text>
           <Text style={styles.copyrightText}>© 2026 OnlyKrida</Text>
           <Text style={styles.buildText}>Build: {Platform.OS === 'web' ? 'Web' : 'Mobile'}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.feedbackButton}
-            onPress={() => Alert.alert('Feedback', 'This feature will be available in a future update.')}
+            onPress={() =>
+              Alert.alert('Feedback', 'This feature will be available in a future update.')
+            }
           >
             <Text style={styles.feedbackText}>Send Feedback</Text>
           </TouchableOpacity>

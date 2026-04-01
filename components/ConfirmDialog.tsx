@@ -13,7 +13,16 @@ interface Props {
   onConfirm: () => void | Promise<void>;
 }
 
-export default function ConfirmDialog({ visible, title, message, confirmText, cancelText, destructive, onCancel, onConfirm }: Props) {
+export default function ConfirmDialog({
+  visible,
+  title,
+  message,
+  confirmText,
+  cancelText,
+  destructive,
+  onCancel,
+  onConfirm,
+}: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.backdrop} testID="confirm-backdrop">
@@ -21,7 +30,11 @@ export default function ConfirmDialog({ visible, title, message, confirmText, ca
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
           <View style={styles.row}>
-            <TouchableOpacity onPress={onCancel} style={[styles.btn, styles.cancel]} testID="confirm-cancel">
+            <TouchableOpacity
+              onPress={onCancel}
+              style={[styles.btn, styles.cancel]}
+              testID="confirm-cancel"
+            >
               <Text style={styles.cancelText}>{cancelText}</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -29,7 +42,9 @@ export default function ConfirmDialog({ visible, title, message, confirmText, ca
               style={[styles.btn, destructive ? styles.destructive : styles.primary]}
               testID="confirm-confirm"
             >
-              <Text style={destructive ? styles.destructiveText : styles.primaryText}>{confirmText}</Text>
+              <Text style={destructive ? styles.destructiveText : styles.primaryText}>
+                {confirmText}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -48,7 +63,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
   },

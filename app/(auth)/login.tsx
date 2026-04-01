@@ -46,7 +46,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const result = await login(email, password);
-      
+
       if (result.error) {
         setErrors({ general: result.error });
       } else {
@@ -71,9 +71,9 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Text style={styles.logo}>OnlyKrida</Text>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue</Text>
+            <Text style={styles.logo}>ONLYKRIDA</Text>
+            <Text style={styles.title}>WELCOME BACK</Text>
+            <Text style={styles.subtitle}>YOUR TALENT IS WAITING.</Text>
           </View>
 
           <View style={styles.form}>
@@ -82,7 +82,7 @@ export default function LoginScreen() {
                 <Text style={styles.errorText}>{errors.general}</Text>
               </View>
             )}
-            
+
             <Input
               label="Email"
               placeholder="Enter your email"
@@ -113,12 +113,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.footer}>
-            <Button
-              title="Sign In"
-              onPress={handleLogin}
-              loading={loading}
-              size="large"
-            />
+            <Button title="Sign In" onPress={handleLogin} loading={loading} size="large" />
 
             <TouchableOpacity
               onPress={() => router.push('/(auth)/role-selection' as any)}
@@ -147,27 +142,34 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: theme.spacing.lg,
+    padding: theme.spacing.md,
   },
   header: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xxl,
+    marginBottom: theme.spacing.xl,
   },
   logo: {
-    fontSize: 40,
-    fontWeight: theme.fontWeight.extrabold,
+    fontSize: 36,
+    fontWeight: theme.fontWeight.black,
     color: theme.colors.primary,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
+    letterSpacing: 4,
+    textShadowColor: 'rgba(48, 209, 88, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
   },
   title: {
     fontSize: theme.fontSize.xxl,
-    fontWeight: theme.fontWeight.bold,
+    fontWeight: theme.fontWeight.black,
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
+    letterSpacing: 3,
   },
   subtitle: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
+    color: theme.colors.orange,
+    fontWeight: theme.fontWeight.semibold,
+    letterSpacing: 2,
   },
   form: {
     flex: 1,
@@ -178,8 +180,10 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.primary,
-    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.orange,
+    fontWeight: theme.fontWeight.bold,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   footer: {
     marginTop: theme.spacing.xl,
@@ -194,18 +198,22 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   signupTextBold: {
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.orange,
   },
   errorContainer: {
-    backgroundColor: '#fee2e2',
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.dangerBg,
+    borderRadius: theme.borderRadius.sm,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 69, 58, 0.3)',
   },
   errorText: {
-    color: '#dc2626',
+    color: theme.colors.danger,
     fontSize: theme.fontSize.sm,
     textAlign: 'center',
+    fontWeight: theme.fontWeight.bold,
+    letterSpacing: 0.5,
   },
 });

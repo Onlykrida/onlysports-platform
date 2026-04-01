@@ -1,21 +1,39 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import { useRouter } from 'expo-router';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
 
+const isWeb = Platform.OS === 'web';
+
+// Dynamically import expo-notifications to handle SDK version mismatches
+// (e.g., SDK 54 app running in SDK 53 Expo Go)
+let Notifications: typeof import('expo-notifications') | null = null;
+let Device: typeof import('expo-device') | null = null;
+
+try {
+  Notifications = require('expo-notifications');
+  Device = require('expo-device');
+} catch (e) {
+  console.warn('expo-notifications not available:', e);
+}
+
 // Configure how notifications appear when the app is in the foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+if (!isWeb && Notifications) {
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  } catch (e) {
+    console.warn('Failed to set notification handler:', e);
+  }
+}
 
 // Notification category identifiers
 const NOTIFICATION_CATEGORIES = {
@@ -27,9 +45,14 @@ const NOTIFICATION_CATEGORIES = {
 } as const;
 
 async function registerNotificationCategories() {
+  if (!Notifications) return;
   await Notifications.setNotificationCategoryAsync(NOTIFICATION_CATEGORIES.MESSAGE, [
     { identifier: 'reply', buttonTitle: 'Reply', options: { opensAppToForeground: true } },
-    { identifier: 'mark_read', buttonTitle: 'Mark as Read', options: { opensAppToForeground: false } },
+    {
+      identifier: 'mark_read',
+      buttonTitle: 'Mark as Read',
+      options: { opensAppToForeground: false },
+    },
   ]);
 
   await Notifications.setNotificationCategoryAsync(NOTIFICATION_CATEGORIES.LIKE, [
@@ -37,7 +60,11 @@ async function registerNotificationCategories() {
   ]);
 
   await Notifications.setNotificationCategoryAsync(NOTIFICATION_CATEGORIES.FOLLOW, [
-    { identifier: 'view_profile', buttonTitle: 'View Profile', options: { opensAppToForeground: true } },
+    {
+      identifier: 'view_profile',
+      buttonTitle: 'View Profile',
+      options: { opensAppToForeground: true },
+    },
   ]);
 
   await Notifications.setNotificationCategoryAsync(NOTIFICATION_CATEGORIES.COMMENT, [
@@ -51,6 +78,8 @@ async function registerNotificationCategories() {
 }
 
 async function registerForPushNotificationsAsync(): Promise<string | null> {
+  if (!Notifications || !Device) return null;
+
   // Push notifications only work on physical devices
   if (!Device.isDevice) {
     console.log('Push notifications require a physical device');
@@ -83,12 +112,11 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
   }
 
   try {
-    const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: undefined, // Uses the projectId from app.json/app.config.js automatically
-    });
+    // In Expo Go dev, projectId may not be available — catch and skip silently
+    const tokenData = await Notifications.getExpoPushTokenAsync();
     return tokenData.data;
   } catch (error) {
-    console.error('Failed to get Expo push token:', error);
+    if (__DEV__) console.log('Push token not available in dev (expected in Expo Go)');
     return null;
   }
 }
@@ -107,7 +135,7 @@ async function savePushTokenToSupabase(userId: string, token: string) {
       if (error.code === '42703' || error.message?.includes('push_token')) {
         console.warn(
           'push_token column does not exist on profiles table. ' +
-          'Run: ALTER TABLE profiles ADD COLUMN push_token TEXT;'
+            'Run: ALTER TABLE profiles ADD COLUMN push_token TEXT;',
         );
       } else {
         console.error('Error saving push token:', error);
@@ -118,7 +146,7 @@ async function savePushTokenToSupabase(userId: string, token: string) {
   }
 }
 
-function getDeepLinkFromNotification(notification: Notifications.Notification): string | null {
+function getDeepLinkFromNotification(notification: any): string | null {
   const data = notification.request.content.data;
   if (!data) return null;
 
@@ -151,12 +179,12 @@ export function usePushNotifications() {
   const { user } = useAuth();
   const router = useRouter();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
-  const responseListener = useRef<Notifications.EventSubscription | null>(null);
+  const notificationListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
 
-  // Register for push notifications and save token
+  // Skip all push notification logic on web or if notifications unavailable
   useEffect(() => {
-    if (!user?.id) return;
+    if (isWeb || !user?.id || !Notifications) return;
 
     let isMounted = true;
 
@@ -177,16 +205,13 @@ export function usePushNotifications() {
 
   // Handle incoming notifications (foreground)
   useEffect(() => {
-    notificationListener.current = Notifications.addNotificationReceivedListener(
-      (notification) => {
-        // Notification received while app is in foreground.
-        // The existing notifications-context handles in-app state via Supabase realtime,
-        // so we just let the system notification handler display it.
-        if (__DEV__) {
-          console.log('Push notification received:', notification.request.content.title);
-        }
+    if (isWeb || !Notifications) return;
+
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+      if (__DEV__) {
+        console.log('Push notification received:', notification.request.content.title);
       }
-    );
+    });
 
     return () => {
       if (notificationListener.current) {
@@ -197,17 +222,16 @@ export function usePushNotifications() {
 
   // Handle notification tap (background / killed → opened)
   useEffect(() => {
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const route = getDeepLinkFromNotification(response.notification);
-        if (route) {
-          // Small delay to ensure the app and router are fully initialised after cold start
-          setTimeout(() => {
-            router.push(route as any);
-          }, 500);
-        }
+    if (isWeb || !Notifications) return;
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const route = getDeepLinkFromNotification(response.notification);
+      if (route) {
+        setTimeout(() => {
+          router.push(route as any);
+        }, 500);
       }
-    );
+    });
 
     return () => {
       if (responseListener.current) {
@@ -218,6 +242,8 @@ export function usePushNotifications() {
 
   // Handle the notification that originally launched the app (cold start)
   useEffect(() => {
+    if (isWeb || !Notifications) return;
+
     Notifications.getLastNotificationResponseAsync().then((response) => {
       if (response) {
         const route = getDeepLinkFromNotification(response.notification);

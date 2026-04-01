@@ -1,5 +1,14 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { View, StyleSheet, ViewStyle, Image, Platform, Text, ActivityIndicator, DimensionValue } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  ViewStyle,
+  Platform,
+  Text,
+  ActivityIndicator,
+  DimensionValue,
+} from 'react-native';
+import CachedImage from '@/components/CachedImage';
 import { VideoView, useVideoPlayer } from 'expo-video';
 
 interface VideoPlayerProps {
@@ -27,7 +36,7 @@ export default function VideoPlayer({
 }: VideoPlayerProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  
+
   const player = useVideoPlayer(uri, (player) => {
     player.loop = loop;
     player.muted = muted;
@@ -44,7 +53,7 @@ export default function VideoPlayer({
     setIsLoading(true);
   }, [uri, poster]);
 
-  const posterSource = useMemo(() => (poster ? { uri: poster } : undefined), [poster]);
+  // posterSource no longer needed — CachedImage handles the URI directly
 
   useEffect(() => {
     if (!player) return;
@@ -59,7 +68,7 @@ export default function VideoPlayer({
       } else if (status.status === 'error') {
         console.error('[VideoPlayer] Video error:', JSON.stringify(status.error, null, 2));
         console.error('[VideoPlayer] Full status:', JSON.stringify(status, null, 2));
-        
+
         let errorMsg = 'Unable to play this video';
         if (status.error) {
           if (typeof status.error === 'string') {
@@ -68,7 +77,7 @@ export default function VideoPlayer({
             errorMsg = status.error.message;
           }
         }
-        
+
         setError(errorMsg);
         setIsLoading(false);
       }
@@ -80,15 +89,18 @@ export default function VideoPlayer({
   }, [player]);
 
   return (
-    <View style={[styles.container, { height, width: width as DimensionValue }, style]} testID={`${testID}-container`}>
+    <View
+      style={[styles.container, { height, width: width as DimensionValue }, style]}
+      testID={`${testID}-container`}
+    >
       {error ? (
         <View style={styles.errorContainer}>
-          {posterSource ? (
-            <Image
-              source={posterSource}
-              style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
-              resizeMode={'cover'}
-              testID={`${testID}-poster`}
+          {poster ? (
+            <CachedImage
+              source={poster}
+              size={height}
+              placeholder="post"
+              style={{ width: '100%', height: '100%', position: 'absolute' }}
             />
           ) : (
             <View style={styles.fallback} />

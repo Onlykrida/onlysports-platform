@@ -18,7 +18,8 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
   }
 
   static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
-    const message = error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
+    const message =
+      error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
     return { hasError: true, errorMessage: message };
   }
 
@@ -38,7 +39,11 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
           <ScrollView style={styles.messageBox} contentContainerStyle={styles.messageContent}>
             <Text style={styles.message}>{this.state.errorMessage ?? 'Unknown error'}</Text>
           </ScrollView>
-          <TouchableOpacity onPress={this.handleReset} style={styles.button} testID="error-boundary-reset">
+          <TouchableOpacity
+            onPress={this.handleReset}
+            style={styles.button}
+            testID="error-boundary-reset"
+          >
             <Text style={styles.buttonText}>Try again</Text>
           </TouchableOpacity>
         </View>
@@ -66,7 +71,7 @@ const styles = StyleSheet.create({
   messageBox: {
     maxHeight: 200,
     width: '90%',
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,

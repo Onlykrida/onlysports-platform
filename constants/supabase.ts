@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Get Supabase credentials from environment variables only
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -20,7 +21,8 @@ if (isSupabaseConfigured) {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: false,
+        storage: AsyncStorage,
       },
     });
   } catch (error) {
@@ -29,13 +31,16 @@ if (isSupabaseConfigured) {
   }
 } else {
   if (__DEV__) {
-    console.warn('Supabase not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to your .env file.');
+    console.warn(
+      'Supabase not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to your .env file.',
+    );
   }
   supabase = createMockClient();
 }
 
 function createMockClient() {
-  const notConfiguredMessage = 'Supabase is not configured. Please check your .env file and add valid Supabase credentials.';
+  const notConfiguredMessage =
+    'Supabase is not configured. Please check your .env file and add valid Supabase credentials.';
 
   const createQueryBuilder = () => {
     const builder: any = {
@@ -47,7 +52,11 @@ function createMockClient() {
       limit: () => builder,
       order: () => builder,
       head: () => builder,
-      single: async () => ({ data: null, error: { code: 'PGRST116', message: notConfiguredMessage } }),
+      single: async () => ({
+        data: null,
+        error: { code: 'PGRST116', message: notConfiguredMessage },
+      }),
+      maybeSingle: async () => ({ data: null, error: null }),
       then: (onFulfilled: any, onRejected: any) => {
         return Promise.resolve({ data: [], error: null }).then(onFulfilled, onRejected);
       },
@@ -56,31 +65,70 @@ function createMockClient() {
     };
     return builder;
   };
-  
+
+  // Mock channel that supports chaining .on() and .subscribe()
+  const createMockChannel = () => {
+    const channel: any = {
+      on: () => channel,
+      subscribe: () => channel,
+      unsubscribe: () => {},
+    };
+    return channel;
+  };
+
+  // Mock storage bucket
+  const createMockStorageBucket = () => ({
+    upload: () => Promise.resolve({ data: null, error: { message: notConfiguredMessage } }),
+    getPublicUrl: () => ({ data: { publicUrl: '' } }),
+    download: () => Promise.resolve({ data: null, error: { message: notConfiguredMessage } }),
+    remove: () => Promise.resolve({ data: null, error: { message: notConfiguredMessage } }),
+    list: () => Promise.resolve({ data: [], error: null }),
+  });
+
   return {
     auth: {
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      signInWithPassword: () => Promise.resolve({ 
-        error: { message: notConfiguredMessage },
-        data: { user: null, session: null }
-      }),
-      signUp: () => Promise.resolve({ 
-        error: { message: notConfiguredMessage },
-        data: { user: null, session: null }
-      }),
+      signInWithPassword: () =>
+        Promise.resolve({
+          error: { message: notConfiguredMessage },
+          data: { user: null, session: null },
+        }),
+      signUp: () =>
+        Promise.resolve({
+          error: { message: notConfiguredMessage },
+          data: { user: null, session: null },
+        }),
       signOut: () => Promise.resolve({ error: null }),
     },
-    from: () => ({
-      select: () => createQueryBuilder(),
-      insert: () => Promise.resolve({ error: { message: notConfiguredMessage } }),
-      update: () => ({
-        eq: () => Promise.resolve({ error: { message: notConfiguredMessage } }),
-      }),
-      delete: () => ({
-        eq: () => Promise.resolve({ error: { message: notConfiguredMessage } }),
-      }),
-    }),
+    from: () => {
+      const mockResult = { data: null, error: { message: notConfiguredMessage } };
+      const chainable: any = {
+        eq: () => chainable,
+        neq: () => chainable,
+        or: () => chainable,
+        in: () => chainable,
+        gte: () => chainable,
+        lte: () => chainable,
+        then: (onFulfilled: any, onRejected: any) =>
+          Promise.resolve(mockResult).then(onFulfilled, onRejected),
+        catch: (onRejected: any) => Promise.resolve(mockResult).catch(onRejected),
+        finally: (onFinally: any) => Promise.resolve(mockResult).finally(onFinally),
+      };
+      return {
+        select: () => createQueryBuilder(),
+        insert: () => ({ select: () => createQueryBuilder(), ...chainable }),
+        update: () => chainable,
+        upsert: () => ({ select: () => createQueryBuilder(), ...chainable }),
+        delete: () => chainable,
+      };
+    },
+    channel: () => createMockChannel(),
+    removeChannel: () => {},
+    storage: {
+      from: () => createMockStorageBucket(),
+      listBuckets: () => Promise.resolve({ data: [], error: null }),
+    },
   };
 }
 
@@ -95,7 +143,16 @@ export interface Database {
           id: string;
           email: string;
           name: string;
-          role: 'athlete' | 'coach' | 'scout' | 'team' | 'fan' | 'trainer' | 'gym' | 'brand' | 'academy';
+          role:
+            | 'athlete'
+            | 'coach'
+            | 'scout'
+            | 'team'
+            | 'fan'
+            | 'trainer'
+            | 'gym'
+            | 'brand'
+            | 'academy';
           avatar?: string;
           bio?: string;
           location?: string;
@@ -111,7 +168,16 @@ export interface Database {
           id: string;
           email: string;
           name: string;
-          role: 'athlete' | 'coach' | 'scout' | 'team' | 'fan' | 'trainer' | 'gym' | 'brand' | 'academy';
+          role:
+            | 'athlete'
+            | 'coach'
+            | 'scout'
+            | 'team'
+            | 'fan'
+            | 'trainer'
+            | 'gym'
+            | 'brand'
+            | 'academy';
           avatar?: string;
           bio?: string;
           location?: string;
@@ -125,7 +191,16 @@ export interface Database {
           id?: string;
           email?: string;
           name?: string;
-          role?: 'athlete' | 'coach' | 'scout' | 'team' | 'fan' | 'trainer' | 'gym' | 'brand' | 'academy';
+          role?:
+            | 'athlete'
+            | 'coach'
+            | 'scout'
+            | 'team'
+            | 'fan'
+            | 'trainer'
+            | 'gym'
+            | 'brand'
+            | 'academy';
           avatar?: string;
           bio?: string;
           location?: string;

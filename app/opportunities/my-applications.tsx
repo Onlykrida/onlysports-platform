@@ -7,16 +7,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Calendar,
-  Clock,
-  CheckCircle,
-  XCircle,
-  ChevronLeft,
-} from 'lucide-react-native';
+import { Calendar, Clock, CheckCircle, XCircle, ChevronLeft } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { FLATLIST_PERF_PROPS } from '@/constants/performance';
+
+const ItemSeparator = () => <View style={{ height: theme.spacing.sm }} />;
 import { useOpportunities, Application } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
 import { router } from 'expo-router';
@@ -105,9 +103,7 @@ export default function MyApplicationsScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.centeredContainer}>
           <Text style={styles.emptyTitle}>Athletes Only</Text>
-          <Text style={styles.emptySubtext}>
-            Only athletes can view their applications.
-          </Text>
+          <Text style={styles.emptySubtext}>Only athletes can view their applications.</Text>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
@@ -137,7 +133,8 @@ export default function MyApplicationsScreen() {
           renderItem={renderApplication}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={ItemSeparator}
+          {...FLATLIST_PERF_PROPS}
           refreshControl={
             <RefreshControl
               refreshing={isLoading}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { theme } from '@/constants/theme';
 import { X, Save } from 'lucide-react-native';
@@ -13,8 +13,18 @@ interface Props {
 export default function EditPostModal({ visible, onClose, initialContent, onSave }: Props) {
   const [content, setContent] = useState<string>(initialContent);
 
+  // Sync local state when a different post is opened for editing
+  useEffect(() => {
+    setContent(initialContent);
+  }, [initialContent]);
+
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Edit Post</Text>
@@ -70,7 +80,7 @@ const styles = StyleSheet.create({
   },
   input: {
     margin: theme.spacing.md,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.inputBackground,
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.lg,

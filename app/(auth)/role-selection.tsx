@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { User, Trophy, Users, Building2, Heart, Dumbbell } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { Button } from '@/components/Button';
+import { StepIndicator } from '@/components/StepIndicator';
 import { UserRole } from '@/types';
-
 
 interface RoleOption {
   id: UserRole;
@@ -26,35 +20,35 @@ const roles: RoleOption[] = [
   {
     id: 'athlete',
     title: 'Athlete',
-    description: 'Showcase your talent and get discovered by scouts',
+    description: 'Showcase your talent and get discovered',
     icon: <Trophy size={32} color={theme.colors.white} />,
     color: theme.colors.accent,
   },
   {
     id: 'coach',
     title: 'Coach',
-    description: 'Train athletes and build championship teams',
+    description: 'Train athletes and build champions',
     icon: <User size={32} color={theme.colors.white} />,
     color: theme.colors.success,
   },
   {
     id: 'scout',
     title: 'Scout',
-    description: 'Discover and recruit talented athletes',
+    description: 'Discover the next star',
     icon: <Users size={32} color={theme.colors.white} />,
     color: theme.colors.secondary,
   },
   {
     id: 'trainer',
     title: 'Gym Trainer',
-    description: 'Coach athletes in strength and conditioning',
+    description: 'Transform athletes with your expertise',
     icon: <Dumbbell size={32} color={theme.colors.white} />,
     color: theme.colors.warning ?? theme.colors.secondary,
   },
   {
     id: 'team',
     title: 'Team/Club',
-    description: 'Build your roster and manage your organization',
+    description: 'Build your roster and grow your legacy',
     icon: <Building2 size={32} color={theme.colors.white} />,
     color: theme.colors.primary,
   },
@@ -79,9 +73,9 @@ export default function RoleSelectionScreen() {
         team: '/(auth)/signup-team',
         fan: '/(auth)/signup',
         trainer: '/(auth)/signup-trainer',
-        academy: '/(auth)/signup-academy',
-        brand: '/(auth)/signup-brand',
-        gym: '/(auth)/signup-gym',
+        academy: '/(auth)/signup',
+        brand: '/(auth)/signup',
+        gym: '/(auth)/signup',
       };
       router.push({ pathname: routeMap[selectedRole] as any, params: { role: selectedRole } });
     }
@@ -90,11 +84,11 @@ export default function RoleSelectionScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <StepIndicator currentStep={1} totalSteps={2} />
+
         <View style={styles.header}>
-          <Text style={styles.title}>Choose Your Role</Text>
-          <Text style={styles.subtitle}>
-            Select how you want to use OnlyKrida
-          </Text>
+          <Text style={styles.title}>Who are you?</Text>
+          <Text style={styles.subtitle}>Choose your path to greatness</Text>
         </View>
 
         <View style={styles.rolesContainer}>
@@ -109,12 +103,7 @@ export default function RoleSelectionScreen() {
               onPress={() => setSelectedRole(role.id)}
               activeOpacity={0.7}
             >
-              <View
-                style={[
-                  styles.iconContainer,
-                  { backgroundColor: role.color },
-                ]}
-              >
+              <View style={[styles.iconContainer, { backgroundColor: role.color }]}>
                 {role.icon}
               </View>
               <View style={styles.roleContent}>
@@ -133,12 +122,7 @@ export default function RoleSelectionScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Button
-            title="Continue"
-            onPress={handleContinue}
-            disabled={!selectedRole}
-            size="large"
-          />
+          <Button title="Continue" onPress={handleContinue} disabled={!selectedRole} size="large" />
           <TouchableOpacity
             onPress={() => router.push('/(auth)/login' as any)}
             style={styles.loginLink}

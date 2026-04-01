@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -15,8 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Send } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { theme } from '@/constants/theme';
+import CachedImage from '@/components/CachedImage';
 import { useMessages, Message } from '@/hooks/messages-context';
 import { useAuth } from '@/hooks/auth-context';
+import { CHAT_FLATLIST_PROPS } from '@/constants/performance';
+import { ChatSkeleton } from '@/components/SkeletonScreens';
 
 export default function ChatScreen() {
   const { id, name, avatar, role } = useLocalSearchParams<{
@@ -25,18 +27,20 @@ export default function ChatScreen() {
     avatar: string;
     role: string;
   }>();
-  
+
   const { messages, sendMessage, markAsRead, loadMessages } = useMessages();
   const { user } = useAuth();
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const flatListRef = useRef<FlatList>(null);
-  
+
   const conversationMessages = messages[id] || [];
 
   useEffect(() => {
     if (id) {
-      loadMessages(id);
+      setIsLoadingMessages(true);
+      Promise.resolve(loadMessages(id)).finally(() => setIsLoadingMessages(false));
       markAsRead(id);
     }
   }, [id, loadMessages, markAsRead]);
@@ -68,52 +72,50 @@ export default function ChatScreen() {
     }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => {
-    const isFromCurrentUser = item.senderId === user?.id;
-    
-    return (
-      <View
-        style={[
-          styles.messageContainer,
-          isFromCurrentUser ? styles.sentMessage : styles.receivedMessage,
-        ]}
-      >
-        {!isFromCurrentUser && (
-          <Image
-            source={{ 
-              uri: item.senderAvatar || 'https://via.placeholder.com/30x30/E5E7EB/9CA3AF?text=U'
-            }}
-            style={styles.messageAvatar}
-          />
-        )}
-        
+  const renderMessage = useCallback(
+    ({ item }: { item: Message }) => {
+      const isFromCurrentUser = item.senderId === user?.id;
+
+      return (
         <View
           style={[
-            styles.messageBubble,
-            isFromCurrentUser ? styles.sentBubble : styles.receivedBubble,
+            styles.messageContainer,
+            isFromCurrentUser ? styles.sentMessage : styles.receivedMessage,
           ]}
         >
-          <Text
+          {!isFromCurrentUser && (
+            <CachedImage source={item.senderAvatar} size={30} placeholder="avatar" />
+          )}
+
+          <View
             style={[
-              styles.messageText,
-              isFromCurrentUser ? styles.sentText : styles.receivedText,
+              styles.messageBubble,
+              isFromCurrentUser ? styles.sentBubble : styles.receivedBubble,
             ]}
           >
-            {item.content}
-          </Text>
-          
-          <Text
-            style={[
-              styles.messageTime,
-              isFromCurrentUser ? styles.sentTime : styles.receivedTime,
-            ]}
-          >
-            {formatMessageTime(item.createdAt)}
-          </Text>
+            <Text
+              style={[
+                styles.messageText,
+                isFromCurrentUser ? styles.sentText : styles.receivedText,
+              ]}
+            >
+              {item.content}
+            </Text>
+
+            <Text
+              style={[
+                styles.messageTime,
+                isFromCurrentUser ? styles.sentTime : styles.receivedTime,
+              ]}
+            >
+              {formatMessageTime(item.createdAt)}
+            </Text>
+          </View>
         </View>
-      </View>
-    );
-  };
+      );
+    },
+    [user?.id],
+  );
 
   const formatMessageTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -123,20 +125,12 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerInfo}>
-          <Image
-            source={{ 
-              uri: avatar || 'https://via.placeholder.com/40x40/E5E7EB/9CA3AF?text=U'
-            }}
-            style={styles.headerAvatar}
-          />
+          <CachedImage source={avatar} size={40} placeholder="avatar" />
           <View>
             <Text style={styles.headerName}>{name}</Text>
             <Text style={styles.headerRole}>{role}</Text>
@@ -150,20 +144,25 @@ export default function ChatScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {/* Messages List */}
-        <FlatList
-          ref={flatListRef}
-          data={conversationMessages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messagesList}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => {
-            flatListRef.current?.scrollToEnd({ animated: false });
-          }}
-          onLayout={() => {
-            flatListRef.current?.scrollToEnd({ animated: false });
-          }}
-        />
+        {isLoadingMessages && conversationMessages.length === 0 ? (
+          <ChatSkeleton />
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={conversationMessages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.messagesList}
+            showsVerticalScrollIndicator={false}
+            {...CHAT_FLATLIST_PROPS}
+            onContentSizeChange={() => {
+              flatListRef.current?.scrollToEnd({ animated: false });
+            }}
+            onLayout={() => {
+              flatListRef.current?.scrollToEnd({ animated: false });
+            }}
+          />
+        )}
 
         {/* Message Input */}
         <View style={styles.inputContainer}>
@@ -177,7 +176,7 @@ export default function ChatScreen() {
             placeholderTextColor={theme.colors.textSecondary}
             editable={!isSending}
           />
-          
+
           <TouchableOpacity
             style={[
               styles.sendButton,
@@ -186,13 +185,11 @@ export default function ChatScreen() {
             onPress={handleSendMessage}
             disabled={!messageText.trim() || isSending}
           >
-            <Send 
-              size={20} 
+            <Send
+              size={20}
               color={
-                !messageText.trim() || isSending 
-                  ? theme.colors.textSecondary 
-                  : theme.colors.white
-              } 
+                !messageText.trim() || isSending ? theme.colors.textSecondary : theme.colors.white
+              }
             />
           </TouchableOpacity>
         </View>
@@ -211,7 +208,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
     gap: theme.spacing.md,
@@ -274,7 +271,7 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   receivedBubble: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surfaceLight,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -304,7 +301,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
     gap: theme.spacing.sm,

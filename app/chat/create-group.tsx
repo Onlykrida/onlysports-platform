@@ -5,15 +5,17 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
   TextInput,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Search, Check, Users, X } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
+import CachedImage from '@/components/CachedImage';
+import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { useAuth } from '@/hooks/auth-context';
 import { useGroups } from '@/hooks/group-messages-context';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
@@ -36,7 +38,7 @@ export default function CreateGroupScreen() {
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
-  const selectedCount = users.filter(u => u.selected).length;
+  const selectedCount = users.filter((u) => u.selected).length;
 
   // Load users the current user follows
   const loadFollowedUsers = useCallback(async () => {
@@ -100,14 +102,12 @@ export default function CreateGroupScreen() {
       setFilteredUsers(users);
     } else {
       const query = searchQuery.toLowerCase();
-      setFilteredUsers(users.filter(u => u.name.toLowerCase().includes(query)));
+      setFilteredUsers(users.filter((u) => u.name.toLowerCase().includes(query)));
     }
   }, [searchQuery, users]);
 
   const toggleUser = (userId: string) => {
-    setUsers(prev =>
-      prev.map(u => (u.id === userId ? { ...u, selected: !u.selected } : u))
-    );
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, selected: !u.selected } : u)));
   };
 
   const handleCreateGroup = async () => {
@@ -117,7 +117,7 @@ export default function CreateGroupScreen() {
       return;
     }
 
-    const selectedIds = users.filter(u => u.selected).map(u => u.id);
+    const selectedIds = users.filter((u) => u.selected).map((u) => u.id);
     if (selectedIds.length === 0) {
       Alert.alert('Error', 'Please select at least one member');
       return;
@@ -142,33 +142,42 @@ export default function CreateGroupScreen() {
     }
   };
 
-  const renderUser = ({ item }: { item: SelectableUser }) => (
-    <TouchableOpacity
-      style={[styles.userItem, item.selected && styles.userItemSelected]}
-      onPress={() => toggleUser(item.id)}
-    >
-      <Image
-        source={{
-          uri: item.avatar || 'https://via.placeholder.com/40x40/E5E7EB/9CA3AF?text=U',
-        }}
-        style={styles.userAvatar}
-      />
-      <View style={styles.userInfo}>
-        <Text style={styles.userName}>{item.name}</Text>
-        {item.role && (
-          <Text style={styles.userRole}>{item.role}</Text>
-        )}
-      </View>
-      {item.selected && (
-        <View style={styles.checkCircle}>
-          <Check size={16} color={theme.colors.white} />
+  const renderUser = useCallback(
+    ({ item }: { item: SelectableUser }) => (
+      <TouchableOpacity
+        style={[styles.userItem, item.selected && styles.userItemSelected]}
+        onPress={() => toggleUser(item.id)}
+      >
+        <CachedImage source={item.avatar} size={44} placeholder="avatar" />
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{item.name}</Text>
+          {item.role && <Text style={styles.userRole}>{item.role}</Text>}
         </View>
-      )}
-    </TouchableOpacity>
+        {item.selected && (
+          <View style={styles.checkCircle}>
+            <Check size={16} color={theme.colors.white} />
+          </View>
+        )}
+      </TouchableOpacity>
+    ),
+    [toggleUser],
+  );
+
+  const renderChip = useCallback(
+    ({ item }: { item: SelectableUser }) => (
+      <TouchableOpacity style={styles.chip} onPress={() => toggleUser(item.id)}>
+        <CachedImage source={item.avatar} size={24} placeholder="avatar" />
+        <Text style={styles.chipName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <X size={14} color={theme.colors.textSecondary} />
+      </TouchableOpacity>
+    ),
+    [toggleUser],
   );
 
   // Selected members chips
-  const selectedUsers = users.filter(u => u.selected);
+  const selectedUsers = users.filter((u) => u.selected);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -179,7 +188,10 @@ export default function CreateGroupScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Group</Text>
         <TouchableOpacity
-          style={[styles.createButton, (!groupName.trim() || selectedCount === 0 || isCreating) && styles.createButtonDisabled]}
+          style={[
+            styles.createButton,
+            (!groupName.trim() || selectedCount === 0 || isCreating) && styles.createButtonDisabled,
+          ]}
           onPress={handleCreateGroup}
           disabled={!groupName.trim() || selectedCount === 0 || isCreating}
         >
@@ -215,16 +227,8 @@ export default function CreateGroupScreen() {
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.selectedList}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.chip} onPress={() => toggleUser(item.id)}>
-                <Image
-                  source={{ uri: item.avatar || 'https://via.placeholder.com/24x24/E5E7EB/9CA3AF?text=U' }}
-                  style={styles.chipAvatar}
-                />
-                <Text style={styles.chipName} numberOfLines={1}>{item.name}</Text>
-                <X size={14} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-            )}
+            renderItem={renderChip}
+            {...FLATLIST_PERF_PROPS}
           />
         </View>
       )}
@@ -252,9 +256,7 @@ export default function CreateGroupScreen() {
       ) : filteredUsers.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Users size={48} color={theme.colors.textSecondary} />
-          <Text style={styles.emptyTitle}>
-            {searchQuery ? 'No users found' : 'No one to add'}
-          </Text>
+          <Text style={styles.emptyTitle}>{searchQuery ? 'No users found' : 'No one to add'}</Text>
           <Text style={styles.emptySubtitle}>
             {searchQuery ? 'Try a different search' : 'Follow people to add them to a group'}
           </Text>
@@ -266,6 +268,7 @@ export default function CreateGroupScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          {...FLATLIST_PERF_PROPS}
         />
       )}
     </SafeAreaView>

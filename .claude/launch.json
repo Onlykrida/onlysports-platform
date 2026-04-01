@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "expo-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/anirudhtumuluru/onlykrida && npx expo start --web --port 8082"
+      ],
+      "port": 8082
+    }
+  ]
+}

@@ -6,26 +6,22 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Image,
   Alert,
-  
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  Camera, 
-  Video, 
-  FileText, 
-  X, 
-  ImageIcon,
-} from 'lucide-react-native';
+import { BackgroundGradient } from '@/components/BackgroundGradient';
+import { Camera, Video, FileText, X, ImageIcon } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import CachedImage from '@/components/CachedImage';
 import { Button } from '@/components/Button';
 import * as ImagePicker from 'expo-image-picker';
 import { usePosts } from '@/hooks/posts-context';
 import { useAuth } from '@/hooks/auth-context';
 import { router } from 'expo-router';
 import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
+
+const MAX_CHARS = 500;
 
 export default function CreateScreen() {
   const [content, setContent] = useState('');
@@ -98,8 +94,6 @@ export default function CreateScreen() {
     }
   };
 
-
-
   const handlePost = async () => {
     if (!content.trim() && !selectedMedia) {
       Alert.alert('Error', 'Please add some content or media');
@@ -113,9 +107,9 @@ export default function CreateScreen() {
 
     try {
       setIsPosting(true);
-      
+
       const result = await createPost(content, selectedMedia || undefined, mediaType || undefined);
-      
+
       if (result.error) {
         Alert.alert('Error', result.error);
         return;
@@ -124,23 +118,23 @@ export default function CreateScreen() {
       track(EVENTS.POST_CREATED);
 
       Alert.alert('Success', 'Your post has been created and will appear in the feed!', [
-        { 
-          text: 'View Feed', 
+        {
+          text: 'View Feed',
           onPress: () => {
             setContent('');
             setSelectedMedia(null);
             setMediaType(null);
             router.push('/');
-          }
+          },
         },
-        { 
-          text: 'Create Another', 
+        {
+          text: 'Create Another',
           onPress: () => {
             setContent('');
             setSelectedMedia(null);
             setMediaType(null);
-          }
-        }
+          },
+        },
       ]);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -150,35 +144,65 @@ export default function CreateScreen() {
     }
   };
 
-
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <BackgroundGradient>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Create Post</Text>
-          <Text style={styles.subtitle}>Share your journey with the community</Text>
+          <View style={styles.headerRow}>
+            <TouchableOpacity style={styles.cancelTouchable} onPress={() => router.back()}>
+              <Text style={styles.cancelButton} numberOfLines={1}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              CREATE
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.postButton,
+                (isPosting || (!content.trim() && !selectedMedia)) && styles.postButtonDisabled,
+              ]}
+              onPress={handlePost}
+              disabled={isPosting || (!content.trim() && !selectedMedia)}
+            >
+              <Text style={styles.postButtonText} numberOfLines={1}>
+                {isPosting ? 'POSTING...' : 'POST'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <View style={styles.contentContainer}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.contentContainer}>
             <TextInput
               style={styles.textInput}
-              placeholder="What's on your mind?"
-              placeholderTextColor={theme.colors.textSecondary}
+              placeholder="What did you crush today?"
+              placeholderTextColor="#666"
               multiline
               value={content}
-              onChangeText={setContent}
+              onChangeText={(text) => setContent(text.slice(0, MAX_CHARS))}
               textAlignVertical="top"
             />
+            <Text style={styles.charCount} numberOfLines={1}>
+              {content.length}/{MAX_CHARS}
+            </Text>
 
             {selectedMedia && (
               <View style={styles.mediaPreview}>
                 {mediaType === 'image' ? (
-                  <Image source={{ uri: selectedMedia }} style={styles.previewImage} />
+                  <CachedImage
+                    source={selectedMedia}
+                    size={200}
+                    placeholder="post"
+                    borderRadius={12}
+                    style={{ width: '100%', height: 200 }}
+                  />
                 ) : (
                   <View style={styles.videoPreview}>
                     <Video size={48} color={theme.colors.white} />
-                    <Text style={styles.videoText}>Video Selected</Text>
+                    <Text style={styles.videoText} numberOfLines={1}>
+                      Video Selected
+                    </Text>
                   </View>
                 )}
                 <TouchableOpacity
@@ -194,182 +218,260 @@ export default function CreateScreen() {
             )}
 
             <View style={styles.mediaOptions}>
-              <TouchableOpacity
-                style={styles.mediaButton}
-                onPress={handleCameraCapture}
-              >
-                <Camera size={24} color={theme.colors.primary} />
-                <Text style={styles.mediaButtonText}>Camera</Text>
+              <TouchableOpacity style={styles.mediaButton} onPress={handleCameraCapture}>
+                <Camera size={24} color="#30D158" style={styles.mediaIcon} />
+                <Text style={styles.mediaButtonText} numberOfLines={1}>
+                  Camera
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.mediaButton}
                 onPress={() => handleMediaSelect('Photo')}
               >
-                <ImageIcon size={24} color={theme.colors.primary} />
-                <Text style={styles.mediaButtonText}>Gallery</Text>
+                <ImageIcon size={24} color="#30D158" style={styles.mediaIcon} />
+                <Text style={styles.mediaButtonText} numberOfLines={1}>
+                  Gallery
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.mediaButton}
                 onPress={() => handleMediaSelect('Video')}
               >
-                <Video size={24} color={theme.colors.primary} />
-                <Text style={styles.mediaButtonText}>Video</Text>
+                <Video size={24} color="#FF9F0A" style={styles.mediaIcon} />
+                <Text style={styles.mediaButtonText} numberOfLines={1}>
+                  Video
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.mediaButton}
                 onPress={() => handleMediaSelect('Article')}
               >
-                <FileText size={24} color={theme.colors.primary} />
-                <Text style={styles.mediaButtonText}>Article</Text>
+                <FileText size={24} color="#888" style={styles.mediaIcon} />
+                <Text style={styles.mediaButtonText} numberOfLines={1}>
+                  Article
+                </Text>
               </TouchableOpacity>
             </View>
-        </View>
+          </View>
 
-        <View style={styles.tips}>
-          <Text style={styles.tipsTitle}>Tips for great content:</Text>
-          <Text style={styles.tip}>• Share your training routines and progress</Text>
-          <Text style={styles.tip}>• Post match highlights and achievements</Text>
-          <Text style={styles.tip}>• Engage with your community</Text>
-          <Text style={styles.tip}>• Use hashtags to increase visibility</Text>
-        </View>
+          <View style={styles.tips}>
+            <Text style={styles.tipsTitle} numberOfLines={1}>
+              TIPS FOR GREAT CONTENT
+            </Text>
+            <Text style={styles.tip} numberOfLines={2}>
+              • Share your training routines and progress
+            </Text>
+            <Text style={styles.tip} numberOfLines={2}>
+              • Post match highlights and achievements
+            </Text>
+            <Text style={styles.tip} numberOfLines={2}>
+              • Engage with your community
+            </Text>
+            <Text style={styles.tip} numberOfLines={2}>
+              • Use hashtags to increase visibility
+            </Text>
+          </View>
 
-        <View style={styles.footer}>
-          <Button
-            title={isPosting ? 'Posting...' : 'Post'}
-            onPress={handlePost}
-            size="large"
-            disabled={isPosting || (!content.trim() && !selectedMedia)}
-          />
           {isPosting && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-              <Text style={styles.loadingText}>Creating your post...</Text>
+              <ActivityIndicator size="small" color="#30D158" />
+              <Text style={styles.loadingText} numberOfLines={1}>
+                Creating your post...
+              </Text>
             </View>
           )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </BackgroundGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     flexGrow: 1,
   },
   header: {
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#0a0a0a',
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  title: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  subtitle: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#f0f0f0',
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+    flex: 1,
+    textAlign: 'center',
+  },
+  cancelTouchable: {
+    flexShrink: 0,
+  },
+  cancelButton: {
+    color: '#888',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  postButton: {
+    flexShrink: 0,
+    backgroundColor: '#30D158',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    shadowColor: '#30D158',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  postButtonDisabled: {
+    opacity: 0.4,
+  },
+  postButtonText: {
+    color: '#000',
+    fontWeight: '900',
+    fontSize: 13,
+    letterSpacing: 1,
   },
   contentContainer: {
-    backgroundColor: theme.colors.cardBg,
-    margin: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    backgroundColor: '#1a1a1a',
+    margin: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: 14,
+    overflow: 'hidden',
   },
   textInput: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.text,
-    minHeight: 120,
-    marginBottom: theme.spacing.md,
+    fontSize: 15,
+    color: '#f0f0f0',
+    minHeight: 100,
+    marginBottom: 8,
+  },
+  charCount: {
+    color: '#666',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textAlign: 'right',
+    marginBottom: 12,
   },
   mediaPreview: {
-    position: 'relative',
-    marginBottom: theme.spacing.md,
+    position: 'relative' as const,
+    marginBottom: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
   },
   previewImage: {
     width: '100%',
     height: 200,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: 12,
   },
   removeMedia: {
-    position: 'absolute',
-    top: theme.spacing.sm,
-    right: theme.spacing.sm,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: theme.borderRadius.full,
-    padding: theme.spacing.xs,
+    position: 'absolute' as const,
+    top: 8,
+    right: 8,
+    backgroundColor: '#FF453A',
+    borderRadius: 12,
+    padding: 6,
   },
   mediaOptions: {
-    flexDirection: 'row',
+    flexDirection: 'row' as const,
     justifyContent: 'space-around',
-    paddingTop: theme.spacing.md,
+    paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   mediaButton: {
-    alignItems: 'center',
-    gap: theme.spacing.xs,
+    alignItems: 'center' as const,
+    gap: 6,
+    backgroundColor: '#111',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.1)',
+    padding: 14,
+    flex: 1,
+    marginHorizontal: 3,
+  },
+  mediaIcon: {
+    flexShrink: 0,
   },
   mediaButtonText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    fontSize: 11,
+    color: '#888',
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+    fontWeight: '700',
   },
   tips: {
-    backgroundColor: theme.colors.surface,
-    margin: theme.spacing.md,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: '#1a1a1a',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   tipsTitle: {
-    fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#FF9F0A',
+    marginBottom: 10,
+    letterSpacing: 1,
   },
   tip: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: theme.spacing.xs,
-  },
-  footer: {
-    padding: theme.spacing.md,
+    fontSize: 11,
+    color: '#888',
+    lineHeight: 18,
+    marginBottom: 4,
   },
   videoPreview: {
     width: '100%',
     height: 200,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: '#111',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: theme.spacing.sm,
+    gap: 8,
   },
   videoText: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.text,
-    fontWeight: theme.fontWeight.medium,
+    fontSize: 14,
+    color: '#f0f0f0',
+    fontWeight: '700',
   },
   loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: theme.spacing.md,
-    gap: theme.spacing.sm,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginBottom: 16,
+    gap: 8,
   },
   loadingText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    fontSize: 12,
+    color: '#888',
+    flexShrink: 1,
+  },
+  footer: {
+    padding: 16,
   },
   modeSelector: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -15,8 +14,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Send, Users } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { theme } from '@/constants/theme';
+import CachedImage from '@/components/CachedImage';
 import { useGroups, GroupMessage } from '@/hooks/group-messages-context';
 import { useAuth } from '@/hooks/auth-context';
+import { CHAT_FLATLIST_PROPS } from '@/constants/performance';
 
 export default function GroupChatScreen() {
   const { id, name } = useLocalSearchParams<{
@@ -31,7 +32,7 @@ export default function GroupChatScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   const messages = groupMessages[id] || [];
-  const currentGroup = groups.find(g => g.id === id);
+  const currentGroup = groups.find((g) => g.id === id);
   const groupName = name || currentGroup?.name || 'Group';
   const memberCount = currentGroup?.memberCount || 0;
 
@@ -67,58 +68,54 @@ export default function GroupChatScreen() {
     }
   };
 
-  const renderMessage = ({ item }: { item: GroupMessage }) => {
-    const isFromCurrentUser = item.senderId === user?.id;
+  const renderMessage = useCallback(
+    ({ item }: { item: GroupMessage }) => {
+      const isFromCurrentUser = item.senderId === user?.id;
 
-    return (
-      <View
-        style={[
-          styles.messageContainer,
-          isFromCurrentUser ? styles.sentMessage : styles.receivedMessage,
-        ]}
-      >
-        {!isFromCurrentUser && (
-          <Image
-            source={{
-              uri: item.senderAvatar || 'https://via.placeholder.com/30x30/E5E7EB/9CA3AF?text=U',
-            }}
-            style={styles.messageAvatar}
-          />
-        )}
-
+      return (
         <View
           style={[
-            styles.messageBubble,
-            isFromCurrentUser ? styles.sentBubble : styles.receivedBubble,
+            styles.messageContainer,
+            isFromCurrentUser ? styles.sentMessage : styles.receivedMessage,
           ]}
         >
           {!isFromCurrentUser && (
-            <Text style={styles.senderName}>
-              {item.senderName || 'Unknown'}
-            </Text>
+            <CachedImage source={item.senderAvatar} size={30} placeholder="avatar" />
           )}
 
-          <Text
+          <View
             style={[
-              styles.messageText,
-              isFromCurrentUser ? styles.sentText : styles.receivedText,
+              styles.messageBubble,
+              isFromCurrentUser ? styles.sentBubble : styles.receivedBubble,
             ]}
           >
-            {item.content}
-          </Text>
+            {!isFromCurrentUser && (
+              <Text style={styles.senderName}>{item.senderName || 'Unknown'}</Text>
+            )}
 
-          <Text
-            style={[
-              styles.messageTime,
-              isFromCurrentUser ? styles.sentTime : styles.receivedTime,
-            ]}
-          >
-            {formatMessageTime(item.createdAt)}
-          </Text>
+            <Text
+              style={[
+                styles.messageText,
+                isFromCurrentUser ? styles.sentText : styles.receivedText,
+              ]}
+            >
+              {item.content}
+            </Text>
+
+            <Text
+              style={[
+                styles.messageTime,
+                isFromCurrentUser ? styles.sentTime : styles.receivedTime,
+              ]}
+            >
+              {formatMessageTime(item.createdAt)}
+            </Text>
+          </View>
         </View>
-      </View>
-    );
-  };
+      );
+    },
+    [user?.id],
+  );
 
   const formatMessageTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -137,7 +134,9 @@ export default function GroupChatScreen() {
             <Users size={20} color={theme.colors.primary} />
           </View>
           <View>
-            <Text style={styles.headerName} numberOfLines={1}>{groupName}</Text>
+            <Text style={styles.headerName} numberOfLines={1}>
+              {groupName}
+            </Text>
             <Text style={styles.headerSubtitle}>
               {memberCount} {memberCount === 1 ? 'member' : 'members'}
             </Text>
@@ -158,6 +157,7 @@ export default function GroupChatScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messagesList}
           showsVerticalScrollIndicator={false}
+          {...CHAT_FLATLIST_PROPS}
           onContentSizeChange={() => {
             flatListRef.current?.scrollToEnd({ animated: false });
           }}
@@ -167,9 +167,7 @@ export default function GroupChatScreen() {
           ListEmptyComponent={
             <View style={styles.emptyMessages}>
               <Users size={48} color={theme.colors.textSecondary} />
-              <Text style={styles.emptyMessagesText}>
-                No messages yet. Say hello!
-              </Text>
+              <Text style={styles.emptyMessagesText}>No messages yet. Say hello!</Text>
             </View>
           }
         />
@@ -198,9 +196,7 @@ export default function GroupChatScreen() {
             <Send
               size={20}
               color={
-                !messageText.trim() || isSending
-                  ? theme.colors.textSecondary
-                  : theme.colors.white
+                !messageText.trim() || isSending ? theme.colors.textSecondary : theme.colors.white
               }
             />
           </TouchableOpacity>

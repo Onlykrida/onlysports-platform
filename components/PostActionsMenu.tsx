@@ -27,7 +27,11 @@ export default function PostActionsMenu({ visible, onClose, onEdit, onDelete }: 
             <Text style={styles.rowText}>Edit post</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={onDelete} style={[styles.row, styles.destructive]} testID="post-actions-delete">
+          <TouchableOpacity
+            onPress={onDelete}
+            style={[styles.row, styles.destructive]}
+            testID="post-actions-delete"
+          >
             <Trash2 size={20} color={theme.colors.danger} />
             <Text style={[styles.rowText, styles.destructiveText]}>Delete post</Text>
           </TouchableOpacity>
@@ -44,7 +48,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     padding: theme.spacing.lg,
     borderTopLeftRadius: theme.borderRadius.xl,
     borderTopRightRadius: theme.borderRadius.xl,

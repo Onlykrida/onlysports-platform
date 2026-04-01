@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,15 @@ import {
   Modal,
   FlatList,
   TouchableOpacity,
-  Image,
   TextInput,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { X, Send, Search } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import CachedImage from '@/components/CachedImage';
+import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { useAuth } from '@/hooks/auth-context';
 import { useMessages, Conversation } from '@/hooks/messages-context';
 import { Post } from '@/types';
@@ -32,8 +34,8 @@ export default function ShareModal({ visible, onClose, post }: ShareModalProps) 
 
   useEffect(() => {
     if (searchQuery.trim()) {
-      const filtered = conversations.filter(conv =>
-        conv.participantName.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered = conversations.filter((conv) =>
+        conv.participantName.toLowerCase().includes(searchQuery.toLowerCase()),
       );
       setFilteredConversations(filtered);
     } else {
@@ -48,14 +50,14 @@ export default function ShareModal({ visible, onClose, post }: ShareModalProps) 
     try {
       const contentPreview = post.content.substring(0, 100);
       const ellipsis = post.content.length > 100 ? '...' : '';
-      
+
       // Create a shareable link to the post
-      const postLink = `https://onlykrida-app.vercel.app/post/${post.id}`;
-      
+      const postLink = `https://onlykrida.app/post/${post.id}`;
+
       const shareMessage = `🏆 Check out this post from ${post.userName}:\n\n"${contentPreview}${ellipsis}"\n\n🔗 View full post: ${postLink}\n\n#OnlyKrida #${post.userRole}`;
-      
+
       const result = await sendMessage(conversation.participantId, shareMessage, post.id);
-      
+
       if (result.error) {
         Alert.alert('Error', result.error);
       } else {
@@ -70,28 +72,26 @@ export default function ShareModal({ visible, onClose, post }: ShareModalProps) 
     }
   };
 
-  const renderConversation = ({ item }: { item: Conversation }) => (
-    <TouchableOpacity 
-      style={styles.conversationItem}
-      onPress={() => handleShare(item)}
-      disabled={isSharing}
-    >
-      <Image 
-        source={{ 
-          uri: item.participantAvatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' 
-        }} 
-        style={styles.avatar} 
-      />
-      <View style={styles.conversationInfo}>
-        <Text style={styles.participantName}>{item.participantName}</Text>
-        <Text style={styles.participantRole}>{item.participantRole?.toUpperCase()}</Text>
-      </View>
-      {isSharing ? (
-        <ActivityIndicator size="small" color={theme.colors.primary} />
-      ) : (
-        <Send size={20} color={theme.colors.primary} />
-      )}
-    </TouchableOpacity>
+  const renderConversation = useCallback(
+    ({ item }: { item: Conversation }) => (
+      <TouchableOpacity
+        style={styles.conversationItem}
+        onPress={() => handleShare(item)}
+        disabled={isSharing}
+      >
+        <CachedImage source={item.participantAvatar} size={48} placeholder="avatar" />
+        <View style={styles.conversationInfo}>
+          <Text style={styles.participantName}>{item.participantName}</Text>
+          <Text style={styles.participantRole}>{item.participantRole?.toUpperCase()}</Text>
+        </View>
+        {isSharing ? (
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        ) : (
+          <Send size={20} color={theme.colors.primary} />
+        )}
+      </TouchableOpacity>
+    ),
+    [isSharing, handleShare],
   );
 
   return (
@@ -112,15 +112,23 @@ export default function ShareModal({ visible, onClose, post }: ShareModalProps) 
         {/* Post Preview */}
         <View style={styles.postPreview}>
           <View style={styles.postHeader}>
-            <Image source={{ uri: post.userAvatar }} style={styles.postAvatar} />
+            <CachedImage source={post.userAvatar} size={32} placeholder="avatar" />
             <View>
               <Text style={styles.postUserName}>{post.userName}</Text>
               <Text style={styles.postUserRole}>{post.userRole.toUpperCase()}</Text>
             </View>
           </View>
-          <Text style={styles.postContent} numberOfLines={3}>{post.content}</Text>
+          <Text style={styles.postContent} numberOfLines={3}>
+            {post.content}
+          </Text>
           {post.media && (
-            <Image source={{ uri: post.media.url }} style={styles.postImage} />
+            <CachedImage
+              source={post.media.url}
+              size={120}
+              placeholder="post"
+              borderRadius={theme.borderRadius.md}
+              style={{ width: '100%', height: 120 }}
+            />
           )}
         </View>
 
@@ -142,13 +150,16 @@ export default function ShareModal({ visible, onClose, post }: ShareModalProps) 
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.conversationsList}
           showsVerticalScrollIndicator={false}
+          {...FLATLIST_PERF_PROPS}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>
                 {searchQuery ? 'No conversations found' : 'No conversations yet'}
               </Text>
               <Text style={styles.emptyStateSubtext}>
-                {searchQuery ? 'Try a different search term' : 'Start a conversation to share posts'}
+                {searchQuery
+                  ? 'Try a different search term'
+                  : 'Start a conversation to share posts'}
               </Text>
             </View>
           }
@@ -181,7 +192,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xs,
   },
   postPreview: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     margin: theme.spacing.md,
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,

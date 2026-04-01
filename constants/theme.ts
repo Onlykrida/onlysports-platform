@@ -1,4 +1,6 @@
 export const formatRoleName = (role: string, plural: boolean = false): string => {
+  if (!role) return plural ? 'Users' : 'User';
+
   const roleMap: Record<string, { singular: string; plural: string }> = {
     athlete: { singular: 'Athlete', plural: 'Athletes' },
     coach: { singular: 'Coach', plural: 'Coaches' },
@@ -13,11 +15,11 @@ export const formatRoleName = (role: string, plural: boolean = false): string =>
 
   const roleLower = role.toLowerCase();
   const roleData = roleMap[roleLower];
-  
+
   if (roleData) {
     return plural ? roleData.plural : roleData.singular;
   }
-  
+
   // Fallback for unknown roles
   const formatted = role.charAt(0).toUpperCase() + role.slice(1);
   return plural ? formatted + 's' : formatted;
@@ -25,73 +27,80 @@ export const formatRoleName = (role: string, plural: boolean = false): string =>
 
 export const theme = {
   colors: {
-    // Dark sporty theme colors
-    background: '#000000', // Base background color
-    backgroundGradient: ['#003300', '#000000'], // Gradient from deep sport green to black
-    surface: '#1C1C1E', // Charcoal grey for surfaces
-    surfaceLight: '#2C2C2E', // Slightly lighter charcoal
-    cardBackground: '#1C1C1E', // Charcoal grey for cards
-    
+    // Street culture dark theme
+    background: '#0a0a0a',
+    backgroundGradient: ['#0a1a0a', '#0a0a0a'],
+    surface: '#141414',
+    surfaceLight: '#1e1e1e',
+    cardBackground: '#141414',
+
     // Primary colors
-    primary: '#30D158', // Sporty green
-    primaryDark: '#248A3D', // Darker sporty green
-    primaryLight: '#0A2F1C', // Dark green tint for highlights
-    secondary: '#30D158', // Sporty green
-    accent: '#30D158', // Sporty green
-    
-    // Status colors
-    warning: '#FF9F0A', // Sporty orange
-    info: '#64D2FF', // Sporty blue
-    orange: '#FF9F0A', // Sporty orange
-    
+    primary: '#30D158',
+    primaryDark: '#248A3D',
+    primaryLight: '#0A2F1C',
+    secondary: '#30D158',
+    accent: '#FF9F0A', // Orange accent for street vibe
+
+    // Street palette
+    orange: '#FF9F0A',
+    cyan: '#64D2FF',
+    red: '#FF453A',
+    neonGreen: '#30D158',
+    warning: '#FF9F0A',
+    info: '#64D2FF',
+
     // Text colors
-    text: '#FFFFFF', // White text
-    textSecondary: '#C7C7CC', // Light grey
-    textMuted: '#8E8E93', // Dim grey
-    textOnCard: '#FFFFFF', // White text on cards
-    textOnLight: '#000000', // Black text on light backgrounds
-    textOnDark: '#FFFFFF', // White text on dark backgrounds
-    textPrimary: '#FFFFFF', // White text
-    textLight: '#C7C7CC', // Light grey
-    
+    text: '#f0f0f0',
+    textSecondary: '#C7C7CC',
+    textMuted: '#888888',
+    textOnCard: '#f0f0f0',
+    textOnLight: '#0a0a0a',
+    textOnDark: '#f0f0f0',
+    textPrimary: '#f0f0f0',
+    textLight: '#C7C7CC',
+
     // Status colors
-    success: '#30D158', // Sporty green
-    danger: '#FF453A', // Sporty red
-    successBg: '#0A2F1C', // Dark green background
-    dangerBg: '#3A0A0A', // Dark red background
-    
+    success: '#30D158',
+    danger: '#FF453A',
+    successBg: '#0A2F1C',
+    dangerBg: '#3A0A0A',
+
     // Utility colors
-    white: '#FFFFFF',
-    black: '#000000',
-    border: '#38383A', // Dark border
-    borderLight: '#48484A', // Slightly lighter border
-    
+    white: '#f0f0f0',
+    black: '#0a0a0a',
+    border: '#2a2a2a',
+    borderLight: '#383838',
+
     // Card and surface colors
-    cardBg: '#1C1C1E', // Charcoal grey
-    surfaceDark: '#1C1C1E', // Charcoal grey
-    inputBackground: '#2C2C2E', // Slightly lighter charcoal
-    
-    // Sporty gradients
+    cardBg: '#1a1a1a',
+    cardBorder: 'rgba(255,255,255,0.08)',
+    surfaceDark: '#0a0a0a',
+    inputBackground: '#111111',
+
+    // Street gradients
     gradient: {
-      primary: ['#30D158', '#248A3D'], // Sporty green gradient
-      secondary: ['#30D158', '#248A3D'], // Sporty green gradient
-      accent: ['#FF9F0A', '#FF8000'], // Sporty orange gradient
-      dark: ['#1C1C1E', '#000000'], // Dark gradient
-      energetic: ['#64D2FF', '#0A84FF'], // Sporty blue gradient
-      fire: ['#FF453A', '#FF9F0A'], // Sporty red to orange gradient
-      navy: ['#0A84FF', '#0040DD'], // Sporty blue gradient
-      sport: ['#003300', '#000000'], // Deep sport green to black gradient
+      primary: ['#30D158', '#248A3D'],
+      secondary: ['#30D158', '#248A3D'],
+      accent: ['#FF9F0A', '#FF8000'],
+      dark: ['#141414', '#0a0a0a'],
+      energetic: ['#64D2FF', '#0A84FF'],
+      fire: ['#FF453A', '#FF9F0A'],
+      navy: ['#0A84FF', '#0040DD'],
+      sport: ['#0a1a0a', '#0a0a0a'],
+      street: ['#FF9F0A', '#FF453A'],
+      neon: ['#30D158', '#64D2FF'],
     },
   },
   spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
+    xs: 2,
+    sm: 6,
+    md: 12,
+    lg: 20,
+    xl: 28,
+    xxl: 40,
   },
   borderRadius: {
+    xs: 4,
     sm: 8,
     md: 12,
     lg: 16,
@@ -99,13 +108,21 @@ export const theme = {
     full: 9999,
   },
   fontSize: {
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 18,
-    xl: 24,
-    xxl: 32,
-    xxxl: 40,
+    xs: 10,
+    sm: 12,
+    md: 14,
+    lg: 16,
+    xl: 20,
+    xxl: 28,
+    xxxl: 36,
+    hero: 44,
+  },
+  letterSpacing: {
+    tight: -0.5,
+    normal: 0,
+    wide: 1,
+    wider: 2,
+    widest: 4,
   },
   fontWeight: {
     regular: '400' as const,
@@ -115,55 +132,97 @@ export const theme = {
     extrabold: '800' as const,
     black: '900' as const, // For sporty headings
   },
-  // Standard shadows
+  // Neon glow shadows
   shadow: {
-    // Success shadow
     glow: {
-      shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowColor: '#30D158',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 4,
     },
-    // Primary shadow
     electric: {
-      shadowColor: '#000000',
+      shadowColor: '#30D158',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 6,
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 5,
+    },
+    fire: {
+      shadowColor: '#FF453A',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 4,
+    },
+    notification: {
+      shadowColor: '#FF9F0A',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
       elevation: 3,
     },
-    // Danger shadow
-    fire: {
-      shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
-    },
-    // Notification shadow
-    notification: {
-      shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 3,
-      elevation: 1,
-    },
-    // Secondary shadow
     cyan: {
-      shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowColor: '#64D2FF',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 4,
     },
-    // Card shadow
     card: {
       shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    ctaGlow: {
+      shadowColor: '#30D158',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 16,
+      elevation: 6,
     },
   },
+  dashBorder: {
+    borderWidth: 2,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+};
+
+// Role-specific accent colors for differentiated experiences
+export const roleAccents: Record<
+  string,
+  {
+    accent: string;
+    accentBg: string;
+    gradient: [string, string];
+  }
+> = {
+  athlete: {
+    accent: '#30D158',
+    accentBg: 'rgba(48,209,88,0.08)',
+    gradient: ['#30D158', '#248A3D'],
+  },
+  scout: { accent: '#FF9F0A', accentBg: 'rgba(255,159,10,0.08)', gradient: ['#FF9F0A', '#FF8000'] },
+  coach: {
+    accent: '#64D2FF',
+    accentBg: 'rgba(100,210,255,0.08)',
+    gradient: ['#64D2FF', '#0A84FF'],
+  },
+  team: { accent: '#FF453A', accentBg: 'rgba(255,69,58,0.08)', gradient: ['#FF453A', '#D32F2F'] },
+  academy: {
+    accent: '#FF453A',
+    accentBg: 'rgba(255,69,58,0.08)',
+    gradient: ['#FF453A', '#D32F2F'],
+  },
+  fan: { accent: '#BF5AF2', accentBg: 'rgba(191,90,242,0.08)', gradient: ['#BF5AF2', '#9B30FF'] },
+  brand: { accent: '#FF9F0A', accentBg: 'rgba(255,159,10,0.08)', gradient: ['#FF9F0A', '#FF6B00'] },
+  trainer: {
+    accent: '#30D158',
+    accentBg: 'rgba(48,209,88,0.08)',
+    gradient: ['#30D158', '#248A3D'],
+  },
+  gym: { accent: '#64D2FF', accentBg: 'rgba(100,210,255,0.08)', gradient: ['#64D2FF', '#0A84FF'] },
 };

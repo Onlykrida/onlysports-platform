@@ -20,7 +20,7 @@ import { UserRole } from '@/types';
 
 export default function SignupScreen() {
   const { role } = useLocalSearchParams<{ role: UserRole }>();
-  const { signup, updateProfile, session } = useAuth();
+  const { signup, updateProfile } = useAuth();
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -46,10 +46,8 @@ export default function SignupScreen() {
 
     if (!password) {
       newErrors.password = 'Password is required';
-    } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    } else if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
-      newErrors.password = 'Password must include uppercase, lowercase, and a number';
+    } else if (password.length < 6) {
+      newErrors.password = 'At least 6 characters';
     }
 
     if (password !== confirmPassword) {
@@ -66,19 +64,21 @@ export default function SignupScreen() {
     setLoading(true);
     try {
       const result = await signup(email, password, name, role || 'athlete');
-      
+
       if (result.error) {
         setErrors({ general: result.error });
       } else {
-        if (!session) {
-          setErrors({ general: 'Please verify your email and sign in to complete your profile.' });
-          return;
-        }
+        // Build optional profile updates
         const achArray = achievements
           .split('\n')
           .map((a) => a.trim())
           .filter((a) => a)
-          .map((a, idx) => ({ id: `${idx}`, title: a, description: '', date: new Date().toISOString() }));
+          .map((a, idx) => ({
+            id: `${idx}`,
+            title: a,
+            description: '',
+            date: new Date().toISOString(),
+          }));
         const updates: Record<string, any> = {};
         if (sport.trim()) updates.sport = sport.trim();
         if (bio.trim()) updates.bio = bio.trim();
@@ -86,10 +86,12 @@ export default function SignupScreen() {
         if (Object.keys(updates).length) {
           const upd = await updateProfile(updates);
           if (upd.error) {
-            setErrors({ general: upd.error });
-            return;
+            // Profile update failed but signup succeeded - don't block, just log
+            console.warn('Profile update after signup failed:', upd.error);
           }
         }
+        // Navigation will be handled by onAuthStateChange listener in auth-context.
+        // Only navigate explicitly if the listener hasn't already done so.
         router.replace('/');
       }
     } catch (error) {
@@ -112,9 +114,7 @@ export default function SignupScreen() {
         >
           <View style={styles.header}>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>
-              Join as {role ? formatRoleName(role) : 'Athlete'}
-            </Text>
+            <Text style={styles.subtitle}>Join as {role ? formatRoleName(role) : 'Athlete'}</Text>
           </View>
 
           <View style={styles.form}>
@@ -123,11 +123,12 @@ export default function SignupScreen() {
                 <Text style={styles.errorText}>{errors.general}</Text>
               </View>
             )}
-            
-            {errors.general && (errors.general.includes('table') || errors.general.includes('Permission denied') || errors.general.includes('policies')) && (
-              <DatabaseSetupChecker />
-            )}
-            
+
+            {errors.general &&
+              (errors.general.includes('table') ||
+                errors.general.includes('Permission denied') ||
+                errors.general.includes('policies')) && <DatabaseSetupChecker />}
+
             <Input
               label="Full Name"
               placeholder="Enter your full name"
@@ -202,12 +203,7 @@ export default function SignupScreen() {
           </View>
 
           <View style={styles.footer}>
-            <Button
-              title="Sign Up"
-              onPress={handleSignup}
-              loading={loading}
-              size="large"
-            />
+            <Button title="Sign Up" onPress={handleSignup} loading={loading} size="large" />
 
             <TouchableOpacity
               onPress={() => router.push('/(auth)/login' as any)}

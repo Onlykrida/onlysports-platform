@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
-import { X, Save, ChevronDown } from 'lucide-react-native';
+import { X, Save, ChevronDown, Activity } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/Button';
@@ -18,20 +18,66 @@ import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { PlayerStatRow } from '@/hooks/scouting-context';
 
 const SPORTS = [
-  'Football', 'Basketball', 'Soccer', 'Baseball', 'Tennis', 'Golf',
-  'Swimming', 'Track & Field', 'Volleyball', 'Hockey', 'Wrestling',
-  'Boxing', 'MMA', 'Cricket', 'Rugby', 'Other'
+  'Football',
+  'Basketball',
+  'Soccer',
+  'Baseball',
+  'Tennis',
+  'Golf',
+  'Swimming',
+  'Track & Field',
+  'Volleyball',
+  'Hockey',
+  'Wrestling',
+  'Boxing',
+  'MMA',
+  'Cricket',
+  'Rugby',
+  'Other',
 ];
 
 const POSITIONS: Record<string, string[]> = {
-  Football: ['Quarterback', 'Running Back', 'Wide Receiver', 'Tight End', 'Offensive Line', 'Defensive Line', 'Linebacker', 'Cornerback', 'Safety', 'Kicker', 'Punter'],
+  Football: [
+    'Quarterback',
+    'Running Back',
+    'Wide Receiver',
+    'Tight End',
+    'Offensive Line',
+    'Defensive Line',
+    'Linebacker',
+    'Cornerback',
+    'Safety',
+    'Kicker',
+    'Punter',
+  ],
   Basketball: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center'],
   Soccer: ['Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Striker'],
-  Baseball: ['Pitcher', 'Catcher', 'First Base', 'Second Base', 'Third Base', 'Shortstop', 'Left Field', 'Center Field', 'Right Field'],
+  Baseball: [
+    'Pitcher',
+    'Catcher',
+    'First Base',
+    'Second Base',
+    'Third Base',
+    'Shortstop',
+    'Left Field',
+    'Center Field',
+    'Right Field',
+  ],
   Tennis: ['Singles', 'Doubles'],
   Cricket: ['Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper'],
   Hockey: ['Goalie', 'Defender', 'Midfielder', 'Forward'],
-  Rugby: ['Prop', 'Hooker', 'Lock', 'Flanker', 'Number Eight', 'Scrum-Half', 'Fly-Half', 'Centre', 'Wing', 'Fullback'],
+  Rugby: [
+    'Prop',
+    'Hooker',
+    'Lock',
+    'Flanker',
+    'Number Eight',
+    'Scrum-Half',
+    'Fly-Half',
+    'Centre',
+    'Wing',
+    'Fullback',
+  ],
   Volleyball: ['Setter', 'Libero', 'Outside Hitter', 'Middle Blocker', 'Opposite Hitter'],
   Other: ['Player', 'Athlete'],
 };
@@ -51,7 +97,7 @@ export default function PlayerStatsScreen() {
   const [showSportPicker, setShowSportPicker] = useState(false);
   const [showPositionPicker, setShowPositionPicker] = useState(false);
 
-  const availablePositions = sport ? (POSITIONS[sport] || POSITIONS.Other) : POSITIONS.Other;
+  const availablePositions = sport ? POSITIONS[sport] || POSITIONS.Other : POSITIONS.Other;
 
   const loadExistingStats = useCallback(async () => {
     if (!user || !isSupabaseConfigured) {
@@ -67,7 +113,11 @@ export default function PlayerStatsScreen() {
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116' || error.code === 'PGRST205' || error.message?.includes('Could not find')) {
+        if (
+          error.code === 'PGRST116' ||
+          error.code === 'PGRST205' ||
+          error.message?.includes('Could not find')
+        ) {
           // No row found or table doesn't exist - that's fine
         } else {
           console.log('PlayerStats: load error', error);
@@ -127,10 +177,7 @@ export default function PlayerStatsScreen() {
 
       let result;
       if (existingId) {
-        result = await supabase
-          .from('player_stats')
-          .update(payload)
-          .eq('id', existingId);
+        result = await supabase.from('player_stats').update(payload).eq('id', existingId);
       } else {
         result = await supabase
           .from('player_stats')
@@ -138,8 +185,14 @@ export default function PlayerStatsScreen() {
       }
 
       if (result.error) {
-        if (result.error.code === 'PGRST205' || result.error.message?.includes('Could not find the table')) {
-          Alert.alert('Setup Required', 'The player_stats table has not been created yet. Please run the database migration first.');
+        if (
+          result.error.code === 'PGRST205' ||
+          result.error.message?.includes('Could not find the table')
+        ) {
+          Alert.alert(
+            'Setup Required',
+            'The player_stats table has not been created yet. Please run the database migration first.',
+          );
         } else {
           Alert.alert('Error', result.error.message || 'Failed to save stats.');
         }
@@ -202,7 +255,10 @@ export default function PlayerStatsScreen() {
               <Text style={styles.inputLabel}>Sport</Text>
               <TouchableOpacity
                 style={styles.picker}
-                onPress={() => { setShowSportPicker(!showSportPicker); setShowPositionPicker(false); }}
+                onPress={() => {
+                  setShowSportPicker(!showSportPicker);
+                  setShowPositionPicker(false);
+                }}
               >
                 <Text style={[styles.pickerText, !sport && styles.placeholderText]}>
                   {sport || 'Select your sport'}
@@ -222,7 +278,14 @@ export default function PlayerStatsScreen() {
                         setShowSportPicker(false);
                       }}
                     >
-                      <Text style={[styles.pickerOptionText, s === sport && styles.pickerOptionTextSelected]}>{s}</Text>
+                      <Text
+                        style={[
+                          styles.pickerOptionText,
+                          s === sport && styles.pickerOptionTextSelected,
+                        ]}
+                      >
+                        {s}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -234,7 +297,10 @@ export default function PlayerStatsScreen() {
                 <Text style={styles.inputLabel}>Position</Text>
                 <TouchableOpacity
                   style={styles.picker}
-                  onPress={() => { setShowPositionPicker(!showPositionPicker); setShowSportPicker(false); }}
+                  onPress={() => {
+                    setShowPositionPicker(!showPositionPicker);
+                    setShowSportPicker(false);
+                  }}
                 >
                   <Text style={[styles.pickerText, !position && styles.placeholderText]}>
                     {position || 'Select your position'}
@@ -253,7 +319,14 @@ export default function PlayerStatsScreen() {
                           setShowPositionPicker(false);
                         }}
                       >
-                        <Text style={[styles.pickerOptionText, p === position && styles.pickerOptionTextSelected]}>{p}</Text>
+                        <Text
+                          style={[
+                            styles.pickerOptionText,
+                            p === position && styles.pickerOptionTextSelected,
+                          ]}
+                        >
+                          {p}
+                        </Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -266,9 +339,19 @@ export default function PlayerStatsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Performance Metrics</Text>
 
-            <StatSlider label="Skill" value={skill} onChange={setSkill} color={theme.colors.primary} />
+            <StatSlider
+              label="Skill"
+              value={skill}
+              onChange={setSkill}
+              color={theme.colors.primary}
+            />
             <StatSlider label="Speed" value={speed} onChange={setSpeed} color={theme.colors.info} />
-            <StatSlider label="Stamina" value={stamina} onChange={setStamina} color={theme.colors.warning} />
+            <StatSlider
+              label="Stamina"
+              value={stamina}
+              onChange={setStamina}
+              color={theme.colors.warning}
+            />
           </View>
 
           {/* Summary Card */}
@@ -285,26 +368,44 @@ export default function PlayerStatsScreen() {
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Overall Rating</Text>
-                <Text style={[styles.summaryValue, { color: theme.colors.primary, fontWeight: theme.fontWeight.black }]}>
+                <Text
+                  style={[
+                    styles.summaryValue,
+                    { color: theme.colors.primary, fontWeight: theme.fontWeight.black },
+                  ]}
+                >
                   {Math.round((skill + speed + stamina) / 3)}
                 </Text>
               </View>
             </View>
           </View>
 
+          {/* Beep Test Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Fitness Assessment</Text>
+            <TouchableOpacity
+              style={styles.beepTestLink}
+              onPress={() => router.push('/beep-test' as any)}
+            >
+              <Activity size={20} color={theme.colors.primary} />
+              <View style={{ flex: 1, marginLeft: theme.spacing.md }}>
+                <Text style={styles.beepTestLinkTitle}>Beep Test</Text>
+                <Text style={styles.beepTestLinkSubtitle}>
+                  Measure your endurance with the 20m shuttle run test
+                </Text>
+              </View>
+              <ChevronDown
+                size={18}
+                color={theme.colors.textSecondary}
+                style={{ transform: [{ rotate: '-90deg' }] }}
+              />
+            </TouchableOpacity>
+          </View>
+
           {/* Save Button */}
           <View style={styles.actions}>
-            <Button
-              title="Save Stats"
-              onPress={handleSave}
-              loading={isSaving}
-              variant="primary"
-            />
-            <Button
-              title="Cancel"
-              onPress={() => router.back()}
-              variant="ghost"
-            />
+            <Button title="Save Stats" onPress={handleSave} loading={isSaving} variant="primary" />
+            <Button title="Cancel" onPress={() => router.back()} variant="ghost" />
           </View>
         </ScrollView>
       )}
@@ -541,6 +642,25 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.bold,
   },
 
+  beepTestLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  beepTestLinkTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  beepTestLinkSubtitle: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
   actions: {
     padding: theme.spacing.md,
     gap: theme.spacing.sm,

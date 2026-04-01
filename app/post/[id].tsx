@@ -4,25 +4,25 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { 
-  ArrowLeft, 
-  Zap, 
-  MessageSquare, 
-  Send, 
-  Star, 
+import {
+  ArrowLeft,
+  Zap,
+  MessageSquare,
+  Send,
+  Star,
   Trophy,
   Target,
   Award,
-  Flame
+  Flame,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import CachedImage from '@/components/CachedImage';
 import { Post } from '@/types';
 import { usePosts } from '@/hooks/posts-context';
 import { useAuth } from '@/hooks/auth-context';
@@ -73,7 +73,7 @@ export default function PostScreen() {
 
   useEffect(() => {
     if (id && posts.length > 0) {
-      const foundPost = posts.find(p => p.id === id);
+      const foundPost = posts.find((p) => p.id === id);
       setPost(foundPost || null);
       setIsLoading(false);
     }
@@ -81,7 +81,7 @@ export default function PostScreen() {
 
   const handleUserPress = (userId: string) => {
     if (userId === user?.id) {
-      router.push({ pathname: '/profile' as any });
+      router.push({ pathname: '/(tabs)/profile' as any });
     } else {
       router.push({ pathname: '/user/[id]' as any, params: { id: userId } });
     }
@@ -98,7 +98,7 @@ export default function PostScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Stack.Screen 
+        <Stack.Screen
           options={{
             title: 'Post',
             headerLeft: () => (
@@ -119,7 +119,7 @@ export default function PostScreen() {
   if (!post) {
     return (
       <SafeAreaView style={styles.container}>
-        <Stack.Screen 
+        <Stack.Screen
           options={{
             title: 'Post',
             headerLeft: () => (
@@ -131,10 +131,7 @@ export default function PostScreen() {
         />
         <View style={styles.loadingContainer}>
           <Text style={styles.errorText}>Post not found</Text>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -144,7 +141,7 @@ export default function PostScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           title: 'Post',
           headerLeft: () => (
@@ -154,14 +151,16 @@ export default function PostScreen() {
           ),
         }}
       />
-      
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.postContainer}>
           <View style={styles.postHeader}>
             <TouchableOpacity style={styles.userInfo} onPress={() => handleUserPress(post.userId)}>
               <View style={styles.avatarContainer}>
-                <Image source={{ uri: post.userAvatar }} style={styles.avatar} />
-                <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(post.userRole) }]}>
+                <CachedImage source={post.userAvatar} size={48} placeholder="avatar" />
+                <View
+                  style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(post.userRole) }]}
+                >
                   {getRoleIcon(post.userRole)}
                 </View>
               </View>
@@ -188,7 +187,16 @@ export default function PostScreen() {
           {post.media && (
             <View style={styles.mediaContainer}>
               {post.media.type === 'image' ? (
-                <Image source={{ uri: post.media.url }} style={styles.postImage} />
+                <CachedImage
+                  source={post.media.url}
+                  size={width - theme.spacing.md * 2}
+                  placeholder="post"
+                  borderRadius={theme.borderRadius.md}
+                  style={{
+                    width: width - theme.spacing.md * 2,
+                    height: (width - theme.spacing.md * 2) * 0.75,
+                  }}
+                />
               ) : (
                 <VideoPlayer
                   uri={post.media.url ?? ''}
@@ -205,12 +213,12 @@ export default function PostScreen() {
           )}
 
           <View style={styles.postActions}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.actionButton, post.isLiked && styles.likedButton]}
               onPress={() => likePost(post.id)}
             >
-              <Zap 
-                size={24} 
+              <Zap
+                size={24}
                 color={post.isLiked ? theme.colors.white : theme.colors.primary}
                 fill={post.isLiked ? theme.colors.white : 'transparent'}
               />
@@ -231,7 +239,7 @@ export default function PostScreen() {
           </View>
         </View>
       </ScrollView>
-      
+
       {/* Comments Modal */}
       <CommentsModal
         visible={commentsModalVisible}
@@ -239,7 +247,7 @@ export default function PostScreen() {
         postId={post.id}
         postAuthor={post.userName}
       />
-      
+
       {/* Share Modal */}
       <ShareModal
         visible={shareModalVisible}
@@ -291,7 +299,7 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.semibold,
   },
   postContainer: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.lg,
     marginHorizontal: theme.spacing.md,
@@ -384,8 +392,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   postImage: {
-    width: width - (theme.spacing.md * 2),
-    height: (width - (theme.spacing.md * 2)) * 0.75,
+    width: width - theme.spacing.md * 2,
+    height: (width - theme.spacing.md * 2) * 0.75,
     resizeMode: 'cover',
     borderRadius: theme.borderRadius.md,
   },
