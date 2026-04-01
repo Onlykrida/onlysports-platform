@@ -1,4 +1,13 @@
-export type UserRole = 'athlete' | 'coach' | 'scout' | 'team' | 'fan' | 'trainer' | 'gym' | 'brand' | 'academy';
+export type UserRole =
+  | 'athlete'
+  | 'coach'
+  | 'scout'
+  | 'team'
+  | 'fan'
+  | 'trainer'
+  | 'gym'
+  | 'brand'
+  | 'academy';
 
 export interface User {
   id: string;
@@ -28,22 +37,22 @@ export interface RoleSpecificData {
   dateOfBirth?: string;
   careerGoals?: string;
   currentTeam?: string;
-  
+
   // Scout specific
   organization?: string;
   scoutingRegions?: string[];
   athleteLevels?: string[];
   lookingFor?: string;
-  
+
   // Coach specific
   experience?: string;
   philosophy?: string;
   teamHistory?: string[];
-  
+
   // Trainer specific
   specialties?: string[];
   certifications?: string[];
-  
+
   // Team specific
   league?: string;
   founded?: string;
@@ -197,7 +206,19 @@ export interface Follow {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'follow' | 'like' | 'comment' | 'post' | 'opportunity' | 'message' | 'connection_request' | 'connection_accepted' | 'profile_view' | 'mention' | 'system' | 'application';
+  type:
+    | 'follow'
+    | 'like'
+    | 'comment'
+    | 'post'
+    | 'opportunity'
+    | 'message'
+    | 'connection_request'
+    | 'connection_accepted'
+    | 'profile_view'
+    | 'mention'
+    | 'system'
+    | 'application';
   title: string;
   message: string;
   data?: any;
@@ -272,4 +293,98 @@ export interface SearchResult {
   avatar?: string;
   subtitle?: string;
   verified?: boolean;
+}
+
+export interface BeepTestResult {
+  id: string;
+  athlete_id: string;
+  conducted_by?: string;
+  conductor_name?: string;
+  test_mode: 'self' | 'coached' | 'manual';
+  level: number;
+  shuttle: number;
+  vo2max: number;
+  zone: 'starter' | 'building' | 'rising' | 'strong' | 'elite' | 'unstoppable';
+  total_distance: number;
+  total_shuttles: number;
+  peak_speed: number;
+  test_date: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type FitnessTestType =
+  | 'yoyo'
+  | 'sprint_20m'
+  | 'sprint_40m'
+  | 'agility_ttest'
+  | 'vertical_jump';
+export type FitnessZone = 'starter' | 'building' | 'rising' | 'strong' | 'elite' | 'unstoppable';
+
+export type VerificationTier =
+  | 'self_reported'
+  | 'app_measured'
+  | 'coach_verified'
+  | 'center_tested';
+
+export interface FitnessTestResult {
+  id: string;
+  athlete_id: string;
+  conducted_by?: string;
+  test_type: FitnessTestType;
+  test_mode: 'self' | 'coached' | 'manual';
+
+  // Yo-Yo IR1 specific
+  level?: number;
+  shuttle?: number;
+  vo2max?: number;
+  total_distance?: number;
+  total_shuttles?: number;
+  peak_speed?: number;
+
+  // Sprint specific
+  sprint_time?: number;
+  sprint_distance?: number;
+
+  // Agility T-Test specific
+  agility_time?: number;
+
+  // Vertical Jump specific
+  jump_height?: number;
+
+  // Common
+  zone: FitnessZone;
+  test_date: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+
+  // Verification
+  verification_tier?: VerificationTier;
+  video_url?: string;
+  verified_by?: string;
+  verified_at?: string;
+  verification_notes?: string;
+  sensor_data?: Record<string, any>;
+  attestation_count?: number;
+}
+
+export interface TestAttestation {
+  id: string;
+  test_result_id: string;
+  attester_id: string;
+  relationship: 'teammate' | 'training_partner' | 'coach_staff' | 'spectator';
+  created_at: string;
+}
+
+export interface VerificationRequest {
+  id: string;
+  test_result_id: string;
+  athlete_id: string;
+  coach_id: string;
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
+  coach_notes?: string;
+  created_at: string;
+  resolved_at?: string;
 }
