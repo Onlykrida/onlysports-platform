@@ -1,0 +1,908 @@
+import React, { useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { X, Check, Target, TrendingUp } from 'lucide-react-native';
+import { theme } from '@/constants/theme';
+import { useAuth } from '@/hooks/auth-context';
+import { useFitnessTest } from '@/hooks/fitness-test-context';
+import BackgroundGradient from '@/components/BackgroundGradient';
+import VerificationBadge from '@/components/VerificationBadge';
+import {
+  getMaxShuttlesForLevel,
+  getSpeedForLevel,
+  calculateVO2max,
+  calculateDistance,
+  getZone,
+  getNextZoneTarget,
+  getImprovementTips,
+  getSprintZone,
+  getAgilityZone,
+  getVerticalJumpZone,
+  getAgeGroup,
+  getAdjacentLevel,
+  VALID_YOYO_LEVELS,
+  SPRINT_TIPS,
+  AGILITY_TIPS,
+  JUMP_TIPS,
+  type TestType,
+  type Gender,
+  type AgeGroup,
+  type ZoneName,
+  type ZoneDefinition,
+} from '@/constants/fitness-test-data';
+
+// ── Test type metadata ─────────────────────────────────
+const TEST_META: Record<TestType, { title: string; shortTitle: string }> = {
+  yoyo: { title: 'Yo-Yo Intermittent Recovery Test', shortTitle: 'Yo-Yo Test' },
+  sprint_20m: { title: '20m Sprint Test', shortTitle: '20m Sprint' },
+  sprint_40m: { title: '40m Sprint Test', shortTitle: '40m Sprint' },
+  agility_ttest: { title: 'Agility T-Test', shortTitle: 'T-Test' },
+  vertical_jump: { title: 'Vertical Jump Test', shortTitle: 'Vertical Jump' },
+};
+
+export default function FitnessTestManualScreen() {
+  const params = useLocalSearchParams<{ testType?: string }>();
+  const testType: TestType = [
+    'yoyo',
+    'sprint_20m',
+    'sprint_40m',
+    'agility_ttest',
+    'vertical_jump',
+  ].includes(params.testType ?? '')
+    ? (params.testType as TestType)
+    : 'yoyo';
+
+  const { user: currentUser } = useAuth();
+  const { saveYoYoResult, saveSprintResult, saveAgilityResult, saveJumpResult } = useFitnessTest();
+
+  // Derive gender & age group from user profile
+  const gender: Gender = (currentUser as any)?.gender === 'female' ? 'female' : 'male';
+  const ageGroup: AgeGroup = getAgeGroup((currentUser as any)?.date_of_birth);
+
+  const meta = TEST_META[testType];
+
+  // ── Yo-Yo state ──────────────────────────────────────
+  const [level, setLevel] = useState(5);
+  const [shuttle, setShuttle] = useState(1);
+
+  // ── Sprint / Agility state (time in seconds) ────────
+  const [timeInput, setTimeInput] = useState('');
+
+  // ── Vertical Jump state (cm) ─────────────────────────
+  const [heightInput, setHeightInput] = useState('');
+
+  // ── Shared state ─────────────────────────────────────
+  const [notes, setNotes] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // ── Yo-Yo derived ───────────────────────────────────
+  const maxShuttles = useMemo(() => getMaxShuttlesForLevel(level), [level]);
+  const safeShuttle = useMemo(() => Math.min(shuttle, maxShuttles), [shuttle, maxShuttles]);
+
+  const yoyoResults = useMemo(() => {
+    if (testType !== 'yoyo') return null;
+    const distance = calculateDistance(level, safeShuttle);
+    const vo2max = calculateVO2max(distance);
+    const peakSpeed = getSpeedForLevel(level);
+    const zone = getZone(distance, gender, ageGroup);
+    const nextTarget = getNextZoneTarget(distance, gender, ageGroup);
+    const tips = getImprovementTips(zone.name);
+    return { distance, vo2max, peakSpeed, zone, nextTarget, tips };
+  }, [testType, level, safeShuttle, gender, ageGroup]);
+
+  // ── Sprint derived ──────────────────────────────────
+  const sprintResults = useMemo(() => {
+    if (testType !== 'sprint_20m' && testType !== 'sprint_40m') return null;
+    const time = parseFloat(timeInput);
+    if (isNaN(time) || time <= 0) return null;
+    const sprintDist: 20 | 40 = testType === 'sprint_20m' ? 20 : 40;
+    const zone = getSprintZone(time, sprintDist, gender, ageGroup);
+    const speed = Math.round((sprintDist / time) * 3.6 * 100) / 100; // m/s -> km/h
+    const tips = SPRINT_TIPS[zone.name];
+    return { time, zone, speed, tips };
+  }, [testType, timeInput, gender, ageGroup]);
+
+  // ── Agility derived ─────────────────────────────────
+  const agilityResults = useMemo(() => {
+    if (testType !== 'agility_ttest') return null;
+    const time = parseFloat(timeInput);
+    if (isNaN(time) || time <= 0) return null;
+    const zone = getAgilityZone(time, gender, ageGroup);
+    const tips = AGILITY_TIPS[zone.name];
+    return { time, zone, tips };
+  }, [testType, timeInput, gender, ageGroup]);
+
+  // ── Vertical Jump derived ───────────────────────────
+  const jumpResults = useMemo(() => {
+    if (testType !== 'vertical_jump') return null;
+    const height = parseInt(heightInput, 10);
+    if (isNaN(height) || height <= 0) return null;
+    const zone = getVerticalJumpZone(height, gender, ageGroup);
+    const tips = JUMP_TIPS[zone.name];
+    return { height, zone, tips };
+  }, [testType, heightInput, gender, ageGroup]);
+
+  // ── Unified zone/tips accessor ──────────────────────
+  const currentZone: ZoneDefinition | null = useMemo(() => {
+    if (yoyoResults) return yoyoResults.zone;
+    if (sprintResults) return sprintResults.zone;
+    if (agilityResults) return agilityResults.zone;
+    if (jumpResults) return jumpResults.zone;
+    return null;
+  }, [yoyoResults, sprintResults, agilityResults, jumpResults]);
+
+  const currentTips: string[] = useMemo(() => {
+    if (yoyoResults) return yoyoResults.tips;
+    if (sprintResults) return sprintResults.tips;
+    if (agilityResults) return agilityResults.tips;
+    if (jumpResults) return jumpResults.tips;
+    return [];
+  }, [yoyoResults, sprintResults, agilityResults, jumpResults]);
+
+  const hasValidInput = testType === 'yoyo' || !!sprintResults || !!agilityResults || !!jumpResults;
+
+  // ── Handlers ────────────────────────────────────────
+  const handleLevelStep = (direction: 1 | -1) => {
+    const newLevel = getAdjacentLevel(level, direction);
+    setLevel(newLevel);
+    const newMax = getMaxShuttlesForLevel(newLevel);
+    if (shuttle > newMax) setShuttle(newMax);
+  };
+
+  const handleLevelJump = (steps: number) => {
+    // Jump multiple valid levels at once (e.g. -5 or +5 valid levels)
+    const idx = VALID_YOYO_LEVELS.indexOf(level);
+    const startIdx = idx >= 0 ? idx : 0;
+    const newIdx = Math.max(0, Math.min(VALID_YOYO_LEVELS.length - 1, startIdx + steps));
+    const newLevel = VALID_YOYO_LEVELS[newIdx];
+    setLevel(newLevel);
+    const newMax = getMaxShuttlesForLevel(newLevel);
+    if (shuttle > newMax) setShuttle(newMax);
+  };
+
+  const handleShuttleChange = (newShuttle: number) => {
+    setShuttle(Math.max(1, Math.min(maxShuttles, newShuttle)));
+  };
+
+  const handleSave = async () => {
+    if (!currentUser) {
+      Alert.alert('Error', 'You must be logged in to save results.');
+      return;
+    }
+    if (!hasValidInput) {
+      Alert.alert('Missing Input', 'Please enter a valid value before saving.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      let result: { error?: string } = {};
+
+      if (testType === 'yoyo') {
+        result = await saveYoYoResult({
+          athlete_id: currentUser.id,
+          test_mode: 'manual',
+          level,
+          shuttle: safeShuttle,
+          gender,
+          dateOfBirth: (currentUser as any)?.date_of_birth,
+          notes: notes.trim() || undefined,
+          verification_tier: 'self_reported' as const,
+        });
+      } else if (testType === 'sprint_20m' || testType === 'sprint_40m') {
+        const time = parseFloat(timeInput);
+        result = await saveSprintResult({
+          athlete_id: currentUser.id,
+          test_mode: 'manual',
+          sprint_time: time,
+          sprint_distance: testType === 'sprint_20m' ? 20 : 40,
+          gender,
+          dateOfBirth: (currentUser as any)?.date_of_birth,
+          notes: notes.trim() || undefined,
+          verification_tier: 'self_reported' as const,
+        });
+      } else if (testType === 'agility_ttest') {
+        const time = parseFloat(timeInput);
+        result = await saveAgilityResult({
+          athlete_id: currentUser.id,
+          test_mode: 'manual',
+          agility_time: time,
+          gender,
+          dateOfBirth: (currentUser as any)?.date_of_birth,
+          notes: notes.trim() || undefined,
+          verification_tier: 'self_reported' as const,
+        });
+      } else if (testType === 'vertical_jump') {
+        const height = parseInt(heightInput, 10);
+        result = await saveJumpResult({
+          athlete_id: currentUser.id,
+          test_mode: 'manual',
+          jump_height: height,
+          gender,
+          dateOfBirth: (currentUser as any)?.date_of_birth,
+          notes: notes.trim() || undefined,
+          verification_tier: 'self_reported' as const,
+        });
+      }
+
+      if (result.error) {
+        Alert.alert('Error', result.error);
+        return;
+      }
+
+      const zoneName = currentZone?.label ?? 'Unknown';
+      Alert.alert('Saved!', `${meta.shortTitle} result recorded — ${zoneName} zone.`, [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (e) {
+      console.log('FitnessTestManual: save exception', e);
+      Alert.alert('Error', 'An unexpected error occurred.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ── Not logged in ───────────────────────────────────
+  if (!currentUser) {
+    return (
+      <BackgroundGradient style={styles.container}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+          <Text style={styles.emptyText}>Please log in to enter a fitness test result.</Text>
+        </SafeAreaView>
+      </BackgroundGradient>
+    );
+  }
+
+  // ── Render ──────────────────────────────────────────
+  return (
+    <BackgroundGradient style={styles.container}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <Stack.Screen
+          options={{
+            title: `Enter ${meta.shortTitle} Result`,
+            headerStyle: { backgroundColor: 'transparent' },
+            headerTintColor: theme.colors.text,
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+                <X size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            ),
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={handleSave}
+                style={styles.headerButton}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                ) : (
+                  <Check size={24} color={theme.colors.primary} />
+                )}
+              </TouchableOpacity>
+            ),
+          }}
+        />
+
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* ═══ INPUT SECTION ═══ */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionAccent} />
+              <Text style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                {testType === 'yoyo' ? 'SCORE' : 'INPUT'}
+              </Text>
+            </View>
+
+            {/* ── Yo-Yo: Level + Shuttle pickers ── */}
+            {testType === 'yoyo' && (
+              <>
+                <View style={styles.pickerRow}>
+                  <Text style={styles.pickerLabel} numberOfLines={1}>
+                    Level
+                  </Text>
+                  <View style={styles.pickerControls}>
+                    <TouchableOpacity style={styles.pickerBtn} onPress={() => handleLevelJump(-5)}>
+                      <Text style={styles.pickerBtnText}>-5</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.pickerBtn} onPress={() => handleLevelStep(-1)}>
+                      <Text style={styles.pickerBtnText}>-1</Text>
+                    </TouchableOpacity>
+                    <View style={styles.pickerValueBadge}>
+                      <Text style={styles.pickerValueText}>{level}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.pickerBtn} onPress={() => handleLevelStep(1)}>
+                      <Text style={styles.pickerBtnText}>+1</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.pickerBtn} onPress={() => handleLevelJump(5)}>
+                      <Text style={styles.pickerBtnText}>+5</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.pickerRow}>
+                  <Text style={styles.pickerLabel} numberOfLines={1}>
+                    Shuttle
+                  </Text>
+                  <View style={styles.pickerControls}>
+                    <TouchableOpacity
+                      style={styles.pickerBtn}
+                      onPress={() => handleShuttleChange(safeShuttle - 1)}
+                    >
+                      <Text style={styles.pickerBtnText}>-1</Text>
+                    </TouchableOpacity>
+                    <View style={styles.pickerValueBadge}>
+                      <Text style={styles.pickerValueText}>{safeShuttle}</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.pickerBtn}
+                      onPress={() => handleShuttleChange(safeShuttle + 1)}
+                    >
+                      <Text style={styles.pickerBtnText}>+1</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <Text style={styles.pickerHint} numberOfLines={1} ellipsizeMode="tail">
+                  Max {maxShuttles} shuttles at Level {level}
+                </Text>
+              </>
+            )}
+
+            {/* ── Sprint / Agility: Time input ── */}
+            {(testType === 'sprint_20m' ||
+              testType === 'sprint_40m' ||
+              testType === 'agility_ttest') && (
+              <View style={styles.timeInputContainer}>
+                <Text style={styles.pickerLabel} numberOfLines={1}>
+                  Time (seconds)
+                </Text>
+                <TextInput
+                  style={styles.timeInput}
+                  value={timeInput}
+                  onChangeText={(text) => {
+                    // Allow digits and one decimal point, max 2 decimal places
+                    const cleaned = text.replace(/[^0-9.]/g, '');
+                    const parts = cleaned.split('.');
+                    if (parts.length > 2) return;
+                    if (parts[1] && parts[1].length > 2) return;
+                    setTimeInput(cleaned);
+                  }}
+                  placeholder={testType === 'agility_ttest' ? 'e.g. 10.25' : 'e.g. 3.45'}
+                  placeholderTextColor={theme.colors.textMuted}
+                  keyboardType="decimal-pad"
+                  returnKeyType="done"
+                />
+                <Text style={styles.pickerHint} numberOfLines={1} ellipsizeMode="tail">
+                  {testType === 'sprint_20m'
+                    ? 'Enter your 20m sprint time to 2 decimal places'
+                    : testType === 'sprint_40m'
+                      ? 'Enter your 40m sprint time to 2 decimal places'
+                      : 'Enter your T-Test completion time to 2 decimal places'}
+                </Text>
+              </View>
+            )}
+
+            {/* ── Vertical Jump: Height input ── */}
+            {testType === 'vertical_jump' && (
+              <View style={styles.timeInputContainer}>
+                <Text style={styles.pickerLabel} numberOfLines={1}>
+                  Jump Height (cm)
+                </Text>
+                <TextInput
+                  style={styles.timeInput}
+                  value={heightInput}
+                  onChangeText={(text) => {
+                    const cleaned = text.replace(/[^0-9]/g, '');
+                    setHeightInput(cleaned);
+                  }}
+                  placeholder="e.g. 55"
+                  placeholderTextColor={theme.colors.textMuted}
+                  keyboardType="number-pad"
+                  returnKeyType="done"
+                />
+                <Text style={styles.pickerHint} numberOfLines={1} ellipsizeMode="tail">
+                  Enter your vertical jump height in centimeters
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* ═══ RESULTS SECTION ═══ */}
+          {currentZone && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionAccent} />
+                <Text style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                  YOUR RESULTS
+                </Text>
+              </View>
+
+              <View style={styles.resultsCard}>
+                {/* Zone Badge */}
+                <View style={[styles.zoneBadge, { backgroundColor: currentZone.color }]}>
+                  <Text style={styles.zoneBadgeText} numberOfLines={1} ellipsizeMode="tail">
+                    {currentZone.label.toUpperCase()}
+                  </Text>
+                </View>
+                <Text style={styles.zoneTagline} numberOfLines={1} ellipsizeMode="tail">
+                  "{currentZone.tagline}"
+                </Text>
+
+                <View style={styles.resultsDivider} />
+
+                {/* ── Yo-Yo metrics ── */}
+                {yoyoResults && (
+                  <View style={styles.resultsGrid}>
+                    <View style={styles.resultItem}>
+                      <Text style={styles.resultValue} numberOfLines={1}>
+                        {yoyoResults.vo2max}
+                      </Text>
+                      <Text style={styles.resultLabel} numberOfLines={1} ellipsizeMode="tail">
+                        VO2max (ml/kg/min)
+                      </Text>
+                    </View>
+                    <View style={styles.resultItem}>
+                      <Text style={styles.resultValue} numberOfLines={1}>
+                        {yoyoResults.distance.toLocaleString()}m
+                      </Text>
+                      <Text style={styles.resultLabel} numberOfLines={1}>
+                        Distance
+                      </Text>
+                    </View>
+                    <View style={styles.resultItem}>
+                      <Text style={styles.resultValue} numberOfLines={1}>
+                        {yoyoResults.peakSpeed} km/h
+                      </Text>
+                      <Text style={styles.resultLabel} numberOfLines={1}>
+                        Peak Speed
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* ── Sprint metrics ── */}
+                {sprintResults && (
+                  <View style={styles.resultsGrid}>
+                    <View style={styles.resultItem}>
+                      <Text style={styles.resultValue} numberOfLines={1}>
+                        {sprintResults.time.toFixed(2)}s
+                      </Text>
+                      <Text style={styles.resultLabel} numberOfLines={1} ellipsizeMode="tail">
+                        Time
+                      </Text>
+                    </View>
+                    <View style={styles.resultItem}>
+                      <Text style={styles.resultValue} numberOfLines={1}>
+                        {sprintResults.speed} km/h
+                      </Text>
+                      <Text style={styles.resultLabel} numberOfLines={1}>
+                        Avg Speed
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* ── Agility metrics ── */}
+                {agilityResults && (
+                  <View style={styles.resultsGrid}>
+                    <View style={styles.resultItem}>
+                      <Text style={styles.resultValue} numberOfLines={1}>
+                        {agilityResults.time.toFixed(2)}s
+                      </Text>
+                      <Text style={styles.resultLabel} numberOfLines={1} ellipsizeMode="tail">
+                        Completion Time
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* ── Vertical Jump metrics ── */}
+                {jumpResults && (
+                  <View style={styles.resultsGrid}>
+                    <View style={styles.resultItem}>
+                      <Text style={styles.resultValue} numberOfLines={1}>
+                        {jumpResults.height} cm
+                      </Text>
+                      <Text style={styles.resultLabel} numberOfLines={1} ellipsizeMode="tail">
+                        Jump Height
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* ═══ NEXT GOAL (Yo-Yo only) ═══ */}
+          {yoyoResults?.nextTarget && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionAccent} />
+                <Target size={16} color={theme.colors.text} />
+                <Text style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                  YOUR NEXT GOAL
+                </Text>
+              </View>
+
+              <View style={styles.goalCard}>
+                <Text style={styles.goalText} numberOfLines={2} ellipsizeMode="tail">
+                  <Text
+                    style={{
+                      fontWeight: theme.fontWeight.black,
+                      color: yoyoResults.nextTarget.zone.color,
+                    }}
+                  >
+                    {yoyoResults.nextTarget.zone.label.toUpperCase()}
+                  </Text>{' '}
+                  zone — {yoyoResults.nextTarget.distanceNeeded}m away
+                </Text>
+                <Text style={styles.goalSubtext} numberOfLines={2} ellipsizeMode="tail">
+                  {yoyoResults.nextTarget.shuttlesNeeded} more shuttle
+                  {yoyoResults.nextTarget.shuttlesNeeded !== 1 ? 's' : ''} (~
+                  {yoyoResults.nextTarget.distanceNeeded}m) to go
+                </Text>
+                <Text style={styles.goalMotivation} numberOfLines={1} ellipsizeMode="tail">
+                  "You're closer than you think"
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* ═══ HOW TO IMPROVE ═══ */}
+          {currentTips.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionAccent} />
+                <TrendingUp size={16} color={theme.colors.text} />
+                <Text style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                  HOW TO IMPROVE
+                </Text>
+              </View>
+
+              <View style={styles.tipsCard}>
+                {currentTips.map((tip, index) => (
+                  <View key={index} style={styles.tipRow}>
+                    <View style={styles.tipBullet} />
+                    <Text style={styles.tipText} numberOfLines={3} ellipsizeMode="tail">
+                      {tip}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* ═══ NOTES ═══ */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionAccent} />
+              <Text style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                NOTES
+              </Text>
+            </View>
+            <TextInput
+              style={styles.notesInput}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Optional notes about this test..."
+              placeholderTextColor={theme.colors.textMuted}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+          </View>
+
+          {/* ═══ VERIFICATION TIER INDICATOR ═══ */}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              backgroundColor: 'rgba(142,142,147,0.1)',
+              borderRadius: 8,
+              marginBottom: 12,
+              marginHorizontal: theme.spacing.md,
+            }}
+          >
+            <VerificationBadge tier="self_reported" size="sm" showLabel />
+            <Text style={{ flex: 1, fontSize: 11, color: theme.colors.textSecondary }}>
+              Manual entries are Self-Reported. Take the guided test for higher trust.
+            </Text>
+          </View>
+
+          {/* ═══ SAVE BUTTON ═══ */}
+          <View style={styles.saveSection}>
+            <TouchableOpacity
+              style={[styles.saveButton, (isSaving || !hasValidInput) && styles.saveButtonDisabled]}
+              onPress={handleSave}
+              disabled={isSaving || !hasValidInput}
+              activeOpacity={0.85}
+            >
+              {isSaving ? (
+                <ActivityIndicator size="small" color={theme.colors.black} />
+              ) : (
+                <Text style={styles.saveButtonText}>SAVE RESULT</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </BackgroundGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  headerButton: {
+    padding: theme.spacing.sm,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.xxl,
+  },
+  emptyText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: theme.spacing.xxl,
+  },
+
+  // Sections
+  section: {
+    padding: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  sectionAccent: {
+    width: 3,
+    height: 16,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 2,
+  },
+  sectionTitle: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.text,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+  },
+
+  // Picker (Yo-Yo)
+  pickerRow: {
+    marginBottom: theme.spacing.md,
+  },
+  pickerLabel: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: theme.spacing.sm,
+  },
+  pickerControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+  },
+  pickerBtn: {
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    minWidth: 44,
+    alignItems: 'center',
+  },
+  pickerBtnText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  pickerValueBadge: {
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  pickerValueText: {
+    fontSize: theme.fontSize.xxl,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.primary,
+  },
+  pickerHint: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    marginTop: theme.spacing.xs,
+  },
+
+  // Time / Height Input
+  timeInputContainer: {
+    gap: theme.spacing.sm,
+  },
+  timeInput: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    fontSize: theme.fontSize.xxl,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.primary,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    textAlign: 'center',
+  },
+
+  // Results Card
+  resultsCard: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    borderWidth: 2,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  zoneBadge: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+  },
+  zoneBadgeText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.black,
+    letterSpacing: 1.5,
+  },
+  zoneTagline: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  resultsDivider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginVertical: theme.spacing.sm,
+  },
+  resultsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.md,
+    width: '100%',
+  },
+  resultItem: {
+    flex: 1,
+    minWidth: '40%',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.sm,
+  },
+  resultValue: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.text,
+  },
+  resultLabel: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 2,
+  },
+
+  // Goal Card
+  goalCard: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    borderWidth: 2,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.08)',
+    gap: theme.spacing.sm,
+  },
+  goalText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    lineHeight: 22,
+  },
+  goalSubtext: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
+    lineHeight: 22,
+  },
+  goalMotivation: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontStyle: 'italic',
+    marginTop: theme.spacing.xs,
+  },
+
+  // Tips Card
+  tipsCard: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    borderWidth: 2,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.08)',
+    gap: theme.spacing.md,
+  },
+  tipRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.spacing.md,
+  },
+  tipBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.primary,
+    marginTop: 7,
+    flexShrink: 0,
+  },
+  tipText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
+    flex: 1,
+    lineHeight: 22,
+  },
+
+  // Notes
+  notesInput: {
+    backgroundColor: theme.colors.inputBackground,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    minHeight: 80,
+  },
+
+  // Save
+  saveSection: {
+    padding: theme.spacing.md,
+  },
+  saveButton: {
+    backgroundColor: '#30D158',
+    borderRadius: theme.borderRadius.lg,
+    paddingVertical: theme.spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...theme.shadow.ctaGlow,
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
+  saveButtonText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.black,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+  },
+});
