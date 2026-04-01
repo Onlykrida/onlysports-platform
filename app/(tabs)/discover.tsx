@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useReducer, useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -40,6 +40,7 @@ import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { DiscoverSkeleton } from '@/components/SkeletonScreens';
 import VerificationBadge from '@/components/VerificationBadge';
 import { getTierMeta } from '@/constants/verification';
+import { useFitnessTest } from '@/hooks/fitness-test-context';
 
 interface DiscoverState {
   searchQuery: string;
@@ -234,6 +235,8 @@ export default function DiscoverScreen() {
   const { unreadCount } = useNotifications();
   const { user: currentUser } = useAuth();
   const { track } = useAnalytics();
+  const { fetchLatestBatch } = useFitnessTest();
+  const [athleteZones, setAthleteZones] = useState<Record<string, string>>({});
 
   useEffect(() => {
     track(EVENTS.SCREEN_VIEW, { screen: 'discover' });
@@ -392,6 +395,23 @@ export default function DiscoverScreen() {
     currentUser,
   ]);
 
+  useEffect(() => {
+    const athleteIds = filteredUsers
+      .filter((u) => u.role === 'athlete')
+      .map((u) => u.id)
+      .slice(0, 50);
+    if (athleteIds.length === 0) return;
+    fetchLatestBatch(athleteIds, 'yoyo')
+      .then((batchMap) => {
+        const zones: Record<string, string> = {};
+        batchMap.forEach((result, id) => {
+          if (result?.zone) zones[id] = result.zone;
+        });
+        setAthleteZones(zones);
+      })
+      .catch(() => {});
+  }, [filteredUsers]);
+
   const isInitialLoading = useMemo(() => {
     return (isLoadingUsers || usersIsLoading) && users.length === 0 && !usersError;
   }, [isLoadingUsers, usersIsLoading, users.length, usersError]);
@@ -473,6 +493,32 @@ export default function DiscoverScreen() {
             <Text style={styles.userBio} numberOfLines={2} ellipsizeMode="tail">
               {item.bio}
             </Text>
+          )}
+          {item.role === 'athlete' && athleteZones[item.id] && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+              <Text style={{ fontSize: 10, color: theme.colors.textSecondary, fontWeight: '600' }}>
+                FITNESS
+              </Text>
+              <View
+                style={{
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  borderRadius: 4,
+                  backgroundColor: 'rgba(48,209,88,0.1)',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: '700',
+                    color: '#30D158',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {athleteZones[item.id]}
+                </Text>
+              </View>
+            </View>
           )}
           {renderRoleSpecificInfo(item)}
           <View style={styles.userActions}>

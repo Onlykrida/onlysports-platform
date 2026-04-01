@@ -13,6 +13,7 @@ interface AthleteMatchCardProps {
   isShortlisted: boolean;
   onUserPress: (userId: string) => void;
   onShortlistToggle: (athleteId: string) => void;
+  fitnessZone?: string;
   highestVerificationTier?: string;
 }
 
@@ -22,6 +23,7 @@ const AthleteMatchCard: React.FC<AthleteMatchCardProps> = ({
   isShortlisted,
   onUserPress,
   onShortlistToggle,
+  fitnessZone,
   highestVerificationTier,
 }) => {
   const verLevel = getVerificationLevel(athlete.verified ? 'district' : 'school');
@@ -43,6 +45,50 @@ const AthleteMatchCard: React.FC<AthleteMatchCardProps> = ({
             {athlete.sport?.toUpperCase() || 'SPORT'}{' '}
             {athlete.position ? `/ ${athlete.position.toUpperCase()}` : ''}
           </Text>
+          {fitnessZone && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: theme.colors.textSecondary,
+                  fontWeight: '600',
+                  letterSpacing: 0.5,
+                }}
+              >
+                FITNESS
+              </Text>
+              <View
+                style={{
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  borderRadius: 4,
+                  backgroundColor:
+                    fitnessZone === 'elite' || fitnessZone === 'unstoppable'
+                      ? 'rgba(48,209,88,0.15)'
+                      : fitnessZone === 'strong'
+                        ? 'rgba(48,209,88,0.1)'
+                        : 'rgba(100,210,255,0.1)',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: '700',
+                    color:
+                      fitnessZone === 'elite' || fitnessZone === 'unstoppable'
+                        ? '#30D158'
+                        : fitnessZone === 'strong'
+                          ? '#30D158'
+                          : '#64D2FF',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {fitnessZone}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
         <View style={styles.fitScoreContainer}>
           <Text style={styles.fitScoreValue} numberOfLines={1}>

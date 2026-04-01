@@ -10,6 +10,7 @@ import { useScouting, AIRecommendationRow } from '@/hooks/scouting-context';
 import { useAuth } from '@/hooks/auth-context';
 import { useUsers } from '@/hooks/users-context';
 import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
+import { useFitnessTest } from '@/hooks/fitness-test-context';
 
 import DashboardHeader from './scout/DashboardHeader';
 import ScoutStatsBar from './scout/ScoutStatsBar';
@@ -36,14 +37,30 @@ export default function ScoutHome() {
   const { users } = useUsers();
   const { track } = useAnalytics();
 
+  const { fetchLatestBatch } = useFitnessTest();
   const [recommendations, setRecommendations] = useState<AIRecommendationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [shortlistExpanded, setShortlistExpanded] = useState(false);
+  const [athleteFitnessZones, setAthleteFitnessZones] = useState<Record<string, string>>({});
 
   useEffect(() => {
     track(EVENTS.SCREEN_VIEW, { screen: 'home_scout' });
   }, []);
+
+  useEffect(() => {
+    const athleteIds = recommendations.map((r) => r.player_id).filter(Boolean) as string[];
+    if (athleteIds.length === 0) return;
+    fetchLatestBatch(athleteIds, 'yoyo')
+      .then((batchMap) => {
+        const zones: Record<string, string> = {};
+        batchMap.forEach((result, id) => {
+          if (result?.zone) zones[id] = result.zone;
+        });
+        setAthleteFitnessZones(zones);
+      })
+      .catch(() => {});
+  }, [recommendations]);
 
   useEffect(() => {
     if (user?.id) {
@@ -125,6 +142,7 @@ export default function ScoutHome() {
           isShortlisted={isShortlisted(item.player_id)}
           onUserPress={handleUserPress}
           onShortlistToggle={handleShortlist}
+          fitnessZone={athleteFitnessZones[athlete.id]}
         />
       );
     },
