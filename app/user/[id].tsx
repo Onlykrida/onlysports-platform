@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
@@ -12,11 +11,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { 
-  ArrowLeft, 
-  MessageCircle, 
-  UserPlus, 
-  UserMinus, 
+import {
+  ArrowLeft,
+  MessageCircle,
+  UserPlus,
+  UserMinus,
   Trophy,
   Target,
   Award,
@@ -29,7 +28,7 @@ import {
   Edit,
   CheckCircle,
   Zap,
-  Heart
+  Heart,
 } from 'lucide-react-native';
 import { theme, formatRoleName } from '@/constants/theme';
 import { User, Post } from '@/types';
@@ -42,6 +41,12 @@ import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Button } from '@/components/Button';
 import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 import VideoPlayer from '@/components/VideoPlayer';
+import { useFitnessTest } from '@/hooks/fitness-test-context';
+import { FitnessTestCard } from '@/components/BeepTestCard';
+import { getAgeGroup } from '@/constants/fitness-test-data';
+import { FitnessTestResult, FitnessTestType } from '@/types';
+import CachedImage from '@/components/CachedImage';
+import { UserProfileSkeleton } from '@/components/SkeletonScreens';
 
 const getRoleIcon = (role: string) => {
   switch (role.toLowerCase()) {
@@ -76,17 +81,26 @@ const getRoleBadgeColor = (role: string) => {
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user: currentUser } = useAuth();
-  const { followUser, unfollowUser, isFollowing, getFollowersCount, getFollowingCount } = useFollow();
+  const { followUser, unfollowUser, isFollowing, getFollowersCount, getFollowingCount } =
+    useFollow();
   const { posts } = usePosts();
-  
+
+  const userPosts = useMemo(() => posts.filter((p) => p.userId === id), [posts, id]);
+
   const [profileUser, setProfileUser] = useState<User | null>(null);
-  const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [postsViewMode, setPostsViewMode] = useState<'grid' | 'list'>('grid');
-  const { getInterestedForPlayer, expressInterest, removeInterest, hasExpressedInterest: checkInterest, getInterestedOrganizations, getInterestedAthletesForOrg } = useScouting();
+  const {
+    getInterestedForPlayer,
+    expressInterest,
+    removeInterest,
+    hasExpressedInterest: checkInterest,
+    getInterestedOrganizations,
+    getInterestedAthletesForOrg,
+  } = useScouting();
   const [interested, setInterested] = useState<{ scoutName: string; score: number }[]>([]);
   const [recommendedAthletes, setRecommendedAthletes] = useState<User[]>([]);
 
@@ -96,10 +110,25 @@ export default function UserProfileScreen() {
   const [interestedOrganizations, setInterestedOrganizations] = useState<User[]>([]);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const { track } = useAnalytics();
+  const { fetchLatestForAthlete, fetchHistoryForAthlete } = useFitnessTest();
+  const [fitnessLatestByType, setFitnessLatestByType] = useState<
+    Partial<Record<FitnessTestType, FitnessTestResult>>
+  >({});
+  const [fitnessTestHistory, setFitnessTestHistory] = useState<FitnessTestResult[]>([]);
 
   useEffect(() => {
     if (id) {
       track(EVENTS.PROFILE_VIEWED, { viewedUserId: id });
+      // Record profile view for "Who Viewed Your Profile" feature
+      if (currentUser?.id && currentUser.id !== id && isSupabaseConfigured) {
+        supabase
+          .from('profile_views')
+          .insert({
+            profile_id: id,
+            viewer_id: currentUser.id,
+          })
+          .then(() => {});
+      }
     }
   }, [id]);
 
@@ -113,7 +142,9 @@ export default function UserProfileScreen() {
 
       const { data: userData, error: userError } = await supabase
         .from('profiles')
-        .select('id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at')
+        .select(
+          'id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at',
+        )
         .eq('id', id)
         .maybeSingle();
 
@@ -158,21 +189,35 @@ export default function UserProfileScreen() {
         setFollowingCount(followingCountResult);
       }
 
-      const filteredPosts = posts.filter((post) => post.userId === id);
-      setUserPosts(filteredPosts);
-      
       if (userData?.role === 'athlete') {
         if (__DEV__) console.log('UserProfile: Loading interested organizations for athlete', id);
-        const orgs = await getInterestedOrganizations(id);
-        if (__DEV__) console.log('UserProfile: Interested organizations loaded', { count: orgs.length, orgs });
+        const [orgs, fitnessHist] = await Promise.all([
+          getInterestedOrganizations(id),
+          fetchHistoryForAthlete(id),
+        ]);
+        if (__DEV__)
+          console.log('UserProfile: Interested organizations loaded', { count: orgs.length, orgs });
         setInterestedOrganizations(orgs);
+        // Build latestByType map from history
+        const byType: Partial<Record<FitnessTestType, FitnessTestResult>> = {};
+        for (const r of fitnessHist) {
+          if (
+            !byType[r.test_type] ||
+            new Date(r.test_date) > new Date(byType[r.test_type]!.test_date)
+          ) {
+            byType[r.test_type] = r;
+          }
+        }
+        setFitnessLatestByType(byType);
+        setFitnessTestHistory(fitnessHist);
       }
-      
+
       if (userData?.role && ['coach', 'scout', 'team', 'academy'].includes(userData.role)) {
         if (__DEV__) console.log('UserProfile: Loading interested athletes for organization', id);
         try {
           const athletes = await getInterestedAthletesForOrg(id);
-          if (__DEV__) console.log('UserProfile: Interested athletes loaded', { count: athletes.length });
+          if (__DEV__)
+            console.log('UserProfile: Interested athletes loaded', { count: athletes.length });
           setRecommendedAthletes(athletes);
         } catch (e) {
           if (__DEV__) console.log('UserProfile: interested athletes load failed', e);
@@ -184,7 +229,13 @@ export default function UserProfileScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [getFollowersCount, getFollowingCount, id, posts, getInterestedOrganizations, getInterestedAthletesForOrg]);
+  }, [
+    getFollowersCount,
+    getFollowingCount,
+    id,
+    getInterestedOrganizations,
+    getInterestedAthletesForOrg,
+  ]);
 
   useEffect(() => {
     void loadUserProfile();
@@ -197,7 +248,7 @@ export default function UserProfileScreen() {
       setInterested(
         res
           .filter((x) => x.scout != null)
-          .map((x) => ({ scoutName: x.scout?.name ?? 'Unknown', score: x.rec.fit_score }))
+          .map((x) => ({ scoutName: x.scout?.name ?? 'Unknown', score: x.rec.fit_score })),
       );
     } catch (e) {
       if (__DEV__) console.log('UserProfile: interested load failed', e);
@@ -208,24 +259,26 @@ export default function UserProfileScreen() {
     void loadInterestedScouts();
   }, [loadInterestedScouts]);
 
-
-
   useEffect(() => {
     if (!id || !isSupabaseConfigured || !profileUser || profileUser.role !== 'athlete') return;
 
     const channel = supabase
       .channel(`profile_changes_${id}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'ai_recommendations',
-        filter: `player_id=eq.${id}`
-      }, async () => {
-        if (__DEV__) console.log('UserProfile: AI recommendation changed, refreshing');
-        void loadInterestedScouts();
-        const orgs = await getInterestedOrganizations(id);
-        setInterestedOrganizations(orgs);
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ai_recommendations',
+          filter: `player_id=eq.${id}`,
+        },
+        async () => {
+          if (__DEV__) console.log('UserProfile: AI recommendation changed, refreshing');
+          void loadInterestedScouts();
+          const orgs = await getInterestedOrganizations(id);
+          setInterestedOrganizations(orgs);
+        },
+      )
       .subscribe();
 
     return () => {
@@ -241,7 +294,7 @@ export default function UserProfileScreen() {
 
   const handleFollow = async () => {
     if (!profileUser || !currentUser) return;
-    
+
     setIsFollowLoading(true);
     try {
       if (isFollowing(profileUser.id)) {
@@ -249,14 +302,14 @@ export default function UserProfileScreen() {
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
-          setFollowersCount(prev => prev - 1);
+          setFollowersCount((prev) => prev - 1);
         }
       } else {
         const result = await followUser(profileUser.id);
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
-          setFollowersCount(prev => prev + 1);
+          setFollowersCount((prev) => prev + 1);
         }
       }
     } catch (error) {
@@ -274,55 +327,66 @@ export default function UserProfileScreen() {
 
   const handleExpressInterest = async () => {
     if (!profileUser || !currentUser) return;
-    
+
     setIsInterestLoading(true);
     try {
       if (hasExpressedInterest) {
-        if (__DEV__) console.log('UserProfile: Removing interest', { profileUserId: profileUser.id });
+        if (__DEV__)
+          console.log('UserProfile: Removing interest', { profileUserId: profileUser.id });
         const result = await removeInterest(profileUser.id);
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
           if (__DEV__) console.log('UserProfile: Interest removed, updating UI');
-          setInterestedOrganizations(prev => prev.filter(org => org.id !== currentUser.id));
+          setInterestedOrganizations((prev) => prev.filter((org) => org.id !== currentUser.id));
           Alert.alert('Success', 'Interest removed');
         }
       } else {
-        if (__DEV__) console.log('UserProfile: Expressing interest', { profileUserId: profileUser.id, currentUserId: currentUser.id });
+        if (__DEV__)
+          console.log('UserProfile: Expressing interest', {
+            profileUserId: profileUser.id,
+            currentUserId: currentUser.id,
+          });
         const result = await expressInterest(profileUser.id);
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
-          if (__DEV__) console.log('UserProfile: Interest expressed, updating UI and sending notification');
-          setInterestedOrganizations(prev => {
-            const exists = prev.some(org => org.id === currentUser.id);
+          if (__DEV__)
+            console.log('UserProfile: Interest expressed, updating UI and sending notification');
+          setInterestedOrganizations((prev) => {
+            const exists = prev.some((org) => org.id === currentUser.id);
             if (exists) return prev;
             return [currentUser, ...prev];
           });
-          
-          const orgTypeLabel = currentUser.role === 'coach' ? 'Coach' : 
-                               currentUser.role === 'scout' ? 'Scout' : 
-                               currentUser.role === 'team' ? 'Team' : 
-                               currentUser.role === 'academy' ? 'Academy' : 'Organization';
-          
+
+          const orgTypeLabel =
+            currentUser.role === 'coach'
+              ? 'Coach'
+              : currentUser.role === 'scout'
+                ? 'Scout'
+                : currentUser.role === 'team'
+                  ? 'Team'
+                  : currentUser.role === 'academy'
+                    ? 'Academy'
+                    : 'Organization';
+
           const sportInfo = currentUser.sport ? ` (${currentUser.sport})` : '';
-          const orgName = currentUser.roleSpecificData?.organization ? ` from ${currentUser.roleSpecificData.organization}` : '';
-          
+          const orgName = currentUser.roleSpecificData?.organization
+            ? ` from ${currentUser.roleSpecificData.organization}`
+            : '';
+
           await createNotification(
             profileUser.id,
             'connection_request',
             `${orgTypeLabel}${sportInfo} Interested in Your Profile`,
             `${currentUser.name}${orgName} is interested in your athletic profile. This could be a great opportunity!`,
-            { userId: currentUser.id, userRole: currentUser.role, userSport: currentUser.sport }
+            { userId: currentUser.id, userRole: currentUser.role, userSport: currentUser.sport },
           );
-          
+
           Alert.alert(
             'Interest Expressed!',
             `${profileUser.name} has been notified of your interest. You can now message them directly.`,
-            [
-              { text: 'OK' },
-              { text: 'Message Now', onPress: handleMessage }
-            ]
+            [{ text: 'OK' }, { text: 'Message Now', onPress: handleMessage }],
           );
         }
       }
@@ -339,13 +403,37 @@ export default function UserProfileScreen() {
   };
 
   const handleShareHighlights = () => {
-    router.push('/create' as any);
+    router.push('/(tabs)/create' as any);
   };
+
+  // All hooks must be called before any early return to maintain consistent hook call order.
+  const isOwnProfile = currentUser?.id === profileUser?.id;
+  const userIsFollowing = isFollowing(profileUser?.id || '');
+
+  const interestedOrganizationGroups = useMemo(() => {
+    const scouts: User[] = [];
+    const organizations: User[] = [];
+    const countByRole: Record<string, number> = {};
+    for (const org of interestedOrganizations) {
+      countByRole[org.role] = (countByRole[org.role] ?? 0) + 1;
+      if (org.role === 'scout') {
+        scouts.push(org);
+      } else if (['coach', 'team', 'academy'].includes(org.role)) {
+        organizations.push(org);
+      }
+    }
+    return {
+      scouts,
+      organizations,
+      totalInterest: scouts.length + organizations.length,
+      countByRole,
+    };
+  }, [interestedOrganizations]);
 
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Stack.Screen 
+        <Stack.Screen
           options={{
             title: 'Profile',
             headerLeft: () => (
@@ -355,10 +443,7 @@ export default function UserProfileScreen() {
             ),
           }}
         />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading profile...</Text>
-        </View>
+        <UserProfileSkeleton />
       </SafeAreaView>
     );
   }
@@ -366,7 +451,7 @@ export default function UserProfileScreen() {
   if (!profileUser) {
     return (
       <SafeAreaView style={styles.container}>
-        <Stack.Screen 
+        <Stack.Screen
           options={{
             title: 'Profile',
             headerLeft: () => (
@@ -383,11 +468,9 @@ export default function UserProfileScreen() {
     );
   }
 
-  const isOwnProfile = currentUser?.id === profileUser.id;
-  const userIsFollowing = isFollowing(profileUser.id);
-  
-  const canExpressInterest = !isOwnProfile && 
-    currentUser && 
+  const canExpressInterest =
+    !isOwnProfile &&
+    currentUser &&
     ['coach', 'scout', 'team', 'academy'].includes(currentUser.role) &&
     profileUser.role === 'athlete';
 
@@ -401,23 +484,38 @@ export default function UserProfileScreen() {
       case 'athlete':
         if (data.height) details.push({ label: 'Height', value: data.height, icon: '📏' });
         if (data.weight) details.push({ label: 'Weight', value: data.weight, icon: '⚖️' });
-        if (data.dateOfBirth) details.push({ label: 'Date of Birth', value: data.dateOfBirth, icon: '🎂' });
-        if (data.currentTeam) details.push({ label: 'Current Team', value: data.currentTeam, icon: '🏆' });
-        if (data.careerGoals) details.push({ label: 'Career Goals', value: data.careerGoals, icon: '🎯' });
+        if (data.dateOfBirth)
+          details.push({ label: 'Date of Birth', value: data.dateOfBirth, icon: '🎂' });
+        if (data.currentTeam)
+          details.push({ label: 'Current Team', value: data.currentTeam, icon: '🏆' });
+        if (data.careerGoals)
+          details.push({ label: 'Career Goals', value: data.careerGoals, icon: '🎯' });
         break;
       case 'scout':
-        if (data.organization) details.push({ label: 'Organization', value: data.organization, icon: '🏢' });
+        if (data.organization)
+          details.push({ label: 'Organization', value: data.organization, icon: '🏢' });
         if (data.scoutingRegions && data.scoutingRegions.length > 0) {
-          details.push({ label: 'Scouting Regions', value: data.scoutingRegions.join(', '), icon: '🌍' });
+          details.push({
+            label: 'Scouting Regions',
+            value: data.scoutingRegions.join(', '),
+            icon: '🌍',
+          });
         }
         if (data.athleteLevels && data.athleteLevels.length > 0) {
-          details.push({ label: 'Athlete Levels', value: data.athleteLevels.join(', '), icon: '👥' });
+          details.push({
+            label: 'Athlete Levels',
+            value: data.athleteLevels.join(', '),
+            icon: '👥',
+          });
         }
-        if (data.lookingFor) details.push({ label: 'Looking For', value: data.lookingFor, icon: '🔍' });
+        if (data.lookingFor)
+          details.push({ label: 'Looking For', value: data.lookingFor, icon: '🔍' });
         break;
       case 'coach':
-        if (data.experience) details.push({ label: 'Experience', value: data.experience, icon: '⏱️' });
-        if (data.philosophy) details.push({ label: 'Philosophy', value: data.philosophy, icon: '💭' });
+        if (data.experience)
+          details.push({ label: 'Experience', value: data.experience, icon: '⏱️' });
+        if (data.philosophy)
+          details.push({ label: 'Philosophy', value: data.philosophy, icon: '💭' });
         if (data.teamHistory && data.teamHistory.length > 0) {
           details.push({ label: 'Team History', value: data.teamHistory.join(', '), icon: '🏆' });
         }
@@ -427,7 +525,11 @@ export default function UserProfileScreen() {
           details.push({ label: 'Specialties', value: data.specialties.join(', '), icon: '💪' });
         }
         if (data.certifications && data.certifications.length > 0) {
-          details.push({ label: 'Certifications', value: data.certifications.join(', '), icon: '🎓' });
+          details.push({
+            label: 'Certifications',
+            value: data.certifications.join(', '),
+            icon: '🎓',
+          });
         }
         break;
     }
@@ -449,7 +551,7 @@ export default function UserProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           title: profileUser.name,
           headerLeft: () => (
@@ -459,17 +561,17 @@ export default function UserProfileScreen() {
           ),
         }}
       />
-      
-      <ScrollView 
+
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Cover Photo */}
         <View style={styles.coverContainer}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200' }}
+          <CachedImage
+            source={'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200'}
+            size={400}
+            placeholder="cover"
             style={styles.coverImage}
           />
         </View>
@@ -477,13 +579,10 @@ export default function UserProfileScreen() {
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
-            <Image 
-              source={{ 
-                uri: profileUser.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face' 
-              }} 
-              style={styles.avatar} 
-            />
-            <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(profileUser.role) }]}>
+            <CachedImage source={profileUser.avatar} size={100} placeholder="avatar" />
+            <View
+              style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(profileUser.role) }]}
+            >
               {getRoleIcon(profileUser.role)}
             </View>
           </View>
@@ -502,196 +601,272 @@ export default function UserProfileScreen() {
           <Text style={styles.location}>{profileUser.location || 'Location not set'}</Text>
         </View>
 
-        {/* Interest Signal Section - For Athletes viewing their own profile */}
-        {isOwnProfile && profileUser.role === 'athlete' && (() => {
-          const scouts = interestedOrganizations.filter(org => org.role === 'scout');
-          const organizations = interestedOrganizations.filter(org => ['coach', 'team', 'academy'].includes(org.role));
-          const totalInterest = scouts.length + organizations.length;
-          
-          return (
-            <View style={styles.interestSection}>
-              <View style={styles.interestHeader}>
-                <Zap size={24} color={theme.colors.warning} />
-                <Text style={styles.interestTitle}>Interest & Visibility</Text>
-              </View>
-              
-              {totalInterest > 0 ? (
-                <>
-                  <View style={styles.interestCard}>
-                    <View style={styles.interestCount}>
-                      <Text style={styles.interestCountNumber}>{totalInterest}</Text>
-                      <Text style={styles.interestCountLabel}>
-                        {totalInterest === 1 ? 'party has' : 'parties have'} shown interest
-                      </Text>
-                    </View>
-                    
-                    {scouts.length > 0 && (
-                      <View style={styles.interestCategorySection}>
-                        <View style={styles.interestCategoryHeader}>
-                          <Award size={18} color={theme.colors.warning} />
-                          <Text style={styles.interestCategoryTitle}>Scouts Interested ({scouts.length})</Text>
-                        </View>
-                        <View style={styles.interestedOrgDetailsList}>
-                          {scouts.slice(0, 5).map((scout) => (
-                            <TouchableOpacity 
-                              key={scout.id} 
-                              style={styles.interestedOrgDetailItem}
-                              onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: scout.id } })}
-                            >
-                              <Image 
-                                source={{ uri: scout.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
-                                style={styles.interestedOrgDetailAvatar}
-                              />
-                              <View style={styles.interestedOrgDetailInfo}>
-                                <View style={styles.interestedOrgDetailNameRow}>
-                                  <Text style={styles.interestedOrgDetailName}>{scout.name}</Text>
-                                  {scout.verified && <Text style={styles.verified}>✓</Text>}
-                                </View>
-                                <View style={styles.interestedOrgDetailMeta}>
-                                  <View style={[styles.interestedOrgDetailRoleBadge, { backgroundColor: getRoleBadgeColor('scout') + '30' }]}>
-                                    {getRoleIcon('scout')}
-                                    <Text style={[styles.interestedOrgDetailRole, { color: getRoleBadgeColor('scout') }]}>
-                                      {formatRoleName('scout')}
-                                    </Text>
-                                  </View>
-                                  {scout.roleSpecificData?.organization && (
-                                    <Text style={styles.interestedOrgDetailTeam} numberOfLines={1}>
-                                      {scout.roleSpecificData.organization}
-                                    </Text>
-                                  )}
-                                </View>
-                                {scout.sport && (
-                                  <Text style={styles.interestedOrgDetailSport}>{scout.sport}</Text>
-                                )}
-                              </View>
-                            </TouchableOpacity>
-                          ))}
-                          {scouts.length > 5 && (
-                            <View style={styles.interestedOrgDetailMore}>
-                              <Text style={styles.interestedOrgDetailMoreText}>
-                                +{scouts.length - 5} more {scouts.length - 5 === 1 ? 'scout' : 'scouts'}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
+        {/* Interest Signal Section - Visible to everyone on athlete profiles */}
+        {profileUser.role === 'athlete' &&
+          (() => {
+            const { scouts, organizations, totalInterest, countByRole } =
+              interestedOrganizationGroups;
+            return (
+              <View style={styles.interestSection}>
+                <View style={styles.interestHeader}>
+                  <Zap size={24} color={theme.colors.warning} />
+                  <Text style={styles.interestTitle}>Interest & Visibility</Text>
+                </View>
+
+                {totalInterest > 0 ? (
+                  <>
+                    <View style={styles.interestCard}>
+                      <View style={styles.interestCount}>
+                        <Text style={styles.interestCountNumber}>{totalInterest}</Text>
+                        <Text style={styles.interestCountLabel}>
+                          {totalInterest === 1 ? 'party has' : 'parties have'} shown interest
+                        </Text>
                       </View>
-                    )}
-                    
-                    {organizations.length > 0 && (
-                      <View style={styles.interestCategorySection}>
-                        <View style={styles.interestCategoryHeader}>
-                          <Flame size={18} color={theme.colors.primary} />
-                          <Text style={styles.interestCategoryTitle}>Organizations Interested ({organizations.length})</Text>
-                        </View>
-                        <View style={styles.interestedOrgDetailsList}>
-                          {organizations.slice(0, 5).map((org) => (
-                            <TouchableOpacity 
-                              key={org.id} 
-                              style={styles.interestedOrgDetailItem}
-                              onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: org.id } })}
-                            >
-                              <Image 
-                                source={{ uri: org.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
-                                style={styles.interestedOrgDetailAvatar}
-                              />
-                              <View style={styles.interestedOrgDetailInfo}>
-                                <View style={styles.interestedOrgDetailNameRow}>
-                                  <Text style={styles.interestedOrgDetailName}>{org.name}</Text>
-                                  {org.verified && <Text style={styles.verified}>✓</Text>}
-                                </View>
-                                <View style={styles.interestedOrgDetailMeta}>
-                                  <View style={[styles.interestedOrgDetailRoleBadge, { backgroundColor: getRoleBadgeColor(org.role || 'coach') + '30' }]}>
-                                    {getRoleIcon(org.role || 'coach')}
-                                    <Text style={[styles.interestedOrgDetailRole, { color: getRoleBadgeColor(org.role || 'coach') }]}>
-                                      {org.role ? formatRoleName(org.role) : 'Organization'}
-                                    </Text>
-                                  </View>
-                                  {org.roleSpecificData?.organization && (
-                                    <Text style={styles.interestedOrgDetailTeam} numberOfLines={1}>
-                                      {org.roleSpecificData.organization}
-                                    </Text>
-                                  )}
-                                </View>
-                                {org.sport && (
-                                  <Text style={styles.interestedOrgDetailSport}>{org.sport}</Text>
-                                )}
-                              </View>
-                            </TouchableOpacity>
-                          ))}
-                          {organizations.length > 5 && (
-                            <View style={styles.interestedOrgDetailMore}>
-                              <Text style={styles.interestedOrgDetailMoreText}>
-                                +{organizations.length - 5} more {organizations.length - 5 === 1 ? 'organization' : 'organizations'}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                      </View>
-                    )}
-                    
-                    <View style={styles.orgTypeBreakdown}>
-                      {['scout', 'coach', 'team', 'academy'].map(role => {
-                        const count = interestedOrganizations.filter(o => o.role === role).length;
-                        if (count === 0) return null;
-                        return (
-                          <View key={role} style={styles.orgTypeChip}>
-                            {getRoleIcon(role)}
-                            <Text style={styles.orgTypeChipText}>
-                              {count} {formatRoleName(role, count > 1)}
+
+                      {scouts.length > 0 && (
+                        <View style={styles.interestCategorySection}>
+                          <View style={styles.interestCategoryHeader}>
+                            <Award size={18} color={theme.colors.warning} />
+                            <Text style={styles.interestCategoryTitle}>
+                              Scouts Interested ({scouts.length})
                             </Text>
                           </View>
-                        );
-                      })}
+                          <View style={styles.interestedOrgDetailsList}>
+                            {scouts.slice(0, 5).map((scout) => (
+                              <TouchableOpacity
+                                key={scout.id}
+                                style={styles.interestedOrgDetailItem}
+                                onPress={() =>
+                                  router.push({
+                                    pathname: '/user/[id]' as any,
+                                    params: { id: scout.id },
+                                  })
+                                }
+                              >
+                                <CachedImage source={scout.avatar} size={40} placeholder="avatar" />
+                                <View style={styles.interestedOrgDetailInfo}>
+                                  <View style={styles.interestedOrgDetailNameRow}>
+                                    <Text style={styles.interestedOrgDetailName}>{scout.name}</Text>
+                                    {scout.verified && <Text style={styles.verified}>✓</Text>}
+                                  </View>
+                                  <View style={styles.interestedOrgDetailMeta}>
+                                    <View
+                                      style={[
+                                        styles.interestedOrgDetailRoleBadge,
+                                        { backgroundColor: getRoleBadgeColor('scout') + '30' },
+                                      ]}
+                                    >
+                                      {getRoleIcon('scout')}
+                                      <Text
+                                        style={[
+                                          styles.interestedOrgDetailRole,
+                                          { color: getRoleBadgeColor('scout') },
+                                        ]}
+                                      >
+                                        {formatRoleName('scout')}
+                                      </Text>
+                                    </View>
+                                    {scout.roleSpecificData?.organization && (
+                                      <Text
+                                        style={styles.interestedOrgDetailTeam}
+                                        numberOfLines={1}
+                                      >
+                                        {scout.roleSpecificData.organization}
+                                      </Text>
+                                    )}
+                                  </View>
+                                  {scout.sport && (
+                                    <Text style={styles.interestedOrgDetailSport}>
+                                      {scout.sport}
+                                    </Text>
+                                  )}
+                                </View>
+                              </TouchableOpacity>
+                            ))}
+                            {scouts.length > 5 && (
+                              <View style={styles.interestedOrgDetailMore}>
+                                <Text style={styles.interestedOrgDetailMoreText}>
+                                  +{scouts.length - 5} more{' '}
+                                  {scouts.length - 5 === 1 ? 'scout' : 'scouts'}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      )}
+
+                      {organizations.length > 0 && (
+                        <View style={styles.interestCategorySection}>
+                          <View style={styles.interestCategoryHeader}>
+                            <Flame size={18} color={theme.colors.primary} />
+                            <Text style={styles.interestCategoryTitle}>
+                              Organizations Interested ({organizations.length})
+                            </Text>
+                          </View>
+                          <View style={styles.interestedOrgDetailsList}>
+                            {organizations.slice(0, 5).map((org) => (
+                              <TouchableOpacity
+                                key={org.id}
+                                style={styles.interestedOrgDetailItem}
+                                onPress={() =>
+                                  router.push({
+                                    pathname: '/user/[id]' as any,
+                                    params: { id: org.id },
+                                  })
+                                }
+                              >
+                                <CachedImage source={org.avatar} size={40} placeholder="avatar" />
+                                <View style={styles.interestedOrgDetailInfo}>
+                                  <View style={styles.interestedOrgDetailNameRow}>
+                                    <Text style={styles.interestedOrgDetailName}>{org.name}</Text>
+                                    {org.verified && <Text style={styles.verified}>✓</Text>}
+                                  </View>
+                                  <View style={styles.interestedOrgDetailMeta}>
+                                    <View
+                                      style={[
+                                        styles.interestedOrgDetailRoleBadge,
+                                        {
+                                          backgroundColor:
+                                            getRoleBadgeColor(org.role || 'coach') + '30',
+                                        },
+                                      ]}
+                                    >
+                                      {getRoleIcon(org.role || 'coach')}
+                                      <Text
+                                        style={[
+                                          styles.interestedOrgDetailRole,
+                                          { color: getRoleBadgeColor(org.role || 'coach') },
+                                        ]}
+                                      >
+                                        {org.role ? formatRoleName(org.role) : 'Organization'}
+                                      </Text>
+                                    </View>
+                                    {org.roleSpecificData?.organization && (
+                                      <Text
+                                        style={styles.interestedOrgDetailTeam}
+                                        numberOfLines={1}
+                                      >
+                                        {org.roleSpecificData.organization}
+                                      </Text>
+                                    )}
+                                  </View>
+                                  {org.sport && (
+                                    <Text style={styles.interestedOrgDetailSport}>{org.sport}</Text>
+                                  )}
+                                </View>
+                              </TouchableOpacity>
+                            ))}
+                            {organizations.length > 5 && (
+                              <View style={styles.interestedOrgDetailMore}>
+                                <Text style={styles.interestedOrgDetailMoreText}>
+                                  +{organizations.length - 5} more{' '}
+                                  {organizations.length - 5 === 1
+                                    ? 'organization'
+                                    : 'organizations'}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      )}
+
+                      <View style={styles.orgTypeBreakdown}>
+                        {['scout', 'coach', 'team', 'academy'].map((role) => {
+                          const count = countByRole[role] ?? 0;
+                          if (count === 0) return null;
+                          return (
+                            <View key={role} style={styles.orgTypeChip}>
+                              {getRoleIcon(role)}
+                              <Text style={styles.orgTypeChipText}>
+                                {count} {formatRoleName(role, count > 1)}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                      </View>
                     </View>
+
+                    <View style={styles.trustBanner}>
+                      <CheckCircle size={16} color={theme.colors.success} />
+                      <Text style={styles.trustBannerText}>
+                        Only verified coaches and organizations can express interest
+                      </Text>
+                    </View>
+
+                    {isOwnProfile && (
+                      <View style={styles.actionGuidesSection}>
+                        <Text style={styles.actionGuidesTitle}>Recommended Next Steps</Text>
+                        <TouchableOpacity
+                          style={styles.actionGuideCard}
+                          onPress={handleShareHighlights}
+                        >
+                          <View
+                            style={[
+                              styles.actionGuideIcon,
+                              { backgroundColor: theme.colors.primary + '20' },
+                            ]}
+                          >
+                            <Send size={20} color={theme.colors.primary} />
+                          </View>
+                          <View style={styles.actionGuideContent}>
+                            <Text style={styles.actionGuideLabel}>Share Latest Highlights</Text>
+                            <Text style={styles.actionGuideDesc}>
+                              Post your recent performances
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.actionGuideCard}
+                          onPress={handleUpdateProfile}
+                        >
+                          <View
+                            style={[
+                              styles.actionGuideIcon,
+                              { backgroundColor: theme.colors.info + '20' },
+                            ]}
+                          >
+                            <Edit size={20} color={theme.colors.info} />
+                          </View>
+                          <View style={styles.actionGuideContent}>
+                            <Text style={styles.actionGuideLabel}>Update Your Stats</Text>
+                            <Text style={styles.actionGuideDesc}>Keep your profile current</Text>
+                          </View>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </>
+                ) : isOwnProfile ? (
+                  <View style={styles.emptyInterestState}>
+                    <View style={styles.emptyInterestIcon}>
+                      <TrendingUp size={32} color={theme.colors.textSecondary} />
+                    </View>
+                    <Text style={styles.emptyInterestTitle}>Build Your Visibility</Text>
+                    <Text style={styles.emptyInterestDesc}>
+                      Coaches and scouts will discover your profile. Keep sharing highlights and
+                      updating your stats to increase your visibility.
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.emptyInterestAction}
+                      onPress={handleShareHighlights}
+                    >
+                      <Text style={styles.emptyInterestActionText}>Share Your First Highlight</Text>
+                    </TouchableOpacity>
                   </View>
-                  
-                  <View style={styles.trustBanner}>
-                    <CheckCircle size={16} color={theme.colors.success} />
-                    <Text style={styles.trustBannerText}>
-                      Only verified coaches and organizations can express interest
+                ) : (
+                  <View style={styles.emptyInterestState}>
+                    <View style={styles.emptyInterestIcon}>
+                      <TrendingUp size={32} color={theme.colors.textSecondary} />
+                    </View>
+                    <Text style={styles.emptyInterestTitle}>No interest expressed yet</Text>
+                    <Text style={styles.emptyInterestDesc}>
+                      Scouts, coaches, and organizations haven't expressed interest yet.
                     </Text>
                   </View>
-                  
-                  <View style={styles.actionGuidesSection}>
-                    <Text style={styles.actionGuidesTitle}>Recommended Next Steps</Text>
-                    <TouchableOpacity style={styles.actionGuideCard} onPress={handleShareHighlights}>
-                      <View style={[styles.actionGuideIcon, { backgroundColor: theme.colors.primary + '20' }]}>
-                        <Send size={20} color={theme.colors.primary} />
-                      </View>
-                      <View style={styles.actionGuideContent}>
-                        <Text style={styles.actionGuideLabel}>Share Latest Highlights</Text>
-                        <Text style={styles.actionGuideDesc}>Post your recent performances</Text>
-                      </View>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity style={styles.actionGuideCard} onPress={handleUpdateProfile}>
-                      <View style={[styles.actionGuideIcon, { backgroundColor: theme.colors.info + '20' }]}>
-                        <Edit size={20} color={theme.colors.info} />
-                      </View>
-                      <View style={styles.actionGuideContent}>
-                        <Text style={styles.actionGuideLabel}>Update Your Stats</Text>
-                        <Text style={styles.actionGuideDesc}>Keep your profile current</Text>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              ) : (
-                <View style={styles.emptyInterestState}>
-                  <View style={styles.emptyInterestIcon}>
-                    <TrendingUp size={32} color={theme.colors.textSecondary} />
-                  </View>
-                  <Text style={styles.emptyInterestTitle}>Build Your Visibility</Text>
-                  <Text style={styles.emptyInterestDesc}>
-                    Coaches and scouts will discover your profile. Keep sharing highlights and updating your stats to increase your visibility.
-                  </Text>
-                  <TouchableOpacity style={styles.emptyInterestAction} onPress={handleShareHighlights}>
-                    <Text style={styles.emptyInterestActionText}>Share Your First Highlight</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          );
-        })()}
+                )}
+              </View>
+            );
+          })()}
 
         {/* Stats */}
         <View style={styles.statsContainer}>
@@ -744,6 +919,25 @@ export default function UserProfileScreen() {
           </View>
         )}
 
+        {/* Fitness Assessment - visible to scouts/coaches/teams/academies viewing athletes */}
+        {profileUser.role === 'athlete' && Object.keys(fitnessLatestByType).length > 0 && (
+          <View style={styles.section}>
+            <FitnessTestCard
+              variant="scout"
+              latestByType={fitnessLatestByType}
+              history={fitnessTestHistory}
+              gender={(profileUser?.roleSpecificData as any)?.gender || 'male'}
+              ageGroup={getAgeGroup((profileUser?.roleSpecificData as any)?.dateOfBirth)}
+              onViewHistory={() =>
+                router.push({
+                  pathname: '/beep-test-history' as any,
+                  params: { athleteId: profileUser.id, athleteName: profileUser.name },
+                })
+              }
+            />
+          </View>
+        )}
+
         {/* Stats Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -767,50 +961,52 @@ export default function UserProfileScreen() {
         </View>
 
         {/* Players Interested In for scouts/coaches/organizations */}
-        {['coach', 'scout', 'team', 'academy'].includes(profileUser.role) && recommendedAthletes.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Star size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>Players Interested In</Text>
-            </View>
-            <View style={styles.recommendedAthletesList}>
-              {recommendedAthletes.slice(0, 5).map((athlete) => (
-                <TouchableOpacity 
-                  key={athlete.id} 
-                  style={styles.recommendedAthleteItem}
-                  onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: athlete.id } })}
-                >
-                  <Image 
-                    source={{ uri: athlete.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400' }} 
-                    style={styles.recommendedAthleteAvatar}
-                  />
-                  <View style={styles.recommendedAthleteInfo}>
-                    <View style={styles.recommendedAthleteNameRow}>
-                      <Text style={styles.recommendedAthleteName}>{athlete.name}</Text>
-                      {athlete.verified && <Text style={styles.verified}>✓</Text>}
-                    </View>
-                    <View style={styles.recommendedAthleteMeta}>
-                      {athlete.sport && (
-                        <Text style={styles.recommendedAthleteSport}>{athlete.sport}</Text>
+        {['coach', 'scout', 'team', 'academy'].includes(profileUser.role) &&
+          recommendedAthletes.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Star size={20} color={theme.colors.primary} />
+                <Text style={styles.sectionTitle}>Players Interested In</Text>
+              </View>
+              <View style={styles.recommendedAthletesList}>
+                {recommendedAthletes.slice(0, 5).map((athlete) => (
+                  <TouchableOpacity
+                    key={athlete.id}
+                    style={styles.recommendedAthleteItem}
+                    onPress={() =>
+                      router.push({ pathname: '/user/[id]' as any, params: { id: athlete.id } })
+                    }
+                  >
+                    <CachedImage source={athlete.avatar} size={40} placeholder="avatar" />
+                    <View style={styles.recommendedAthleteInfo}>
+                      <View style={styles.recommendedAthleteNameRow}>
+                        <Text style={styles.recommendedAthleteName}>{athlete.name}</Text>
+                        {athlete.verified && <Text style={styles.verified}>✓</Text>}
+                      </View>
+                      <View style={styles.recommendedAthleteMeta}>
+                        {athlete.sport && (
+                          <Text style={styles.recommendedAthleteSport}>{athlete.sport}</Text>
+                        )}
+                        {athlete.position && (
+                          <Text style={styles.recommendedAthletePosition}>
+                            • {athlete.position}
+                          </Text>
+                        )}
+                      </View>
+                      {athlete.roleSpecificData?.currentTeam && (
+                        <Text style={styles.recommendedAthleteTeam} numberOfLines={1}>
+                          🏆 {athlete.roleSpecificData.currentTeam}
+                        </Text>
                       )}
-                      {athlete.position && (
-                        <Text style={styles.recommendedAthletePosition}>• {athlete.position}</Text>
-                      )}
                     </View>
-                    {athlete.roleSpecificData?.currentTeam && (
-                      <Text style={styles.recommendedAthleteTeam} numberOfLines={1}>
-                        🏆 {athlete.roleSpecificData.currentTeam}
-                      </Text>
-                    )}
-                  </View>
-                  <View style={styles.recommendedAthleteAction}>
-                    <Star size={16} color={theme.colors.primary} fill={theme.colors.primary} />
-                  </View>
-                </TouchableOpacity>
-              ))}
+                    <View style={styles.recommendedAthleteAction}>
+                      <Star size={16} color={theme.colors.primary} fill={theme.colors.primary} />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
         {/* Action Buttons */}
         {!isOwnProfile && (
@@ -821,9 +1017,12 @@ export default function UserProfileScreen() {
                   title={hasExpressedInterest ? 'Interest Expressed' : 'Interested in this Athlete'}
                   onPress={handleExpressInterest}
                   variant={hasExpressedInterest ? 'outline' : 'primary'}
-                  icon={hasExpressedInterest ? 
-                    <CheckCircle size={16} color={theme.colors.success} /> : 
-                    <Star size={16} color={theme.colors.white} />
+                  icon={
+                    hasExpressedInterest ? (
+                      <CheckCircle size={16} color={theme.colors.success} />
+                    ) : (
+                      <Star size={16} color={theme.colors.white} />
+                    )
                   }
                   style={styles.actionButtonFull}
                   loading={isInterestLoading}
@@ -842,9 +1041,12 @@ export default function UserProfileScreen() {
                   title={userIsFollowing ? 'Unfollow' : 'Follow'}
                   onPress={handleFollow}
                   variant={userIsFollowing ? 'outline' : 'primary'}
-                  icon={userIsFollowing ? 
-                    <UserMinus size={16} color={theme.colors.primary} /> : 
-                    <UserPlus size={16} color={theme.colors.white} />
+                  icon={
+                    userIsFollowing ? (
+                      <UserMinus size={16} color={theme.colors.primary} />
+                    ) : (
+                      <UserPlus size={16} color={theme.colors.white} />
+                    )
                   }
                   style={styles.actionButton}
                   loading={isFollowLoading}
@@ -866,28 +1068,40 @@ export default function UserProfileScreen() {
           <View style={styles.postsHeader}>
             <Text style={styles.sectionTitle}>Posts</Text>
             <View style={styles.postsActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.viewModeButton, postsViewMode === 'grid' && styles.activeViewMode]}
                 onPress={() => setPostsViewMode('grid')}
               >
-                <Grid size={16} color={postsViewMode === 'grid' ? theme.colors.primary : theme.colors.textSecondary} />
+                <Grid
+                  size={16}
+                  color={
+                    postsViewMode === 'grid' ? theme.colors.primary : theme.colors.textSecondary
+                  }
+                />
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.viewModeButton, postsViewMode === 'list' && styles.activeViewMode]}
                 onPress={() => setPostsViewMode('list')}
               >
-                <List size={16} color={postsViewMode === 'list' ? theme.colors.primary : theme.colors.textSecondary} />
+                <List
+                  size={16}
+                  color={
+                    postsViewMode === 'list' ? theme.colors.primary : theme.colors.textSecondary
+                  }
+                />
               </TouchableOpacity>
             </View>
           </View>
-          
+
           {userPosts.length > 0 ? (
             <View style={styles.postsGrid}>
               {userPosts.map((post) => (
-                <TouchableOpacity 
-                  key={post.id} 
+                <TouchableOpacity
+                  key={post.id}
                   style={styles.postItem}
-                  onPress={() => router.push({ pathname: '/post/[id]' as any, params: { id: post.id } })}
+                  onPress={() =>
+                    router.push({ pathname: '/post/[id]' as any, params: { id: post.id } })
+                  }
                 >
                   {post.media ? (
                     post.media.type === 'video' ? (
@@ -902,11 +1116,18 @@ export default function UserProfileScreen() {
                         testID={`profile-video-${post.id}`}
                       />
                     ) : (
-                      <Image source={{ uri: post.media.url }} style={styles.postImage} />
+                      <CachedImage
+                        source={post.media.url}
+                        size={100}
+                        placeholder="post"
+                        style={styles.postImage}
+                      />
                     )
                   ) : (
                     <View style={styles.postTextContainer}>
-                      <Text style={styles.postText} numberOfLines={3}>{post.content}</Text>
+                      <Text style={styles.postText} numberOfLines={3}>
+                        {post.content}
+                      </Text>
                     </View>
                   )}
                   <View style={styles.postOverlay}>
@@ -919,7 +1140,9 @@ export default function UserProfileScreen() {
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>No posts yet</Text>
               <Text style={styles.emptyStateSubtext}>
-                {isOwnProfile ? 'Share your achievements and highlights' : `${profileUser.name} hasn't posted anything yet`}
+                {isOwnProfile
+                  ? 'Share your achievements and highlights'
+                  : `${profileUser.name} hasn't posted anything yet`}
               </Text>
             </View>
           )}
