@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,15 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
-import { 
-  Heart, 
-  MessageCircle, 
-  UserPlus, 
-  FileText, 
+import { Stack, router } from 'expo-router';
+import {
+  Heart,
+  MessageCircle,
+  UserPlus,
+  FileText,
   Briefcase,
   Check,
   Trash2,
@@ -22,11 +23,13 @@ import {
   Eye,
   AtSign,
   Settings,
-  UserCheck
+  UserCheck,
+  ClipboardCheck,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { Notification } from '@/types';
 import { useNotifications } from '@/hooks/notifications-context';
+import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -50,6 +53,10 @@ const getNotificationIcon = (type: Notification['type']) => {
       return <Eye size={20} color={theme.colors.secondary} />;
     case 'mention':
       return <AtSign size={20} color={theme.colors.accent} />;
+    case 'application':
+      return <FileText size={20} color={theme.colors.warning} />;
+    case 'coach_verification_request':
+      return <ClipboardCheck size={20} color={theme.colors.success} />;
     case 'system':
       return <Settings size={20} color={theme.colors.textSecondary} />;
     default:
@@ -60,12 +67,12 @@ const getNotificationIcon = (type: Notification['type']) => {
 const formatTimeAgo = (date: Date) => {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
+
   if (diffInSeconds < 60) return 'Just now';
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  
+
   return date.toLocaleDateString();
 };
 
@@ -79,40 +86,83 @@ export default function NotificationsScreen() {
     refreshNotifications,
   } = useNotifications();
 
-  const renderNotification = ({ item }: { item: Notification }) => (
-    <TouchableOpacity
-      style={[styles.notificationItem, !item.read && styles.unreadNotification]}
-      onPress={() => !item.read && markAsRead(item.id)}
-    >
-      <View style={styles.notificationIcon}>
-        {getNotificationIcon(item.type)}
-      </View>
-      
-      <View style={styles.notificationContent}>
-        <Text style={styles.notificationTitle}>{item.title}</Text>
-        <Text style={styles.notificationMessage}>{item.message}</Text>
-        <Text style={styles.notificationTime}>
-          {formatTimeAgo(item.createdAt)}
-        </Text>
-      </View>
+  const handleNotificationPress = useCallback(
+    (notification: Notification) => {
+      if (!notification.read) {
+        markAsRead(notification.id);
+      }
+      if (notification.type === 'coach_verification_request' && notification.data) {
+        router.push({ pathname: '/verify-result' as any, params: notification.data });
+        return;
+      }
+      switch (notification.type) {
+        case 'like':
+        case 'comment':
+        case 'post':
+          if (notification.data?.postId) {
+            router.push({
+              pathname: '/post/[id]' as any,
+              params: { id: String(notification.data.postId) },
+            });
+          }
+          break;
+        case 'follow':
+        case 'connection_request':
+        case 'connection_accepted':
+        case 'profile_view':
+          if (notification.data?.followerId || notification.data?.userId) {
+            router.push({
+              pathname: '/user/[id]' as any,
+              params: { id: String(notification.data.followerId || notification.data.userId) },
+            });
+          }
+          break;
+        case 'message':
+          if (notification.data?.senderId) {
+            router.push({
+              pathname: '/chat/[id]' as any,
+              params: { id: String(notification.data.senderId) },
+            });
+          }
+          break;
+        case 'opportunity':
+        case 'application':
+          router.push('/(tabs)/opportunities' as any);
+          break;
+        default:
+          break;
+      }
+    },
+    [markAsRead],
+  );
 
-      <View style={styles.notificationActions}>
-        {!item.read && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => markAsRead(item.id)}
-          >
-            <Check size={16} color={theme.colors.primary} />
+  const renderNotification = useCallback(
+    ({ item }: { item: Notification }) => (
+      <TouchableOpacity
+        style={[styles.notificationItem, !item.read && styles.unreadNotification]}
+        onPress={() => handleNotificationPress(item)}
+      >
+        <View style={styles.notificationIcon}>{getNotificationIcon(item.type)}</View>
+
+        <View style={styles.notificationContent}>
+          <Text style={styles.notificationTitle}>{item.title}</Text>
+          <Text style={styles.notificationMessage}>{item.message}</Text>
+          <Text style={styles.notificationTime}>{formatTimeAgo(item.createdAt)}</Text>
+        </View>
+
+        <View style={styles.notificationActions}>
+          {!item.read && (
+            <TouchableOpacity style={styles.actionButton} onPress={() => markAsRead(item.id)}>
+              <Check size={16} color={theme.colors.primary} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.actionButton} onPress={() => deleteNotification(item.id)}>
+            <Trash2 size={16} color={theme.colors.textSecondary} />
           </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => deleteNotification(item.id)}
-        >
-          <Trash2 size={16} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    ),
+    [handleNotificationPress, markAsRead, deleteNotification],
   );
 
   const renderEmptyState = () => (
@@ -149,23 +199,20 @@ export default function NotificationsScreen() {
           title: 'Notifications',
           headerShown: true,
           headerRight: () => (
-            <TouchableOpacity
-              onPress={markAllAsRead}
-              style={styles.headerButton}
-            >
+            <TouchableOpacity onPress={markAllAsRead} style={styles.headerButton}>
               <Text style={styles.headerButtonText}>Mark all read</Text>
             </TouchableOpacity>
           ),
         }}
       />
-      
+
       <FlatList
         data={notifications}
         renderItem={renderNotification}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          notifications.length === 0 && styles.emptyListContent
+          notifications.length === 0 && styles.emptyListContent,
         ]}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={renderEmptyState}
@@ -177,6 +224,7 @@ export default function NotificationsScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
+        {...FLATLIST_PERF_PROPS}
       />
     </SafeAreaView>
   );
@@ -213,7 +261,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notificationItem: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.surface,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
     flexDirection: 'row',
@@ -283,3 +331,5 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 });
+
+const NotificationSeparator = () => <View style={styles.separator} />;

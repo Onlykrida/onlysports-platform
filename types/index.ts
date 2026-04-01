@@ -218,7 +218,8 @@ export interface Notification {
     | 'profile_view'
     | 'mention'
     | 'system'
-    | 'application';
+    | 'application'
+    | 'coach_verification_request';
   title: string;
   message: string;
   data?: any;
