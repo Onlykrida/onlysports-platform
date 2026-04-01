@@ -15,12 +15,9 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.onlysports.app",
+      "bundleIdentifier": "com.onlykrida.app",
       "infoPlist": {
-        "UIBackgroundModes": [
-          "audio",
-          "remote-notification"
-        ],
+        "UIBackgroundModes": ["audio", "remote-notification"],
         "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
@@ -31,7 +28,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0a0f1a"
       },
-      "package": "com.onlysports.app",
+      "package": "com.onlykrida.app",
       "manifest": {
         "android:supportsPictureInPicture": true
       },
@@ -39,7 +36,8 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
-        "INTERNET"
+        "INTERNET",
+        "HIGH_SAMPLING_RATE_SENSORS"
       ]
     },
     "web": {
@@ -49,7 +47,7 @@
       [
         "expo-router",
         {
-          "origin": "https://onlysports.app/"
+          "origin": "https://onlykrida.app/"
         }
       ],
       [
