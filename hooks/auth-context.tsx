@@ -27,7 +27,7 @@ interface AuthState {
 const AUTH_DEFAULTS: AuthState = {
   user: null,
   session: null,
-  isLoading: false,
+  isLoading: true,
   isAuthenticated: false,
   login: async () => ({}),
   signup: async () => ({}),

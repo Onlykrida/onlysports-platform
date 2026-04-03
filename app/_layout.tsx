@@ -135,6 +135,7 @@ function RootLayoutNav() {
       <BackgroundGradient>
         <Stack
           screenOptions={{
+            headerShown: false,
             headerBackTitle: 'Back',
             contentStyle: { backgroundColor: 'transparent' },
           }}

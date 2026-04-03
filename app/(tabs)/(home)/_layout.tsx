@@ -2,15 +2,20 @@ import { Stack, router } from 'expo-router';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Bell } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
-import { useNotifications } from '@/hooks/notifications-context';
 
 function HeaderTitle() {
-  const { unreadCount } = useNotifications();
-  
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flex: 1,
+      }}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View style={{
+        <View
+          style={{
             width: 32,
             height: 32,
             marginRight: 8,
@@ -18,47 +23,34 @@ function HeaderTitle() {
             backgroundColor: theme.colors.primary,
             alignItems: 'center',
             justifyContent: 'center',
-          }}>
+          }}
+        >
           <Text style={{ color: theme.colors.white, fontWeight: 'bold', fontSize: 16 }}>OK</Text>
         </View>
-        <Text style={{ 
-          fontSize: 20, 
-          fontWeight: 'bold', 
-          color: theme.colors.primary
-        }}>OnlyKrida</Text>
-        <Text style={{ 
-          fontSize: 16, 
-          color: theme.colors.textSecondary,
-          marginLeft: 8 
-        }}>• Feed</Text>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: 'bold',
+            color: theme.colors.primary,
+          }}
+        >
+          OnlyKrida
+        </Text>
+        <Text
+          style={{
+            fontSize: 16,
+            color: theme.colors.textSecondary,
+            marginLeft: 8,
+          }}
+        >
+          • Feed
+        </Text>
       </View>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={{ position: 'relative', padding: 8 }}
         onPress={() => router.push('/(tabs)/notifications' as any)}
       >
         <Bell size={24} color={theme.colors.text} />
-        {unreadCount > 0 && (
-          <View style={{
-            position: 'absolute',
-            top: 2,
-            right: 2,
-            backgroundColor: theme.colors.danger,
-            borderRadius: 10,
-            minWidth: 20,
-            height: 20,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: 4,
-          }}>
-            <Text style={{
-              color: theme.colors.white,
-              fontSize: 10,
-              fontWeight: 'bold',
-            }}>
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </Text>
-          </View>
-        )}
       </TouchableOpacity>
     </View>
   );
@@ -77,12 +69,12 @@ export default function HomeLayout() {
         },
       }}
     >
-      <Stack.Screen 
-        name="index" 
-        options={{ 
+      <Stack.Screen
+        name="index"
+        options={{
           headerTitle: () => <HeaderTitle />,
           headerTitleAlign: 'left',
-        }} 
+        }}
       />
     </Stack>
   );

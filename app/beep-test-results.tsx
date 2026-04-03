@@ -23,7 +23,9 @@ import {
   Camera,
   CheckCircle,
 } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
+
+const Haptics = Platform.OS !== 'web' ? require('expo-haptics') : null;
 import * as ImagePicker from 'expo-image-picker';
 import { theme } from '@/constants/theme';
 import VerificationBadge from '@/components/VerificationBadge';
@@ -289,7 +291,7 @@ export default function BeepTestResultsScreen() {
 
       if (!result.error) {
         setHasSaved(true);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics?.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert('Saved', `Your ${testLabel} result has been saved!`, [
           { text: 'OK', onPress: () => router.replace('/(tabs)/profile' as any) },
         ]);
@@ -324,7 +326,7 @@ export default function BeepTestResultsScreen() {
 
       if (!result.error) {
         setHasSaved(true);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics?.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert('Saved', `${coachResults.length} results saved successfully!`, [
           { text: 'OK', onPress: () => router.replace('/(tabs)/profile' as any) },
         ]);

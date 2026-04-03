@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackgroundGradient } from '@/components/BackgroundGradient';
@@ -71,6 +72,13 @@ export default function CreateScreen() {
   };
 
   const handleCameraCapture = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert(
+        'Not Available',
+        'Camera capture is not available on web. Please use the Gallery option instead.',
+      );
+      return;
+    }
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
@@ -336,6 +344,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   postButtonDisabled: {
     opacity: 0.4,

@@ -1,9 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 // Get Supabase credentials from environment variables only
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+// Use localStorage on web, AsyncStorage on native
+const storage =
+  Platform.OS === 'web'
+    ? {
+        getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+        setItem: (key: string, value: string) => {
+          localStorage.setItem(key, value);
+          return Promise.resolve();
+        },
+        removeItem: (key: string) => {
+          localStorage.removeItem(key);
+          return Promise.resolve();
+        },
+      }
+    : AsyncStorage;
 
 // Check if Supabase is properly configured
 const isSupabaseConfigured =
@@ -21,8 +38,8 @@ if (isSupabaseConfigured) {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: false,
-        storage: AsyncStorage,
+        detectSessionInUrl: Platform.OS === 'web',
+        storage,
       },
     });
   } catch (error) {

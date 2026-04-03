@@ -1,5 +1,10 @@
 import { useRef, useCallback } from 'react';
-import { Accelerometer } from 'expo-sensors';
+import { Platform } from 'react-native';
+
+let Accelerometer: any = null;
+if (Platform.OS !== 'web') {
+  Accelerometer = require('expo-sensors').Accelerometer;
+}
 
 interface SensorReading {
   timestamp: number;
@@ -86,8 +91,10 @@ export function useSensorRecording() {
     session.current = { readings: [], turns: [], freefalls: [], startTime: Date.now(), endTime: 0 };
     lastTurnTime.current = 0;
     inFreefall.current = false;
-    Accelerometer.setUpdateInterval(SAMPLING_INTERVAL_MS);
-    subscription.current = Accelerometer.addListener(processReading);
+    if (Accelerometer) {
+      Accelerometer.setUpdateInterval(SAMPLING_INTERVAL_MS);
+      subscription.current = Accelerometer.addListener(processReading);
+    }
   }, [processReading]);
 
   const stopRecording = useCallback((): SensorSession => {

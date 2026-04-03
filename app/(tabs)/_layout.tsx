@@ -11,8 +11,9 @@ import {
   Sparkles,
 } from 'lucide-react-native';
 import React, { useMemo } from 'react';
-import { TouchableOpacity, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { TouchableOpacity, View, Platform } from 'react-native';
+
+const Haptics = Platform.OS !== 'web' ? require('expo-haptics') : null;
 import { useAuth } from '@/hooks/auth-context';
 import { theme, roleAccents } from '@/constants/theme';
 import { useMessages } from '@/hooks/messages-context';
@@ -125,7 +126,7 @@ export default function TabLayout() {
           ),
         }}
         listeners={{
-          tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
+          tabPress: () => Haptics?.impactAsync(Haptics.ImpactFeedbackStyle.Light),
         }}
       />
       <Tabs.Screen

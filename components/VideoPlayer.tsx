@@ -9,7 +9,14 @@ import {
   DimensionValue,
 } from 'react-native';
 import CachedImage from '@/components/CachedImage';
-import { VideoView, useVideoPlayer } from 'expo-video';
+
+let VideoView: any = null;
+let useVideoPlayer: any = null;
+if (Platform.OS !== 'web') {
+  const expoVideo = require('expo-video');
+  VideoView = expoVideo.VideoView;
+  useVideoPlayer = expoVideo.useVideoPlayer;
+}
 
 interface VideoPlayerProps {
   uri: string;
@@ -37,13 +44,35 @@ export default function VideoPlayer({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const player = useVideoPlayer(uri, (player) => {
-    player.loop = loop;
-    player.muted = muted;
-    if (autoPlay) {
-      player.play();
-    }
-  });
+  const player = useVideoPlayer
+    ? useVideoPlayer(uri, (p: any) => {
+        p.loop = loop;
+        p.muted = muted;
+        if (autoPlay) {
+          p.play();
+        }
+      })
+    : null;
+
+  // Web fallback: render HTML video element
+  if (Platform.OS === 'web') {
+    return (
+      <View
+        style={[styles.container, { height, width: width as DimensionValue }, style]}
+        testID={`${testID}-container`}
+      >
+        <video
+          src={uri}
+          poster={poster}
+          autoPlay={autoPlay}
+          loop={loop}
+          muted={muted}
+          controls
+          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 } as any}
+        />
+      </View>
+    );
+  }
 
   useEffect(() => {
     if (__DEV__) console.log('[VideoPlayer] Initializing with URI:', uri);
@@ -58,7 +87,7 @@ export default function VideoPlayer({
   useEffect(() => {
     if (!player) return;
 
-    const subscription = player.addListener('statusChange', (status) => {
+    const subscription = player.addListener('statusChange', (status: any) => {
       if (__DEV__) console.log('[VideoPlayer] Status:', status);
 
       if (status.status === 'readyToPlay') {

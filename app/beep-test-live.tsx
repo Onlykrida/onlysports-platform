@@ -9,12 +9,14 @@ import {
   Alert,
   Animated,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { ArrowLeft, Plus, UserMinus, Pause, Play, Square, Users, User } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
+
+const Haptics = Platform.OS !== 'web' ? require('expo-haptics') : null;
+const Audio = Platform.OS !== 'web' ? require('expo-av').Audio : null;
 import { theme } from '@/constants/theme';
 import { BackgroundGradient } from '@/components/BackgroundGradient';
 import { useSensorRecording } from '@/hooks/sensor-context';
@@ -62,8 +64,8 @@ export default function BeepTestLiveScreen() {
   const [athleteName, setAthleteName] = useState('');
 
   // Audio
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const [sound, setSound] = useState<any>(null);
+  const soundRef = useRef<any>(null);
 
   // Timer refs
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,6 +93,7 @@ export default function BeepTestLiveScreen() {
     let mounted = true;
     async function loadSound() {
       try {
+        if (!Audio) return;
         await Audio.setAudioModeAsync({
           playsInSilentModeIOS: true,
           staysActiveInBackground: true,
@@ -129,10 +132,10 @@ export default function BeepTestLiveScreen() {
     try {
       await sound?.setPositionAsync(0);
       await sound?.playAsync();
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics?.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {
       // Audio may not be available
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Haptics?.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
   }, [sound]);
 
@@ -249,7 +252,7 @@ export default function BeepTestLiveScreen() {
     scheduleNextBeep();
     startCountdownDisplay();
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, [playBeep, scheduleNextBeep, startCountdownDisplay, startRecording]);
 
   const pauseTest = useCallback(() => {
@@ -258,7 +261,7 @@ export default function BeepTestLiveScreen() {
     if (countdownRef.current) clearInterval(countdownRef.current);
     progressAnim.stopAnimation();
     setPhase('paused');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics?.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, [progressAnim]);
 
   const resumeTest = useCallback(() => {
@@ -275,7 +278,7 @@ export default function BeepTestLiveScreen() {
     setPhase('running');
     scheduleNextBeep();
     startCountdownDisplay();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics?.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [timeToNextBeep, scheduleNextBeep, startCountdownDisplay]);
 
   const finishTest = useCallback(() => {
@@ -287,7 +290,7 @@ export default function BeepTestLiveScreen() {
     stopRecording();
 
     setPhase('finished');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics?.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     router.push({
       pathname: '/beep-test-results' as any,
@@ -310,7 +313,7 @@ export default function BeepTestLiveScreen() {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (countdownRef.current) clearInterval(countdownRef.current);
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Haptics?.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 
     const sensorSummary = getSensorSummary();
     stopRecording();
@@ -376,7 +379,7 @@ export default function BeepTestLiveScreen() {
       return updated;
     });
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    Haptics?.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
   }, []);
 
   const confirmStopTest = useCallback(() => {
@@ -450,7 +453,7 @@ export default function BeepTestLiveScreen() {
       },
     ]);
     setAthleteName('');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics?.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [athleteName]);
 
   const removeAthlete = useCallback((id: string) => {

@@ -46,7 +46,22 @@ interface PostsState {
   getLikedAthletes: (userId: string) => Promise<User[]>;
 }
 
-export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
+const noop = async () => ({}) as any;
+const POSTS_DEFAULTS: PostsState = {
+  posts: [],
+  isLoading: false,
+  hasMore: false,
+  isLoadingMore: false,
+  refreshPosts: noop,
+  loadMore: noop,
+  createPost: noop,
+  likePost: noop,
+  deletePost: noop,
+  updatePost: noop,
+  getLikedAthletes: async () => [],
+};
+
+const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -1181,3 +1196,6 @@ export const [PostsProvider, usePosts] = createContextHook<PostsState>(() => {
     ],
   );
 });
+
+export { PostsProvider };
+export const usePosts = () => _usePosts() ?? POSTS_DEFAULTS;
