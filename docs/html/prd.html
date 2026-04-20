@@ -1,0 +1,2677 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PRD — Product Requirements | OnlyKrida</title>
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --bg-card: #141420;
+        --bg-code: #1a1a2e;
+        --green: #30d158;
+        --orange: #ff9f0a;
+        --cyan: #64d2ff;
+        --red: #ff453a;
+        --purple: #bf5af2;
+        --text: #f0f0f0;
+        --text-muted: #999;
+        --border: #2a2a2e;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 32px 120px;
+      }
+      /* Nav bar */
+      .topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: rgba(10, 10, 10, 0.92);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 32px;
+      }
+      .topbar .logo {
+        color: var(--green);
+        font-weight: 800;
+        font-size: 18px;
+        letter-spacing: -0.5px;
+      }
+      .topbar a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 13px;
+        transition: color 0.2s;
+      }
+      .topbar a:hover {
+        color: var(--green);
+      }
+      .topbar a.active {
+        color: var(--green);
+      }
+      body {
+        padding-top: 72px;
+      }
+
+      h1 {
+        font-size: 2.4em;
+        font-weight: 800;
+        color: var(--green);
+        margin: 48px 0 8px;
+        letter-spacing: -1px;
+        border-bottom: 2px solid var(--green);
+        padding-bottom: 12px;
+      }
+      h1:first-of-type {
+        margin-top: 0;
+      }
+      h2 {
+        font-size: 1.6em;
+        font-weight: 700;
+        color: var(--text);
+        margin: 40px 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      h3 {
+        font-size: 1.25em;
+        font-weight: 600;
+        color: var(--cyan);
+        margin: 28px 0 10px;
+      }
+      h4 {
+        font-size: 1.05em;
+        font-weight: 600;
+        color: var(--orange);
+        margin: 20px 0 8px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      a {
+        color: var(--cyan);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      strong {
+        color: var(--green);
+        font-weight: 700;
+      }
+      em {
+        color: var(--text-muted);
+        font-style: italic;
+      }
+
+      blockquote {
+        background: var(--bg-card);
+        border-left: 4px solid var(--green);
+        padding: 16px 20px;
+        margin: 20px 0;
+        border-radius: 0 8px 8px 0;
+      }
+      blockquote p {
+        margin: 4px 0;
+        color: var(--text-muted);
+      }
+      blockquote strong {
+        color: var(--green);
+      }
+
+      ul,
+      ol {
+        padding-left: 24px;
+        margin: 10px 0;
+      }
+      li {
+        margin: 6px 0;
+      }
+      li::marker {
+        color: var(--green);
+      }
+
+      code {
+        background: var(--bg-code);
+        color: var(--cyan);
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      }
+      pre {
+        background: var(--bg-code);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 16px 0;
+        overflow-x: auto;
+        line-height: 1.5;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        color: var(--text);
+        font-size: 0.85em;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 0.92em;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      th {
+        background: var(--bg-code);
+        color: var(--green);
+        font-weight: 700;
+        text-align: left;
+        padding: 12px 16px;
+        border-bottom: 2px solid var(--green);
+        position: sticky;
+        top: 56px;
+        z-index: 10;
+      }
+      td {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      tr:nth-child(even) td {
+        background: rgba(20, 20, 32, 0.5);
+      }
+      tr:hover td {
+        background: rgba(48, 209, 88, 0.06);
+      }
+
+      hr {
+        border: none;
+        height: 1px;
+        background: var(--border);
+        margin: 40px 0;
+      }
+
+      /* Table of Contents */
+      h2#table-of-contents ~ ol,
+      h2#table-of-contents ~ ul {
+        columns: 2;
+        column-gap: 32px;
+      }
+
+      /* Badges for P0/P1/P2 */
+      td:first-child {
+        white-space: nowrap;
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #444;
+      }
+
+      /* Print */
+      @media print {
+        body {
+          background: white;
+          color: #111;
+          padding: 20px;
+        }
+        .topbar {
+          display: none;
+        }
+        h1 {
+          color: #111;
+          border-color: #111;
+        }
+        h2 {
+          color: #333;
+        }
+        h3 {
+          color: #555;
+        }
+        table th {
+          background: #eee;
+          color: #111;
+          border-color: #111;
+        }
+        td {
+          border-color: #ddd;
+        }
+        code {
+          background: #f5f5f5;
+          color: #333;
+        }
+        pre {
+          background: #f5f5f5;
+          border-color: #ddd;
+        }
+        blockquote {
+          background: #f9f9f9;
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        body {
+          padding: 60px 16px 80px;
+        }
+        h1 {
+          font-size: 1.8em;
+        }
+        table {
+          font-size: 0.82em;
+        }
+        th,
+        td {
+          padding: 8px 10px;
+        }
+        .topbar {
+          padding: 10px 16px;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="topbar">
+      <span class="logo">OnlyKrida</span><a href="brd.html">BRD</a
+      ><a href="prd.html" class="active">PRD</a><a href="trd.html">TRD</a
+      ><a href="improvements.html">Top 15 Critical Improvements</a>
+    </nav>
+    <h1 id="product-requirement-document-prd">Product Requirement Document (PRD)</h1>
+    <h1 id="onlykrida-indias-first-ai-powered-sports-talent-discovery-platform">
+      OnlyKrida — India's First AI-Powered Sports Talent Discovery Platform
+    </h1>
+    <blockquote>
+      <p>
+        <strong>Version</strong>: 1.0 | <strong>Date</strong>: April 2026 | <strong>Status</strong>:
+        MVP Complete | <strong>Classification</strong>: Confidential
+      </p>
+    </blockquote>
+    <hr />
+    <h2 id="table-of-contents">Table of Contents</h2>
+    <ol>
+      <li><a href="#1-product-architecture-overview">Product Architecture Overview</a></li>
+      <li><a href="#2-feature-by-feature-breakdown">Feature-by-Feature Breakdown</a></li>
+      <li><a href="#3-user-flows">User Flows</a></li>
+      <li><a href="#4-uxui-guidelines">UX/UI Guidelines</a></li>
+      <li><a href="#5-feature-prioritization">Feature Prioritization</a></li>
+    </ol>
+    <hr />
+    <h1 id="1-product-architecture-overview">1. Product Architecture Overview</h1>
+    <h2 id="11-system-architecture">1.1 System Architecture</h2>
+    <pre><code>┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENT LAYER                              │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │           React Native (Expo SDK 54)                      │   │
+│  │  ┌────────┐ ┌──────────┐ ┌────────┐ ┌──────────────┐    │   │
+│  │  │ Screens │ │Components│ │ Hooks  │ │   Services   │    │   │
+│  │  │  (20+) │ │   (47)   │ │  (12)  │ │  (AI, etc.)  │    │   │
+│  │  └────┬───┘ └─────┬────┘ └───┬────┘ └──────┬───────┘    │   │
+│  │       └──────┬─────┴─────────┴──────────────┘            │   │
+│  │              │ Expo Router (file-based routing)            │   │
+│  └──────────────┼───────────────────────────────────────────┘   │
+│                 │                                                 │
+│  ┌──────────────▼───────────────────────────────────────────┐   │
+│  │              State Management Layer                       │   │
+│  │  ┌─────────┐ ┌─────────┐ ┌──────────┐ ┌────────────┐   │   │
+│  │  │  Auth   │ │  Posts  │ │ Messages │ │  Scouting   │   │   │
+│  │  │ Context │ │ Context │ │  Context │ │   Context   │   │   │
+│  │  └────┬────┘ └────┬────┘ └────┬─────┘ └─────┬──────┘   │   │
+│  │       │           │           │              │           │   │
+│  │  ┌────┴────┐ ┌────┴────┐ ┌────┴─────┐ ┌─────┴──────┐   │   │
+│  │  │ Follow  │ │ Search  │ │  Groups  │ │  Fitness   │   │   │
+│  │  │ Context │ │ Context │ │  Context │ │  Context   │   │   │
+│  │  └─────────┘ └─────────┘ └──────────┘ └────────────┘   │   │
+│  │  + Notifications Context, Users Context, AI Context      │   │
+│  │  + Opportunities Context                                  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │ HTTPS / WebSocket
+┌─────────────────────────▼───────────────────────────────────────┐
+│                      SUPABASE LAYER                              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │
+│  │   Auth   │ │ Database │ │ Storage  │ │     Realtime     │   │
+│  │          │ │ (Postgres│ │(3 buckets│ │  (WebSocket)     │   │
+│  │ JWT/     │ │  13 tbls │ │ avatars, │ │  Posts, Messages │   │
+│  │ Session) │ │  w/ RLS) │ │ posts,   │ │  Notifications,  │   │
+│  │          │ │          │ │ videos)  │ │  Follows, Opps   │   │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────────────┘   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              Edge Functions (Planned)                      │   │
+│  │  AI Proxy | Payment Webhooks | Push Notifications         │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────────┐
+│                    EXTERNAL SERVICES                             │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │
+│  │Claude API│ │ Razorpay │ │Expo Push │ │    CDN/Media     │   │
+│  │(Opus +   │ │(Planned) │ │  Service │ │   (Planned)      │   │
+│  │ Sonnet)  │ │          │ │          │ │                   │   │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+    <h2 id="12-tech-stack-summary">1.2 Tech Stack Summary</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Technology</th>
+          <th>Version</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Framework</td>
+          <td>React Native (Expo)</td>
+          <td>SDK 54</td>
+          <td>Cross-platform mobile + web</td>
+        </tr>
+        <tr>
+          <td>Language</td>
+          <td>TypeScript</td>
+          <td>5.9</td>
+          <td>Type safety</td>
+        </tr>
+        <tr>
+          <td>Routing</td>
+          <td>Expo Router</td>
+          <td>6.0</td>
+          <td>File-based navigation</td>
+        </tr>
+        <tr>
+          <td>Backend</td>
+          <td>Supabase</td>
+          <td>—</td>
+          <td>Auth + DB + Storage + Realtime</td>
+        </tr>
+        <tr>
+          <td>Database</td>
+          <td>PostgreSQL</td>
+          <td>15+</td>
+          <td>Relational data with RLS</td>
+        </tr>
+        <tr>
+          <td>AI</td>
+          <td>Claude API</td>
+          <td>Opus 4.6 / Sonnet 4.6</td>
+          <td>Scouting, coaching, chat</td>
+        </tr>
+        <tr>
+          <td>State</td>
+          <td>React Context + React Query</td>
+          <td>—</td>
+          <td>Client + server state</td>
+        </tr>
+        <tr>
+          <td>Media</td>
+          <td>expo-image + expo-video</td>
+          <td>—</td>
+          <td>Cached media handling</td>
+        </tr>
+        <tr>
+          <td>Icons</td>
+          <td>Lucide React Native</td>
+          <td>—</td>
+          <td>700+ SVG icons</td>
+        </tr>
+        <tr>
+          <td>Build</td>
+          <td>EAS Build</td>
+          <td>—</td>
+          <td>Cloud builds for iOS/Android</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="13-data-flow-architecture">1.3 Data Flow Architecture</h2>
+    <pre><code>User Action → Screen → Context Provider → Supabase Client → PostgreSQL
+                                                  ↕
+                                          Realtime Subscription
+                                                  ↕
+                                    All Connected Clients Updated
+
+AI Request → Screen → AI Context → services/ai.ts → Claude API → Response
+                                                                     ↓
+                                                              Cache in DB
+</code></pre>
+    <hr />
+    <h1 id="2-feature-by-feature-breakdown">2. Feature-by-Feature Breakdown</h1>
+    <hr />
+    <h2 id="21-authentication-system">2.1 Authentication System</h2>
+    <h3 id="purpose">Purpose</h3>
+    <p>
+      Provide secure, role-aware authentication that collects role-specific information during
+      signup to personalize the experience from the first interaction.
+    </p>
+    <h3 id="user-stories">User Stories</h3>
+    <ul>
+      <li>
+        As a new user, I want to sign up with my email and password so I can create an account
+      </li>
+      <li>
+        As a new user, I want to select my role (athlete, scout, coach, team, etc.) so the platform
+        is customized for me
+      </li>
+      <li>
+        As an athlete, I want to provide my sport, position, and physical stats during signup so
+        scouts can find me
+      </li>
+      <li>
+        As a scout, I want to specify my organization and preferred regions during signup so I get
+        relevant recommendations
+      </li>
+      <li>
+        As a returning user, I want to stay logged in across app restarts so I don't have to log in
+        every time
+      </li>
+    </ul>
+    <h3 id="detailed-functionality">Detailed Functionality</h3>
+    <p>
+      <strong>Welcome Screen</strong> (<code>app/(auth)/welcome.tsx</code>)<br />
+      - Animated logo with "Powered by AI" badge<br />
+      - Hero text: "YOUR TALENT DESERVES A STAGE"<br />
+      - 3 feature cards: Discover, Connect, Grow<br />
+      - CTA buttons: "Get Started" and "Already have an account?"
+    </p>
+    <p>
+      <strong>Login Screen</strong> (<code>app/(auth)/login.tsx</code>)<br />
+      - Email and password fields with validation<br />
+      - Error handling for invalid credentials<br />
+      - "Forgot Password" link (planned)<br />
+      - Redirect to home on success
+    </p>
+    <p>
+      <strong>Signup Flow</strong>:<br />
+      1. Generic signup form → email, password, name<br />
+      2. Role selection screen → choose from 9 roles<br />
+      3. Role-specific form:
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Fields Collected</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Athlete</td>
+          <td>Sport, Position, Date of Birth, Height, Weight, Career Goals</td>
+        </tr>
+        <tr>
+          <td>Scout</td>
+          <td>
+            Organization, Regions of Interest, Athlete Levels (youth/college/pro), What You're
+            Looking For
+          </td>
+        </tr>
+        <tr>
+          <td>Coach</td>
+          <td>Years of Experience, Coaching Philosophy, Team History, Specialties</td>
+        </tr>
+        <tr>
+          <td>Team</td>
+          <td>League/Division, Founded Date, Home Venue, Team Size</td>
+        </tr>
+        <tr>
+          <td>Trainer</td>
+          <td>Certifications, Specialties, Experience Years</td>
+        </tr>
+        <tr>
+          <td>Fan</td>
+          <td>Favorite Sports (selected from list)</td>
+        </tr>
+        <tr>
+          <td>Gym</td>
+          <td>Facility Name, Location, Sports Offered</td>
+        </tr>
+        <tr>
+          <td>Brand</td>
+          <td>Company Name, Industry, Sponsorship Interests</td>
+        </tr>
+        <tr>
+          <td>Academy</td>
+          <td>Academy Name, Sports Offered, Student Count</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Session Management</strong>:<br />
+      - Supabase Auth with JWT tokens<br />
+      - <code>onAuthStateChange</code> listener for session updates<br />
+      - AsyncStorage (mobile) / localStorage (web) for persistence<br />
+      - 8-second timeout on profile fetch with fallback to auth metadata<br />
+      - Auto token refresh
+    </p>
+    <h3 id="edge-cases">Edge Cases</h3>
+    <ul>
+      <li>Network failure during signup → show retry, don't lose form data</li>
+      <li>Duplicate email → clear error message "Account already exists"</li>
+      <li>Session expires mid-use → redirect to login, preserve navigation state</li>
+      <li>User changes role → not supported (create new account)</li>
+      <li>
+        Profile fetch fails → fallback user from auth metadata (name, email, role from signup)
+      </li>
+    </ul>
+    <h3 id="data-involved">Data Involved</h3>
+    <ul>
+      <li><strong>Supabase Auth</strong>: <code>auth.users</code> table (managed by Supabase)</li>
+      <li><strong>profiles table</strong>: Created on signup completion with role-specific data</li>
+    </ul>
+    <h3 id="ui-behavior">UI Behavior</h3>
+    <ul>
+      <li>Green step indicator (dots) shows progress through signup flow</li>
+      <li>Animated transitions between steps</li>
+      <li>Form validation with inline error messages</li>
+      <li>Loading state during API calls</li>
+      <li>Success animation on completion</li>
+    </ul>
+    <h3 id="test-accounts">Test Accounts</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Email</th>
+          <th>Password</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Athlete</td>
+          <td>test.athlete@onlykrida.com</td>
+          <td>test123</td>
+        </tr>
+        <tr>
+          <td>Scout</td>
+          <td>test.scout@onlykrida.com</td>
+          <td>test123</td>
+        </tr>
+        <tr>
+          <td>Coach</td>
+          <td>test.coach@onlykrida.com</td>
+          <td>test123</td>
+        </tr>
+        <tr>
+          <td>Team</td>
+          <td>test.team@onlykrida.com</td>
+          <td>test123</td>
+        </tr>
+        <tr>
+          <td>Fan</td>
+          <td>test.fan@onlykrida.com</td>
+          <td>test123</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="future-enhancements">Future Enhancements</h3>
+    <ul>
+      <li>OAuth (Google, Apple Sign-In)</li>
+      <li>Phone OTP authentication</li>
+      <li>Multi-factor authentication for scouts/teams</li>
+      <li>Single sign-on for sports federations</li>
+    </ul>
+    <hr />
+    <h2 id="22-profile-system">2.2 Profile System</h2>
+    <h3 id="purpose_1">Purpose</h3>
+    <p>
+      Create a comprehensive digital sports identity that serves as the athlete's resume, the
+      scout's evaluation tool, and the coach's progress tracker.
+    </p>
+    <h3 id="user-stories_1">User Stories</h3>
+    <ul>
+      <li>
+        As an athlete, I want to showcase my sport, position, achievements, and stats so scouts can
+        evaluate me
+      </li>
+      <li>
+        As a scout, I want to see verified fitness data on athlete profiles so I can trust the
+        information
+      </li>
+      <li>As a user, I want to see how complete my profile is so I know what to add</li>
+      <li>As an athlete, I want to know who viewed my profile so I can gauge scout interest</li>
+      <li>As a user, I want a verification badge so others trust my profile</li>
+    </ul>
+    <h3 id="detailed-functionality_1">Detailed Functionality</h3>
+    <p>
+      <strong>Profile Page</strong> (<code>app/(tabs)/profile.tsx</code> — 1,124 lines)<br />
+      - Avatar (circular, with camera icon overlay for editing)<br />
+      - Cover photo (banner)<br />
+      - Name, role badge (color-coded), verification badge (if verified)<br />
+      - Bio (expandable text)<br />
+      - Stats bar: Posts count | Followers | Following<br />
+      - Profile completion progress bar (percentage)<br />
+      - Tab sections:<br />
+      - <strong>Posts</strong>: Grid of user's posts (3-column grid)<br />
+      - <strong>Achievements</strong>: List of achievement cards (title, description, date, icon)<br />
+      - <strong>Stats</strong>: Key-value pairs of performance metrics<br />
+      - <strong>About</strong>: Extended bio, location, sport, position, role-specific details
+    </p>
+    <p>
+      <strong>Profile Completion System</strong>
+      (<code>components/ProfileCompletion.tsx</code>)<br />
+      - Calculates percentage based on:<br />
+      - Avatar uploaded (15%)<br />
+      - Bio written (15%)<br />
+      - Sport selected (10%)<br />
+      - Position selected (10%)<br />
+      - At least 1 achievement added (15%)<br />
+      - At least 1 post created (15%)<br />
+      - Fitness test completed (10%)<br />
+      - Cover photo uploaded (10%)<br />
+      - Green progress bar with percentage label<br />
+      - Actionable tips: "Add a highlight video to reach 80%"
+    </p>
+    <p>
+      <strong>Profile Viewers</strong> (<code>components/ProfileViewers.tsx</code>)<br />
+      - Shows avatars of recent viewers<br />
+      - Text: "5 scouts viewed your profile this week"<br />
+      - Drives engagement and FOMO<br />
+      - Visible only on own profile
+    </p>
+    <p>
+      <strong>Verification Badge</strong> (<code>components/VerificationBadge.tsx</code>)<br />
+      - Blue checkmark icon next to name<br />
+      - 4 verification tiers (future):<br />
+      1. Self-reported (no badge)<br />
+      2. App-measured (gray badge)<br />
+      3. Coach-verified (blue badge)<br />
+      4. Center-tested (gold badge)
+    </p>
+    <p>
+      <strong>Edit Profile</strong> (<code>app/edit-profile.tsx</code>)<br />
+      - Avatar upload (image picker → Supabase Storage → URL saved to profile)<br />
+      - Cover photo upload<br />
+      - Name, bio, location fields<br />
+      - Sport and position dropdowns<br />
+      - Role-specific fields (from signup)<br />
+      - Achievements CRUD (add/edit/delete)<br />
+      - Stats editing (key-value pairs)
+    </p>
+    <p>
+      <strong>Public Profile</strong> (<code>app/user/[id].tsx</code>)<br />
+      - Same layout as own profile but with:<br />
+      - Follow/Unfollow button<br />
+      - Message button<br />
+      - "Who viewed you" is hidden<br />
+      - Profile edit is hidden<br />
+      - View tracking (records that current user viewed this profile)
+    </p>
+    <h3 id="edge-cases_1">Edge Cases</h3>
+    <ul>
+      <li>Avatar upload fails → keep existing avatar, show error toast</li>
+      <li>Very long bio → truncate with "Read more" expansion</li>
+      <li>No posts yet → show empty state with CTA "Share your first highlight"</li>
+      <li>User with 0 followers → show encouraging message, not empty state</li>
+      <li>Profile viewed by own user → don't record in profile viewers</li>
+    </ul>
+    <h3 id="data-involved_1">Data Involved</h3>
+    <ul>
+      <li>
+        <strong>profiles table</strong>: All columns (id, email, name, role, avatar, cover_photo,
+        bio, location, verified, sport, position, achievements JSONB, stats JSONB,
+        role_specific_data JSONB, followers_count, following_count, posts_count)
+      </li>
+      <li>
+        <strong>Storage</strong>: <code>avatars</code> bucket (2MB limit), <code>posts</code> bucket
+        for cover photos
+      </li>
+      <li><strong>follows table</strong>: For follower/following counts and relationships</li>
+    </ul>
+    <h3 id="ui-behavior_1">UI Behavior</h3>
+    <ul>
+      <li>Skeleton loading while profile data fetches</li>
+      <li>Pull-to-refresh for updated data</li>
+      <li>Haptic feedback on follow/unfollow (native)</li>
+      <li>Smooth avatar transition when uploading new photo</li>
+      <li>Tab switching with horizontal scroll indicator</li>
+    </ul>
+    <h3 id="future-enhancements_1">Future Enhancements</h3>
+    <ul>
+      <li>Video profile header (autoplay highlight reel)</li>
+      <li>QR code for profile sharing at events</li>
+      <li>Profile analytics (views over time, engagement trends)</li>
+      <li>Achievement verification by third parties</li>
+      <li>Endorsements from coaches (like LinkedIn endorsements)</li>
+      <li>Comparison mode (compare two athletes side by side)</li>
+    </ul>
+    <hr />
+    <h2 id="23-feed-system">2.3 Feed System</h2>
+    <h3 id="purpose_2">Purpose</h3>
+    <p>
+      Enable athletes to share their sports journey through content — training clips, match
+      highlights, achievements — while building engagement and visibility among scouts, coaches, and
+      fans.
+    </p>
+    <h3 id="user-stories_2">User Stories</h3>
+    <ul>
+      <li>As an athlete, I want to post training videos so scouts can see my skills</li>
+      <li>As a user, I want to scroll through a feed of sports content</li>
+      <li>As a user, I want to like, comment, and share posts</li>
+      <li>As a scout, I want to see relevant content in my feed based on my preferences</li>
+      <li>As an athlete, I want to see how many views my posts get</li>
+    </ul>
+    <h3 id="detailed-functionality_2">Detailed Functionality</h3>
+    <p>
+      <strong>Home Feed</strong> (<code>app/(tabs)/(home)/index.tsx</code>)<br />
+      - 6 role-specific home screens:<br />
+      - <strong>AthleteHome</strong>: Quick actions (upload, share, browse), post feed, "Who is
+      watching" section, AI suggestions<br />
+      - <strong>ScoutHome</strong>: Dashboard header with stats, AI recommendation cards, shortlist
+      section, search<br />
+      - <strong>CoachHome</strong>: Quick actions, recent posts, athlete roster<br />
+      - <strong>TeamHome</strong>: Create opportunity CTA, postings, roster, applications<br />
+      - <strong>BrandHome</strong>: Sponsorship opportunities, talent search, messaging<br />
+      - <strong>FanHome</strong>: Feed of followed athletes, trending, sports news
+    </p>
+    <p>
+      <strong>Create Post</strong> (<code>app/(tabs)/create.tsx</code> — 657 lines)<br />
+      - Media selection: Image or Video from gallery/camera<br />
+      - Caption input (multiline, 500 char limit)<br />
+      - Post type selection: Highlight, Training, Match, Achievement<br />
+      - Sport tag selection<br />
+      - Preview before posting<br />
+      - Upload progress indicator<br />
+      - Publish → uploads media to Supabase Storage → creates post record
+    </p>
+    <p>
+      <strong>Post Card</strong> (<code>components/home/shared/PostCard.tsx</code>)<br />
+      - User avatar + name + role badge + time ago<br />
+      - Post content/caption<br />
+      - Media display (image or video player)<br />
+      - Action bar: Like (heart) | Comment (bubble) | Share (arrow) | Views count<br />
+      - Like animation (scale bounce)<br />
+      - Double-tap to like (mobile)
+    </p>
+    <p>
+      <strong>Post Detail</strong> (<code>app/post/[id].tsx</code>)<br />
+      - Full post view<br />
+      - Comments list (infinite scroll)<br />
+      - Comment input<br />
+      - Like/unlike on comments<br />
+      - Share functionality
+    </p>
+    <p>
+      <strong>Comments</strong> (<code>components/CommentsModal.tsx</code>)<br />
+      - Bottom sheet modal<br />
+      - Comment list with user avatars<br />
+      - Reply to comment (flat, not threaded)<br />
+      - Like individual comments<br />
+      - Delete own comments<br />
+      - Timestamp on each comment
+    </p>
+    <p>
+      <strong>Feed Ranking</strong>:<br />
+      - Currently: Reverse chronological (newest first)<br />
+      - Real-time updates: New posts appear at top via Supabase subscription<br />
+      - Pagination: 20 posts per page, infinite scroll loads more
+    </p>
+    <h3 id="edge-cases_2">Edge Cases</h3>
+    <ul>
+      <li>Video too large (&gt;50MB) → show error, suggest compression</li>
+      <li>Post upload fails mid-way → retry mechanism, don't lose caption</li>
+      <li>Offensive content → planned: content moderation system (see Critical Improvements)</li>
+      <li>No posts in feed → show empty state with suggested users to follow</li>
+      <li>User blocks another user → hide their posts (future)</li>
+      <li>Deleted post → remove from all feeds in real-time</li>
+    </ul>
+    <h3 id="data-involved_2">Data Involved</h3>
+    <ul>
+      <li>
+        <strong>posts table</strong>: id, user_id, title, description, video_url, image_url, type,
+        likes_count, comments_count, views_count, shares_count
+      </li>
+      <li><strong>likes table</strong>: user_id, post_id (unique constraint)</li>
+      <li><strong>comments table</strong>: user_id, post_id, content, likes_count</li>
+      <li><strong>comment_likes table</strong>: user_id, comment_id</li>
+      <li><strong>Storage</strong>: <code>posts</code> bucket (50MB max, MP4/MOV/images)</li>
+    </ul>
+    <h3 id="ui-behavior_2">UI Behavior</h3>
+    <ul>
+      <li>Pull-to-refresh loads latest posts</li>
+      <li>Infinite scroll with loading spinner at bottom</li>
+      <li>Skeleton screens while loading</li>
+      <li>Like animation: heart icon scales up briefly</li>
+      <li>Video autoplay (muted) when visible in viewport</li>
+      <li>Tap video to toggle play/pause</li>
+      <li>Image pinch-to-zoom</li>
+    </ul>
+    <h3 id="future-enhancements_2">Future Enhancements</h3>
+    <ul>
+      <li>Stories (24-hour ephemeral content)</li>
+      <li>Reels (short-form vertical video)</li>
+      <li>Live streaming</li>
+      <li>Polls and Q&amp;A in posts</li>
+      <li>AI-powered feed ranking (personalized based on interests)</li>
+      <li>Content tagging (tag other users, tag sport events)</li>
+      <li>Hashtags with trending topics</li>
+    </ul>
+    <hr />
+    <h2 id="24-explore-discovery-engine">2.4 Explore / Discovery Engine</h2>
+    <h3 id="purpose_3">Purpose</h3>
+    <p>
+      Enable scouts, coaches, teams, and fans to discover athletes and other users through advanced
+      search and filtering — the core "matchmaking" surface of the platform.
+    </p>
+    <h3 id="user-stories_3">User Stories</h3>
+    <ul>
+      <li>
+        As a scout, I want to search for athletes by sport, position, and location so I can find
+        talent matching my needs
+      </li>
+      <li>As a user, I want to discover trending athletes on the platform</li>
+      <li>As a scout, I want to filter by verified-only profiles so I can trust the data</li>
+      <li>As an athlete, I want to appear in search results so scouts can find me</li>
+      <li>As a fan, I want to explore athletes by sport to find new people to follow</li>
+    </ul>
+    <h3 id="detailed-functionality_3">Detailed Functionality</h3>
+    <p>
+      <strong>Discover Screen</strong> (<code>app/(tabs)/discover.tsx</code> — 1,750 lines)<br />
+      - Search bar with real-time text search (pg_trgm trigram matching)<br />
+      - Filter categories:<br />
+      1. <strong>Sport</strong>: Football, Cricket, Basketball, Badminton, Tennis, Swimming,
+      Athletics, Kabaddi, Hockey, Wrestling, Boxing, Table Tennis, Volleyball, Others<br />
+      2. <strong>Role</strong>: Filter by user role (athlete, coach, scout, team, etc.)<br />
+      3. <strong>Location</strong>: Text input with suggestions<br />
+      4. <strong>Verified</strong>: Toggle to show only verified users<br />
+      5. <strong>Sort</strong>: Newest, Most Followers, Most Posts<br />
+      - 5 FlatLists for different discovery sections:<br />
+      1. Trending Athletes (top athletes by recent engagement)<br />
+      2. New Users (recently joined)<br />
+      3. Verified Users (trusted profiles)<br />
+      4. By Sport (categorized sections)<br />
+      5. Search Results (when query is active)
+    </p>
+    <p>
+      <strong>User Card</strong> (<code>components/home/shared/UserCard.tsx</code>)<br />
+      - Avatar + name + role badge<br />
+      - Sport + position (if athlete)<br />
+      - Location<br />
+      - Verification badge<br />
+      - Follower count<br />
+      - Follow/Message action buttons<br />
+      - Tap → navigate to public profile
+    </p>
+    <p>
+      <strong>Trending Algorithm</strong> (current):<br />
+      - Score = (followers_count × 2) + (posts_count × 3) + (recent_likes × 5)<br />
+      - Recalculated on page load<br />
+      - Shows top 20 athletes
+    </p>
+    <h3 id="edge-cases_3">Edge Cases</h3>
+    <ul>
+      <li>
+        Search returns 0 results → show helpful empty state ("No athletes found matching your
+        filters. Try broadening your search.")
+      </li>
+      <li>Very common name search → paginated results, relevance-ranked</li>
+      <li>Location typo → trigram search handles fuzzy matching</li>
+      <li>All filters active → AND logic (may return 0 results, show guidance)</li>
+      <li>User not in search index → all users are searchable by default</li>
+    </ul>
+    <h3 id="data-involved_3">Data Involved</h3>
+    <ul>
+      <li><strong>profiles table</strong>: Full-text search on name, location using pg_trgm</li>
+      <li>
+        Filters query:
+        <code
+          >SELECT * FROM profiles WHERE role = ? AND sport = ? AND location ILIKE ? AND verified = ?
+          ORDER BY ? LIMIT 20 OFFSET ?</code
+        >
+      </li>
+      <li><strong>Indexes</strong>: name (trigram), role, sport, location, verified</li>
+    </ul>
+    <h3 id="future-enhancements_3">Future Enhancements</h3>
+    <ul>
+      <li>Map-based discovery (show athletes on a map)</li>
+      <li>Recommendation engine ("Athletes similar to ones you shortlisted")</li>
+      <li>Advanced stat filters (speed &gt; 80, stamina &gt; 70)</li>
+      <li>Save search filters for later</li>
+      <li>Share search results</li>
+    </ul>
+    <hr />
+    <h2 id="25-scout-dashboard-matching-engine">2.5 Scout Dashboard &amp; Matching Engine</h2>
+    <h3 id="purpose_4">Purpose</h3>
+    <p>
+      The core value proposition for paying users — an AI-powered system that matches scouts with
+      athletes based on weighted preferences, producing fit scores that save scouts hundreds of
+      hours of manual evaluation.
+    </p>
+    <h3 id="user-stories_4">User Stories</h3>
+    <ul>
+      <li>
+        As a scout, I want to set my preferences (sport, positions, weight factors) so the AI knows
+        what I'm looking for
+      </li>
+      <li>
+        As a scout, I want AI-ranked athlete recommendations with fit scores so I can quickly find
+        the best matches
+      </li>
+      <li>As a scout, I want to shortlist athletes for further evaluation</li>
+      <li>As a scout, I want to compare shortlisted athletes side by side</li>
+      <li>As a scout, I want to see why the AI recommended a specific athlete (score breakdown)</li>
+    </ul>
+    <h3 id="detailed-functionality_4">Detailed Functionality</h3>
+    <p>
+      <strong>Scout Preferences</strong> (<code>app/scout-preferences.tsx</code>)<br />
+      - Sport selection (single select)<br />
+      - Preferred positions (multi-select chips)<br />
+      - Region preferences (multi-select)<br />
+      - Weight sliders (0-100 each, must sum to 100):<br />
+      - Skill weight (default: 30)<br />
+      - Speed weight (default: 25)<br />
+      - Stamina weight (default: 25)<br />
+      - Position match weight (default: 20)<br />
+      - Save preferences → stored in <code>scout_preferences</code> table
+    </p>
+    <p>
+      <strong>AI Recommendation Engine</strong>:<br />
+      1. Scout triggers "Get Recommendations" (or auto-triggers on dashboard load)<br />
+      2. System fetches scout preferences from <code>scout_preferences</code><br />
+      3. System fetches all athletes matching sport/position criteria from
+      <code>player_stats</code> + <code>profiles</code><br />
+      4. Sends to Claude Opus (with adaptive thinking enabled):<br />
+      ```<br />
+      System: You are a sports scouting AI. Analyze athletes against scout preferences.<br />
+      For each athlete, calculate:<br />
+      - skill_score (0-100) based on their stats<br />
+      - speed_score (0-100) based on their sprint/agility data<br />
+      - stamina_score (0-100) based on their endurance data<br />
+      - position_match (0-100) based on position alignment
+    </p>
+    <p>
+      Final fit_score = (skill × weight_skill) + (speed × weight_speed) + <br />
+      (stamina × weight_stamina) + (position × weight_position) / 100
+    </p>
+    <p>
+      Return JSON array sorted by fit_score DESC.<br />
+      <code>`` 5. Results cached in</code>ai_recommendations` table<br />
+      6. Displayed as cards with fit scores
+    </p>
+    <p>
+      <strong>Scout Home Dashboard</strong> (<code>components/home/ScoutHome.tsx</code>)<br />
+      - Dashboard header: Total athletes matched, shortlist count, searches performed<br />
+      - AI recommendation cards (scrollable):<br />
+      - Athlete avatar, name, sport, position<br />
+      - Fit score (large, color-coded: green 80+, orange 60-79, red &lt;60)<br />
+      - Score breakdown (skill, speed, stamina, position match as mini bar chart)<br />
+      - "Shortlist" and "Message" action buttons<br />
+      - Shortlist section: Previously saved athletes
+    </p>
+    <p>
+      <strong>AI Scout Card</strong> (<code>components/AIScoutCard.tsx</code>)<br />
+      - Expandable card showing:<br />
+      - Athlete basic info<br />
+      - Fit score with colored badge<br />
+      - Breakdown bars (4 categories)<br />
+      - AI notes (1-2 sentence reasoning)<br />
+      - Quick actions: Shortlist, View Profile, Message
+    </p>
+    <h3 id="matching-algorithm-pseudo-code">Matching Algorithm (Pseudo-code)</h3>
+    <pre><code>for each athlete matching scout.sport:
+  skill_score = normalize(athlete.player_stats.skill, 0, 100)
+  speed_score = normalize(athlete.sprint_data OR player_stats.speed, 0, 100)
+  stamina_score = normalize(athlete.beep_test_vo2max OR player_stats.stamina, 0, 100)
+  position_match = 100 if athlete.position in scout.preferred_positions else 50
+
+  fit_score = (
+    skill_score * scout.weight_skill +
+    speed_score * scout.weight_speed +
+    stamina_score * scout.weight_stamina +
+    position_match * scout.weight_position_match
+  ) / 100
+
+  recommendations.append({ athlete, fit_score, breakdown })
+
+sort(recommendations, by=fit_score, descending)
+return top 20
+</code></pre>
+    <h3 id="edge-cases_4">Edge Cases</h3>
+    <ul>
+      <li>No athletes match criteria → show empty state with suggestion to broaden preferences</li>
+      <li>
+        Scout hasn't set preferences → prompt to set preferences before showing recommendations
+      </li>
+      <li>AI API failure → show cached recommendations with "Last updated X hours ago" note</li>
+      <li>
+        Athlete data is sparse (no fitness tests) → AI notes this in breakdown, lower confidence
+        score
+      </li>
+      <li>Duplicate shortlisting → prevent via UI (toggle button state)</li>
+      <li>Scout views same recommendations repeatedly → cache with 6-hour TTL</li>
+    </ul>
+    <h3 id="data-involved_4">Data Involved</h3>
+    <ul>
+      <li>
+        <strong>scout_preferences</strong>: scout_id, sport, preferred_positions[], weight_skill,
+        weight_speed, weight_stamina, weight_position_match
+      </li>
+      <li>
+        <strong>player_stats</strong>: player_id, sport, position, skill, speed, stamina (0-100)
+      </li>
+      <li>
+        <strong>ai_recommendations</strong>: scout_id, player_id, fit_score, breakdown (JSONB),
+        notes
+      </li>
+      <li><strong>profiles</strong>: For athlete basic info display</li>
+    </ul>
+    <h3 id="future-enhancements_4">Future Enhancements</h3>
+    <ul>
+      <li>
+        ML model trained on scout preferences + historical matches (which recommendations led to
+        actual signings)
+      </li>
+      <li>Video analysis integration (AI evaluates technique from uploaded clips)</li>
+      <li>Multi-sport comparison (compare athlete to benchmarks across sports)</li>
+      <li>Automated scouting reports (PDF generation)</li>
+      <li>Collaborative scouting (share recommendations with team)</li>
+      <li>Real-time notifications when new athletes match preferences</li>
+    </ul>
+    <hr />
+    <h2 id="26-messaging-system">2.6 Messaging System</h2>
+    <h3 id="purpose_5">Purpose</h3>
+    <p>
+      Enable direct communication between all platform users, with a focus on scout-athlete and
+      coach-athlete conversations. The messaging system is the bridge between discovery and
+      recruitment.
+    </p>
+    <h3 id="user-stories_5">User Stories</h3>
+    <ul>
+      <li>As a scout, I want to message an athlete directly after viewing their profile</li>
+      <li>As an athlete, I want to receive and respond to messages from scouts</li>
+      <li>As a coach, I want to create group chats for my team</li>
+      <li>As a user, I want to share posts with others via message</li>
+      <li>As a user, I want to see read receipts so I know my message was seen</li>
+    </ul>
+    <h3 id="detailed-functionality_5">Detailed Functionality</h3>
+    <p>
+      <strong>Message List</strong> (<code>app/(tabs)/messages.tsx</code> — 582 lines)<br />
+      - List of conversations sorted by most recent message<br />
+      - Each conversation row: Avatar, Name, Last message preview, Timestamp, Unread badge<br />
+      - Search conversations by name<br />
+      - Tab layout: All | Unread<br />
+      - New message button → user search → start conversation
+    </p>
+    <p>
+      <strong>Chat Detail</strong> (<code>app/chat/[id].tsx</code>)<br />
+      - Message bubbles: Sent (right, green-tinted) | Received (left, dark)<br />
+      - Message types: Text, Image, Video, Shared Post<br />
+      - Input bar: Text input + attachment button + send button<br />
+      - Read receipts: Single check (sent), Double check (delivered), Blue checks (read)<br />
+      - Typing indicator (future)<br />
+      - Load older messages on scroll up (pagination)
+    </p>
+    <p>
+      <strong>Group Chat</strong> (<code>app/chat/group/[id].tsx</code>)<br />
+      - Group name and avatar<br />
+      - Member list (expandable)<br />
+      - Add/remove members<br />
+      - Same message types as 1-on-1<br />
+      - Group admin actions (rename, delete group)
+    </p>
+    <p>
+      <strong>Post Sharing</strong> (<code>components/ShareModal.tsx</code>)<br />
+      - Share button on posts opens contact picker<br />
+      - Select recipient → send post as special message type<br />
+      - Post preview card in message bubble
+    </p>
+    <h3 id="edge-cases_5">Edge Cases</h3>
+    <ul>
+      <li>Both users offline → messages queued, delivered on reconnect</li>
+      <li>Message to blocked user → prevent send, show error (future: blocking)</li>
+      <li>Very long message → no limit currently, truncate in preview with "..."</li>
+      <li>Media upload in message fails → show retry button on message bubble</li>
+      <li>Group with 1 member (everyone else left) → show empty state</li>
+      <li>Message from deleted account → show "Deleted User" with gray avatar</li>
+    </ul>
+    <h3 id="data-involved_5">Data Involved</h3>
+    <ul>
+      <li>
+        <strong>messages</strong>: id, sender_id, receiver_id, content, media_url, post_id, status
+        (sent/delivered/read), read, created_at
+      </li>
+      <li><strong>Real-time</strong>: Supabase subscription on messages table (INSERT, UPDATE)</li>
+      <li><strong>Storage</strong>: posts bucket for shared media</li>
+    </ul>
+    <h3 id="ui-behavior_3">UI Behavior</h3>
+    <ul>
+      <li>Real-time message delivery (appears instantly for both parties)</li>
+      <li>Unread count badge on Messages tab</li>
+      <li>Haptic feedback on message send (native)</li>
+      <li>Swipe to delete message (own messages only)</li>
+      <li>Long-press for message actions (copy, delete, reply)</li>
+    </ul>
+    <h3 id="future-enhancements_5">Future Enhancements</h3>
+    <ul>
+      <li>Voice messages</li>
+      <li>Video calling</li>
+      <li>Message reactions (emoji)</li>
+      <li>Message search</li>
+      <li>Message forwarding</li>
+      <li>Disappearing messages</li>
+      <li>Pin important messages</li>
+      <li>Chat translation (multi-language)</li>
+    </ul>
+    <hr />
+    <h2 id="27-opportunities-system">2.7 Opportunities System</h2>
+    <h3 id="purpose_6">Purpose</h3>
+    <p>
+      A marketplace connecting teams/organizations (who have opportunities) with athletes (who are
+      looking for them). Covers tryouts, tournaments, scholarships, sponsorships, and contracts.
+    </p>
+    <h3 id="user-stories_6">User Stories</h3>
+    <ul>
+      <li>As a team, I want to post a tryout opportunity so athletes can apply</li>
+      <li>As an athlete, I want to browse and filter opportunities by sport and category</li>
+      <li>As an athlete, I want to apply to an opportunity with a cover letter</li>
+      <li>As a team, I want to review and manage applications (accept/reject)</li>
+      <li>As an athlete, I want to track my application status</li>
+    </ul>
+    <h3 id="detailed-functionality_6">Detailed Functionality</h3>
+    <p>
+      <strong>Opportunities Tab</strong> (<code>app/(tabs)/opportunities.tsx</code> — 1,609
+      lines)<br />
+      - Category filters: Tryouts | Tournaments | Scholarships | Sponsorships | Contracts<br />
+      - Each opportunity card:<br />
+      - Team logo + name<br />
+      - Opportunity title<br />
+      - Sport + location<br />
+      - Deadline (with urgency coloring: red if &lt;3 days)<br />
+      - Tags: paid/unpaid, local/national, short-term/long-term<br />
+      - Applications count<br />
+      - "Apply" or "Applied" button<br />
+      - Sort: Newest, Deadline (soonest), Most Applications
+    </p>
+    <p>
+      <strong>Create Opportunity</strong> (<code>components/CreateOpportunityModal.tsx</code>) —
+      Teams only<br />
+      - Title, description (rich text)<br />
+      - Category selection<br />
+      - Sport, location<br />
+      - Deadline date picker<br />
+      - Requirements (text)<br />
+      - Compensation (text)<br />
+      - Duration, age range, skill level<br />
+      - Contact information<br />
+      - Paid/unpaid toggle<br />
+      - Preview → Publish
+    </p>
+    <p>
+      <strong>Application Flow</strong>:<br />
+      1. Athlete taps "Apply" on opportunity<br />
+      2. Cover letter input modal<br />
+      3. Submit → creates application record<br />
+      4. Status: Pending<br />
+      5. Team reviews → Accept or Reject<br />
+      6. Athlete receives notification of status change
+    </p>
+    <p>
+      <strong>Application Management</strong> (Teams):<br />
+      - List of applications per opportunity<br />
+      - Athlete profile preview (avatar, sport, position, fit score if available)<br />
+      - Accept/Reject buttons<br />
+      - Bulk actions (future)
+    </p>
+    <h3 id="edge-cases_6">Edge Cases</h3>
+    <ul>
+      <li>Apply after deadline → button disabled, show "Deadline passed"</li>
+      <li>
+        Apply to same opportunity twice → prevented by unique constraint, show "Already applied"
+      </li>
+      <li>Team deletes opportunity with pending applications → notify applicants</li>
+      <li>Athlete applies without complete profile → warn but allow</li>
+      <li>Opportunity with 0 applications → show to more users (boost algorithm, future)</li>
+    </ul>
+    <h3 id="data-involved_6">Data Involved</h3>
+    <ul>
+      <li>
+        <strong>opportunities</strong>: id, team_id, title, description, category, type (JSONB
+        array), sport, location, deadline, requirements, compensation, duration, age_range,
+        skill_level, contact_info, paid, applications_count
+      </li>
+      <li><strong>applications</strong>: id, opportunity_id, athlete_id, status, cover_letter</li>
+      <li><strong>Real-time</strong>: subscription on opportunities (INSERT, UPDATE)</li>
+    </ul>
+    <h3 id="future-enhancements_6">Future Enhancements</h3>
+    <ul>
+      <li>AI-powered opportunity matching (recommend opportunities to athletes)</li>
+      <li>Application templates (save cover letters)</li>
+      <li>Video applications (record introduction)</li>
+      <li>Calendar integration for tryout dates</li>
+      <li>Automated reminders for upcoming deadlines</li>
+      <li>Analytics for teams (conversion funnel, demographics of applicants)</li>
+    </ul>
+    <hr />
+    <h2 id="28-fitness-test-module">2.8 Fitness Test Module</h2>
+    <h3 id="purpose_7">Purpose</h3>
+    <p>
+      The differentiation engine — standardized, verifiable fitness testing that creates credible
+      athletic data. This is the "verified credential" layer that makes OnlyKrida profiles
+      trustworthy.
+    </p>
+    <h3 id="user-stories_7">User Stories</h3>
+    <ul>
+      <li>As an athlete, I want to take a beep test on my phone so I can track my endurance</li>
+      <li>As an athlete, I want to see which fitness zone I'm in (Starter to Unstoppable)</li>
+      <li>As a coach, I want to verify my athletes' test results to add credibility</li>
+      <li>As a scout, I want to see verified fitness data on athlete profiles</li>
+      <li>As an athlete, I want to track my fitness progress over time</li>
+    </ul>
+    <h3 id="detailed-functionality_7">Detailed Functionality</h3>
+    <p>
+      <strong>Beep Test</strong> (<code>app/beep-test.tsx</code> +
+      <code>app/beep-test-live.tsx</code> + <code>app/beep-test-results.tsx</code> +
+      <code>app/beep-test-history.tsx</code>)
+    </p>
+    <p>
+      <em>Live Mode</em>:<br />
+      - Audio cues for each shuttle<br />
+      - Level and shuttle counter on screen<br />
+      - "Stop" button when athlete can't continue<br />
+      - Automatic VO2max calculation<br />
+      - Real-time distance tracking<br />
+      - Peak speed estimation
+    </p>
+    <p>
+      <em>Manual Mode</em>:<br />
+      - Enter level and shuttle reached<br />
+      - System calculates VO2max, distance, and zone
+    </p>
+    <p><strong>5 Test Types</strong> (via <code>constants/fitness-test-data.ts</code>)</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Test</th>
+          <th>What It Measures</th>
+          <th>Input</th>
+          <th>Output</th>
+          <th>Zone Calculation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Yo-Yo IR1</td>
+          <td>Cardiovascular endurance</td>
+          <td>Level + Shuttle</td>
+          <td>VO2max, total distance, peak speed</td>
+          <td>Based on VO2max ranges</td>
+        </tr>
+        <tr>
+          <td>20m Sprint</td>
+          <td>Acceleration</td>
+          <td>Time (seconds)</td>
+          <td>Speed (m/s)</td>
+          <td>Based on time thresholds</td>
+        </tr>
+        <tr>
+          <td>40m Sprint</td>
+          <td>Top-end speed</td>
+          <td>Time (seconds)</td>
+          <td>Speed (m/s), acceleration</td>
+          <td>Based on time thresholds</td>
+        </tr>
+        <tr>
+          <td>Agility T-Test</td>
+          <td>Change of direction</td>
+          <td>Time (seconds)</td>
+          <td>Agility score</td>
+          <td>Based on time thresholds</td>
+        </tr>
+        <tr>
+          <td>Vertical Jump</td>
+          <td>Lower body power</td>
+          <td>Height (cm)</td>
+          <td>Power output estimate</td>
+          <td>Based on height thresholds</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><strong>6 Fitness Zones</strong> (Growth-oriented, NEVER demotivating):</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Zone</th>
+          <th>Label</th>
+          <th>Color</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Starter</td>
+          <td>Blue</td>
+          <td>Just beginning the journey</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Building</td>
+          <td>Teal</td>
+          <td>Actively improving</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Rising</td>
+          <td>Green</td>
+          <td>Showing real potential</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>Strong</td>
+          <td>Yellow-Green</td>
+          <td>Competitive level</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>Elite</td>
+          <td>Orange</td>
+          <td>Top-tier performer</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>Unstoppable</td>
+          <td>Red/Gold</td>
+          <td>World-class</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><strong>Verification Tiers</strong>:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Method</th>
+          <th>Badge</th>
+          <th>Trust Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Self-reported</td>
+          <td>Athlete enters manually</td>
+          <td>None</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td>App-measured</td>
+          <td>Live test with phone sensors/timing</td>
+          <td>App badge</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td>Coach-verified</td>
+          <td>Coach attests to results</td>
+          <td>Coach badge</td>
+          <td>High</td>
+        </tr>
+        <tr>
+          <td>Center-tested</td>
+          <td>Official testing center submits results</td>
+          <td>Verified (gold) badge</td>
+          <td>Highest</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Verify Result</strong> (<code>app/verify-result.tsx</code>)<br />
+      - Coach receives verification request<br />
+      - Views athlete's test details<br />
+      - Can attest or reject<br />
+      - Attestation adds to <code>attestation_count</code>
+    </p>
+    <p>
+      <strong>Beep Test Card</strong> (<code>components/BeepTestCard.tsx</code> — 27.6 KB)<br />
+      - Visual result card showing:<br />
+      - Zone name with color coding<br />
+      - Level and shuttle reached<br />
+      - VO2max value<br />
+      - Total distance<br />
+      - Peak speed<br />
+      - Test date<br />
+      - Verification status badge<br />
+      - Share button
+    </p>
+    <h3 id="edge-cases_7">Edge Cases</h3>
+    <ul>
+      <li>Audio doesn't play (silent mode) → visual-only cues as fallback</li>
+      <li>Test interrupted (call, notification) → save partial result, allow resume or restart</li>
+      <li>Unrealistic manual entry (e.g., VO2max of 100) → cap at reasonable limits, flag</li>
+      <li>Coach verification for different sport → verify only if coach is qualified</li>
+      <li>Network loss during test → save locally, upload when connected</li>
+      <li>Historical data migration → import from paper records via manual entry</li>
+    </ul>
+    <h3 id="data-involved_7">Data Involved</h3>
+    <ul>
+      <li><strong>fitness_tests table</strong> (via fitness-test-context):</li>
+      <li>id, athlete_id, conducted_by, test_mode, test_type</li>
+      <li>Result fields vary by type (level, shuttle, time, height)</li>
+      <li>vo2max, zone, total_distance, peak_speed</li>
+      <li>verification_tier, video_url, sensor_data, attestation_count</li>
+      <li>test_date, notes</li>
+    </ul>
+    <h3 id="ui-behavior_4">UI Behavior</h3>
+    <ul>
+      <li>Animated zone reveal on test completion</li>
+      <li>Progress chart showing improvement over time</li>
+      <li>Color-coded zone badges throughout the app</li>
+      <li>Share test result as image card (social media ready)</li>
+      <li>Confetti animation on reaching new zone</li>
+    </ul>
+    <h3 id="future-enhancements_7">Future Enhancements</h3>
+    <ul>
+      <li>GPS-tracked sprint tests (accurate timing via phone GPS)</li>
+      <li>Video recording during test (for verification)</li>
+      <li>Sensor integration (heart rate monitors, wearables)</li>
+      <li>Team fitness assessments (batch testing)</li>
+      <li>Normative data comparison (percentile ranking by age/sport)</li>
+      <li>Training plans based on test results</li>
+      <li>Testing center network (find nearest official center)</li>
+    </ul>
+    <hr />
+    <h2 id="29-notifications-system">2.9 Notifications System</h2>
+    <h3 id="purpose_8">Purpose</h3>
+    <p>
+      Keep users informed about relevant activity — new followers, messages, opportunity updates,
+      scout interest — to drive re-engagement and ensure time-sensitive information is seen.
+    </p>
+    <h3 id="user-stories_8">User Stories</h3>
+    <ul>
+      <li>As a user, I want to be notified when someone likes or comments on my post</li>
+      <li>As an athlete, I want to know when a scout views my profile</li>
+      <li>As an athlete, I want to be notified when my application status changes</li>
+      <li>As a user, I want to manage which notifications I receive</li>
+    </ul>
+    <h3 id="detailed-functionality_8">Detailed Functionality</h3>
+    <p>
+      <strong>Notification Center</strong> (<code>app/notifications.tsx</code> — 390 lines)<br />
+      - List of notifications sorted by recency<br />
+      - Each notification: Icon + Title + Message + Timestamp + Read/Unread indicator<br />
+      - Tap notification → navigate to relevant screen (deep linking)<br />
+      - "Mark all as read" button<br />
+      - Filter: All | Unread
+    </p>
+    <p><strong>11 Notification Types</strong>:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Trigger</th>
+          <th>Title Example</th>
+          <th>Deep Link</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>like</td>
+          <td>Someone likes your post</td>
+          <td>"Vikram liked your post"</td>
+          <td>Post detail</td>
+        </tr>
+        <tr>
+          <td>follow</td>
+          <td>New follower</td>
+          <td>"Priya started following you"</td>
+          <td>User profile</td>
+        </tr>
+        <tr>
+          <td>comment</td>
+          <td>Comment on your post</td>
+          <td>"Rajesh commented on your highlight"</td>
+          <td>Post detail</td>
+        </tr>
+        <tr>
+          <td>message</td>
+          <td>New DM received</td>
+          <td>"New message from Mumbai FC"</td>
+          <td>Chat</td>
+        </tr>
+        <tr>
+          <td>opportunity</td>
+          <td>New opportunity matching your sport</td>
+          <td>"New tryout: ISL U-21 Trials"</td>
+          <td>Opportunity detail</td>
+        </tr>
+        <tr>
+          <td>application</td>
+          <td>Application status change</td>
+          <td>"Your application was accepted!"</td>
+          <td>Application detail</td>
+        </tr>
+        <tr>
+          <td>connection_request</td>
+          <td>Follow request (future, for private profiles)</td>
+          <td>"Ananya wants to connect"</td>
+          <td>User profile</td>
+        </tr>
+        <tr>
+          <td>connection_accepted</td>
+          <td>Follow request accepted</td>
+          <td>"Rajesh accepted your request"</td>
+          <td>User profile</td>
+        </tr>
+        <tr>
+          <td>profile_view</td>
+          <td>Scout/recruiter viewed profile</td>
+          <td>"A scout from ISL viewed your profile"</td>
+          <td>Profile viewers</td>
+        </tr>
+        <tr>
+          <td>mention</td>
+          <td>Tagged in a post (future)</td>
+          <td>"Vikram mentioned you"</td>
+          <td>Post detail</td>
+        </tr>
+        <tr>
+          <td>system</td>
+          <td>Platform announcements</td>
+          <td>"New feature: Video analysis!"</td>
+          <td>Announcement</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="data-involved_8">Data Involved</h3>
+    <ul>
+      <li>
+        <strong>notifications</strong>: id, user_id, type, title, message, read, data (JSONB for
+        context), created_at
+      </li>
+      <li><strong>Real-time</strong>: Supabase subscription on INSERT</li>
+    </ul>
+    <h3 id="future-enhancements_8">Future Enhancements</h3>
+    <ul>
+      <li>Push notifications (device-level, via Expo Push Service)</li>
+      <li>Email digest (weekly summary of activity)</li>
+      <li>Notification preferences (granular control per type)</li>
+      <li>Smart notifications (AI-prioritized, batch low-priority)</li>
+      <li>Scheduled notifications ("Your fitness test data is 30 days old — take a new test?")</li>
+    </ul>
+    <hr />
+    <h2 id="210-ai-features">2.10 AI Features</h2>
+    <h3 id="purpose_9">Purpose</h3>
+    <p>
+      Leverage Claude AI to provide intelligent features that differentiate OnlyKrida from
+      traditional sports platforms — from scouting recommendations to profile coaching to a
+      conversational assistant.
+    </p>
+    <h3 id="user-stories_9">User Stories</h3>
+    <ul>
+      <li>
+        As a scout, I want AI-ranked athlete recommendations so I can find the best matches
+        efficiently
+      </li>
+      <li>As an athlete, I want AI coaching tips to improve my profile</li>
+      <li>
+        As a user, I want to chat with an AI assistant about sports, training, and career advice
+      </li>
+      <li>As an athlete, I want AI to match me with relevant opportunities</li>
+      <li>As a scout, I want deep analysis of an athlete's potential</li>
+    </ul>
+    <h3 id="detailed-functionality_9">Detailed Functionality</h3>
+    <p><strong>7 AI Functions</strong> (<code>services/ai.ts</code>):</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Function</th>
+          <th>Model</th>
+          <th>Input</th>
+          <th>Output</th>
+          <th>Use Case</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>getSmartScoutRecommendations</code></td>
+          <td>Opus + Thinking</td>
+          <td>Scout preferences + athlete pool</td>
+          <td>Ranked list with fit scores</td>
+          <td>Scout dashboard</td>
+        </tr>
+        <tr>
+          <td><code>athletePotentialAnalysis</code></td>
+          <td>Opus + Thinking</td>
+          <td>Athlete profile + stats + history</td>
+          <td>Detailed potential report</td>
+          <td>Deep scouting</td>
+        </tr>
+        <tr>
+          <td><code>opportunityMatcher</code></td>
+          <td>Opus</td>
+          <td>Athlete profile + available opportunities</td>
+          <td>Ranked opportunity list</td>
+          <td>Athlete opportunity feed</td>
+        </tr>
+        <tr>
+          <td><code>generateAthleteProfileSummary</code></td>
+          <td>Sonnet</td>
+          <td>Athlete profile data</td>
+          <td>3-4 sentence summary</td>
+          <td>Scout-readable bio</td>
+        </tr>
+        <tr>
+          <td><code>profileCoachingSuggestions</code></td>
+          <td>Sonnet</td>
+          <td>Profile data + completion %</td>
+          <td>3-5 actionable tips</td>
+          <td>Profile improvement</td>
+        </tr>
+        <tr>
+          <td><code>generateChatResponse</code></td>
+          <td>Sonnet</td>
+          <td>Chat history + user question</td>
+          <td>Conversational response</td>
+          <td>AI assistant</td>
+        </tr>
+        <tr>
+          <td><code>knowledgeSearch</code></td>
+          <td>Sonnet</td>
+          <td>Search query + context</td>
+          <td>Relevant information</td>
+          <td>Knowledge base</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>AI Assistant</strong> (<code>app/ai-assistant.tsx</code>)<br />
+      - Full-screen chat interface<br />
+      - Welcome message: "Hi! I'm Krida, your AI sports assistant"<br />
+      - Quick action buttons: "Improve my profile", "Find opportunities", "Training tips"<br />
+      - Message bubbles with typing indicator<br />
+      - Conversation history preserved in session<br />
+      - Context-aware (knows user's sport, role, profile data)
+    </p>
+    <p>
+      <strong>AI Profile Coach</strong> (<code>components/AIProfileCoach.tsx</code>)<br />
+      - Collapsible card on profile screen<br />
+      - Shows 3-5 personalized tips:<br />
+      - "Add a highlight video — profiles with videos get 5x more scout views"<br />
+      - "Complete your fitness tests — verified data increases trust scores"<br />
+      - "Your bio is too short — add your career goals and training philosophy"<br />
+      - Refreshes daily (cached in AI context)
+    </p>
+    <p>
+      <strong>AI Scout Card</strong> (<code>components/AIScoutCard.tsx</code>)<br />
+      - Used in scout dashboard<br />
+      - Shows athlete with AI-generated fit score<br />
+      - Expandable breakdown (skill, speed, stamina, position match as percentage bars)<br />
+      - AI notes explaining the recommendation
+    </p>
+    <h3 id="edge-cases_8">Edge Cases</h3>
+    <ul>
+      <li>
+        Claude API rate limit hit → show cached results with "AI temporarily unavailable" message
+      </li>
+      <li>Very slow AI response (&gt;10s) → show progressive loading, allow cancel</li>
+      <li>AI hallucinates athlete data → always display actual data alongside AI summary</li>
+      <li>
+        User abuses AI chat (inappropriate questions) → system prompt includes safety guardrails
+      </li>
+      <li>AI recommendation for 0 athletes → show "No matches found, try adjusting preferences"</li>
+    </ul>
+    <h3 id="data-involved_9">Data Involved</h3>
+    <ul>
+      <li><strong>ai_recommendations</strong>: Cached recommendation results</li>
+      <li><strong>profiles + player_stats</strong>: Input data for AI analysis</li>
+      <li>
+        <strong>AI context</strong> (hooks/ai-context.tsx): Chat history, loading state, cache
+      </li>
+    </ul>
+    <h3 id="future-enhancements_9">Future Enhancements</h3>
+    <ul>
+      <li>Fine-tuned sports-specific model</li>
+      <li>Video analysis (pose detection, technique evaluation)</li>
+      <li>Predictive analytics (injury risk, career trajectory)</li>
+      <li>Real-time match commentary analysis</li>
+      <li>Training plan generation based on fitness test results</li>
+      <li>Natural language search ("Show me fast strikers in Maharashtra under 20")</li>
+    </ul>
+    <hr />
+    <h2 id="211-admin-panel-planned">2.11 Admin Panel (Planned)</h2>
+    <h3 id="purpose_10">Purpose</h3>
+    <p>
+      Operational control center for OnlyKrida team to manage users, moderate content, monitor
+      platform health, and make data-driven decisions.
+    </p>
+    <h3 id="planned-features">Planned Features</h3>
+    <ul>
+      <li>
+        <strong>Dashboard</strong>: User counts, daily signups, posts/day, active users, revenue
+      </li>
+      <li><strong>User Management</strong>: List, search, filter, verify, ban, delete users</li>
+      <li>
+        <strong>Content Moderation</strong>: Reports queue, auto-flagged content, approve/remove
+        actions
+      </li>
+      <li>
+        <strong>Analytics</strong>: Growth charts, retention cohorts, feature adoption, funnel
+        analysis
+      </li>
+      <li>
+        <strong>AI Monitor</strong>: Usage logs, cost per function, error rates, response times
+      </li>
+      <li><strong>Opportunities</strong>: Review and moderate team postings</li>
+      <li>
+        <strong>Configuration</strong>: Feature flags, notification templates, zone thresholds
+      </li>
+      <li>
+        <strong>Verification Queue</strong>: Athlete/coach verification requests with document
+        review
+      </li>
+    </ul>
+    <h3 id="recommended-stack">Recommended Stack</h3>
+    <ul>
+      <li><strong>Separate web app</strong> (Next.js or React + Vite)</li>
+      <li>Connected to same Supabase instance with service role key</li>
+      <li>Authentication: Admin-only Supabase auth</li>
+      <li>Deployment: Vercel or similar</li>
+    </ul>
+    <hr />
+    <h1 id="3-user-flows">3. User Flows</h1>
+    <h2 id="31-athlete-onboarding-flow">3.1 Athlete Onboarding Flow</h2>
+    <pre><code>1. Open App
+   └→ Welcome Screen (animated logo, feature cards)
+      └→ Tap &quot;Get Started&quot;
+         └→ Signup Screen (email, password, name)
+            └→ Role Selection (tap &quot;Athlete&quot;)
+               └→ Athlete Signup Form
+                  ├─ Select Sport (dropdown)
+                  ├─ Select Position (dropdown, filtered by sport)
+                  ├─ Enter Date of Birth
+                  ├─ Enter Height (cm)
+                  ├─ Enter Weight (kg)
+                  └─ Tap &quot;Create Account&quot;
+                     └→ Home Screen (AthleteHome)
+                        ├─ Welcome message + quick actions
+                        ├─ Profile completion: 35%
+                        ├─ AI coaching tip: &quot;Upload a highlight video&quot;
+                        └→ Athlete taps &quot;Upload Highlight&quot;
+                           └→ Create Post screen
+                              ├─ Select video from gallery
+                              ├─ Add caption: &quot;Match highlights from district tournament&quot;
+                              ├─ Select type: &quot;Highlight&quot;
+                              └─ Tap &quot;Publish&quot;
+                                 └→ Post appears in feed
+                                    └→ Profile completion: 50%
+                                       └→ Athlete takes Beep Test
+                                          └→ Profile completion: 60%
+                                             └→ Ready for discovery by scouts
+</code></pre>
+    <h2 id="32-scout-discovery-flow">3.2 Scout Discovery Flow</h2>
+    <pre><code>1. Scout opens app → ScoutHome Dashboard
+   └→ &quot;Set Your Preferences&quot; prompt (first time)
+      └→ Scout Preferences Screen
+         ├─ Sport: Football
+         ├─ Positions: Striker, Winger
+         ├─ Weights: Speed 40%, Skill 30%, Stamina 20%, Position 10%
+         └─ Save
+            └→ ScoutHome Dashboard (refreshed)
+               └→ AI Recommendation Cards appear
+                  ├─ Athlete 1: Vikram (Fit Score: 87)
+                  │  ├─ Speed: 92 | Skill: 85 | Stamina: 78 | Position: 100
+                  │  └─ AI Note: &quot;Strong sprinter with verified beep test data&quot;
+                  ├─ Athlete 2: Rahul (Fit Score: 79)
+                  └─ Athlete 3: Amir (Fit Score: 74)
+                     └→ Scout taps Vikram's card
+                        └→ Public Profile
+                           ├─ Review profile, achievements, stats
+                           ├─ Watch highlight videos
+                           ├─ Check verified beep test (Zone: Rising)
+                           └→ Tap &quot;Shortlist&quot; → Tap &quot;Message&quot;
+                              └→ Chat: &quot;Hi Vikram, I'm a scout for Bengaluru FC...&quot;
+                                 └→ Conversation continues
+                                    └→ Trial invitation sent
+</code></pre>
+    <h2 id="33-post-content-flow">3.3 Post Content Flow</h2>
+    <pre><code>1. User taps &quot;+&quot; tab (Create)
+   └→ Create Post Screen
+      ├─ Tap &quot;Select Media&quot;
+      │  └→ Image picker (gallery or camera)
+      │     └→ Media preview shown
+      ├─ Enter caption (up to 500 chars)
+      ├─ Select post type: Highlight / Training / Match / Achievement
+      ├─ Add sport tag (optional)
+      └─ Tap &quot;Publish&quot;
+         ├─ Upload progress bar shown
+         ├─ Media uploaded to Supabase Storage
+         ├─ Post record created in database
+         ├─ Real-time: Post appears in followers' feeds
+         └→ Success → Navigate to feed
+            └→ Post visible with 0 likes, 0 comments
+               └→ Users interact: like, comment, share
+                  └→ Author receives notifications for each
+</code></pre>
+    <h2 id="34-opportunity-application-flow">3.4 Opportunity Application Flow</h2>
+    <pre><code>1. Athlete opens Opportunities tab
+   └→ Browse opportunities (filter by sport, category)
+      └→ Spots interesting tryout: &quot;ISL U-21 Open Trials&quot;
+         └→ Tap to view details
+            ├─ Title, description, requirements
+            ├─ Sport: Football | Location: Goa
+            ├─ Deadline: April 20, 2026
+            ├─ Compensation: Travel + accommodation
+            ├─ Applications: 47
+            └→ Tap &quot;Apply&quot;
+               └→ Cover Letter Modal
+                  ├─ Write: &quot;I'm a striker from Bellary with verified...&quot;
+                  └─ Tap &quot;Submit Application&quot;
+                     └→ Application created (status: pending)
+                        └→ Athlete sees &quot;Applied ✓&quot; on opportunity
+                           └→ Team reviews applications
+                              ├─ Views athlete profile
+                              ├─ Checks fitness data
+                              └─ Taps &quot;Accept&quot;
+                                 └→ Athlete receives notification:
+                                    &quot;Your application was accepted!&quot;
+</code></pre>
+    <h2 id="35-fitness-testing-flow">3.5 Fitness Testing Flow</h2>
+    <pre><code>1. Athlete navigates to Beep Test (from profile or home)
+   └→ Beep Test Landing
+      ├─ &quot;Start Live Test&quot; → Live beep test with audio
+      │  ├─ Audio beeps play
+      │  ├─ Level counter increments
+      │  ├─ Shuttle counter tracks progress
+      │  └─ Athlete taps &quot;Stop&quot; when exhausted
+      │     └→ Results calculated
+      │
+      └─ &quot;Enter Manual Result&quot; → Manual entry
+         ├─ Enter Level reached
+         └─ Enter Shuttle reached
+            └→ Results calculated
+               └→ Results Screen
+                  ├─ Zone: &quot;Rising&quot; (animated reveal)
+                  ├─ VO2max: 42.3 ml/kg/min
+                  ├─ Total Distance: 1,520m
+                  ├─ Peak Speed: 14.5 km/h
+                  ├─ Share button → Share as image card
+                  └─ &quot;Get Coach Verification&quot; button
+                     └→ Select coach from connections
+                        └→ Coach receives verification request
+                           └→ Coach reviews and attests
+                              └→ Badge upgraded: &quot;Coach Verified&quot;
+                                 └→ Result visible on athlete profile
+</code></pre>
+    <hr />
+    <h1 id="4-uxui-guidelines">4. UX/UI Guidelines</h1>
+    <h2 id="41-design-philosophy">4.1 Design Philosophy</h2>
+    <p>
+      OnlyKrida uses a <strong>"Street Badass"</strong> design language — dark, bold, energetic. The
+      aesthetic draws from:<br />
+      - Street sports culture (urban, gritty, authentic)<br />
+      - Neon signage (bright accents on dark backgrounds)<br />
+      - Sports broadcast overlays (stats, scores, badges)<br />
+      - Premium sports apps (Nike Training Club, Strava)
+    </p>
+    <p>
+      <strong>Core Principles</strong>:<br />
+      1. <strong>Dark-first</strong>: Dark backgrounds reduce eye strain during evening use and feel
+      premium<br />
+      2. <strong>Data-forward</strong>: Athlete stats, scores, and metrics are always prominently
+      displayed<br />
+      3. <strong>Action-oriented</strong>: Every screen has a clear primary action<br />
+      4. <strong>Role-aware</strong>: UI adapts to the user's role (different colors, layouts,
+      CTAs)<br />
+      5. <strong>Mobile-first</strong>: Designed for one-handed phone use; tablet/web are responsive
+      adaptations<br />
+      6. <strong>Never demotivating</strong>: Language and design always encourage growth, never
+      shame
+    </p>
+    <h2 id="42-color-system">4.2 Color System</h2>
+    <h3 id="primary-palette">Primary Palette</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Token</th>
+          <th>Hex</th>
+          <th>Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>background</code></td>
+          <td><code>#0a0a0a</code></td>
+          <td>App background</td>
+        </tr>
+        <tr>
+          <td><code>backgroundSecondary</code></td>
+          <td><code>#1a1a1a</code></td>
+          <td>Cards, modals</td>
+        </tr>
+        <tr>
+          <td><code>primary</code></td>
+          <td><code>#30D158</code></td>
+          <td>CTAs, active states, athlete accent</td>
+        </tr>
+        <tr>
+          <td><code>accent</code></td>
+          <td><code>#FF9F0A</code></td>
+          <td>Secondary actions, warnings, scout accent</td>
+        </tr>
+        <tr>
+          <td><code>cyan</code></td>
+          <td><code>#64D2FF</code></td>
+          <td>Info states, coach accent</td>
+        </tr>
+        <tr>
+          <td><code>red</code></td>
+          <td><code>#FF453A</code></td>
+          <td>Errors, destructive actions, team accent</td>
+        </tr>
+        <tr>
+          <td><code>purple</code></td>
+          <td><code>#BF5AF2</code></td>
+          <td>Fan accent, special features</td>
+        </tr>
+        <tr>
+          <td><code>text</code></td>
+          <td><code>#f0f0f0</code></td>
+          <td>Primary text</td>
+        </tr>
+        <tr>
+          <td><code>textMuted</code></td>
+          <td><code>#888888</code></td>
+          <td>Secondary text, timestamps</td>
+        </tr>
+        <tr>
+          <td><code>border</code></td>
+          <td><code>#2a2a2a</code></td>
+          <td>Dividers, card borders</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="role-accent-colors">Role Accent Colors</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Color</th>
+          <th>Hex</th>
+          <th>Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Athlete</td>
+          <td>Green</td>
+          <td><code>#30D158</code></td>
+          <td>Profile badges, home screen accents</td>
+        </tr>
+        <tr>
+          <td>Scout</td>
+          <td>Orange</td>
+          <td><code>#FF9F0A</code></td>
+          <td>Dashboard highlights, fit score accents</td>
+        </tr>
+        <tr>
+          <td>Coach</td>
+          <td>Cyan</td>
+          <td><code>#64D2FF</code></td>
+          <td>Team management, verification badges</td>
+        </tr>
+        <tr>
+          <td>Team</td>
+          <td>Red</td>
+          <td><code>#FF453A</code></td>
+          <td>Opportunity cards, team branding</td>
+        </tr>
+        <tr>
+          <td>Fan</td>
+          <td>Purple</td>
+          <td><code>#BF5AF2</code></td>
+          <td>Engagement features, trending</td>
+        </tr>
+        <tr>
+          <td>Trainer</td>
+          <td>Green</td>
+          <td><code>#30D158</code></td>
+          <td>Training content accents</td>
+        </tr>
+        <tr>
+          <td>Gym</td>
+          <td>Orange</td>
+          <td><code>#FF9F0A</code></td>
+          <td>Facility features</td>
+        </tr>
+        <tr>
+          <td>Brand</td>
+          <td>Cyan</td>
+          <td><code>#64D2FF</code></td>
+          <td>Sponsorship features</td>
+        </tr>
+        <tr>
+          <td>Academy</td>
+          <td>Red</td>
+          <td><code>#FF453A</code></td>
+          <td>Academy dashboard</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="fitness-zone-colors">Fitness Zone Colors</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Zone</th>
+          <th>Color</th>
+          <th>Hex</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Starter</td>
+          <td>Blue</td>
+          <td><code>#007AFF</code></td>
+        </tr>
+        <tr>
+          <td>Building</td>
+          <td>Teal</td>
+          <td><code>#5AC8FA</code></td>
+        </tr>
+        <tr>
+          <td>Rising</td>
+          <td>Green</td>
+          <td><code>#30D158</code></td>
+        </tr>
+        <tr>
+          <td>Strong</td>
+          <td>Yellow-Green</td>
+          <td><code>#A8D158</code></td>
+        </tr>
+        <tr>
+          <td>Elite</td>
+          <td>Orange</td>
+          <td><code>#FF9F0A</code></td>
+        </tr>
+        <tr>
+          <td>Unstoppable</td>
+          <td>Gold/Red</td>
+          <td><code>#FF453A</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="43-typography">4.3 Typography</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Level</th>
+          <th>Size</th>
+          <th>Weight</th>
+          <th>Line Height</th>
+          <th>Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>H1</td>
+          <td>28px</td>
+          <td>Bold (700)</td>
+          <td>1.3</td>
+          <td>Screen titles</td>
+        </tr>
+        <tr>
+          <td>H2</td>
+          <td>24px</td>
+          <td>Bold (700)</td>
+          <td>1.3</td>
+          <td>Section headers</td>
+        </tr>
+        <tr>
+          <td>H3</td>
+          <td>20px</td>
+          <td>Semi-bold (600)</td>
+          <td>1.3</td>
+          <td>Card titles</td>
+        </tr>
+        <tr>
+          <td>Body</td>
+          <td>16px</td>
+          <td>Regular (400)</td>
+          <td>1.5</td>
+          <td>Content text</td>
+        </tr>
+        <tr>
+          <td>Body Small</td>
+          <td>14px</td>
+          <td>Regular (400)</td>
+          <td>1.5</td>
+          <td>Secondary text</td>
+        </tr>
+        <tr>
+          <td>Caption</td>
+          <td>12px</td>
+          <td>Regular (400)</td>
+          <td>1.4</td>
+          <td>Timestamps, metadata</td>
+        </tr>
+        <tr>
+          <td>Label</td>
+          <td>11px</td>
+          <td>Medium (500)</td>
+          <td>1.2</td>
+          <td>Badges, tags</td>
+        </tr>
+        <tr>
+          <td>Stat Number</td>
+          <td>28-36px</td>
+          <td>Bold (700)</td>
+          <td>1.1</td>
+          <td>Fit scores, counts</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Font</strong>: System fonts (SF Pro on iOS, Roboto on Android) — no custom fonts to
+      reduce app size.
+    </p>
+    <h2 id="44-spacing-system">4.4 Spacing System</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Token</th>
+          <th>Value</th>
+          <th>Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>xs</code></td>
+          <td>4px</td>
+          <td>Inline spacing, icon padding</td>
+        </tr>
+        <tr>
+          <td><code>sm</code></td>
+          <td>8px</td>
+          <td>Between related elements</td>
+        </tr>
+        <tr>
+          <td><code>md</code></td>
+          <td>16px</td>
+          <td>Standard component padding</td>
+        </tr>
+        <tr>
+          <td><code>lg</code></td>
+          <td>24px</td>
+          <td>Section spacing</td>
+        </tr>
+        <tr>
+          <td><code>xl</code></td>
+          <td>32px</td>
+          <td>Screen-level padding</td>
+        </tr>
+        <tr>
+          <td><code>xxl</code></td>
+          <td>48px</td>
+          <td>Major section gaps</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="45-component-patterns">4.5 Component Patterns</h2>
+    <h3 id="cards">Cards</h3>
+    <ul>
+      <li>Background: <code>#1a1a1a</code></li>
+      <li>Border radius: 12px</li>
+      <li>Border: 1px solid <code>#2a2a2a</code> (subtle)</li>
+      <li>Padding: 16px</li>
+      <li>Shadow: none (flat design on dark backgrounds)</li>
+      <li>Hover state (web): border color → role accent</li>
+    </ul>
+    <h3 id="buttons">Buttons</h3>
+    <ul>
+      <li><strong>Primary</strong>: Green (#30D158) background, dark text, rounded (8px)</li>
+      <li><strong>Secondary</strong>: Transparent, green border, green text</li>
+      <li><strong>Destructive</strong>: Red (#FF453A) background, white text</li>
+      <li><strong>Ghost</strong>: No background, white text, no border</li>
+      <li>Height: 48px (touch target)</li>
+      <li>Full-width on mobile, auto-width on web</li>
+    </ul>
+    <h3 id="input-fields">Input Fields</h3>
+    <ul>
+      <li>Background: <code>#1a1a1a</code></li>
+      <li>Border: 1px solid <code>#2a2a2a</code></li>
+      <li>Focus border: role accent color</li>
+      <li>Text color: <code>#f0f0f0</code></li>
+      <li>Placeholder: <code>#888888</code></li>
+      <li>Height: 48px</li>
+      <li>Border radius: 8px</li>
+    </ul>
+    <h3 id="badges">Badges</h3>
+    <ul>
+      <li>Small rounded pills</li>
+      <li>Role badge: Role accent color background, dark text</li>
+      <li>Verification badge: Blue circle with white checkmark</li>
+      <li>Zone badge: Zone color background, white/dark text</li>
+      <li>Font size: 11px, padding: 4px 8px</li>
+    </ul>
+    <h3 id="empty-states">Empty States</h3>
+    <ul>
+      <li>Centered illustration area (icon from Lucide)</li>
+      <li>Title (H3, white)</li>
+      <li>Description (Body, muted)</li>
+      <li>CTA button (primary, centered)</li>
+      <li>
+        8 presets: feed, messages, notifications, search, opportunities, followers, posts,
+        achievements
+      </li>
+    </ul>
+    <h2 id="46-animation-guidelines">4.6 Animation Guidelines</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Animation</th>
+          <th>Duration</th>
+          <th>Easing</th>
+          <th>Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Fade in</td>
+          <td>300ms</td>
+          <td>ease-out</td>
+          <td>Screen transitions, cards appearing</td>
+        </tr>
+        <tr>
+          <td>Slide up</td>
+          <td>250ms</td>
+          <td>ease-out</td>
+          <td>Modals, bottom sheets</td>
+        </tr>
+        <tr>
+          <td>Scale bounce</td>
+          <td>200ms</td>
+          <td>spring</td>
+          <td>Like animation, button press</td>
+        </tr>
+        <tr>
+          <td>Stagger</td>
+          <td>100ms delay between items</td>
+          <td>ease-out</td>
+          <td>List items loading</td>
+        </tr>
+        <tr>
+          <td>Skeleton pulse</td>
+          <td>1.5s loop</td>
+          <td>ease-in-out</td>
+          <td>Loading skeletons</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="haptic-feedback-native">Haptic Feedback (Native)</h3>
+    <ul>
+      <li><strong>Light</strong>: Tab switch, toggle</li>
+      <li><strong>Medium</strong>: Like, follow, send message</li>
+      <li><strong>Heavy</strong>: Delete, error</li>
+      <li>Disabled on web</li>
+    </ul>
+    <h2 id="47-accessibility">4.7 Accessibility</h2>
+    <ul>
+      <li>
+        <strong>Color contrast</strong>: All text meets WCAG 2.1 AA (4.5:1 for body, 3:1 for large
+        text)
+      </li>
+      <li><strong>Touch targets</strong>: Minimum 44×44px for all interactive elements</li>
+      <li>
+        <strong>Screen reader</strong>: All images have alt text, all buttons have accessible labels
+      </li>
+      <li><strong>Motion</strong>: Respect <code>prefers-reduced-motion</code> setting</li>
+      <li><strong>Font scaling</strong>: Support system font size preferences</li>
+    </ul>
+    <h2 id="48-responsive-design">4.8 Responsive Design</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Breakpoint</th>
+          <th>Width</th>
+          <th>Layout</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Mobile</td>
+          <td>0-767px</td>
+          <td>Single column, bottom tab navigation</td>
+        </tr>
+        <tr>
+          <td>Tablet</td>
+          <td>768-1023px</td>
+          <td>Two-column where applicable, bottom tabs</td>
+        </tr>
+        <tr>
+          <td>Desktop (Web)</td>
+          <td>1024px+</td>
+          <td>Sidebar navigation, multi-column layouts</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr />
+    <h1 id="5-feature-prioritization">5. Feature Prioritization</h1>
+    <h2 id="51-mvp-phase-1-completed">5.1 MVP — Phase 1 (COMPLETED)</h2>
+    <p>Everything listed below is built and functional:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Status</th>
+          <th>Key Components</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Authentication (email/password, 9 roles)</td>
+          <td>Done</td>
+          <td>5 role-specific signup forms</td>
+        </tr>
+        <tr>
+          <td>6 Role-specific home screens</td>
+          <td>Done</td>
+          <td>AthleteHome, ScoutHome, CoachHome, TeamHome, BrandHome, FanHome</td>
+        </tr>
+        <tr>
+          <td>Social feed (posts, likes, comments, shares)</td>
+          <td>Done</td>
+          <td>Create, feed, detail, modals</td>
+        </tr>
+        <tr>
+          <td>Discover engine (search, filters, trending)</td>
+          <td>Done</td>
+          <td>Sport, role, location, verified filters</td>
+        </tr>
+        <tr>
+          <td>Real-time messaging (1-on-1 + group)</td>
+          <td>Done</td>
+          <td>Chat, group chat, media sharing</td>
+        </tr>
+        <tr>
+          <td>Notifications (11 types, real-time)</td>
+          <td>Done</td>
+          <td>In-app notification center</td>
+        </tr>
+        <tr>
+          <td>Opportunities (5 categories, applications)</td>
+          <td>Done</td>
+          <td>Create, browse, apply, manage</td>
+        </tr>
+        <tr>
+          <td>AI Scouting (Claude Opus recommendations)</td>
+          <td>Done</td>
+          <td>Fit scores, breakdowns, coaching</td>
+        </tr>
+        <tr>
+          <td>Fitness Testing (5 types, 6 zones)</td>
+          <td>Done</td>
+          <td>Live + manual, verification</td>
+        </tr>
+        <tr>
+          <td>Profile system (completion, viewers, badges)</td>
+          <td>Done</td>
+          <td>Edit, public view, achievements</td>
+        </tr>
+        <tr>
+          <td>Settings (account, privacy, notifications)</td>
+          <td>Done</td>
+          <td>Delete account included</td>
+        </tr>
+        <tr>
+          <td>Supabase backend (13 tables, RLS)</td>
+          <td>Done</td>
+          <td>Full security on all tables</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="52-immediate-fixes-phase-15-in-progress">
+      5.2 Immediate Fixes — Phase 1.5 (In Progress)
+    </h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Priority</th>
+          <th>Effort</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>CachedImage migration</td>
+          <td>P1</td>
+          <td>1 day</td>
+          <td>13 files still using raw Image instead of CachedImage</td>
+        </tr>
+        <tr>
+          <td>Discover useReducer refactor</td>
+          <td>P1</td>
+          <td>1 day</td>
+          <td>Consolidate 17 useState hooks into useReducer</td>
+        </tr>
+        <tr>
+          <td>FlatList optimization</td>
+          <td>P1</td>
+          <td>2 days</td>
+          <td>Add performance props to 25+ screens</td>
+        </tr>
+        <tr>
+          <td>AthleteHome split</td>
+          <td>P1</td>
+          <td>1 day</td>
+          <td>Break 666-line monolith into 5 sub-components</td>
+        </tr>
+        <tr>
+          <td>AI key migration</td>
+          <td>P0</td>
+          <td>3 days</td>
+          <td>Move API key to Supabase Edge Function</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="53-phase-2-growth-q2-q3-2026">5.3 Phase 2 — Growth (Q2-Q3 2026)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Priority</th>
+          <th>Effort</th>
+          <th>Business Impact</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Payment integration (Razorpay)</td>
+          <td>P1</td>
+          <td>3 weeks</td>
+          <td>Enables revenue — existential</td>
+        </tr>
+        <tr>
+          <td>Admin dashboard</td>
+          <td>P0</td>
+          <td>4 weeks</td>
+          <td>Operational control, compliance</td>
+        </tr>
+        <tr>
+          <td>Push notifications</td>
+          <td>P1</td>
+          <td>1 week</td>
+          <td>3-10x re-engagement improvement</td>
+        </tr>
+        <tr>
+          <td>Analytics &amp; event tracking</td>
+          <td>P1</td>
+          <td>2 weeks</td>
+          <td>Data-driven product decisions</td>
+        </tr>
+        <tr>
+          <td>Content moderation</td>
+          <td>P1</td>
+          <td>2 weeks</td>
+          <td>Legal compliance, user safety</td>
+        </tr>
+        <tr>
+          <td>CI/CD pipeline</td>
+          <td>P1</td>
+          <td>1 week</td>
+          <td>Development velocity</td>
+        </tr>
+        <tr>
+          <td>Performance optimization</td>
+          <td>P1</td>
+          <td>2 weeks</td>
+          <td>User retention on low-end devices</td>
+        </tr>
+        <tr>
+          <td>Password reset flow</td>
+          <td>P1</td>
+          <td>2 days</td>
+          <td>Basic auth completion</td>
+        </tr>
+        <tr>
+          <td>Report system (user reports)</td>
+          <td>P1</td>
+          <td>1 week</td>
+          <td>User safety</td>
+        </tr>
+        <tr>
+          <td>Profile analytics</td>
+          <td>P2</td>
+          <td>1 week</td>
+          <td>Premium feature for athletes</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="54-phase-3-scale-q4-2026">5.4 Phase 3 — Scale (Q4 2026+)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Priority</th>
+          <th>Effort</th>
+          <th>Business Impact</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ML recommendation engine</td>
+          <td>P2</td>
+          <td>8 weeks</td>
+          <td>Improved matching accuracy</td>
+        </tr>
+        <tr>
+          <td>Video streaming (HLS/Mux)</td>
+          <td>P2</td>
+          <td>2 weeks</td>
+          <td>Better video experience</td>
+        </tr>
+        <tr>
+          <td>Advanced analytics dashboard</td>
+          <td>P2</td>
+          <td>3 weeks</td>
+          <td>Premium feature for all roles</td>
+        </tr>
+        <tr>
+          <td>Event calendar</td>
+          <td>P2</td>
+          <td>2 weeks</td>
+          <td>Community engagement</td>
+        </tr>
+        <tr>
+          <td>Offline-first architecture</td>
+          <td>P2</td>
+          <td>3 weeks</td>
+          <td>Rural India accessibility</td>
+        </tr>
+        <tr>
+          <td>i18n (Hindi, Tamil, Arabic)</td>
+          <td>P2</td>
+          <td>2 weeks</td>
+          <td>Market expansion</td>
+        </tr>
+        <tr>
+          <td>OAuth (Google, Apple)</td>
+          <td>P2</td>
+          <td>1 week</td>
+          <td>Reduced signup friction</td>
+        </tr>
+        <tr>
+          <td>Stories / Reels</td>
+          <td>P2</td>
+          <td>4 weeks</td>
+          <td>Engagement, content virality</td>
+        </tr>
+        <tr>
+          <td>Map-based discovery</td>
+          <td>P2</td>
+          <td>2 weeks</td>
+          <td>Geographic scouting</td>
+        </tr>
+        <tr>
+          <td>Live match streaming</td>
+          <td>P3</td>
+          <td>6 weeks</td>
+          <td>Platform stickiness</td>
+        </tr>
+        <tr>
+          <td>Video analysis (AI technique review)</td>
+          <td>P3</td>
+          <td>8 weeks</td>
+          <td>Unique differentiator</td>
+        </tr>
+        <tr>
+          <td>Wearable integration</td>
+          <td>P3</td>
+          <td>4 weeks</td>
+          <td>Data accuracy</td>
+        </tr>
+        <tr>
+          <td>Training plans (AI-generated)</td>
+          <td>P3</td>
+          <td>3 weeks</td>
+          <td>Athlete retention</td>
+        </tr>
+        <tr>
+          <td>Dubai market launch</td>
+          <td>P2</td>
+          <td>4 weeks</td>
+          <td>Geographic expansion</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr />
+    <p>
+      <em
+        >This PRD should be updated as features are built, user feedback is received, and market
+        conditions evolve.</em
+      >
+    </p>
+    <hr />
+    <p><strong>Document End — PRD v1.0</strong></p>
+  </body>
+</html>

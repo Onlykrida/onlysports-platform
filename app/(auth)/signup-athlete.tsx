@@ -310,7 +310,7 @@ export default function SignupAthleteScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   keyboardView: { flex: 1 },
-  scrollContent: { flexGrow: 1, padding: theme.spacing.lg },
+  scrollContent: { flexGrow: 1, padding: theme.spacing.lg, paddingBottom: 120 },
   header: { marginBottom: theme.spacing.xl },
   title: {
     fontSize: theme.fontSize.xxl,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xs,
   },
   subtitle: { fontSize: theme.fontSize.md, color: theme.colors.textSecondary },
-  form: { flex: 1 },
+  form: {},
   footer: { marginTop: theme.spacing.xl, gap: theme.spacing.md },
   loginLink: { alignItems: 'center', padding: theme.spacing.md },
   loginText: { fontSize: theme.fontSize.md, color: theme.colors.textSecondary },

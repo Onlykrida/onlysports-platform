@@ -2,8 +2,23 @@ import { Stack, router } from 'expo-router';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Bell } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { useAuth } from '@/hooks/auth-context';
+
+const HOME_LABELS: Record<string, string> = {
+  athlete: 'Feed',
+  scout: 'Dashboard',
+  coach: 'Coach HQ',
+  team: 'Dashboard',
+  academy: 'Dashboard',
+  fan: 'Feed',
+  brand: 'Talent',
+  trainer: 'Hub',
+  gym: 'Dashboard',
+};
 
 function HeaderTitle() {
+  const { user } = useAuth();
+  const homeLabel = HOME_LABELS[user?.role ?? 'athlete'] ?? 'Feed';
   return (
     <View
       style={{
@@ -43,7 +58,7 @@ function HeaderTitle() {
             marginLeft: 8,
           }}
         >
-          • Feed
+          • {homeLabel}
         </Text>
       </View>
       <TouchableOpacity

@@ -1,11 +1,30 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 import { User, UserRole } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { router } from 'expo-router';
 
-import * as FileSystem from 'expo-file-system';
+/** Create a fallback User from Supabase auth metadata when profile DB is unavailable */
+function createFallbackUser(supabaseUser: SupabaseUser): User {
+  const role: UserRole = (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email || '',
+    name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+    role,
+    avatar: supabaseUser.user_metadata?.avatar_url,
+    bio: undefined,
+    location: undefined,
+    verified: false,
+    sport: undefined,
+    position: undefined,
+    achievements: [],
+    stats: {},
+    roleSpecificData: {},
+    createdAt: new Date(supabaseUser.created_at),
+  };
+}
 
 interface AuthState {
   user: User | null;
@@ -45,13 +64,13 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
     let mounted = true;
 
     const initializeAuth = async () => {
-      // Safety timeout: if auth takes longer than 5s, stop loading
+      // Safety timeout must be longer than profile timeout (8s) to avoid race
       const timeout = setTimeout(() => {
         if (mounted) {
-          console.warn('Auth initialization timed out after 5s');
+          console.warn('Auth initialization timed out after 10s');
           setIsLoading(false);
         }
-      }, 5000);
+      }, 10000);
 
       try {
         if (__DEV__) console.log('Initializing auth...');
@@ -93,48 +112,22 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
 
     initializeAuth();
 
-    // Listen for auth changes
+    // Listen for auth changes — navigation is handled declaratively by Redirect in _layout.tsx
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event: string, session: Session | null) => {
-      if (__DEV__) console.log('Auth state changed:', event, session?.user?.email || 'No session');
+    } = supabase.auth.onAuthStateChange(async (event: string, newSession: Session | null) => {
+      if (__DEV__)
+        console.log('Auth state changed:', event, newSession?.user?.email || 'No session');
 
       if (!mounted) return;
 
-      setSession(session);
+      setSession(newSession);
 
-      if (session?.user) {
-        await loadUserProfile(session.user);
-        // Only navigate on explicit sign in, not on session recovery
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Check if this is a fresh login (not session recovery)
-          const isSessionRecovery =
-            session.user.last_sign_in_at &&
-            new Date(session.user.last_sign_in_at).getTime() < Date.now() - 5000;
-
-          if (!isSessionRecovery) {
-            setTimeout(() => {
-              try {
-                router.replace('/(tabs)' as any);
-              } catch (navError) {
-                console.error('Navigation error:', navError);
-              }
-            }, 100);
-          }
-        }
+      if (newSession?.user) {
+        await loadUserProfile(newSession.user);
       } else {
         setUser(null);
         setIsLoading(false);
-        // Navigate to auth when user logs out
-        if (event === 'SIGNED_OUT') {
-          setTimeout(() => {
-            try {
-              router.replace('/(auth)/welcome' as any);
-            } catch (navError) {
-              console.error('Navigation error:', navError);
-            }
-          }, 100);
-        }
       }
     });
 
@@ -150,30 +143,11 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
     const profileTimeout = setTimeout(() => {
       timedOut = true;
       console.warn('Profile loading timed out after 8s, creating fallback user');
-      const defaultRole: UserRole =
-        (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
-      setUser({
-        id: supabaseUser.id,
-        email: supabaseUser.email || '',
-        name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-        role: defaultRole,
-        avatar: supabaseUser.user_metadata?.avatar_url,
-        bio: undefined,
-        location: undefined,
-        verified: false,
-        sport: undefined,
-        position: undefined,
-        achievements: [],
-        stats: {},
-        roleSpecificData: {},
-        createdAt: new Date(supabaseUser.created_at),
-      });
+      setUser(createFallbackUser(supabaseUser));
       setIsLoading(false);
     }, 8000);
 
     try {
-      const defaultRole: UserRole =
-        (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
       if (__DEV__) console.log('Loading profile for user:', supabaseUser.id);
 
       // Helper to safely set user only if timeout hasn't fired
@@ -183,23 +157,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
 
       if (!isSupabaseConfigured) {
         if (__DEV__) console.log('Supabase not configured, creating basic user object');
-        const basicUser: User = {
-          id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-          role: defaultRole,
-          avatar: supabaseUser.user_metadata?.avatar_url,
-          bio: undefined,
-          location: undefined,
-          verified: false,
-          sport: undefined,
-          position: undefined,
-          achievements: [],
-          stats: {},
-          roleSpecificData: {},
-          createdAt: new Date(supabaseUser.created_at),
-        };
-        safeSetUser(basicUser);
+        safeSetUser(createFallbackUser(supabaseUser));
         setIsLoading(false);
         return;
       }
@@ -218,23 +176,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         });
         // Other database errors - still create basic user to avoid infinite loading
         console.error('Database error loading profile, creating fallback user:', error.message);
-        const basicUser: User = {
-          id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-          role: defaultRole,
-          avatar: supabaseUser.user_metadata?.avatar_url,
-          bio: undefined,
-          location: undefined,
-          verified: false,
-          sport: undefined,
-          position: undefined,
-          achievements: [],
-          stats: {},
-          roleSpecificData: {},
-          createdAt: new Date(supabaseUser.created_at),
-        };
-        safeSetUser(basicUser);
+        safeSetUser(createFallbackUser(supabaseUser));
       } else if (!profile) {
         if (__DEV__) console.log('No profile found for user, attempting to create profile...');
         try {
@@ -244,7 +186,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
               id: supabaseUser.id,
               email: supabaseUser.email || '',
               name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-              role: defaultRole,
+              role: (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete',
               verified: false,
             })
             .select()
@@ -252,23 +194,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
 
           if (createError) {
             console.error('Failed to create profile:', createError);
-            const basicUser: User = {
-              id: supabaseUser.id,
-              email: supabaseUser.email || '',
-              name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-              role: defaultRole,
-              avatar: supabaseUser.user_metadata?.avatar_url,
-              bio: undefined,
-              location: undefined,
-              verified: false,
-              sport: undefined,
-              position: undefined,
-              achievements: [],
-              stats: {},
-              roleSpecificData: {},
-              createdAt: new Date(supabaseUser.created_at),
-            };
-            safeSetUser(basicUser);
+            safeSetUser(createFallbackUser(supabaseUser));
           } else if (newProfile) {
             if (__DEV__) console.log('Profile created successfully:', newProfile);
             const createdUser: User = {
@@ -291,23 +217,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
           }
         } catch (createError) {
           console.error('Exception creating profile:', createError);
-          const basicUser: User = {
-            id: supabaseUser.id,
-            email: supabaseUser.email || '',
-            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-            role: defaultRole,
-            avatar: supabaseUser.user_metadata?.avatar_url,
-            bio: undefined,
-            location: undefined,
-            verified: false,
-            sport: undefined,
-            position: undefined,
-            achievements: [],
-            stats: {},
-            roleSpecificData: {},
-            createdAt: new Date(supabaseUser.created_at),
-          };
-          safeSetUser(basicUser);
+          safeSetUser(createFallbackUser(supabaseUser));
         }
       } else if (profile) {
         if (__DEV__) console.log('Profile loaded successfully:', profile);
@@ -330,24 +240,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         safeSetUser(loadedUser);
       } else {
         if (__DEV__) console.log('No profile data returned');
-        // Fallback to basic user object
-        const basicUser: User = {
-          id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-          role: defaultRole,
-          avatar: supabaseUser.user_metadata?.avatar_url,
-          bio: undefined,
-          location: undefined,
-          verified: false,
-          sport: undefined,
-          position: undefined,
-          achievements: [],
-          stats: {},
-          roleSpecificData: {},
-          createdAt: new Date(supabaseUser.created_at),
-        };
-        safeSetUser(basicUser);
+        safeSetUser(createFallbackUser(supabaseUser));
       }
     } catch (error) {
       console.error('Failed to load user profile:', {
@@ -357,25 +250,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
 
       // Create fallback user to prevent infinite loading
       if (!timedOut) {
-        const fallbackRole: UserRole =
-          (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete';
-        const basicUser: User = {
-          id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-          role: fallbackRole,
-          avatar: supabaseUser.user_metadata?.avatar_url,
-          bio: undefined,
-          location: undefined,
-          verified: false,
-          sport: undefined,
-          position: undefined,
-          achievements: [],
-          stats: {},
-          roleSpecificData: {},
-          createdAt: new Date(supabaseUser.created_at),
-        };
-        setUser(basicUser);
+        setUser(createFallbackUser(supabaseUser));
       }
     } finally {
       clearTimeout(profileTimeout);
@@ -383,6 +258,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
     }
   };
 
+  // login does NOT manage isLoading — onAuthStateChange handles the full flow
   const login = useCallback(async (email: string, password: string) => {
     if (!isSupabaseConfigured) {
       return {
@@ -391,7 +267,6 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
     }
 
     try {
-      setIsLoading(true);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -408,8 +283,6 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
       const errorMessage =
         error instanceof Error ? error.message : 'Login failed. Please try again.';
       return { error: errorMessage };
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -423,8 +296,6 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
       }
 
       try {
-        setIsLoading(true);
-
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
@@ -547,8 +418,6 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         const errorMessage =
           error instanceof Error ? error.message : 'Signup failed. Please try again.';
         return { error: errorMessage };
-      } finally {
-        setIsLoading(false);
       }
     },
     [],
@@ -604,6 +473,8 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
           }
           if (/^(file:\/\/|content:\/\/)/i.test(uri)) {
             try {
+              const FileSystem = Platform.OS !== 'web' ? require('expo-file-system') : null;
+              if (!FileSystem) throw new Error('File system not available on web');
               const base64 = await FileSystem.readAsStringAsync(uri, {
                 encoding: 'base64' as const,
               });

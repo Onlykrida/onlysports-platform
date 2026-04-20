@@ -456,55 +456,6 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
     }
   }, [user]);
 
-  // Check if storage bucket is properly configured
-  const checkStorageBucket = useCallback(async (): Promise<boolean> => {
-    if (!isSupabaseConfigured) return false;
-
-    try {
-      if (__DEV__) console.log('Posts: Checking "posts" bucket configuration...');
-
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-
-      if (bucketsError) {
-        console.error('Posts: Failed to list buckets:', bucketsError);
-        return false;
-      }
-
-      if (__DEV__)
-        console.log(
-          'Posts: Available buckets:',
-          buckets?.map((b: any) => `${b.id || b.name} (public: ${b.public})`).join(', '),
-        );
-
-      const postsBucket = buckets?.find((b: any) => b.id === 'posts' || b.name === 'posts');
-
-      if (!postsBucket) {
-        console.error('Posts: "posts" bucket not found.');
-        console.error(
-          'Posts: Available buckets:',
-          buckets?.map((b: any) => b.id || b.name).join(', ') || 'none',
-        );
-        console.error('\nSTORAGE SETUP REQUIRED');
-        console.error('Please create a storage bucket named "posts" in Supabase Dashboard');
-        return false;
-      }
-
-      if (__DEV__) console.log('Posts: "posts" bucket found:', postsBucket);
-
-      if (!postsBucket.public) {
-        console.warn('Posts: "posts" bucket is not public. Media may not be visible.');
-        console.warn('Posts: Go to Storage > posts > Settings > Toggle "Public bucket" ON');
-      } else {
-        if (__DEV__) console.log('Posts: "posts" bucket is public and ready');
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Posts: Error checking storage bucket:', error);
-      return false;
-    }
-  }, []);
-
   // Upload media to Supabase Storage and return a public URL
   const uploadMediaIfNeeded = useCallback(
     async (uri?: string, mType?: 'image' | 'video'): Promise<string | undefined> => {
@@ -528,25 +479,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
             userId: user.id,
           });
 
-        // Check if posts bucket exists
-        const bucketExists = await checkStorageBucket();
-
-        if (!bucketExists) {
-          console.error('Posts: "posts" bucket not configured. Using fallback URI.');
-          return uri;
-        }
-
-        // Generate a unique filename with proper folder structure
-        const timestamp = Date.now();
-        const randomId = Math.random().toString(36).substring(2, 15);
-        const extension = mType === 'image' ? 'jpg' : 'mp4';
-        const filename = `${timestamp}-${randomId}.${extension}`;
-        const mediaFolder = mType === 'image' ? 'images' : 'videos';
-        const path = `${mediaFolder}/${user.id}/${filename}`;
-
-        if (__DEV__) console.log('Posts: Upload path:', path, '| Bucket: posts');
-
-        // Fetch the file and create blob
+        // Fetch the file and create blob first so we can detect the real type
         if (__DEV__) console.log('Posts: fetching file from URI...');
         const response = await fetch(uri);
         if (!response.ok) {
@@ -565,14 +498,55 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
           throw new Error('Blob is empty');
         }
 
-        // Set content type based on media type
-        const contentType = mType === 'image' ? 'image/jpeg' : 'video/mp4';
-        if (__DEV__) console.log('Posts: uploading with content type:', contentType);
+        // Check file size against bucket limits (50MB for posts)
+        const MAX_SIZE_MB = 50;
+        const fileSizeMB = blob.size / (1024 * 1024);
+        if (fileSizeMB > MAX_SIZE_MB) {
+          console.error(
+            `Posts: File too large (${fileSizeMB.toFixed(1)}MB). Max is ${MAX_SIZE_MB}MB.`,
+          );
+          return uri;
+        }
+
+        // Use the blob's actual MIME type when available, fall back to defaults
+        const defaultType = mType === 'image' ? 'image/jpeg' : 'video/mp4';
+        const contentType =
+          blob.type && blob.type !== 'application/octet-stream' ? blob.type : defaultType;
+        if (__DEV__)
+          console.log(
+            'Posts: uploading with content type:',
+            contentType,
+            '(blob type:',
+            blob.type,
+            ')',
+          );
+
+        // Generate filename with correct extension based on actual content type
+        const extMap: Record<string, string> = {
+          'image/jpeg': 'jpg',
+          'image/png': 'png',
+          'image/gif': 'gif',
+          'image/webp': 'webp',
+          'video/mp4': 'mp4',
+          'video/quicktime': 'mov',
+          'video/webm': 'webm',
+        };
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substring(2, 15);
+        const extension = extMap[contentType] || (mType === 'image' ? 'jpg' : 'mp4');
+        const filename = `${timestamp}-${randomId}.${extension}`;
+        const mediaFolder = mType === 'image' ? 'images' : 'videos';
+        const path = `${mediaFolder}/${user.id}/${filename}`;
+
+        if (__DEV__) console.log('Posts: Upload path:', path, '| Bucket: posts');
+
+        // Convert blob to ArrayBuffer for more reliable web uploads
+        const arrayBuffer = Platform.OS === 'web' ? await blob.arrayBuffer() : blob;
 
         // Upload to Supabase Storage - posts bucket
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('posts')
-          .upload(path, blob, {
+          .upload(path, arrayBuffer, {
             contentType,
             upsert: false,
             cacheControl: '3600',
@@ -632,7 +606,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         return uri; // Fallback to direct URI
       }
     },
-    [user, checkStorageBucket],
+    [user],
   );
 
   // Create a new post

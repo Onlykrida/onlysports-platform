@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -69,19 +68,6 @@ export default function ProfileScreen() {
     track(EVENTS.PROFILE_VIEWED, { userId: user?.id });
   }, []);
 
-  // Load persisted cover photo
-  useEffect(() => {
-    if (user?.id) {
-      AsyncStorage.getItem(`onlysports_cover_${user.id}`)
-        .then((saved) => {
-          if (saved) setCoverPhoto(saved);
-        })
-        .catch(() => {});
-    }
-  }, [user?.id]);
-  const [coverPhoto, setCoverPhoto] = useState<string>(
-    'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200',
-  );
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [userPostsCount, setUserPostsCount] = useState(0);
@@ -302,35 +288,6 @@ export default function ProfileScreen() {
     );
   };
 
-  const pickCoverImage = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Please grant camera roll permissions to upload photos.');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        const uri = result.assets[0].uri;
-        setCoverPhoto(uri);
-        if (user?.id) {
-          AsyncStorage.setItem(`onlysports_cover_${user.id}`, uri).catch(() => {});
-        }
-        Alert.alert('Success', 'Cover photo updated!');
-      }
-    } catch (error) {
-      console.error('Error picking cover image:', error);
-      Alert.alert('Error', 'Failed to update cover photo');
-    }
-  };
-
   return (
     <BackgroundGradient style={styles.container}>
       <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
@@ -339,24 +296,9 @@ export default function ProfileScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           <View style={styles.header}>
-            <TouchableOpacity
-              onPress={pickCoverImage}
-              style={styles.coverImageContainer}
-              accessibilityRole="button"
-              accessibilityLabel="Change cover photo"
-              accessibilityHint="Opens image picker to select a new cover photo"
-            >
-              <CachedImage
-                source={coverPhoto}
-                size={400}
-                placeholder="cover"
-                style={styles.coverImage}
-              />
-              <View style={styles.coverImageOverlay}>
-                <Camera size={20} color={theme.colors.white} />
-                <Text style={styles.coverImageText}>Change Cover</Text>
-              </View>
-            </TouchableOpacity>
+            <View style={styles.coverImageContainer}>
+              <View style={styles.coverGradient} />
+            </View>
             <View style={styles.profileSection}>
               <TouchableOpacity
                 onPress={pickProfileImage}
@@ -369,14 +311,6 @@ export default function ProfileScreen() {
                 <View style={styles.avatarOverlay}>
                   <Camera size={16} color={theme.colors.white} />
                 </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => router.push('/edit-profile' as any)}
-                accessibilityRole="button"
-                accessibilityLabel="Edit profile"
-              >
-                <Edit3 size={16} color={theme.colors.white} />
               </TouchableOpacity>
             </View>
           </View>
@@ -882,10 +816,6 @@ const styles = StyleSheet.create({
   header: {
     position: 'relative',
   },
-  coverImage: {
-    width: '100%',
-    height: 180,
-  },
   profileSection: {
     alignItems: 'center',
     marginTop: -36,
@@ -896,14 +826,6 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     borderWidth: 3,
     borderColor: theme.colors.primary,
-  },
-  editButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: -10,
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.full,
-    padding: theme.spacing.sm,
   },
   infoSection: {
     alignItems: 'center',
@@ -1126,24 +1048,13 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   coverImageContainer: {
-    position: 'relative',
+    height: 120,
   },
-  coverImageOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: theme.spacing.xs,
-  },
-  coverImageText: {
-    color: theme.colors.white,
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
+  coverGradient: {
+    flex: 1,
+    backgroundColor: '#1a2a1a',
+    borderBottomLeftRadius: theme.borderRadius.md,
+    borderBottomRightRadius: theme.borderRadius.md,
   },
   roleDetailsContainer: {
     gap: theme.spacing.sm,

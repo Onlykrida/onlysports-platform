@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -49,9 +50,8 @@ export default function LoginScreen() {
 
       if (result.error) {
         setErrors({ general: result.error });
-      } else {
-        router.replace('/');
       }
+      // Navigation handled by Redirect in _layout.tsx when isAuthenticated changes
     } catch (error) {
       console.error('Login error:', error);
       setErrors({ general: 'Login failed. Please try again.' });
@@ -107,6 +107,12 @@ export default function LoginScreen() {
               style={styles.forgotPassword}
               accessibilityRole="link"
               accessibilityLabel="Forgot password"
+              onPress={() =>
+                Alert.alert(
+                  'Reset Password',
+                  'Password reset email will be sent to your email address. This feature is coming soon.',
+                )
+              }
             >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>

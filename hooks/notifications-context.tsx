@@ -82,10 +82,15 @@ const [NotificationProvider, _useNotifications] = createContextHook<Notification
     if (!user || !isSupabaseConfigured) return;
 
     const channel = supabase
-      .channel('notifications_changes')
+      .channel(`notifications_${user.id}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
         (payload: any) => {
           const n = payload.new as {
             id: string;

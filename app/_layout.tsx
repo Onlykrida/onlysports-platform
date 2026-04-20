@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, Redirect } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { memo, useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -13,7 +13,7 @@ import { MessagesProvider } from '@/hooks/messages-context';
 import { GroupsProvider } from '@/hooks/group-messages-context';
 import { UsersProvider } from '@/hooks/users-context';
 import { OpportunitiesProvider } from '@/hooks/opportunities-context';
-import { View, ActivityIndicator, StatusBar } from 'react-native';
+import { StatusBar } from 'react-native';
 import { ScoutingProvider } from '@/hooks/scouting-context';
 import { FitnessTestProvider } from '@/hooks/fitness-test-context';
 import { AIProvider } from '@/hooks/ai-context';
@@ -29,47 +29,6 @@ function PushNotificationRegistrar() {
   // Only registers when user is authenticated (useAuth inside usePushNotifications)
   usePushNotifications();
   return null;
-}
-
-function AppStack() {
-  return (
-    <Stack
-      screenOptions={{
-        headerBackTitle: 'Back',
-        contentStyle: { backgroundColor: 'transparent' },
-      }}
-      initialRouteName="(tabs)"
-    >
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="edit-profile"
-        options={{ title: 'Edit Profile', presentation: 'modal' }}
-      />
-      <Stack.Screen name="settings" options={{ title: 'Settings', presentation: 'modal' }} />
-      <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
-      <Stack.Screen name="user/[id]" options={{ title: 'Profile' }} />
-      <Stack.Screen
-        name="team-dashboard"
-        options={{ title: 'Team Dashboard', headerShown: false }}
-      />
-      <Stack.Screen name="chat" options={{ headerShown: false }} />
-      <Stack.Screen name="beep-test" options={{ title: 'Fitness Tests', headerShown: false }} />
-      <Stack.Screen name="beep-test-live" options={{ title: 'Yo-Yo Test', headerShown: false }} />
-      <Stack.Screen
-        name="beep-test-manual"
-        options={{ title: 'Enter Result', headerShown: false }}
-      />
-      <Stack.Screen name="beep-test-results" options={{ title: 'Results', headerShown: false }} />
-      <Stack.Screen
-        name="beep-test-history"
-        options={{ title: 'Fitness History', headerShown: false }}
-      />
-      <Stack.Screen
-        name="ai-assistant"
-        options={{ title: 'Krida AI', headerShown: false, presentation: 'modal' }}
-      />
-    </Stack>
-  );
 }
 
 // Grouped providers to reduce nesting depth and isolate re-render domains
@@ -95,80 +54,124 @@ const ContentProviders = memo(({ children }: { children: React.ReactNode }) => (
   </UsersProvider>
 ));
 
-const MemoizedAppStack = memo(AppStack);
-
-function AuthenticatedApp() {
-  return (
-    <SocialProviders>
-      <CommunicationProviders>
-        <OpportunitiesProvider>
-          <ContentProviders>
-            <AIProvider>
-              <PushNotificationRegistrar />
-              <MemoizedAppStack />
-            </AIProvider>
-          </ContentProviders>
-        </OpportunitiesProvider>
-      </CommunicationProviders>
-    </SocialProviders>
-  );
-}
-
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
+
+  // Hide splash screen only after auth resolves
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading]);
 
   if (__DEV__)
     console.log('RootLayoutNav: isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
 
   if (isLoading) {
-    return (
-      <BackgroundGradient>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      </BackgroundGradient>
-    );
+    // Keep splash screen visible — return null (not a spinner)
+    return null;
   }
 
+  // Redirect unauthenticated users to welcome, authenticated users away from auth screens
   if (!isAuthenticated) {
     return (
       <BackgroundGradient>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            headerBackTitle: 'Back',
-            contentStyle: { backgroundColor: 'transparent' },
-          }}
-          initialRouteName="(auth)"
-        >
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        </Stack>
+        <GestureHandlerRootView style={{ flex: 1, overflow: 'hidden' }}>
+          <Redirect href={'/(auth)/welcome' as any} />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: 'transparent' },
+            }}
+          >
+            <Stack.Screen name="(auth)" />
+          </Stack>
+        </GestureHandlerRootView>
       </BackgroundGradient>
     );
   }
 
   return (
     <BackgroundGradient>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <AuthenticatedApp />
+      <GestureHandlerRootView style={{ flex: 1, overflow: 'hidden' }}>
+        <SearchProvider>
+          <SocialProviders>
+            <CommunicationProviders>
+              <OpportunitiesProvider>
+                <ContentProviders>
+                  <AIProvider>
+                    <PushNotificationRegistrar />
+                    <Redirect href={'/(tabs)' as any} />
+                    <Stack
+                      screenOptions={{
+                        headerShown: false,
+                        headerBackTitle: 'Back',
+                        contentStyle: { backgroundColor: 'transparent' },
+                      }}
+                    >
+                      <Stack.Screen name="(tabs)" />
+                      <Stack.Screen
+                        name="edit-profile"
+                        options={{ title: 'Edit Profile', presentation: 'modal' }}
+                      />
+                      <Stack.Screen
+                        name="settings"
+                        options={{ title: 'Settings', presentation: 'modal' }}
+                      />
+                      <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
+                      <Stack.Screen name="user/[id]" options={{ title: 'Profile' }} />
+                      <Stack.Screen
+                        name="team-dashboard"
+                        options={{ title: 'Team Dashboard', headerShown: false }}
+                      />
+                      <Stack.Screen name="chat" options={{ headerShown: false }} />
+                      <Stack.Screen
+                        name="beep-test"
+                        options={{ title: 'Fitness Tests', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="beep-test-live"
+                        options={{ title: 'Yo-Yo Test', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="beep-test-manual"
+                        options={{ title: 'Enter Result', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="beep-test-results"
+                        options={{ title: 'Results', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="beep-test-history"
+                        options={{ title: 'Fitness History', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="ai-assistant"
+                        options={{
+                          title: 'Krida AI',
+                          headerShown: false,
+                          presentation: 'modal',
+                        }}
+                      />
+                    </Stack>
+                  </AIProvider>
+                </ContentProviders>
+              </OpportunitiesProvider>
+            </CommunicationProviders>
+          </SocialProviders>
+        </SearchProvider>
       </GestureHandlerRootView>
     </BackgroundGradient>
   );
 }
 
 export default function RootLayout() {
-  useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <AuthProvider>
-          <SearchProvider>
-            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-            <RootLayoutNav />
-          </SearchProvider>
+          <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+          <RootLayoutNav />
         </AuthProvider>
       </ErrorBoundary>
     </QueryClientProvider>

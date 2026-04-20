@@ -1,0 +1,2881 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BRD — Business Requirements | OnlyKrida</title>
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --bg-card: #141420;
+        --bg-code: #1a1a2e;
+        --green: #30d158;
+        --orange: #ff9f0a;
+        --cyan: #64d2ff;
+        --red: #ff453a;
+        --purple: #bf5af2;
+        --text: #f0f0f0;
+        --text-muted: #999;
+        --border: #2a2a2e;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 32px 120px;
+      }
+      /* Nav bar */
+      .topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: rgba(10, 10, 10, 0.92);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 32px;
+      }
+      .topbar .logo {
+        color: var(--green);
+        font-weight: 800;
+        font-size: 18px;
+        letter-spacing: -0.5px;
+      }
+      .topbar a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 13px;
+        transition: color 0.2s;
+      }
+      .topbar a:hover {
+        color: var(--green);
+      }
+      .topbar a.active {
+        color: var(--green);
+      }
+      body {
+        padding-top: 72px;
+      }
+
+      h1 {
+        font-size: 2.4em;
+        font-weight: 800;
+        color: var(--green);
+        margin: 48px 0 8px;
+        letter-spacing: -1px;
+        border-bottom: 2px solid var(--green);
+        padding-bottom: 12px;
+      }
+      h1:first-of-type {
+        margin-top: 0;
+      }
+      h2 {
+        font-size: 1.6em;
+        font-weight: 700;
+        color: var(--text);
+        margin: 40px 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      h3 {
+        font-size: 1.25em;
+        font-weight: 600;
+        color: var(--cyan);
+        margin: 28px 0 10px;
+      }
+      h4 {
+        font-size: 1.05em;
+        font-weight: 600;
+        color: var(--orange);
+        margin: 20px 0 8px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      a {
+        color: var(--cyan);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      strong {
+        color: var(--green);
+        font-weight: 700;
+      }
+      em {
+        color: var(--text-muted);
+        font-style: italic;
+      }
+
+      blockquote {
+        background: var(--bg-card);
+        border-left: 4px solid var(--green);
+        padding: 16px 20px;
+        margin: 20px 0;
+        border-radius: 0 8px 8px 0;
+      }
+      blockquote p {
+        margin: 4px 0;
+        color: var(--text-muted);
+      }
+      blockquote strong {
+        color: var(--green);
+      }
+
+      ul,
+      ol {
+        padding-left: 24px;
+        margin: 10px 0;
+      }
+      li {
+        margin: 6px 0;
+      }
+      li::marker {
+        color: var(--green);
+      }
+
+      code {
+        background: var(--bg-code);
+        color: var(--cyan);
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      }
+      pre {
+        background: var(--bg-code);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 16px 0;
+        overflow-x: auto;
+        line-height: 1.5;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        color: var(--text);
+        font-size: 0.85em;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 0.92em;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      th {
+        background: var(--bg-code);
+        color: var(--green);
+        font-weight: 700;
+        text-align: left;
+        padding: 12px 16px;
+        border-bottom: 2px solid var(--green);
+        position: sticky;
+        top: 56px;
+        z-index: 10;
+      }
+      td {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      tr:nth-child(even) td {
+        background: rgba(20, 20, 32, 0.5);
+      }
+      tr:hover td {
+        background: rgba(48, 209, 88, 0.06);
+      }
+
+      hr {
+        border: none;
+        height: 1px;
+        background: var(--border);
+        margin: 40px 0;
+      }
+
+      /* Table of Contents */
+      h2#table-of-contents ~ ol,
+      h2#table-of-contents ~ ul {
+        columns: 2;
+        column-gap: 32px;
+      }
+
+      /* Badges for P0/P1/P2 */
+      td:first-child {
+        white-space: nowrap;
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #444;
+      }
+
+      /* Print */
+      @media print {
+        body {
+          background: white;
+          color: #111;
+          padding: 20px;
+        }
+        .topbar {
+          display: none;
+        }
+        h1 {
+          color: #111;
+          border-color: #111;
+        }
+        h2 {
+          color: #333;
+        }
+        h3 {
+          color: #555;
+        }
+        table th {
+          background: #eee;
+          color: #111;
+          border-color: #111;
+        }
+        td {
+          border-color: #ddd;
+        }
+        code {
+          background: #f5f5f5;
+          color: #333;
+        }
+        pre {
+          background: #f5f5f5;
+          border-color: #ddd;
+        }
+        blockquote {
+          background: #f9f9f9;
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        body {
+          padding: 60px 16px 80px;
+        }
+        h1 {
+          font-size: 1.8em;
+        }
+        table {
+          font-size: 0.82em;
+        }
+        th,
+        td {
+          padding: 8px 10px;
+        }
+        .topbar {
+          padding: 10px 16px;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="topbar">
+      <span class="logo">OnlyKrida</span><a href="brd.html" class="active">BRD</a
+      ><a href="prd.html">PRD</a><a href="trd.html">TRD</a
+      ><a href="improvements.html">Top 15 Critical Improvements</a>
+    </nav>
+    <h1 id="business-requirement-document-brd">Business Requirement Document (BRD)</h1>
+    <h1 id="onlykrida-indias-first-ai-powered-sports-talent-discovery-platform">
+      OnlyKrida — India's First AI-Powered Sports Talent Discovery Platform
+    </h1>
+    <blockquote>
+      <p>
+        <strong>Version</strong>: 1.0 | <strong>Date</strong>: April 2026 | <strong>Status</strong>:
+        MVP Complete | <strong>Classification</strong>: Confidential<br />
+        <strong>Author</strong>: OnlyKrida Product &amp; Engineering Team
+      </p>
+    </blockquote>
+    <hr />
+    <h2 id="table-of-contents">Table of Contents</h2>
+    <ol>
+      <li><a href="#1-executive-summary">Executive Summary</a></li>
+      <li><a href="#2-market-analysis">Market Analysis</a></li>
+      <li><a href="#3-stakeholder-analysis">Stakeholder Analysis</a></li>
+      <li><a href="#4-business-model">Business Model</a></li>
+      <li><a href="#5-user-personas">User Personas</a></li>
+      <li><a href="#6-business-requirements">Business Requirements</a></li>
+      <li><a href="#7-success-metrics">Success Metrics</a></li>
+      <li><a href="#8-risk-analysis">Risk Analysis</a></li>
+    </ol>
+    <hr />
+    <h1 id="1-executive-summary">1. Executive Summary</h1>
+    <h2 id="11-vision">1.1 Vision</h2>
+    <p>
+      <strong
+        >To become the global digital identity layer for sports — starting with India's 400 million
+        untapped athletes.</strong
+      >
+    </p>
+    <p>
+      OnlyKrida envisions a world where no athlete's talent goes undiscovered due to geography,
+      economics, or lack of connections. By 2030, every serious athlete in India — from a village
+      kabaddi player to a Tier 1 city footballer — will have a verified digital sports identity on
+      OnlyKrida that scouts, coaches, and teams can discover, evaluate, and recruit from.
+    </p>
+    <h2 id="12-mission">1.2 Mission</h2>
+    <p>
+      Make every athlete discoverable. Provide scouts with AI-powered tools to find talent anywhere.
+      Give coaches data to develop athletes scientifically. Build the trust infrastructure (verified
+      profiles, fitness data, achievement records) that the Indian sports ecosystem desperately
+      lacks.
+    </p>
+    <h2 id="13-problem-statement">1.3 Problem Statement</h2>
+    <p>India's sports talent ecosystem is fundamentally broken:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Problem</th>
+          <th>Impact</th>
+          <th>Who Suffers</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>No digital identity for athletes</strong></td>
+          <td>Talent dies in WhatsApp groups and local newspapers</td>
+          <td>Athletes, Scouts</td>
+        </tr>
+        <tr>
+          <td><strong>Geographic scouting bias</strong></td>
+          <td>Scouts only visit metro cities; 70% of talent is in Tier 2/3</td>
+          <td>Athletes in small towns</td>
+        </tr>
+        <tr>
+          <td><strong>Pay-to-play culture</strong></td>
+          <td>Access to trials costs Rs 5K-50K; excludes low-income families</td>
+          <td>Economically disadvantaged athletes</td>
+        </tr>
+        <tr>
+          <td><strong>Fragmented, unverified data</strong></td>
+          <td>Fitness data on paper; fake achievements rampant</td>
+          <td>Scouts, Coaches, Teams</td>
+        </tr>
+        <tr>
+          <td><strong>Scout inefficiency</strong></td>
+          <td>Travel thousands of miles, 90% of trips yield zero signings</td>
+          <td>Scouts, Teams (budget waste)</td>
+        </tr>
+        <tr>
+          <td><strong>No standardized metrics</strong></td>
+          <td>Every academy measures differently; no comparable data</td>
+          <td>Coaches, Federations</td>
+        </tr>
+        <tr>
+          <td><strong>Information asymmetry</strong></td>
+          <td>Athletes don't know about opportunities; teams can't find athletes</td>
+          <td>Everyone</td>
+        </tr>
+        <tr>
+          <td><strong>Zero technology</strong></td>
+          <td>WhatsApp + Excel = "talent management" for most organizations</td>
+          <td>The entire ecosystem</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="the-core-insight">The Core Insight</h3>
+    <p>
+      India has <strong>400 million+ sports participants</strong> but
+      <strong>less than 1% are professionally scouted</strong>. The pipeline from grassroots to
+      professional is not a funnel — it's a wall. OnlyKrida turns that wall into a bridge using
+      technology, AI, and verified data.
+    </p>
+    <h2 id="14-opportunity-size">1.4 Opportunity Size</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Value</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>India sports participants</td>
+          <td>400M+</td>
+          <td>FICCI Sports Report 2025</td>
+        </tr>
+        <tr>
+          <td>Indian sports industry size</td>
+          <td>$7 Billion</td>
+          <td>KPMG India</td>
+        </tr>
+        <tr>
+          <td>Annual growth rate</td>
+          <td>15% YoY</td>
+          <td>Deloitte</td>
+        </tr>
+        <tr>
+          <td>Projected 2030 market</td>
+          <td>$14 Billion</td>
+          <td>McKinsey India Sports</td>
+        </tr>
+        <tr>
+          <td>Grassroots athletes without digital presence</td>
+          <td>99%+</td>
+          <td>OnlyKrida Research</td>
+        </tr>
+        <tr>
+          <td>Active organized scouts in India</td>
+          <td>~5,000</td>
+          <td>Federation data</td>
+        </tr>
+        <tr>
+          <td>Sports academies</td>
+          <td>15,000+</td>
+          <td>FICCI Education</td>
+        </tr>
+        <tr>
+          <td>Annual sports scholarships (unfilled)</td>
+          <td>30%+</td>
+          <td>UGC Data</td>
+        </tr>
+        <tr>
+          <td>Government Khelo India budget</td>
+          <td>Rs 1,756 Crore</td>
+          <td>Ministry of Sports</td>
+        </tr>
+        <tr>
+          <td>IPL ecosystem value (proof of sports = commerce)</td>
+          <td>$16 Billion</td>
+          <td>Duff &amp; Phelps</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>TAM</strong>: $7B (Indian sports industry)<br />
+      <strong>SAM</strong>: $800M (talent discovery, scouting, recruitment segment)<br />
+      <strong>SOM (Year 3)</strong>: $12M (OnlyKrida's achievable revenue)
+    </p>
+    <hr />
+    <h1 id="2-market-analysis">2. Market Analysis</h1>
+    <h2 id="21-current-problems-in-the-sports-ecosystem">
+      2.1 Current Problems in the Sports Ecosystem
+    </h2>
+    <h3 id="for-athletes">For Athletes</h3>
+    <ul>
+      <li>No centralized platform to showcase talent</li>
+      <li>Discovery depends entirely on personal networks and geography</li>
+      <li>Fitness data exists on paper, not digitally</li>
+      <li>No way to get noticed by scouts outside their city</li>
+      <li>Pay-to-play trials exclude talented but poor athletes</li>
+      <li>Fake profiles and achievements by competitors hurt credibility</li>
+    </ul>
+    <h3 id="for-scouts">For Scouts</h3>
+    <ul>
+      <li>Manual, travel-heavy scouting process</li>
+      <li>No standardized data to compare athletes across regions</li>
+      <li>Rely on word-of-mouth and personal networks</li>
+      <li>No tools for systematic athlete evaluation</li>
+      <li>Cannot verify claimed achievements or fitness levels</li>
+      <li>Spend 80% of time on logistics, 20% on actual evaluation</li>
+    </ul>
+    <h3 id="for-coaches">For Coaches</h3>
+    <ul>
+      <li>No digital tools for athlete development tracking</li>
+      <li>Cannot benchmark athletes against standardized metrics</li>
+      <li>Team management is WhatsApp-based</li>
+      <li>No way to showcase coaching credentials or philosophy</li>
+    </ul>
+    <h3 id="for-teams">For Teams</h3>
+    <ul>
+      <li>Recruitment is expensive and inefficient</li>
+      <li>Cannot reach athletes in Tier 2/3 cities</li>
+      <li>No centralized system for managing applications</li>
+      <li>Opportunity postings reach limited audiences</li>
+    </ul>
+    <h2 id="22-competitor-analysis">2.2 Competitor Analysis</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>OnlyKrida</th>
+          <th>Hudl</th>
+          <th>NCSA (Next College Student Athlete)</th>
+          <th>TransferMarkt</th>
+          <th>SportsRecruits</th>
+          <th>Khelomore (India)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Primary Market</strong></td>
+          <td>India (grassroots → pro)</td>
+          <td>USA (high school/college)</td>
+          <td>USA (college recruiting)</td>
+          <td>Global (pro football/soccer)</td>
+          <td>USA (college)</td>
+          <td>India (equipment sales)</td>
+        </tr>
+        <tr>
+          <td><strong>Free for Athletes</strong></td>
+          <td>Yes (forever)</td>
+          <td>Freemium</td>
+          <td>No ($)</td>
+          <td>View only</td>
+          <td>No ($)</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td><strong>AI-Powered Matching</strong></td>
+          <td>Yes (Claude Opus)</td>
+          <td>Basic video analytics</td>
+          <td>No</td>
+          <td>No</td>
+          <td>No</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td><strong>Fitness Test Integration</strong></td>
+          <td>Yes (5 types, verified)</td>
+          <td>No</td>
+          <td>No</td>
+          <td>No</td>
+          <td>No</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td><strong>Multi-Sport</strong></td>
+          <td>All sports</td>
+          <td>Primarily American football</td>
+          <td>US college sports</td>
+          <td>Football (soccer) only</td>
+          <td>US college sports</td>
+          <td>Equipment retail</td>
+        </tr>
+        <tr>
+          <td><strong>Social Feed</strong></td>
+          <td>Yes (Instagram-like)</td>
+          <td>Limited highlights</td>
+          <td>No</td>
+          <td>Forum/comments</td>
+          <td>No</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td><strong>Real-time Messaging</strong></td>
+          <td>Yes (1-on-1 + group)</td>
+          <td>No</td>
+          <td>Yes (limited)</td>
+          <td>No</td>
+          <td>Yes (limited)</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td><strong>9 User Role Types</strong></td>
+          <td>Yes</td>
+          <td>2 roles</td>
+          <td>3 roles</td>
+          <td>Viewer + editor</td>
+          <td>3 roles</td>
+          <td>Buyer/seller</td>
+        </tr>
+        <tr>
+          <td><strong>Verified Credentials</strong></td>
+          <td>4-tier verification system</td>
+          <td>No</td>
+          <td>No</td>
+          <td>Editorial only</td>
+          <td>No</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td><strong>Opportunity Marketplace</strong></td>
+          <td>5 categories</td>
+          <td>No</td>
+          <td>Scholarships only</td>
+          <td>Transfers only</td>
+          <td>Scholarships</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td><strong>Mobile App</strong></td>
+          <td>iOS + Android + Web</td>
+          <td>Yes</td>
+          <td>Yes</td>
+          <td>Yes</td>
+          <td>Limited</td>
+          <td>Yes</td>
+        </tr>
+        <tr>
+          <td><strong>India-Specific</strong></td>
+          <td>Built for India</td>
+          <td>No</td>
+          <td>No</td>
+          <td>Partial</td>
+          <td>No</td>
+          <td>Equipment only</td>
+        </tr>
+        <tr>
+          <td><strong>Pricing (Scout)</strong></td>
+          <td>Rs 999-9,999/mo</td>
+          <td>$99-799/yr</td>
+          <td>N/A</td>
+          <td>Free</td>
+          <td>$149-499/yr</td>
+          <td>N/A</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="key-takeaway">Key Takeaway</h3>
+    <p>
+      <strong
+        >No platform globally combines social networking + AI scouting + verified fitness data +
+        opportunity marketplace — and none focuses on India's grassroots athletes.</strong
+      >
+      OnlyKrida has no direct competitor.
+    </p>
+    <h2 id="23-onlykridas-moat-defensibility">2.3 OnlyKrida's Moat (Defensibility)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Moat</th>
+          <th>Description</th>
+          <th>Defensibility</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Network Effects</strong></td>
+          <td>More athletes → more valuable for scouts → more scouts → attracts more athletes</td>
+          <td>Strong — winner-take-most</td>
+        </tr>
+        <tr>
+          <td><strong>Data Moat</strong></td>
+          <td>Verified fitness test data is proprietary and accumulates over time</td>
+          <td>Very strong — data compounds</td>
+        </tr>
+        <tr>
+          <td><strong>AI Training Data</strong></td>
+          <td>Scout preferences + matching outcomes train the recommendation engine</td>
+          <td>Growing — improves with use</td>
+        </tr>
+        <tr>
+          <td><strong>Multi-sided Platform</strong></td>
+          <td>9 roles create complex, hard-to-replicate ecosystem</td>
+          <td>Very strong — high switching costs</td>
+        </tr>
+        <tr>
+          <td><strong>First Mover (India)</strong></td>
+          <td>No competitor in Indian grassroots sports tech</td>
+          <td>Moderate — speed matters</td>
+        </tr>
+        <tr>
+          <td><strong>Coach/Academy Partnerships</strong></td>
+          <td>Coaches bring 20-50 athletes each; institutional relationships are sticky</td>
+          <td>Strong — relationship-based</td>
+        </tr>
+        <tr>
+          <td><strong>Brand &amp; Trust</strong></td>
+          <td>OnlyKrida = verified sports identity (like LinkedIn for professionals)</td>
+          <td>Grows with time</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr />
+    <h1 id="3-stakeholder-analysis">3. Stakeholder Analysis</h1>
+    <h2 id="31-athletes">3.1 Athletes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Who</strong></td>
+          <td>
+            School (14-18), college (18-22), amateur (18-35), semi-pro, professional athletes across
+            all sports
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Get discovered by scouts; showcase talent to a wider audience; access tryouts,
+            tournaments, scholarships; track fitness progress; build a digital sports resume
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            No digital identity; geographic isolation limits visibility; can't afford to attend
+            distant trials; no way to verify their achievements credibly; don't know what
+            opportunities exist
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Value</strong></td>
+          <td>
+            Free verified profile; AI-optimized for scout discovery; fitness test data builds
+            credibility; content platform for highlights; opportunity marketplace for applications
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Profile views by scouts, opportunities applied to, follower growth</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="32-coaches">3.2 Coaches</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Who</strong></td>
+          <td>
+            School/college coaches, academy coaches, independent trainers, national-level coaches
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Develop athletes systematically; track athlete progress with data; recruit talent for
+            their programs; build professional credibility
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            No digital tools for team management; can't benchmark athletes; team communication is
+            fragmented (WhatsApp groups); no way to showcase coaching results
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Value</strong></td>
+          <td>
+            Team roster management; fitness test verification (adds trust to their assessments);
+            content platform to share coaching philosophy; athlete discovery for their programs
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Athletes coached on platform, fitness tests verified, team engagement</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="33-scouts">3.3 Scouts</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Who</strong></td>
+          <td>
+            Independent freelance scouts, sports agency scouts, federation scouts, ISL/IPL team
+            scouts, international scouts looking at Indian talent
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Find the best talent efficiently; reduce travel and cost per signing; access
+            standardized, comparable data; verify athlete claims; stay ahead of competing scouts
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            Travel-heavy, expensive scouting process; rely on personal networks (limited geographic
+            reach); no standardized data across regions; fake achievements are common; 90% of
+            scouting trips yield nothing
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Value</strong></td>
+          <td>
+            AI-powered athlete recommendations (fit scores 0-100); customizable search preferences;
+            shortlisting and comparison tools; verified fitness data; direct messaging with athletes
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>
+            Athletes shortlisted, successful matches, time/cost savings vs. traditional scouting
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="34-teams-clubs">3.4 Teams / Clubs</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Who</strong></td>
+          <td>
+            Local clubs, state-level teams, ISL/I-League clubs, IPL franchises, corporate sports
+            teams, university teams
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Recruit the best athletes affordably; fill open roster spots; promote tryouts and
+            opportunities to a wide audience; manage recruitment pipeline
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            Recruitment is expensive and slow; can't reach Tier 2/3 talent; opportunity postings
+            have limited reach; application management is manual (email/WhatsApp); no centralized
+            recruitment dashboard
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Value</strong></td>
+          <td>
+            Opportunity marketplace (post tryouts, tournaments, contracts, scholarships);
+            application management dashboard; team profile page; AI-assisted athlete screening;
+            direct outreach via messaging
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Applications received, positions filled, cost per hire vs. traditional</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="35-fans">3.5 Fans</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Who</strong></td>
+          <td>
+            Sports enthusiasts, local community supporters, parents of athletes, sports
+            media/bloggers
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Follow favorite athletes' journeys; discover rising talent early; engage with sports
+            content; support local athletes
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            No platform to follow grassroots athletes (only stars are on Instagram); local sports
+            news is fragmented; can't track athletes' development over time
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Value</strong></td>
+          <td>
+            Social feed with athlete content; trending athletes section; follow athletes and get
+            updates; community engagement (likes, comments, shares)
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Feed engagement rate, athletes followed, session duration</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="36-trainers">3.6 Trainers</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Who</strong></td>
+          <td>
+            Personal trainers, fitness coaches, sports physiotherapists, strength &amp; conditioning
+            specialists
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Showcase expertise; attract athlete clients; share training content; build professional
+            network
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            No sports-specific platform to market services; hard to demonstrate results; limited to
+            local word-of-mouth
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Value</strong></td>
+          <td>
+            Professional profile with certifications; content platform for training videos; athlete
+            connection network; fitness test administration
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Athlete connections, content engagement, profile views</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="37-gyms-academies">3.7 Gyms / Academies</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Who</strong></td>
+          <td>
+            Sports academies, training centers, gym chains, specialized facilities (swimming,
+            tennis, martial arts)
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Attract student athletes; showcase facilities and programs; track alumni success; build
+            institutional credibility
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            Marketing limited to local reach; no way to showcase athlete outcomes; manual enrollment
+            management
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Value</strong></td>
+          <td>
+            Institutional profile; athlete roster tracking; program showcase; fitness test center
+            verification status
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Students enrolled via platform, alumni success stories, profile engagement</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="38-brands">3.8 Brands</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Who</strong></td>
+          <td>
+            Sports equipment brands, nutrition companies, sports apparel, local businesses, media
+            companies
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Sponsor rising athletes; reach sports-engaged audience; identify brand ambassadors;
+            content partnership
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            Difficult to find grassroots athletes for sponsorship; no data on athlete
+            reach/engagement; manual ambassador management
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Value</strong></td>
+          <td>
+            Athlete search by sport/location/engagement; sponsorship opportunity postings; brand
+            profile page; campaign management (future)
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Sponsorship deals created, brand impressions, athlete partnerships</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="39-platform-admin">3.9 Platform Admin</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Who</strong></td>
+          <td>OnlyKrida operations team</td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>Platform health, content quality, user growth, revenue, compliance</td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            Currently no admin dashboard; no content moderation tools; no user management; no
+            analytics visibility
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Value</strong></td>
+          <td>
+            Admin dashboard (to be built); user management; content moderation; analytics; AI usage
+            monitoring
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>DAU/MAU ratio, content quality score, user reports resolved, revenue</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr />
+    <h1 id="4-business-model">4. Business Model</h1>
+    <h2 id="41-core-principle">4.1 Core Principle</h2>
+    <p>
+      <strong>Athletes never pay. Ever.</strong> The platform's value grows with athlete volume.
+      Scouts, teams, and brands pay because athletes are there.
+    </p>
+    <h2 id="42-revenue-streams">4.2 Revenue Streams</h2>
+    <h3 id="stream-1-scout-subscriptions">Stream 1: Scout Subscriptions</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Plan</th>
+          <th>Monthly Price (INR)</th>
+          <th>Monthly Price (USD)</th>
+          <th>Features</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Scout Free</strong></td>
+          <td>Rs 0</td>
+          <td>$0</td>
+          <td>Browse profiles (limited), 5 searches/day, no AI recommendations</td>
+        </tr>
+        <tr>
+          <td><strong>Scout Basic</strong></td>
+          <td>Rs 999</td>
+          <td>$12</td>
+          <td>50 searches/mo, 10 shortlists, basic filters, messaging (10/day)</td>
+        </tr>
+        <tr>
+          <td><strong>Scout Pro</strong></td>
+          <td>Rs 2,499</td>
+          <td>$30</td>
+          <td>
+            Unlimited searches, AI recommendations (fit scores), 50 shortlists, full filters,
+            unlimited messaging, export profiles
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Scout Enterprise</strong></td>
+          <td>Rs 9,999</td>
+          <td>$120</td>
+          <td>
+            Everything in Pro + API access, bulk export, team collaboration (5 seats), priority
+            support, custom AI models, analytics dashboard
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="stream-2-team-dashboard-plans">Stream 2: Team Dashboard Plans</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Plan</th>
+          <th>Monthly Price (INR)</th>
+          <th>Monthly Price (USD)</th>
+          <th>Features</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Team Free</strong></td>
+          <td>Rs 0</td>
+          <td>$0</td>
+          <td>Team profile, 1 opportunity/month, basic applications view</td>
+        </tr>
+        <tr>
+          <td><strong>Team Starter</strong></td>
+          <td>Rs 1,999</td>
+          <td>$24</td>
+          <td>5 opportunities/mo, 5 team members, application management, messaging</td>
+        </tr>
+        <tr>
+          <td><strong>Team Pro</strong></td>
+          <td>Rs 4,999</td>
+          <td>$60</td>
+          <td>
+            Unlimited opportunities, 25 team members, analytics, AI screening, priority listing
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Team Enterprise</strong></td>
+          <td>Rs 14,999</td>
+          <td>$180</td>
+          <td>Everything + API access, 100 members, dedicated support, custom branding</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="stream-3-brand-sponsorship-marketplace">
+      Stream 3: Brand &amp; Sponsorship Marketplace
+    </h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Pricing</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Sponsored Athlete Cards</strong></td>
+          <td>Rs 5,000-25,000/campaign</td>
+          <td>Brand logo on athlete profile cards in discover feed</td>
+        </tr>
+        <tr>
+          <td><strong>Featured Opportunity</strong></td>
+          <td>Rs 500-2,000/listing</td>
+          <td>Boosted visibility for opportunity postings</td>
+        </tr>
+        <tr>
+          <td><strong>Brand Profile Page</strong></td>
+          <td>Rs 2,999/mo</td>
+          <td>Enhanced brand page with custom branding, athlete ambassador showcase</td>
+        </tr>
+        <tr>
+          <td><strong>Targeted Notifications</strong></td>
+          <td>Rs 10,000-50,000/campaign</td>
+          <td>Notify athletes matching specific criteria about brand opportunities</td>
+        </tr>
+        <tr>
+          <td><strong>Data Insights Report</strong></td>
+          <td>Rs 25,000-1,00,000/report</td>
+          <td>Custom analytics on athlete demographics, engagement, by sport/region</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="stream-4-premium-features-future">Stream 4: Premium Features (Future)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Price</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Verified Badge (Expedited)</strong></td>
+          <td>Rs 499 one-time</td>
+          <td>Fast-track verification process (normally 7 days → 24 hours)</td>
+        </tr>
+        <tr>
+          <td><strong>Profile Analytics</strong></td>
+          <td>Rs 199/mo</td>
+          <td>Detailed analytics on who viewed profile, engagement trends</td>
+        </tr>
+        <tr>
+          <td><strong>Video Analysis</strong></td>
+          <td>Rs 99/analysis</td>
+          <td>AI-powered video analysis of technique (future ML feature)</td>
+        </tr>
+        <tr>
+          <td><strong>Priority Listing</strong></td>
+          <td>Rs 299/mo</td>
+          <td>Athlete appears higher in scout searches</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="43-unit-economics">4.3 Unit Economics</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Value</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>CAC (Athletes)</strong></td>
+          <td>Rs 50 ($0.60)</td>
+          <td>Organic via coaches, social media, word-of-mouth</td>
+        </tr>
+        <tr>
+          <td><strong>CAC (Scouts)</strong></td>
+          <td>Rs 5,000 ($60)</td>
+          <td>Direct sales, sports events, LinkedIn outreach</td>
+        </tr>
+        <tr>
+          <td><strong>CAC (Teams)</strong></td>
+          <td>Rs 8,000 ($96)</td>
+          <td>Direct sales, federation partnerships</td>
+        </tr>
+        <tr>
+          <td><strong>LTV (Scout Basic)</strong></td>
+          <td>Rs 11,988 ($144)</td>
+          <td>12-month average retention</td>
+        </tr>
+        <tr>
+          <td><strong>LTV (Scout Pro)</strong></td>
+          <td>Rs 29,988 ($360)</td>
+          <td>12-month average retention</td>
+        </tr>
+        <tr>
+          <td><strong>LTV (Team Pro)</strong></td>
+          <td>Rs 59,988 ($720)</td>
+          <td>12-month average retention</td>
+        </tr>
+        <tr>
+          <td><strong>LTV:CAC (Scout Pro)</strong></td>
+          <td>6x</td>
+          <td>Healthy ratio (&gt;3x is good)</td>
+        </tr>
+        <tr>
+          <td><strong>Gross Margin</strong></td>
+          <td>85%</td>
+          <td>Low infrastructure costs (Supabase, Claude API)</td>
+        </tr>
+        <tr>
+          <td><strong>Monthly Burn (current)</strong></td>
+          <td>Rs 2L ($2.4K)</td>
+          <td>Pre-revenue, 1-person team</td>
+        </tr>
+        <tr>
+          <td><strong>Target Monthly Burn</strong></td>
+          <td>Rs 5L ($6K)</td>
+          <td>Post-funding, 3-person team</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="44-revenue-projections">4.4 Revenue Projections</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Year 1</th>
+          <th>Year 2</th>
+          <th>Year 3</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Total Users</strong></td>
+          <td>50,000</td>
+          <td>250,000</td>
+          <td>1,000,000</td>
+        </tr>
+        <tr>
+          <td><strong>Athletes</strong></td>
+          <td>40,000 (80%)</td>
+          <td>200,000 (80%)</td>
+          <td>800,000 (80%)</td>
+        </tr>
+        <tr>
+          <td><strong>Scouts (total)</strong></td>
+          <td>200</td>
+          <td>1,000</td>
+          <td>4,000</td>
+        </tr>
+        <tr>
+          <td><strong>Scouts (paid)</strong></td>
+          <td>50 (25%)</td>
+          <td>300 (30%)</td>
+          <td>1,200 (30%)</td>
+        </tr>
+        <tr>
+          <td><strong>Teams (total)</strong></td>
+          <td>100</td>
+          <td>500</td>
+          <td>2,000</td>
+        </tr>
+        <tr>
+          <td><strong>Teams (paid)</strong></td>
+          <td>50 (50%)</td>
+          <td>200 (40%)</td>
+          <td>800 (40%)</td>
+        </tr>
+        <tr>
+          <td><strong>Brands (active)</strong></td>
+          <td>5</td>
+          <td>25</td>
+          <td>100</td>
+        </tr>
+        <tr>
+          <td><strong>Scout MRR</strong></td>
+          <td>Rs 1.25L</td>
+          <td>Rs 7.5L</td>
+          <td>Rs 30L</td>
+        </tr>
+        <tr>
+          <td><strong>Team MRR</strong></td>
+          <td>Rs 2.5L</td>
+          <td>Rs 10L</td>
+          <td>Rs 40L</td>
+        </tr>
+        <tr>
+          <td><strong>Brand Revenue/mo</strong></td>
+          <td>Rs 2.5L</td>
+          <td>Rs 12.5L</td>
+          <td>Rs 50L</td>
+        </tr>
+        <tr>
+          <td><strong>Other Revenue/mo</strong></td>
+          <td>Rs 50K</td>
+          <td>Rs 5L</td>
+          <td>Rs 20L</td>
+        </tr>
+        <tr>
+          <td><strong>Total MRR</strong></td>
+          <td>Rs 6.75L</td>
+          <td>Rs 35L</td>
+          <td>Rs 1.4 Cr</td>
+        </tr>
+        <tr>
+          <td><strong>Total ARR</strong></td>
+          <td>Rs 81L ($97K)</td>
+          <td>Rs 4.2 Cr ($504K)</td>
+          <td>Rs 16.8 Cr ($2M)</td>
+        </tr>
+        <tr>
+          <td><strong>Gross Margin</strong></td>
+          <td>85%</td>
+          <td>82%</td>
+          <td>80%</td>
+        </tr>
+        <tr>
+          <td><strong>Net Burn/mo</strong></td>
+          <td>Rs -3.25L</td>
+          <td>Rs +10L</td>
+          <td>Rs +60L</td>
+        </tr>
+        <tr>
+          <td><strong>Break-even</strong></td>
+          <td>—</td>
+          <td>Month 14</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr />
+    <h1 id="5-user-personas">5. User Personas</h1>
+    <h2 id="persona-1-vikram-the-grassroots-footballer">
+      Persona 1: Vikram — The Grassroots Footballer
+    </h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Age</strong></td>
+          <td>17</td>
+        </tr>
+        <tr>
+          <td><strong>Location</strong></td>
+          <td>Bellary, Karnataka (Tier 3 city)</td>
+        </tr>
+        <tr>
+          <td><strong>Sport</strong></td>
+          <td>Football</td>
+        </tr>
+        <tr>
+          <td><strong>Position</strong></td>
+          <td>Striker</td>
+        </tr>
+        <tr>
+          <td><strong>Role on Platform</strong></td>
+          <td>Athlete</td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Get scouted by ISL club; earn sports scholarship for college; prove himself beyond local
+            tournaments
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Behavior</strong></td>
+          <td>
+            Trains 4 hours daily at local academy; records training videos on phone; shares clips on
+            Instagram Stories (gets 50 views); plays in district-level tournaments
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            No scouts visit Bellary; can't afford to travel to Mumbai/Bangalore for trials (Rs
+            15K+); local coach doesn't have connections; his Instagram has 200 followers — scouts
+            will never find him
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Devices</strong></td>
+          <td>Redmi Note 11 (mid-range Android), 4G connection (intermittent)</td>
+        </tr>
+        <tr>
+          <td><strong>Platform Journey</strong></td>
+          <td>
+            Coach tells team about OnlyKrida → Signs up as athlete → Adds football/striker → Uploads
+            3 training clips → Takes beep test (scores "Rising" zone) → Coach verifies → Gets
+            profile coaching from AI ("Add match highlights to improve visibility") → Uploads match
+            goal compilation → Scout from Bengaluru FC shortlists him → Scout messages him → Gets
+            invited to trials
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Time from signup to first scout interaction</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="persona-2-ananya-the-college-sprinter">Persona 2: Ananya — The College Sprinter</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Age</strong></td>
+          <td>20</td>
+        </tr>
+        <tr>
+          <td><strong>Location</strong></td>
+          <td>Pune, Maharashtra</td>
+        </tr>
+        <tr>
+          <td><strong>Sport</strong></td>
+          <td>Track &amp; Field</td>
+        </tr>
+        <tr>
+          <td><strong>Position</strong></td>
+          <td>100m / 200m Sprinter</td>
+        </tr>
+        <tr>
+          <td><strong>Role on Platform</strong></td>
+          <td>Athlete</td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            National-level recognition; sports scholarship for Master's program; build a verified
+            digital sports portfolio
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Behavior</strong></td>
+          <td>
+            University athletics team captain; competes in inter-university meets; has coach who
+            tracks her times; active on Instagram (2K followers); posts training reels
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            University meets don't get media coverage; her 11.8s 100m time is competitive but nobody
+            outside Pune knows; scholarship applications require "proof" she can't easily provide;
+            no way to compare her stats nationally
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Journey</strong></td>
+          <td>
+            Finds OnlyKrida through college sports WhatsApp group → Signs up → Adds sprint times,
+            competition results → Takes 20m and 40m sprint tests (scores "Strong") → Coach verifies
+            → AI generates profile summary → Posts training reel (gets 500 views from scouts) → 2
+            scholarships match her profile in Opportunities → Applies with one tap
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Scholarship applications submitted, profile strength score</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="persona-3-rajesh-the-independent-scout">Persona 3: Rajesh — The Independent Scout</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Age</strong></td>
+          <td>38</td>
+        </tr>
+        <tr>
+          <td><strong>Location</strong></td>
+          <td>Mumbai, Maharashtra</td>
+        </tr>
+        <tr>
+          <td><strong>Sport</strong></td>
+          <td>Football (ISL focus)</td>
+        </tr>
+        <tr>
+          <td><strong>Role on Platform</strong></td>
+          <td>Scout</td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Find hidden gems before competing scouts; reduce travel costs; build a reputation as a
+            top-tier scout; provide verified reports to clubs
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Behavior</strong></td>
+          <td>
+            Freelance scout for 2 ISL clubs; travels 15 days/month across India; uses Excel to track
+            athletes; relies on personal network of 50 coaches; attends 30+ tournaments/year
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            Travel costs Rs 2L/month but only 2-3 signings/year; misses talent in regions he can't
+            visit; no standardized data — every coach rates differently; spends 3 hours/day on phone
+            calls gathering leads; competitor scouts have the same network
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Journey</strong></td>
+          <td>
+            Colleague recommends OnlyKrida → Signs up as scout → Sets preferences: football,
+            striker/midfielder, Maharashtra/Karnataka/Goa, weights: speed 40%, skill 30%, stamina
+            20%, position 10% → Gets AI recommendations with fit scores → Browses top 20 athletes →
+            Shortlists 5 → Views their verified beep test data and highlight videos → Messages top 3
+            → Arranges video call → Invites 1 to club trial → Signing happens → Upgrades to Scout
+            Pro
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Successful signings via platform, cost savings vs. traditional scouting</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="persona-4-priya-the-academy-coach">Persona 4: Priya — The Academy Coach</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Age</strong></td>
+          <td>32</td>
+        </tr>
+        <tr>
+          <td><strong>Location</strong></td>
+          <td>Chennai, Tamil Nadu</td>
+        </tr>
+        <tr>
+          <td><strong>Sport</strong></td>
+          <td>Badminton</td>
+        </tr>
+        <tr>
+          <td><strong>Role on Platform</strong></td>
+          <td>Coach</td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Develop athletes systematically using data; attract talented athletes to her academy;
+            get her athletes scouted for national team; build professional credibility
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Behavior</strong></td>
+          <td>
+            Runs a badminton academy with 40 students; tracks progress manually in notebooks; has
+            WhatsApp group for each batch; posts student achievements on her Facebook page
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            Manual progress tracking is tedious and unreliable; can't benchmark her students against
+            national standards; her best students leave for bigger academies in Delhi; no way to
+            prove her coaching quality to attract talent
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Journey</strong></td>
+          <td>
+            Searches for "sports coaching platform India" → Finds OnlyKrida → Signs up as coach →
+            Invites 40 athletes to join → Conducts beep tests through the app → Verifies student
+            fitness results → Posts training content → Her students get discovered by scouts →
+            Academy reputation grows → More students enroll
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Athletes coached, fitness tests verified, athlete outcomes (scouted, signed)</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="persona-5-mumbai-fc-the-football-club">Persona 5: Mumbai FC — The Football Club</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Age (org)</strong></td>
+          <td>Founded 2015</td>
+        </tr>
+        <tr>
+          <td><strong>Location</strong></td>
+          <td>Mumbai, Maharashtra</td>
+        </tr>
+        <tr>
+          <td><strong>Sport</strong></td>
+          <td>Football (I-League 2nd Division)</td>
+        </tr>
+        <tr>
+          <td><strong>Role on Platform</strong></td>
+          <td>Team</td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Cost-effective recruitment for upcoming season; find talent beyond Mumbai; fill 5 open
+            roster positions; promote pre-season trials
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Behavior</strong></td>
+          <td>
+            Currently recruit through 2 scouts + word-of-mouth; post trials on club website (gets 50
+            applicants); budget-constrained (Tier 2 club); need to compete with ISL academy feeder
+            system
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            Limited recruitment reach (only Mumbai/Thane); hired 3 players last season who didn't
+            match expectations (no verified data); trial postings get limited visibility;
+            application management via email is chaotic
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Journey</strong></td>
+          <td>
+            Sports federation email mentions OnlyKrida → Team manager signs up → Creates team
+            profile → Posts 3 open positions as opportunities → Gets 200 applications from across
+            India (vs. 50 before) → Uses AI screening to rank applicants → Reviews top 20 verified
+            profiles → Invites 10 for trials → Signs 5 players → Upgrades to Team Pro
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>
+            Applications received, positions filled, recruit quality (verified data), cost per hire
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="persona-6-arjun-the-sports-fan">Persona 6: Arjun — The Sports Fan</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Age</strong></td>
+          <td>24</td>
+        </tr>
+        <tr>
+          <td><strong>Location</strong></td>
+          <td>Bangalore, Karnataka</td>
+        </tr>
+        <tr>
+          <td><strong>Sport</strong></td>
+          <td>Multi-sport enthusiast (cricket, football, kabaddi)</td>
+        </tr>
+        <tr>
+          <td><strong>Role on Platform</strong></td>
+          <td>Fan</td>
+        </tr>
+        <tr>
+          <td><strong>Goals</strong></td>
+          <td>
+            Discover rising athletes early; follow sports journeys; engage with sports content;
+            support local athletes
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Behavior</strong></td>
+          <td>
+            Watches ISL, IPL, Pro Kabaddi religiously; follows sports pages on Instagram; plays
+            weekend football; always curious about "the next big thing"
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pain Points</strong></td>
+          <td>
+            Only hears about athletes after they make it big; no platform for grassroots sports
+            content; Instagram algorithm buries small athletes' content; wants to feel connected to
+            the sports community
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Platform Journey</strong></td>
+          <td>
+            Friend shares an athlete's OnlyKrida highlight reel → Downloads app → Signs up as fan →
+            Browses trending athletes → Follows 10 local footballers → Engages with content (likes,
+            comments) → Discovers a 16-year-old kabaddi player from Bihar → Shares profile → Athlete
+            goes viral on the platform → Arjun feels part of the discovery story
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Key Metric</strong></td>
+          <td>Athletes followed, content engagement, session duration, shares</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr />
+    <h1 id="6-business-requirements">6. Business Requirements</h1>
+    <h2 id="61-functional-requirements">6.1 Functional Requirements</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Requirement</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Category</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>FR-001</td>
+          <td>Users can sign up with email/password and select from 9 roles</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Auth</td>
+        </tr>
+        <tr>
+          <td>FR-002</td>
+          <td>
+            Role-specific signup forms collect relevant data (sport, position, organization, etc.)
+          </td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Auth</td>
+        </tr>
+        <tr>
+          <td>FR-003</td>
+          <td>Users can log in with existing credentials</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Auth</td>
+        </tr>
+        <tr>
+          <td>FR-004</td>
+          <td>Session persistence across app restarts</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Auth</td>
+        </tr>
+        <tr>
+          <td>FR-005</td>
+          <td>Password reset via email</td>
+          <td>P1</td>
+          <td>Planned</td>
+          <td>Auth</td>
+        </tr>
+        <tr>
+          <td>FR-006</td>
+          <td>OAuth login (Google, Apple)</td>
+          <td>P2</td>
+          <td>Planned</td>
+          <td>Auth</td>
+        </tr>
+        <tr>
+          <td>FR-007</td>
+          <td>OTP-based phone authentication</td>
+          <td>P2</td>
+          <td>Planned</td>
+          <td>Auth</td>
+        </tr>
+        <tr>
+          <td>FR-008</td>
+          <td>Users can create and edit their profile (name, bio, avatar, cover photo)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Profile</td>
+        </tr>
+        <tr>
+          <td>FR-009</td>
+          <td>Athletes can add sport, position, height, weight, achievements, stats</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Profile</td>
+        </tr>
+        <tr>
+          <td>FR-010</td>
+          <td>Profile strength indicator shows completion percentage</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Profile</td>
+        </tr>
+        <tr>
+          <td>FR-011</td>
+          <td>Verification badge system (4 tiers)</td>
+          <td>P1</td>
+          <td>Partial</td>
+          <td>Profile</td>
+        </tr>
+        <tr>
+          <td>FR-012</td>
+          <td>Profile viewers tracking ("Who viewed your profile")</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Profile</td>
+        </tr>
+        <tr>
+          <td>FR-013</td>
+          <td>Users can create posts with images or videos</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Content</td>
+        </tr>
+        <tr>
+          <td>FR-014</td>
+          <td>Posts support 4 types: highlight, training, match, achievement</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Content</td>
+        </tr>
+        <tr>
+          <td>FR-015</td>
+          <td>Users can like, comment, and share posts</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Content</td>
+        </tr>
+        <tr>
+          <td>FR-016</td>
+          <td>Feed displays posts in reverse chronological order with real-time updates</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Content</td>
+        </tr>
+        <tr>
+          <td>FR-017</td>
+          <td>Infinite scroll pagination on feed</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Content</td>
+        </tr>
+        <tr>
+          <td>FR-018</td>
+          <td>Edit and delete own posts</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Content</td>
+        </tr>
+        <tr>
+          <td>FR-019</td>
+          <td>Discover page with search and filters (sport, role, location, verified)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Discovery</td>
+        </tr>
+        <tr>
+          <td>FR-020</td>
+          <td>Trending athletes section</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Discovery</td>
+        </tr>
+        <tr>
+          <td>FR-021</td>
+          <td>Trigram fuzzy text search on names and locations</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Discovery</td>
+        </tr>
+        <tr>
+          <td>FR-022</td>
+          <td>Role-based discovery tabs</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Discovery</td>
+        </tr>
+        <tr>
+          <td>FR-023</td>
+          <td>1-on-1 real-time messaging</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Messaging</td>
+        </tr>
+        <tr>
+          <td>FR-024</td>
+          <td>Group messaging (create, add members)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Messaging</td>
+        </tr>
+        <tr>
+          <td>FR-025</td>
+          <td>Media sharing in messages</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Messaging</td>
+        </tr>
+        <tr>
+          <td>FR-026</td>
+          <td>Post sharing via DM</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Messaging</td>
+        </tr>
+        <tr>
+          <td>FR-027</td>
+          <td>Message read receipts (sent/delivered/read)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Messaging</td>
+        </tr>
+        <tr>
+          <td>FR-028</td>
+          <td>Unread message count badges</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Messaging</td>
+        </tr>
+        <tr>
+          <td>FR-029</td>
+          <td>In-app notification center</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Notifications</td>
+        </tr>
+        <tr>
+          <td>FR-030</td>
+          <td>Real-time notification delivery</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Notifications</td>
+        </tr>
+        <tr>
+          <td>FR-031</td>
+          <td>11 notification types (like, follow, comment, message, opportunity, etc.)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Notifications</td>
+        </tr>
+        <tr>
+          <td>FR-032</td>
+          <td>Mark notifications as read/unread</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Notifications</td>
+        </tr>
+        <tr>
+          <td>FR-033</td>
+          <td>Push notifications to device</td>
+          <td>P1</td>
+          <td>Partial</td>
+          <td>Notifications</td>
+        </tr>
+        <tr>
+          <td>FR-034</td>
+          <td>
+            Teams can create opportunities (tryouts, tournaments, scholarships, sponsorships,
+            contracts)
+          </td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Opportunities</td>
+        </tr>
+        <tr>
+          <td>FR-035</td>
+          <td>Athletes can browse and filter opportunities</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Opportunities</td>
+        </tr>
+        <tr>
+          <td>FR-036</td>
+          <td>Athletes can apply with cover letter</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Opportunities</td>
+        </tr>
+        <tr>
+          <td>FR-037</td>
+          <td>Application status tracking (pending/accepted/rejected)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Opportunities</td>
+        </tr>
+        <tr>
+          <td>FR-038</td>
+          <td>Team-side application management</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Opportunities</td>
+        </tr>
+        <tr>
+          <td>FR-039</td>
+          <td>Scouts can set preferences (sport, positions, weights)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Scouting</td>
+        </tr>
+        <tr>
+          <td>FR-040</td>
+          <td>AI-powered athlete recommendations with fit scores (0-100)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Scouting</td>
+        </tr>
+        <tr>
+          <td>FR-041</td>
+          <td>Shortlisting athletes</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Scouting</td>
+        </tr>
+        <tr>
+          <td>FR-042</td>
+          <td>AI profile coaching suggestions</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>AI</td>
+        </tr>
+        <tr>
+          <td>FR-043</td>
+          <td>AI-generated athlete profile summaries</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>AI</td>
+        </tr>
+        <tr>
+          <td>FR-044</td>
+          <td>Krida AI chat assistant</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>AI</td>
+        </tr>
+        <tr>
+          <td>FR-045</td>
+          <td>AI opportunity matching</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>AI</td>
+        </tr>
+        <tr>
+          <td>FR-046</td>
+          <td>Yo-Yo IR1 beep test (live + manual modes)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Fitness</td>
+        </tr>
+        <tr>
+          <td>FR-047</td>
+          <td>Sprint tests (20m, 40m)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Fitness</td>
+        </tr>
+        <tr>
+          <td>FR-048</td>
+          <td>Agility T-Test</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Fitness</td>
+        </tr>
+        <tr>
+          <td>FR-049</td>
+          <td>Vertical Jump test</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Fitness</td>
+        </tr>
+        <tr>
+          <td>FR-050</td>
+          <td>6 growth-oriented zones (Starter to Unstoppable)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Fitness</td>
+        </tr>
+        <tr>
+          <td>FR-051</td>
+          <td>Coach verification of test results</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Fitness</td>
+        </tr>
+        <tr>
+          <td>FR-052</td>
+          <td>Test history and progress tracking</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Fitness</td>
+        </tr>
+        <tr>
+          <td>FR-053</td>
+          <td>Follow/unfollow users</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Social</td>
+        </tr>
+        <tr>
+          <td>FR-054</td>
+          <td>Followers/following counts</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Social</td>
+        </tr>
+        <tr>
+          <td>FR-055</td>
+          <td>Settings (account, privacy, notifications)</td>
+          <td>P0</td>
+          <td>Done</td>
+          <td>Settings</td>
+        </tr>
+        <tr>
+          <td>FR-056</td>
+          <td>Account deletion</td>
+          <td>P1</td>
+          <td>Done</td>
+          <td>Settings</td>
+        </tr>
+        <tr>
+          <td>FR-057</td>
+          <td>Admin dashboard (user management, moderation, analytics)</td>
+          <td>P0</td>
+          <td>Planned</td>
+          <td>Admin</td>
+        </tr>
+        <tr>
+          <td>FR-058</td>
+          <td>Content moderation system (reports, auto-detection)</td>
+          <td>P1</td>
+          <td>Planned</td>
+          <td>Admin</td>
+        </tr>
+        <tr>
+          <td>FR-059</td>
+          <td>Payment integration (Razorpay + Stripe)</td>
+          <td>P1</td>
+          <td>Planned</td>
+          <td>Payments</td>
+        </tr>
+        <tr>
+          <td>FR-060</td>
+          <td>Subscription management</td>
+          <td>P1</td>
+          <td>Planned</td>
+          <td>Payments</td>
+        </tr>
+        <tr>
+          <td>FR-061</td>
+          <td>Video streaming optimization (HLS/adaptive bitrate)</td>
+          <td>P2</td>
+          <td>Planned</td>
+          <td>Media</td>
+        </tr>
+        <tr>
+          <td>FR-062</td>
+          <td>Video analysis (AI-powered technique review)</td>
+          <td>P3</td>
+          <td>Planned</td>
+          <td>AI</td>
+        </tr>
+        <tr>
+          <td>FR-063</td>
+          <td>Live match streaming</td>
+          <td>P3</td>
+          <td>Planned</td>
+          <td>Media</td>
+        </tr>
+        <tr>
+          <td>FR-064</td>
+          <td>Event calendar (tryouts, tournaments)</td>
+          <td>P2</td>
+          <td>Planned</td>
+          <td>Features</td>
+        </tr>
+        <tr>
+          <td>FR-065</td>
+          <td>Advanced analytics dashboard (for all roles)</td>
+          <td>P2</td>
+          <td>Planned</td>
+          <td>Analytics</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="62-non-functional-requirements">6.2 Non-Functional Requirements</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Requirement</th>
+          <th>Target</th>
+          <th>Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>NFR-001</td>
+          <td>App load time (cold start)</td>
+          <td>&lt; 3 seconds on mid-range Android</td>
+          <td>P0</td>
+        </tr>
+        <tr>
+          <td>NFR-002</td>
+          <td>Feed scroll performance</td>
+          <td>&gt; 55 FPS on target devices</td>
+          <td>P0</td>
+        </tr>
+        <tr>
+          <td>NFR-003</td>
+          <td>API response time (p95)</td>
+          <td>&lt; 500ms for reads, &lt; 1s for writes</td>
+          <td>P0</td>
+        </tr>
+        <tr>
+          <td>NFR-004</td>
+          <td>AI response time (p95)</td>
+          <td>&lt; 5s for Opus, &lt; 2s for Sonnet</td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td>NFR-005</td>
+          <td>Concurrent users supported</td>
+          <td>10,000+ without degradation</td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td>NFR-006</td>
+          <td>Uptime SLA</td>
+          <td>99.5% (Supabase Pro tier)</td>
+          <td>P0</td>
+        </tr>
+        <tr>
+          <td>NFR-007</td>
+          <td>Data encryption at rest</td>
+          <td>AES-256 (Supabase default)</td>
+          <td>P0</td>
+        </tr>
+        <tr>
+          <td>NFR-008</td>
+          <td>Data encryption in transit</td>
+          <td>TLS 1.3</td>
+          <td>P0</td>
+        </tr>
+        <tr>
+          <td>NFR-009</td>
+          <td>RLS on all database tables</td>
+          <td>100% coverage</td>
+          <td>P0</td>
+        </tr>
+        <tr>
+          <td>NFR-010</td>
+          <td>Image upload size limit</td>
+          <td>2MB (avatars), 50MB (posts)</td>
+          <td>P0</td>
+        </tr>
+        <tr>
+          <td>NFR-011</td>
+          <td>Video upload size limit</td>
+          <td>50MB (posts), expandable</td>
+          <td>P0</td>
+        </tr>
+        <tr>
+          <td>NFR-012</td>
+          <td>Offline graceful degradation</td>
+          <td>Show cached content, queue uploads</td>
+          <td>P2</td>
+        </tr>
+        <tr>
+          <td>NFR-013</td>
+          <td>Accessibility (WCAG 2.1 AA)</td>
+          <td>Color contrast, screen reader</td>
+          <td>P2</td>
+        </tr>
+        <tr>
+          <td>NFR-014</td>
+          <td>DPDP Act (India) compliance</td>
+          <td>Consent management, data portability</td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td>NFR-015</td>
+          <td>IT Act intermediary guidelines</td>
+          <td>Content moderation, grievance mechanism</td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td>NFR-016</td>
+          <td>App size</td>
+          <td>&lt; 50MB download</td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td>NFR-017</td>
+          <td>Battery consumption</td>
+          <td>&lt; 5% per hour of active use</td>
+          <td>P2</td>
+        </tr>
+        <tr>
+          <td>NFR-018</td>
+          <td>Cross-platform consistency</td>
+          <td>iOS, Android, Web feature parity</td>
+          <td>P1</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr />
+    <h1 id="7-success-metrics">7. Success Metrics</h1>
+    <h2 id="71-acquisition-metrics">7.1 Acquisition Metrics</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Definition</th>
+          <th>Year 1 Target</th>
+          <th>Year 2 Target</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Total Signups</strong></td>
+          <td>Users who complete registration</td>
+          <td>50,000</td>
+          <td>250,000</td>
+        </tr>
+        <tr>
+          <td><strong>Monthly Active Users (MAU)</strong></td>
+          <td>Unique users with 1+ session/month</td>
+          <td>25,000</td>
+          <td>150,000</td>
+        </tr>
+        <tr>
+          <td><strong>Daily Active Users (DAU)</strong></td>
+          <td>Unique users with 1+ session/day</td>
+          <td>5,000</td>
+          <td>40,000</td>
+        </tr>
+        <tr>
+          <td><strong>DAU/MAU Ratio</strong></td>
+          <td>Stickiness indicator</td>
+          <td>20%</td>
+          <td>27%</td>
+        </tr>
+        <tr>
+          <td><strong>Signup Conversion</strong></td>
+          <td>Welcome page → completed signup</td>
+          <td>40%</td>
+          <td>50%</td>
+        </tr>
+        <tr>
+          <td><strong>Role Distribution</strong></td>
+          <td>Healthy mix of roles</td>
+          <td>80% athletes, 5% scouts, 5% coaches, 5% teams, 5% other</td>
+          <td>Maintain ratio</td>
+        </tr>
+        <tr>
+          <td><strong>Organic vs Paid Signups</strong></td>
+          <td>Cost efficiency</td>
+          <td>70% organic</td>
+          <td>60% organic</td>
+        </tr>
+        <tr>
+          <td><strong>Referral Rate</strong></td>
+          <td>Users who invite others</td>
+          <td>10%</td>
+          <td>15%</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="72-engagement-metrics">7.2 Engagement Metrics</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Definition</th>
+          <th>Year 1 Target</th>
+          <th>Year 2 Target</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Session Duration</strong></td>
+          <td>Average time per session</td>
+          <td>8 minutes</td>
+          <td>12 minutes</td>
+        </tr>
+        <tr>
+          <td><strong>Sessions/Day</strong></td>
+          <td>Sessions per DAU</td>
+          <td>2</td>
+          <td>3</td>
+        </tr>
+        <tr>
+          <td><strong>Posts Created/DAU</strong></td>
+          <td>Content creation rate</td>
+          <td>0.3</td>
+          <td>0.5</td>
+        </tr>
+        <tr>
+          <td><strong>Feed Engagement Rate</strong></td>
+          <td>Likes + comments / impressions</td>
+          <td>5%</td>
+          <td>8%</td>
+        </tr>
+        <tr>
+          <td><strong>Messages Sent/DAU</strong></td>
+          <td>Communication activity</td>
+          <td>3</td>
+          <td>8</td>
+        </tr>
+        <tr>
+          <td><strong>Profile Completion Rate</strong></td>
+          <td>Users with 80%+ complete profiles</td>
+          <td>40%</td>
+          <td>60%</td>
+        </tr>
+        <tr>
+          <td><strong>Fitness Tests Completed/Month</strong></td>
+          <td>Active testing engagement</td>
+          <td>2,000</td>
+          <td>15,000</td>
+        </tr>
+        <tr>
+          <td><strong>AI Feature Usage/DAU</strong></td>
+          <td>% of DAU using any AI feature</td>
+          <td>15%</td>
+          <td>25%</td>
+        </tr>
+        <tr>
+          <td><strong>D1 Retention</strong></td>
+          <td>Users returning day after signup</td>
+          <td>40%</td>
+          <td>50%</td>
+        </tr>
+        <tr>
+          <td><strong>D7 Retention</strong></td>
+          <td>Users returning 7 days after signup</td>
+          <td>20%</td>
+          <td>30%</td>
+        </tr>
+        <tr>
+          <td><strong>D30 Retention</strong></td>
+          <td>Users returning 30 days after signup</td>
+          <td>10%</td>
+          <td>18%</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="73-matching-discovery-metrics">7.3 Matching / Discovery Metrics</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Definition</th>
+          <th>Year 1 Target</th>
+          <th>Year 2 Target</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Scout Searches/Day</strong></td>
+          <td>Active scouting activity</td>
+          <td>200</td>
+          <td>2,000</td>
+        </tr>
+        <tr>
+          <td><strong>Athletes Shortlisted/Scout</strong></td>
+          <td>Shortlisting activity</td>
+          <td>5/month</td>
+          <td>10/month</td>
+        </tr>
+        <tr>
+          <td><strong>Scout→Athlete Messages</strong></td>
+          <td>Discovery-driven conversations</td>
+          <td>500/month</td>
+          <td>5,000/month</td>
+        </tr>
+        <tr>
+          <td><strong>Opportunity Applications</strong></td>
+          <td>Athletes applying to opportunities</td>
+          <td>2,000/month</td>
+          <td>20,000/month</td>
+        </tr>
+        <tr>
+          <td><strong>Application Response Rate</strong></td>
+          <td>Teams responding to applications</td>
+          <td>60%</td>
+          <td>75%</td>
+        </tr>
+        <tr>
+          <td><strong>Successful Matches</strong></td>
+          <td>Athletes recruited via platform</td>
+          <td>50/year</td>
+          <td>500/year</td>
+        </tr>
+        <tr>
+          <td><strong>AI Recommendation CTR</strong></td>
+          <td>Scouts clicking on AI recommendations</td>
+          <td>30%</td>
+          <td>40%</td>
+        </tr>
+        <tr>
+          <td><strong>Fitness Test Verification Rate</strong></td>
+          <td>Tests verified by coach/center</td>
+          <td>20%</td>
+          <td>40%</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="74-revenue-metrics">7.4 Revenue Metrics</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Definition</th>
+          <th>Year 1 Target</th>
+          <th>Year 2 Target</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Monthly Recurring Revenue (MRR)</strong></td>
+          <td>Subscription + recurring revenue</td>
+          <td>Rs 6.75L</td>
+          <td>Rs 35L</td>
+        </tr>
+        <tr>
+          <td><strong>Annual Run Rate (ARR)</strong></td>
+          <td>MRR × 12</td>
+          <td>Rs 81L</td>
+          <td>Rs 4.2 Cr</td>
+        </tr>
+        <tr>
+          <td><strong>Paying Customers</strong></td>
+          <td>Active subscriptions</td>
+          <td>100</td>
+          <td>500</td>
+        </tr>
+        <tr>
+          <td><strong>Average Revenue Per Paying User (ARPPU)</strong></td>
+          <td>MRR / paying customers</td>
+          <td>Rs 6,750</td>
+          <td>Rs 7,000</td>
+        </tr>
+        <tr>
+          <td><strong>Churn Rate (Monthly)</strong></td>
+          <td>Paying customers lost/month</td>
+          <td>5%</td>
+          <td>3%</td>
+        </tr>
+        <tr>
+          <td><strong>Net Revenue Retention</strong></td>
+          <td>Revenue from existing customers (expansion)</td>
+          <td>100%</td>
+          <td>115%</td>
+        </tr>
+        <tr>
+          <td><strong>LTV:CAC (Scouts)</strong></td>
+          <td>Lifetime value / acquisition cost</td>
+          <td>6x</td>
+          <td>10x</td>
+        </tr>
+        <tr>
+          <td><strong>Gross Margin</strong></td>
+          <td>Revenue - direct costs</td>
+          <td>85%</td>
+          <td>82%</td>
+        </tr>
+        <tr>
+          <td><strong>Months to Break-even</strong></td>
+          <td>When revenue &gt; burn</td>
+          <td>Month 18</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr />
+    <h1 id="8-risk-analysis">8. Risk Analysis</h1>
+    <h2 id="81-market-risks">8.1 Market Risks</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Risk</th>
+          <th>Probability</th>
+          <th>Impact</th>
+          <th>Mitigation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Slow adoption by athletes</strong></td>
+          <td>Medium</td>
+          <td>High</td>
+          <td>
+            Onboard via coaches (each brings 20-50 athletes); college partnerships for bulk signup
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Scouts don't see value</strong></td>
+          <td>Medium</td>
+          <td>High</td>
+          <td>
+            Free pilot for top scouts; prove ROI with case studies; AI recommendations are unique
+            differentiator
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Competitor enters Indian market</strong></td>
+          <td>Low (2yr)</td>
+          <td>High</td>
+          <td>
+            First-mover advantage; build data moat with verified fitness tests; network effects
+            compound
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Cricket dominance</strong></td>
+          <td>Low</td>
+          <td>Medium</td>
+          <td>
+            Start multi-sport from day 1; football and kabaddi growing fast; eventually add
+            cricket-specific features
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Pay-to-play resistance</strong></td>
+          <td>Low</td>
+          <td>Medium</td>
+          <td>Free for athletes forever policy; transparency about pricing</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="82-technical-risks">8.2 Technical Risks</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Risk</th>
+          <th>Probability</th>
+          <th>Impact</th>
+          <th>Mitigation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>AI API key exposure</strong></td>
+          <td>High</td>
+          <td>Critical</td>
+          <td>Migrate to Supabase Edge Function proxy (P0 priority)</td>
+        </tr>
+        <tr>
+          <td><strong>Supabase scaling limits</strong></td>
+          <td>Medium</td>
+          <td>High</td>
+          <td>Connection pooling, read replicas, query optimization, plan upgrades</td>
+        </tr>
+        <tr>
+          <td><strong>Performance on low-end Android</strong></td>
+          <td>Medium</td>
+          <td>High</td>
+          <td>FlatList optimization, CachedImage migration, useReducer refactor</td>
+        </tr>
+        <tr>
+          <td><strong>Claude API cost explosion</strong></td>
+          <td>Medium</td>
+          <td>High</td>
+          <td>Response caching, per-user rate limits, cost monitoring</td>
+        </tr>
+        <tr>
+          <td><strong>Data loss / breach</strong></td>
+          <td>Low</td>
+          <td>Critical</td>
+          <td>RLS on all tables, encrypted storage, regular backups, DPDP compliance</td>
+        </tr>
+        <tr>
+          <td><strong>App store rejection</strong></td>
+          <td>Low</td>
+          <td>Medium</td>
+          <td>Content moderation system; comply with Apple/Google guidelines</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="83-regulatory-risks">8.3 Regulatory Risks</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Risk</th>
+          <th>Probability</th>
+          <th>Impact</th>
+          <th>Mitigation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>DPDP Act 2023 compliance</strong></td>
+          <td>High</td>
+          <td>High</td>
+          <td>Implement consent management, data portability, deletion rights</td>
+        </tr>
+        <tr>
+          <td><strong>IT Act intermediary guidelines</strong></td>
+          <td>High</td>
+          <td>High</td>
+          <td>Content moderation, grievance officer appointment, 72-hour takedown</td>
+        </tr>
+        <tr>
+          <td><strong>Minor athlete data (under 18)</strong></td>
+          <td>Medium</td>
+          <td>High</td>
+          <td>Parental consent flow, restricted data collection, enhanced privacy</td>
+        </tr>
+        <tr>
+          <td><strong>UAE data regulations (Dubai expansion)</strong></td>
+          <td>Medium</td>
+          <td>Medium</td>
+          <td>Research PDPL compliance before expansion</td>
+        </tr>
+      </tbody>
+    </table>
+    <h2 id="84-business-risks">8.4 Business Risks</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Risk</th>
+          <th>Probability</th>
+          <th>Impact</th>
+          <th>Mitigation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Cash runway exhaustion</strong></td>
+          <td>Medium</td>
+          <td>Critical</td>
+          <td>Control burn rate; milestone-based spending; revenue ASAP</td>
+        </tr>
+        <tr>
+          <td><strong>Key person dependency</strong></td>
+          <td>High</td>
+          <td>High</td>
+          <td>Document everything; hire early; build systems not dependencies</td>
+        </tr>
+        <tr>
+          <td><strong>Monetization timing</strong></td>
+          <td>Medium</td>
+          <td>High</td>
+          <td>Launch payments in Month 2; don't wait for scale to monetize</td>
+        </tr>
+        <tr>
+          <td><strong>Brand reputation incident</strong></td>
+          <td>Low</td>
+          <td>High</td>
+          <td>Content moderation from Day 1; community guidelines; quick response</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr />
+    <p>
+      <em
+        >This BRD should be reviewed quarterly and updated based on user feedback, market
+        conditions, and platform evolution.</em
+      >
+    </p>
+    <hr />
+    <p><strong>Document End — BRD v1.0</strong></p>
+  </body>
+</html>

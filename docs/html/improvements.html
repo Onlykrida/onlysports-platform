@@ -1,0 +1,1651 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Top 15 Critical Improvements | OnlyKrida</title>
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --bg-card: #141420;
+        --bg-code: #1a1a2e;
+        --green: #30d158;
+        --orange: #ff9f0a;
+        --cyan: #64d2ff;
+        --red: #ff453a;
+        --purple: #bf5af2;
+        --text: #f0f0f0;
+        --text-muted: #999;
+        --border: #2a2a2e;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 32px 120px;
+      }
+      /* Nav bar */
+      .topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: rgba(10, 10, 10, 0.92);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 32px;
+      }
+      .topbar .logo {
+        color: var(--green);
+        font-weight: 800;
+        font-size: 18px;
+        letter-spacing: -0.5px;
+      }
+      .topbar a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 13px;
+        transition: color 0.2s;
+      }
+      .topbar a:hover {
+        color: var(--green);
+      }
+      .topbar a.active {
+        color: var(--green);
+      }
+      body {
+        padding-top: 72px;
+      }
+
+      h1 {
+        font-size: 2.4em;
+        font-weight: 800;
+        color: var(--green);
+        margin: 48px 0 8px;
+        letter-spacing: -1px;
+        border-bottom: 2px solid var(--green);
+        padding-bottom: 12px;
+      }
+      h1:first-of-type {
+        margin-top: 0;
+      }
+      h2 {
+        font-size: 1.6em;
+        font-weight: 700;
+        color: var(--text);
+        margin: 40px 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      h3 {
+        font-size: 1.25em;
+        font-weight: 600;
+        color: var(--cyan);
+        margin: 28px 0 10px;
+      }
+      h4 {
+        font-size: 1.05em;
+        font-weight: 600;
+        color: var(--orange);
+        margin: 20px 0 8px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      a {
+        color: var(--cyan);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      strong {
+        color: var(--green);
+        font-weight: 700;
+      }
+      em {
+        color: var(--text-muted);
+        font-style: italic;
+      }
+
+      blockquote {
+        background: var(--bg-card);
+        border-left: 4px solid var(--green);
+        padding: 16px 20px;
+        margin: 20px 0;
+        border-radius: 0 8px 8px 0;
+      }
+      blockquote p {
+        margin: 4px 0;
+        color: var(--text-muted);
+      }
+      blockquote strong {
+        color: var(--green);
+      }
+
+      ul,
+      ol {
+        padding-left: 24px;
+        margin: 10px 0;
+      }
+      li {
+        margin: 6px 0;
+      }
+      li::marker {
+        color: var(--green);
+      }
+
+      code {
+        background: var(--bg-code);
+        color: var(--cyan);
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      }
+      pre {
+        background: var(--bg-code);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 16px 0;
+        overflow-x: auto;
+        line-height: 1.5;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        color: var(--text);
+        font-size: 0.85em;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 0.92em;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      th {
+        background: var(--bg-code);
+        color: var(--green);
+        font-weight: 700;
+        text-align: left;
+        padding: 12px 16px;
+        border-bottom: 2px solid var(--green);
+        position: sticky;
+        top: 56px;
+        z-index: 10;
+      }
+      td {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      tr:nth-child(even) td {
+        background: rgba(20, 20, 32, 0.5);
+      }
+      tr:hover td {
+        background: rgba(48, 209, 88, 0.06);
+      }
+
+      hr {
+        border: none;
+        height: 1px;
+        background: var(--border);
+        margin: 40px 0;
+      }
+
+      /* Table of Contents */
+      h2#table-of-contents ~ ol,
+      h2#table-of-contents ~ ul {
+        columns: 2;
+        column-gap: 32px;
+      }
+
+      /* Badges for P0/P1/P2 */
+      td:first-child {
+        white-space: nowrap;
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #444;
+      }
+
+      /* Print */
+      @media print {
+        body {
+          background: white;
+          color: #111;
+          padding: 20px;
+        }
+        .topbar {
+          display: none;
+        }
+        h1 {
+          color: #111;
+          border-color: #111;
+        }
+        h2 {
+          color: #333;
+        }
+        h3 {
+          color: #555;
+        }
+        table th {
+          background: #eee;
+          color: #111;
+          border-color: #111;
+        }
+        td {
+          border-color: #ddd;
+        }
+        code {
+          background: #f5f5f5;
+          color: #333;
+        }
+        pre {
+          background: #f5f5f5;
+          border-color: #ddd;
+        }
+        blockquote {
+          background: #f9f9f9;
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        body {
+          padding: 60px 16px 80px;
+        }
+        h1 {
+          font-size: 1.8em;
+        }
+        table {
+          font-size: 0.82em;
+        }
+        th,
+        td {
+          padding: 8px 10px;
+        }
+        .topbar {
+          padding: 10px 16px;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="topbar">
+      <span class="logo">OnlyKrida</span><a href="brd.html">BRD</a><a href="prd.html">PRD</a
+      ><a href="trd.html">TRD</a
+      ><a href="improvements.html" class="active">Top 15 Critical Improvements</a>
+    </nav>
+    <h1 id="onlykrida-top-15-critical-improvements">OnlyKrida — Top 15 Critical Improvements</h1>
+    <blockquote>
+      <p>
+        Investor-grade risk assessment and engineering roadmap<br />
+        Generated: 2026-04-04 | Platform: OnlyKrida v1.0 (MVP)
+      </p>
+    </blockquote>
+    <hr />
+    <h2 id="summary-matrix">Summary Matrix</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Improvement</th>
+          <th>Priority</th>
+          <th>Category</th>
+          <th>Impact</th>
+          <th>Effort</th>
+          <th>Risk Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Move AI API Key Server-Side</td>
+          <td><strong>P0</strong></td>
+          <td>Security</td>
+          <td>Critical</td>
+          <td>3 days</td>
+          <td>🔴 Critical</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Automated Testing Suite</td>
+          <td><strong>P0</strong></td>
+          <td>Tech</td>
+          <td>High</td>
+          <td>3 weeks</td>
+          <td>🔴 Critical</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Admin Dashboard</td>
+          <td><strong>P0</strong></td>
+          <td>Product</td>
+          <td>High</td>
+          <td>4 weeks</td>
+          <td>🔴 Critical</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>CI/CD Pipeline</td>
+          <td><strong>P1</strong></td>
+          <td>Tech</td>
+          <td>High</td>
+          <td>1 week</td>
+          <td>🟡 High</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>Payment Integration</td>
+          <td><strong>P1</strong></td>
+          <td>Business</td>
+          <td>Critical</td>
+          <td>3 weeks</td>
+          <td>🟡 High</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>Performance Optimization Sprint</td>
+          <td><strong>P1</strong></td>
+          <td>Tech</td>
+          <td>High</td>
+          <td>2 weeks</td>
+          <td>🟡 High</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>Analytics &amp; Event Tracking</td>
+          <td><strong>P1</strong></td>
+          <td>Product</td>
+          <td>High</td>
+          <td>2 weeks</td>
+          <td>🟡 High</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>Content Moderation System</td>
+          <td><strong>P1</strong></td>
+          <td>Product/Security</td>
+          <td>High</td>
+          <td>2 weeks</td>
+          <td>🟡 High</td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td>Database Scaling &amp; Optimization</td>
+          <td><strong>P1</strong></td>
+          <td>Tech</td>
+          <td>High</td>
+          <td>2 weeks</td>
+          <td>🟡 High</td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td>Push Notification Infrastructure</td>
+          <td><strong>P1</strong></td>
+          <td>Product</td>
+          <td>Medium</td>
+          <td>1 week</td>
+          <td>🟡 High</td>
+        </tr>
+        <tr>
+          <td>11</td>
+          <td>AI Response Caching &amp; Cost Control</td>
+          <td><strong>P2</strong></td>
+          <td>Tech/Business</td>
+          <td>Medium</td>
+          <td>1 week</td>
+          <td>🟠 Medium</td>
+        </tr>
+        <tr>
+          <td>12</td>
+          <td>Offline-First Architecture</td>
+          <td><strong>P2</strong></td>
+          <td>Tech</td>
+          <td>Medium</td>
+          <td>3 weeks</td>
+          <td>🟠 Medium</td>
+        </tr>
+        <tr>
+          <td>13</td>
+          <td>Video Streaming Optimization</td>
+          <td><strong>P2</strong></td>
+          <td>Tech</td>
+          <td>Medium</td>
+          <td>2 weeks</td>
+          <td>🟠 Medium</td>
+        </tr>
+        <tr>
+          <td>14</td>
+          <td>User Retention &amp; Re-engagement</td>
+          <td><strong>P2</strong></td>
+          <td>Business</td>
+          <td>High</td>
+          <td>3 weeks</td>
+          <td>🟠 Medium</td>
+        </tr>
+        <tr>
+          <td>15</td>
+          <td>Internationalization (i18n)</td>
+          <td><strong>P2</strong></td>
+          <td>Business</td>
+          <td>Medium</td>
+          <td>2 weeks</td>
+          <td>🟢 Low</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr />
+    <h2 id="1-move-ai-api-key-server-side">1. Move AI API Key Server-Side</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P0 — Must fix before any public launch</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Security</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>Critical — exposed API key = unlimited spend by attackers</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>3 days</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description">Description</h3>
+    <p>
+      The Anthropic API key (<code>EXPO_PUBLIC_ANTHROPIC_API_KEY</code>) is currently embedded in
+      the client bundle via <code>EXPO_PUBLIC_</code> prefix. Any user can extract this key from the
+      JavaScript bundle and make unlimited API calls at OnlyKrida's expense. This is the single most
+      critical security vulnerability in the platform.
+    </p>
+    <h3 id="risk-if-not-addressed">Risk If Not Addressed</h3>
+    <ul>
+      <li>
+        <strong>Financial</strong>: Attacker extracts key → runs millions of API calls → $10K+ bill
+        overnight
+      </li>
+      <li>
+        <strong>Service disruption</strong>: Key gets rate-limited or banned → all AI features break
+        for all users
+      </li>
+      <li>
+        <strong>Reputation</strong>: Public exposure of insecure practices undermines investor/user
+        trust
+      </li>
+    </ul>
+    <h3 id="recommended-approach">Recommended Approach</h3>
+    <ol>
+      <li>
+        <strong>Create a Supabase Edge Function</strong>
+        (<code>supabase/functions/ai-proxy/index.ts</code>) that:<br />
+        - Accepts requests from authenticated users only (validates JWT)<br />
+        - Forwards to Claude API with the secret key (stored as Supabase secret)<br />
+        - Implements per-user rate limiting (e.g., 50 AI calls/day for free, 200 for premium)<br />
+        - Logs usage for billing and analytics
+      </li>
+      <li>
+        <strong>Update <code>services/ai.ts</code></strong> to call the edge function instead of
+        Claude directly
+      </li>
+      <li>
+        <strong>Remove <code>EXPO_PUBLIC_ANTHROPIC_API_KEY</code></strong> from
+        <code>.env</code> and client code
+      </li>
+      <li><strong>Add cost alerting</strong> via Anthropic dashboard</li>
+    </ol>
+    <pre><code class="language-typescript">// Before (INSECURE)
+const response = await fetch('https://api.anthropic.com/v1/messages', {
+  headers: { 'x-api-key': process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY }
+});
+
+// After (SECURE)
+const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-proxy`, {
+  headers: { 'Authorization': `Bearer ${session.access_token}` },
+  body: JSON.stringify({ function: 'profileCoaching', data: { profileId } })
+});
+</code></pre>
+    <hr />
+    <h2 id="2-automated-testing-suite">2. Automated Testing Suite</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P0 — Required for reliable iteration</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Tech</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>High — prevents regressions, enables confident refactoring</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>3 weeks (initial setup + critical path coverage)</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_1">Description</h3>
+    <p>
+      The codebase has <strong>zero automated tests</strong>. With 47 components, 12 context
+      providers, and 13 database tables, any change risks breaking existing functionality. The team
+      currently relies entirely on manual testing, which doesn't scale.
+    </p>
+    <h3 id="risk-if-not-addressed_1">Risk If Not Addressed</h3>
+    <ul>
+      <li>
+        <strong>Regression bugs</strong>: Every feature addition risks breaking existing features
+      </li>
+      <li>
+        <strong>Slow iteration</strong>: Developers fear making changes → technical debt accumulates
+      </li>
+      <li>
+        <strong>Investor concern</strong>: No test suite signals immature engineering practices
+      </li>
+      <li>
+        <strong>Scaling blocker</strong>: Can't hire engineers who can contribute safely without
+        tests
+      </li>
+    </ul>
+    <h3 id="recommended-approach_1">Recommended Approach</h3>
+    <p>
+      <strong>Week 1: Foundation</strong><br />
+      - Set up Jest + React Native Testing Library<br />
+      - Configure test runners in <code>package.json</code><br />
+      - Write tests for all 12 context providers (highest leverage — they contain business logic)<br />
+      - Add <code>__tests__/</code> directories alongside source files
+    </p>
+    <p>
+      <strong>Week 2: Critical Paths</strong><br />
+      - Auth flow tests (signup, login, session management, role-specific forms)<br />
+      - Post CRUD tests (create, like, comment, delete)<br />
+      - Messaging tests (send, receive, read receipts)<br />
+      - AI service tests (mock Claude API, test all 7 functions)
+    </p>
+    <p>
+      <strong>Week 3: E2E + Integration</strong><br />
+      - Set up Maestro or Detox for E2E testing<br />
+      - Write 5 critical user journey tests:<br />
+      1. Athlete signup → profile completion → post creation<br />
+      2. Scout signup → set preferences → view recommendations<br />
+      3. Team creates opportunity → athlete applies → team reviews<br />
+      4. User sends message → recipient receives in real-time<br />
+      5. Athlete takes beep test → results saved → coach verifies
+    </p>
+    <p><strong>Target</strong>: 70%+ coverage on business logic, 100% on auth and payment flows.</p>
+    <hr />
+    <h2 id="3-admin-dashboard">3. Admin Dashboard</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P0 — Cannot operate a platform without admin controls</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Product</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>High — required for content moderation, user management, analytics</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>4 weeks</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_2">Description</h3>
+    <p>
+      There is no admin panel. The team has no way to:<br />
+      - View platform metrics (users, posts, messages, opportunities)<br />
+      - Moderate content (remove inappropriate posts, ban users)<br />
+      - Manage user reports<br />
+      - Verify athlete/scout identities<br />
+      - View AI usage and costs<br />
+      - Manage opportunities and applications<br />
+      - Configure platform settings
+    </p>
+    <h3 id="risk-if-not-addressed_2">Risk If Not Addressed</h3>
+    <ul>
+      <li><strong>Legal liability</strong>: No way to remove harmful content → regulatory risk</li>
+      <li><strong>User trust</strong>: Reported content stays up indefinitely</li>
+      <li><strong>Operational blindness</strong>: No visibility into platform health</li>
+      <li><strong>Scaling impossible</strong>: Can't manage a growing user base manually</li>
+    </ul>
+    <h3 id="recommended-approach_2">Recommended Approach</h3>
+    <p>
+      <strong>Phase 1 (Week 1-2): Web Dashboard</strong><br />
+      - Build with Next.js or React (separate repo) + Supabase service role key<br />
+      - Core pages:<br />
+      - <strong>Dashboard</strong>: User counts by role, daily signups, posts/day, active users<br />
+      - <strong>Users</strong>: List, search, filter by role, verify/ban/delete<br />
+      - <strong>Content</strong>: Posts list with moderation actions (remove, flag, approve)<br />
+      - <strong>Reports</strong>: User reports queue with action buttons
+    </p>
+    <p>
+      <strong>Phase 2 (Week 3-4): Advanced Features</strong><br />
+      - <strong>Analytics</strong>: Charts for growth metrics, retention, engagement<br />
+      - <strong>AI Monitor</strong>: Usage logs, cost per function, error rates<br />
+      - <strong>Opportunities</strong>: Review and moderate team postings<br />
+      - <strong>Configuration</strong>: Feature flags, notification templates, zone thresholds<br />
+      - <strong>Verification</strong>: Queue for athlete/coach verification requests with document
+      review
+    </p>
+    <p><strong>Database additions</strong>:</p>
+    <pre><code class="language-sql">CREATE TABLE admin_actions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  admin_id UUID REFERENCES profiles(id),
+  action_type TEXT NOT NULL, -- 'ban', 'verify', 'remove_post', 'resolve_report'
+  target_type TEXT NOT NULL, -- 'user', 'post', 'opportunity'
+  target_id UUID NOT NULL,
+  reason TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE user_reports (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  reporter_id UUID REFERENCES profiles(id),
+  reported_user_id UUID REFERENCES profiles(id),
+  reported_post_id UUID REFERENCES posts(id),
+  reason TEXT NOT NULL,
+  status TEXT DEFAULT 'pending', -- 'pending', 'resolved', 'dismissed'
+  admin_notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+</code></pre>
+    <hr />
+    <h2 id="4-cicd-pipeline">4. CI/CD Pipeline</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Tech</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>High — automates quality gates, prevents broken deploys</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>1 week</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_3">Description</h3>
+    <p>
+      No CI/CD pipeline exists. Builds are triggered manually via <code>eas build</code>. There are
+      no automated checks on pull requests — no linting, type checking, or test runs before code
+      merges.
+    </p>
+    <h3 id="risk-if-not-addressed_3">Risk If Not Addressed</h3>
+    <ul>
+      <li><strong>Broken builds</strong>: Untested code ships to production</li>
+      <li><strong>Developer friction</strong>: Manual build process is slow and error-prone</li>
+      <li><strong>No quality gates</strong>: Bad code merges without review</li>
+    </ul>
+    <h3 id="recommended-approach_3">Recommended Approach</h3>
+    <ol>
+      <li>
+        <strong>GitHub Actions workflow</strong> (<code>.github/workflows/ci.yml</code>):<br />
+        <code
+          >yaml on: [push, pull_request] jobs: lint: npx expo lint typecheck: npx tsc --noEmit test:
+          npx jest --coverage build-check: npx expo export --platform web</code
+        >
+      </li>
+      <li>
+        <strong>EAS Build triggers</strong>: Auto-build preview on PR merge, production on tag
+      </li>
+      <li><strong>Branch protection</strong>: Require CI pass + 1 approval before merge to main</li>
+      <li><strong>Notifications</strong>: Slack/Discord webhook on build success/failure</li>
+    </ol>
+    <hr />
+    <h2 id="5-payment-integration">5. Payment Integration</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P1 — Required for revenue generation</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Business</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>Critical — no payments = no revenue = no business</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>3 weeks</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_4">Description</h3>
+    <p>
+      The business model depends on scout subscriptions, team dashboard plans, and premium features.
+      None of these can be monetized without payment infrastructure. The platform is currently 100%
+      free with no path to revenue.
+    </p>
+    <h3 id="risk-if-not-addressed_4">Risk If Not Addressed</h3>
+    <ul>
+      <li><strong>No revenue</strong>: Platform burns cash with zero income</li>
+      <li><strong>Investor concern</strong>: No monetization path = uninvestable</li>
+      <li>
+        <strong>Competitive window</strong>: Competitors may monetize first and lock in paying users
+      </li>
+    </ul>
+    <h3 id="recommended-approach_4">Recommended Approach</h3>
+    <p>
+      <strong>Payment Stack</strong> (India-focused):<br />
+      - <strong>Razorpay</strong> (primary) — UPI, cards, netbanking, wallets (dominant in India)<br />
+      - <strong>Stripe</strong> (international) — for Dubai expansion and international scouts<br />
+      - <strong>In-app purchases</strong> — Apple/Google for premium features on mobile
+    </p>
+    <p>
+      <strong>Implementation</strong>:<br />
+      1. <strong>Supabase Edge Function</strong> for payment webhook handling<br />
+      2. <strong>Subscription tables</strong>:<br />
+      <code
+        >sql CREATE TABLE subscriptions ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id
+        UUID REFERENCES profiles(id), plan TEXT NOT NULL, -- 'scout_basic', 'scout_pro',
+        'team_starter', 'team_pro' status TEXT DEFAULT 'active', -- 'active', 'cancelled',
+        'expired', 'past_due' provider TEXT NOT NULL, -- 'razorpay', 'stripe', 'apple', 'google'
+        provider_subscription_id TEXT, current_period_start TIMESTAMPTZ, current_period_end
+        TIMESTAMPTZ, created_at TIMESTAMPTZ DEFAULT NOW() );</code
+      ><br />
+      3. <strong>Gating logic</strong>: Check subscription status before allowing premium
+      features<br />
+      4. <strong>Pricing page</strong>: In-app upgrade flow with plan comparison
+    </p>
+    <p>
+      <strong>Pricing Tiers</strong> (India market):<br />
+      | Plan | Price (INR/mo) | Features |<br />
+      |------|---------------|----------|<br />
+      | Scout Basic | ₹999 | 50 searches/mo, 10 shortlists |<br />
+      | Scout Pro | ₹2,499 | Unlimited searches, AI recommendations, 50 shortlists |<br />
+      | Scout Enterprise | ₹9,999 | Everything + API access, bulk export, priority support |<br />
+      | Team Starter | ₹1,999 | 1 opportunity/mo, 5 team members |<br />
+      | Team Pro | ₹4,999 | Unlimited opportunities, 25 members, analytics |
+    </p>
+    <hr />
+    <h2 id="6-performance-optimization-sprint">6. Performance Optimization Sprint</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Tech</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>
+            High — directly affects user retention (53% abandon apps that take &gt;3s to load)
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>2 weeks</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_5">Description</h3>
+    <p>
+      Multiple known performance issues:<br />
+      - <strong>Discover screen</strong>: 17 <code>useState</code> hooks causing excessive
+      re-renders<br />
+      - <strong>FlatList optimization</strong>: 25+ screens missing
+      <code>maxToRenderPerBatch</code>, <code>windowSize</code>, <code>getItemLayout</code><br />
+      - <strong>CachedImage migration</strong>: 13 files still using raw
+      <code>&lt;Image&gt;</code> instead of <code>&lt;CachedImage&gt;</code> (no disk caching)<br />
+      - <strong>AthleteHome</strong>: 666-line monolith causing slow renders<br />
+      - <strong>Context providers</strong>: 12 nested providers, some triggering unnecessary
+      re-renders
+    </p>
+    <h3 id="risk-if-not-addressed_5">Risk If Not Addressed</h3>
+    <ul>
+      <li>
+        <strong>User churn</strong>: Slow app = users leave (especially on low-end Android devices
+        common in India)
+      </li>
+      <li>
+        <strong>App store ratings</strong>: Performance complaints → low ratings → reduced
+        discoverability
+      </li>
+      <li>
+        <strong>Scaling failure</strong>: Current architecture won't handle 10K+ concurrent users
+      </li>
+    </ul>
+    <h3 id="recommended-approach_5">Recommended Approach</h3>
+    <p>
+      <strong>Week 1: Quick Wins</strong><br />
+      - Migrate all 13 files to <code>&lt;CachedImage&gt;</code> (1 day)<br />
+      - Add FlatList performance props to all 25+ screens (2 days)<br />
+      - Refactor Discover screen: Replace 17 <code>useState</code> with <code>useReducer</code> (1
+      day)<br />
+      - Split AthleteHome.tsx into 5 sub-components (1 day)
+    </p>
+    <p>
+      <strong>Week 2: Deep Optimization</strong><br />
+      - Implement <code>React.memo</code> on all list item components<br />
+      - Add <code>useMemo</code>/<code>useCallback</code> to expensive computations in contexts<br />
+      - Implement virtualized image loading (only load visible images)<br />
+      - Add Supabase query pagination everywhere (limit 20, cursor-based)<br />
+      - Profile with React DevTools Profiler → fix top 5 re-render hotspots<br />
+      - Implement skeleton screens for all data-loading states
+    </p>
+    <p>
+      <strong>Target</strong>: Time-to-interactive &lt; 2s, scroll FPS &gt; 55 on mid-range Android.
+    </p>
+    <hr />
+    <h2 id="7-analytics-event-tracking">7. Analytics &amp; Event Tracking</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Product</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>High — can't improve what you can't measure</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>2 weeks</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_6">Description</h3>
+    <p>
+      No analytics or event tracking. The team has zero visibility into:<br />
+      - Which features are used (and which aren't)<br />
+      - Where users drop off in funnels<br />
+      - Session duration, screens/session, retention curves<br />
+      - AI feature usage and satisfaction<br />
+      - Content engagement patterns
+    </p>
+    <h3 id="risk-if-not-addressed_6">Risk If Not Addressed</h3>
+    <ul>
+      <li><strong>Blind product decisions</strong>: Building features nobody uses</li>
+      <li><strong>Investor due diligence</strong>: "What are your metrics?" → "We don't know"</li>
+      <li><strong>Growth stagnation</strong>: Can't optimize funnels without data</li>
+    </ul>
+    <h3 id="recommended-approach_6">Recommended Approach</h3>
+    <ol>
+      <li>
+        <strong>Mixpanel</strong> or <strong>PostHog</strong> (self-hosted option) for event
+        tracking
+      </li>
+      <li>
+        <strong>Key events to track</strong>:<br />
+        - <code>signup_started</code>, <code>signup_completed</code> (with role)<br />
+        - <code>profile_updated</code>, <code>profile_completion_percentage</code><br />
+        - <code>post_created</code>, <code>post_liked</code>, <code>post_commented</code>,
+        <code>post_shared</code><br />
+        - <code>opportunity_viewed</code>, <code>opportunity_applied</code><br />
+        - <code>message_sent</code>, <code>message_read</code><br />
+        - <code>ai_feature_used</code> (with function name)<br />
+        - <code>fitness_test_completed</code> (with type and zone)<br />
+        - <code>scout_search_performed</code>, <code>athlete_shortlisted</code><br />
+        - <code>session_start</code>, <code>session_end</code>, <code>screen_view</code>
+      </li>
+      <li>
+        <strong>Dashboards</strong>: Daily active users, retention cohorts, feature adoption, funnel
+        analysis
+      </li>
+      <li>
+        <strong>A/B testing framework</strong>: For iterating on onboarding, feed ranking, AI
+        prompts
+      </li>
+    </ol>
+    <hr />
+    <h2 id="8-content-moderation-system">8. Content Moderation System</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Product / Security</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>High — required for platform safety and legal compliance</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>2 weeks</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_7">Description</h3>
+    <p>
+      No content moderation exists. Users can post anything — inappropriate images, hate speech,
+      spam, fake profiles — with no detection or removal mechanism. India's IT Act 2021 intermediary
+      guidelines require platforms to have grievance mechanisms and content moderation.
+    </p>
+    <h3 id="risk-if-not-addressed_7">Risk If Not Addressed</h3>
+    <ul>
+      <li>
+        <strong>Legal</strong>: Non-compliance with IT Act intermediary guidelines → platform
+        takedown
+      </li>
+      <li>
+        <strong>User safety</strong>: Minors on platform (school athletes) exposed to harmful
+        content
+      </li>
+      <li>
+        <strong>Brand damage</strong>: One viral incident of inappropriate content ruins reputation
+      </li>
+      <li>
+        <strong>App store removal</strong>: Apple/Google require content moderation for social apps
+      </li>
+    </ul>
+    <h3 id="recommended-approach_7">Recommended Approach</h3>
+    <ol>
+      <li>
+        <strong>Automated layer</strong>: Integrate image moderation API (AWS Rekognition or Google
+        Cloud Vision) for uploaded media
+      </li>
+      <li>
+        <strong>Report system</strong>: User-facing "Report" button on posts, profiles, messages
+      </li>
+      <li><strong>Moderation queue</strong>: Admin dashboard page for reviewing flagged content</li>
+      <li>
+        <strong>Auto-actions</strong>: Auto-hide posts with 3+ reports, auto-ban users with 5+
+        confirmed violations
+      </li>
+      <li>
+        <strong>Word filters</strong>: Block known slurs and inappropriate terms in posts/messages
+      </li>
+      <li><strong>Community guidelines</strong>: Publish and require acceptance during signup</li>
+    </ol>
+    <hr />
+    <h2 id="9-database-scaling-optimization">9. Database Scaling &amp; Optimization</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Tech</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>High — database is the primary bottleneck at scale</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>2 weeks</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_8">Description</h3>
+    <p>
+      Current Supabase free/pro tier has limitations:<br />
+      - Connection pooling limits (direct connections exhaust quickly)<br />
+      - No read replicas<br />
+      - Queries on <code>profiles</code> table will slow as it grows (JSONB columns aren't indexed
+      deeply)<br />
+      - <code>messages</code> table will grow fastest and has no archival strategy<br />
+      - Feed queries join multiple tables without materialized views
+    </p>
+    <h3 id="risk-if-not-addressed_8">Risk If Not Addressed</h3>
+    <ul>
+      <li><strong>Outages</strong>: Connection pool exhaustion at ~500 concurrent users</li>
+      <li><strong>Slow queries</strong>: Feed and discover become unusable at 100K+ profiles</li>
+      <li>
+        <strong>Cost explosion</strong>: Supabase compute scales linearly without optimization
+      </li>
+    </ul>
+    <h3 id="recommended-approach_8">Recommended Approach</h3>
+    <p>
+      <strong>Immediate (Week 1)</strong>:<br />
+      - Enable Supabase connection pooling (PgBouncer) — transaction mode<br />
+      - Add composite indexes for common query patterns:<br />
+      <code
+        >sql CREATE INDEX idx_posts_feed ON posts(created_at DESC) WHERE deleted_at IS NULL; CREATE
+        INDEX idx_messages_conversation ON messages( LEAST(sender_id, receiver_id),
+        GREATEST(sender_id, receiver_id), created_at DESC ); CREATE INDEX idx_profiles_discover ON
+        profiles(role, sport, location, verified);</code
+      ><br />
+      - Add GIN index on JSONB columns for deep queries:<br />
+      <code
+        >sql CREATE INDEX idx_profiles_achievements ON profiles USING GIN(achievements); CREATE
+        INDEX idx_profiles_stats ON profiles USING GIN(stats);</code
+      >
+    </p>
+    <p>
+      <strong>Near-term (Week 2)</strong>:<br />
+      - Create materialized view for feed (denormalized posts + user data)<br />
+      - Implement message archival (move messages &gt;90 days to archive table)<br />
+      - Add database monitoring (pg_stat_statements, slow query log)<br />
+      - Plan read replica setup for Discover queries (Supabase Enterprise)
+    </p>
+    <hr />
+    <h2 id="10-push-notification-infrastructure">10. Push Notification Infrastructure</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P1</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Product</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>Medium — push notifications drive 3-10x re-engagement vs in-app only</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>1 week</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_9">Description</h3>
+    <p>
+      <code>expo-notifications</code> is installed but push notifications are not fully implemented.
+      The current notification system is in-app only — users must open the app to see notifications.
+      This means missed messages, opportunities, and scout interest go unnoticed.
+    </p>
+    <h3 id="risk-if-not-addressed_9">Risk If Not Addressed</h3>
+    <ul>
+      <li><strong>Low re-engagement</strong>: Users forget about the app without push reminders</li>
+      <li>
+        <strong>Missed opportunities</strong>: Time-sensitive tryouts expire before athletes see
+        them
+      </li>
+      <li><strong>Competitive disadvantage</strong>: Every social app has push notifications</li>
+    </ul>
+    <h3 id="recommended-approach_9">Recommended Approach</h3>
+    <ol>
+      <li>
+        <strong>Store push tokens</strong>: Add <code>push_token</code> column to
+        <code>profiles</code>, save on app launch
+      </li>
+      <li><strong>Supabase Edge Function</strong> for sending pushes via Expo Push API</li>
+      <li>
+        <strong>Database trigger</strong>: When a notification row is inserted → call edge function
+        → send push
+      </li>
+      <li>
+        <strong>Key push events</strong>: New message, new follower, opportunity match, application
+        status change, scout viewed profile
+      </li>
+      <li>
+        <strong>User preferences</strong>: Notification settings screen (already exists) → respect
+        user choices
+      </li>
+      <li><strong>Rich notifications</strong>: Include sender avatar, preview text, deep link</li>
+    </ol>
+    <hr />
+    <h2 id="11-ai-response-caching-cost-control">11. AI Response Caching &amp; Cost Control</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P2</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Tech / Business</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>Medium — reduces AI costs by 60-80%</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>1 week</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_10">Description</h3>
+    <p>
+      Every AI call hits Claude API directly with no caching. Profile coaching suggestions
+      regenerate on every profile view. Scout recommendations recalculate on every dashboard load.
+      At scale, this creates massive API costs.
+    </p>
+    <h3 id="risk-if-not-addressed_10">Risk If Not Addressed</h3>
+    <ul>
+      <li><strong>Cost explosion</strong>: 10K DAU × 5 AI calls/day × $0.01/call = $1,500/day</li>
+      <li><strong>Slow UX</strong>: AI calls take 2-5 seconds, no cached fallback</li>
+      <li><strong>Rate limiting</strong>: Hit Anthropic rate limits during peak usage</li>
+    </ul>
+    <h3 id="recommended-approach_10">Recommended Approach</h3>
+    <ol>
+      <li>
+        <strong>Cache layer</strong> in <code>ai_recommendations</code> table (already exists) —
+        extend to all AI functions
+      </li>
+      <li><strong>Cache keys</strong>: Hash of (function_name + input_data + model_version)</li>
+      <li>
+        <strong>TTL strategy</strong>:<br />
+        - Profile coaching: 24 hours (regenerate daily)<br />
+        - Scout recommendations: 6 hours (refresh throughout day)<br />
+        - Chat responses: Don't cache (conversational)<br />
+        - Opportunity matching: 12 hours
+      </li>
+      <li>
+        <strong>Background refresh</strong>: Supabase cron job regenerates stale recommendations
+        overnight
+      </li>
+      <li>
+        <strong>Cost dashboard</strong>: Track tokens used per function per day, set budget alerts
+      </li>
+    </ol>
+    <hr />
+    <h2 id="12-offline-first-architecture">12. Offline-First Architecture</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P2</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Tech</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>Medium — critical for Indian market (inconsistent connectivity)</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>3 weeks</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_11">Description</h3>
+    <p>
+      The app requires constant internet connectivity. In India, many athletes are in rural areas or
+      stadiums with poor connectivity. The app shows errors or blank screens when offline.
+    </p>
+    <h3 id="risk-if-not-addressed_11">Risk If Not Addressed</h3>
+    <ul>
+      <li>
+        <strong>Market fit failure</strong>: Target users (grassroots Indian athletes) have the
+        worst connectivity
+      </li>
+      <li><strong>Data loss</strong>: Draft posts and test results lost on connection drop</li>
+      <li><strong>User frustration</strong>: App feels broken in common usage scenarios</li>
+    </ul>
+    <h3 id="recommended-approach_11">Recommended Approach</h3>
+    <ol>
+      <li>
+        <strong>Local database</strong>: Use WatermelonDB or expo-sqlite for local data persistence
+      </li>
+      <li><strong>Optimistic updates</strong>: Show changes immediately, sync when online</li>
+      <li>
+        <strong>Queue system</strong>: Queue posts, messages, and test results for upload when
+        connectivity returns
+      </li>
+      <li>
+        <strong>Conflict resolution</strong>: Last-write-wins for profiles, append-only for
+        messages/posts
+      </li>
+      <li><strong>Cache feed</strong>: Store last 50 feed items locally for offline browsing</li>
+      <li>
+        <strong>Connectivity indicator</strong>: Show subtle "offline" banner, not error screens
+      </li>
+    </ol>
+    <hr />
+    <h2 id="13-video-streaming-optimization">13. Video Streaming Optimization</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P2</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Tech</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>Medium — video is the primary content type for athlete highlights</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>2 weeks</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_12">Description</h3>
+    <p>
+      Videos upload directly to Supabase Storage with no processing. Issues:<br />
+      - No compression or transcoding (raw uploads can be 200MB+)<br />
+      - No adaptive bitrate streaming (HLS/DASH)<br />
+      - No thumbnail generation<br />
+      - Videos load fully before playing (no progressive loading)<br />
+      - Supabase Storage bandwidth is expensive at scale
+    </p>
+    <h3 id="risk-if-not-addressed_12">Risk If Not Addressed</h3>
+    <ul>
+      <li><strong>Slow loading</strong>: Large videos take 30+ seconds on 4G</li>
+      <li>
+        <strong>Data consumption</strong>: Users in India are data-conscious; uncompressed video
+        burns data plans
+      </li>
+      <li>
+        <strong>Storage costs</strong>: Supabase Storage charges per GB; uncompressed video is 10x
+        more expensive
+      </li>
+      <li><strong>Poor UX</strong>: No thumbnails in feed, no preview before playing</li>
+    </ul>
+    <h3 id="recommended-approach_12">Recommended Approach</h3>
+    <ol>
+      <li>
+        <strong>Upload pipeline</strong>: Client → Supabase Edge Function → Cloudflare Stream or Mux
+      </li>
+      <li><strong>Transcoding</strong>: Auto-generate 360p, 720p, 1080p variants</li>
+      <li><strong>HLS streaming</strong>: Adaptive bitrate based on connection speed</li>
+      <li><strong>Thumbnails</strong>: Auto-generate at 0s, 3s, 6s; use best as preview</li>
+      <li>
+        <strong>Progressive loading</strong>: Start playback immediately with low-quality stream
+      </li>
+      <li><strong>CDN</strong>: Cloudflare or Bunny CDN for edge caching in India</li>
+    </ol>
+    <hr />
+    <h2 id="14-user-retention-re-engagement">14. User Retention &amp; Re-engagement</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P2</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Business</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>High — retention is the #1 predictor of startup success</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>3 weeks</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_13">Description</h3>
+    <p>
+      No retention mechanisms beyond the core product. No onboarding flow to drive profile
+      completion. No re-engagement for churned users. No gamification or streaks. The current
+      profile completion indicator is a start but needs to be part of a broader retention strategy.
+    </p>
+    <h3 id="risk-if-not-addressed_13">Risk If Not Addressed</h3>
+    <ul>
+      <li>
+        <strong>Low retention</strong>: Social apps typically see 20-30% D7 retention; without
+        active measures, OnlyKrida could be worse
+      </li>
+      <li>
+        <strong>Empty platform</strong>: Low retention → fewer profiles → less value for scouts →
+        death spiral
+      </li>
+      <li>
+        <strong>High CAC waste</strong>: Acquiring users who churn in week 1 wastes marketing spend
+      </li>
+    </ul>
+    <h3 id="recommended-approach_13">Recommended Approach</h3>
+    <p>
+      <strong>Onboarding (Week 1)</strong>:<br />
+      - Guided 5-step onboarding after signup (upload photo → add sport → write bio → post highlight
+      → take fitness test)<br />
+      - Profile completion rewards (verified badge at 100%)<br />
+      - "Complete your profile to be discovered by scouts" motivation
+    </p>
+    <p>
+      <strong>Engagement Loops (Week 2)</strong>:<br />
+      - Weekly fitness challenge (compare beep test scores)<br />
+      - "This week's rising athletes" leaderboard<br />
+      - Scout activity notifications ("3 scouts viewed your profile this week")<br />
+      - Content prompts ("Share your training highlight from today")
+    </p>
+    <p>
+      <strong>Re-engagement (Week 3)</strong>:<br />
+      - Email drip campaign for inactive users (Day 3, 7, 14, 30)<br />
+      - Push notifications: "A scout in Mumbai is looking for your position"<br />
+      - Monthly "Athlete Spotlight" feature (motivates content creation)<br />
+      - Referral program: "Invite teammates, get verified faster"
+    </p>
+    <hr />
+    <h2 id="15-internationalization-i18n">15. Internationalization (i18n)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Priority</strong></td>
+          <td>P2</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Business</td>
+        </tr>
+        <tr>
+          <td><strong>Impact</strong></td>
+          <td>Medium — required for India (22 official languages) and Dubai expansion</td>
+        </tr>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td>2 weeks</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 id="description_14">Description</h3>
+    <p>
+      The app is English-only. India has 22 official languages and hundreds of dialects. Many
+      grassroots athletes, especially in rural areas, are not comfortable with English. The planned
+      Dubai expansion requires Arabic support.
+    </p>
+    <h3 id="risk-if-not-addressed_14">Risk If Not Addressed</h3>
+    <ul>
+      <li>
+        <strong>Market limitation</strong>: Excludes non-English speaking athletes (majority in
+        India)
+      </li>
+      <li>
+        <strong>Competitive vulnerability</strong>: A Hindi/regional language alternative could
+        capture the market
+      </li>
+      <li><strong>Dubai expansion blocker</strong>: Arabic is required for UAE market</li>
+    </ul>
+    <h3 id="recommended-approach_14">Recommended Approach</h3>
+    <ol>
+      <li>
+        <strong>i18n framework</strong>: Integrate <code>i18next</code> +
+        <code>react-i18next</code> with <code>expo-localization</code>
+      </li>
+      <li>
+        <strong>Phase 1 languages</strong>: English, Hindi, Tamil, Telugu, Kannada (top 5 by athlete
+        population)
+      </li>
+      <li><strong>Phase 2 languages</strong>: Arabic (Dubai), Marathi, Bengali, Malayalam</li>
+      <li>
+        <strong>Translation workflow</strong>: Extract all strings → professional translation →
+        community review
+      </li>
+      <li>
+        <strong>RTL support</strong>: Required for Arabic (use <code>I18nManager.forceRTL</code>)
+      </li>
+      <li>
+        <strong>Dynamic content</strong>: AI responses should respect user language preference
+      </li>
+    </ol>
+    <hr />
+    <h2 id="implementation-timeline">Implementation Timeline</h2>
+    <pre><code>Month 1 (Critical):
+├── Week 1: AI key migration (P0) + CI/CD setup (P1)
+├── Week 2: Performance sprint starts (P1) + Analytics setup (P1)
+├── Week 3: Testing foundation (P0) + Push notifications (P1)
+└── Week 4: Testing critical paths + Content moderation (P1)
+
+Month 2 (Revenue):
+├── Week 5-6: Payment integration (P1)
+├── Week 7-8: Admin dashboard (P0)
+
+Month 3 (Scale):
+├── Week 9-10: Database optimization (P1) + AI caching (P2)
+├── Week 11-12: Video optimization (P2) + Retention features (P2)
+
+Month 4 (Expand):
+├── Week 13-14: Offline-first (P2)
+├── Week 15-16: i18n (P2) + E2E testing (P0)
+</code></pre>
+    <hr />
+    <h2 id="investment-required">Investment Required</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Effort</th>
+          <th>Estimated Cost (India rates)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Security (P0)</td>
+          <td>3 days</td>
+          <td>$500</td>
+        </tr>
+        <tr>
+          <td>Testing (P0)</td>
+          <td>3 weeks</td>
+          <td>$5,000</td>
+        </tr>
+        <tr>
+          <td>Admin Dashboard (P0)</td>
+          <td>4 weeks</td>
+          <td>$8,000</td>
+        </tr>
+        <tr>
+          <td>CI/CD (P1)</td>
+          <td>1 week</td>
+          <td>$1,500</td>
+        </tr>
+        <tr>
+          <td>Payments (P1)</td>
+          <td>3 weeks</td>
+          <td>$6,000</td>
+        </tr>
+        <tr>
+          <td>Performance (P1)</td>
+          <td>2 weeks</td>
+          <td>$3,000</td>
+        </tr>
+        <tr>
+          <td>Analytics (P1)</td>
+          <td>2 weeks</td>
+          <td>$3,000</td>
+        </tr>
+        <tr>
+          <td>Moderation (P1)</td>
+          <td>2 weeks</td>
+          <td>$3,000</td>
+        </tr>
+        <tr>
+          <td>DB Optimization (P1)</td>
+          <td>2 weeks</td>
+          <td>$3,000</td>
+        </tr>
+        <tr>
+          <td>Push Notifications (P1)</td>
+          <td>1 week</td>
+          <td>$1,500</td>
+        </tr>
+        <tr>
+          <td>AI Caching (P2)</td>
+          <td>1 week</td>
+          <td>$1,500</td>
+        </tr>
+        <tr>
+          <td>Offline-First (P2)</td>
+          <td>3 weeks</td>
+          <td>$5,000</td>
+        </tr>
+        <tr>
+          <td>Video Optimization (P2)</td>
+          <td>2 weeks</td>
+          <td>$4,000</td>
+        </tr>
+        <tr>
+          <td>Retention (P2)</td>
+          <td>3 weeks</td>
+          <td>$5,000</td>
+        </tr>
+        <tr>
+          <td>i18n (P2)</td>
+          <td>2 weeks</td>
+          <td>$3,000</td>
+        </tr>
+        <tr>
+          <td><strong>Total</strong></td>
+          <td><strong>~16 weeks</strong></td>
+          <td><strong>~$53,000</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <blockquote>
+      <p>
+        These estimates assume a 2-person engineering team in India. Costs scale with team size and
+        location.
+      </p>
+    </blockquote>
+    <hr />
+    <p>
+      <em
+        >This document should be reviewed monthly and priorities re-assessed based on user feedback,
+        growth metrics, and competitive landscape changes.</em
+      >
+    </p>
+  </body>
+</html>

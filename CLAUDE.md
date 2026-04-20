@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # OnlyKrida
 
 **India's first sports talent discovery platform.** We make grassroots athletes visible to every scout in the country, powered by AI.
@@ -35,7 +39,10 @@ npx expo start --web        # Dev server (web)
 npx tsc --noEmit            # TypeScript check (must pass with 0 errors)
 npx expo lint               # Lint
 npx tsx scripts/seed-test-data.ts  # Seed test data
+npx tsx scripts/nuke-and-seed.ts   # Reset DB + reseed
 ```
+
+**Formatting**: Prettier with single quotes, trailing commas, 2-space indent, 100-char width (`.prettierrc`).
 
 ## Environment
 

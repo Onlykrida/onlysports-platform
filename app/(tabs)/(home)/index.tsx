@@ -36,7 +36,7 @@ export default function HomeScreen() {
   })();
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, overflow: 'hidden' }}>
       {homeComponent}
 
       {/* AI Assistant FAB */}

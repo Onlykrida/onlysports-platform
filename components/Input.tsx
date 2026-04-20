@@ -32,10 +32,16 @@ export const Input: React.FC<InputProps> = ({
           secureTextEntry={isPassword && !showPassword}
           keyboardType={type === 'email' ? 'email-address' : 'default'}
           autoCapitalize={type === 'email' ? 'none' : 'sentences'}
+          accessibilityLabel={label || props.accessibilityLabel}
           {...props}
         />
         {isPassword && (
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeIcon}
+            accessibilityRole="button"
+            accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+          >
             {showPassword ? (
               <EyeOff size={20} color={theme.colors.textSecondary} />
             ) : (
@@ -86,7 +92,11 @@ const styles = StyleSheet.create({
     marginRight: theme.spacing.sm,
   },
   eyeIcon: {
-    padding: theme.spacing.xs,
+    padding: 12,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   error: {
     fontSize: theme.fontSize.xs,
