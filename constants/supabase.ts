@@ -32,6 +32,16 @@ const isSupabaseConfigured =
 
 let supabase: any;
 
+// No-op auth lock for web: bypasses Supabase's default navigator.locks-based
+// cross-tab coordination. Multi-tab session-state sync is lost; the
+// "lock broken by another user" error is gone. Acceptable for this app
+// because users are unlikely to run two tabs with active sessions.
+const noopLock = async <R>(
+  _name: string,
+  _acquireTimeout: number,
+  fn: () => Promise<R>,
+): Promise<R> => fn();
+
 if (isSupabaseConfigured) {
   try {
     supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
@@ -40,6 +50,7 @@ if (isSupabaseConfigured) {
         persistSession: true,
         detectSessionInUrl: Platform.OS === 'web',
         storage,
+        lock: noopLock,
       },
     });
   } catch (error) {

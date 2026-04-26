@@ -79,6 +79,68 @@ function dob(ageYears: number): string {
 }
 
 // ---------------------------------------------------------------------------
+// VERIFICATION TIERS (post 2026-04-01 schema migration)
+// ---------------------------------------------------------------------------
+
+type VerificationTier = 'self_reported' | 'app_measured' | 'coach_verified' | 'center_tested';
+
+function weightedTier(): VerificationTier {
+  const r = Math.random();
+  if (r < 0.4) return 'self_reported';
+  if (r < 0.65) return 'app_measured';
+  if (r < 0.9) return 'coach_verified';
+  return 'center_tested';
+}
+
+function sensorSampleFor(testType: string): Record<string, any> {
+  if (testType === 'yoyo') {
+    return {
+      accelerometer_samples: randomInt(800, 1600),
+      peak_g: randomFloat(2.4, 4.2, 2),
+      turn_count: randomInt(40, 120),
+      sample_rate_hz: 50,
+    };
+  }
+  if (testType === 'sprint_20m' || testType === 'sprint_40m') {
+    return {
+      accelerometer_samples: randomInt(80, 200),
+      peak_g: randomFloat(2.8, 4.8, 2),
+      sample_rate_hz: 50,
+    };
+  }
+  return { accelerometer_samples: 200, sample_rate_hz: 50 };
+}
+
+function verificationFields(
+  tier: VerificationTier,
+  testType: string,
+  coachId: string | null,
+): Record<string, any> {
+  const fields: Record<string, any> = { verification_tier: tier };
+  if (tier === 'coach_verified' && coachId) {
+    fields.verified_by = coachId;
+    fields.verified_at = pastDate(0, 7);
+    fields.verification_notes = pick([
+      'Verified during team practice. Form was solid.',
+      'Conducted alongside the squad — time confirmed.',
+      'Present for the test. Result is accurate.',
+      'Matches what I see in training.',
+    ]);
+  }
+  if (tier === 'center_tested') {
+    fields.verified_at = pastDate(0, 30);
+    fields.verification_notes = 'Tested at certified Khelo India sub-junior camp.';
+  }
+  if (tier === 'app_measured') {
+    fields.sensor_data = sensorSampleFor(testType);
+  }
+  if (tier === 'self_reported' || tier === 'app_measured') {
+    fields.attestation_count = Math.random() < 0.3 ? randomInt(1, 4) : 0;
+  }
+  return fields;
+}
+
+// ---------------------------------------------------------------------------
 // INDIAN NAMES
 // ---------------------------------------------------------------------------
 
@@ -1231,8 +1293,6 @@ async function seed() {
       avatar: null,
       bio,
       location: u.city,
-      city: u.city,
-      state: cityToState(u.city),
       verified: u.verified,
       sport: u.sport,
       position: u.position,
@@ -1624,12 +1684,19 @@ async function seed() {
     const vo2max = levelToVO2Max(level, shuttle);
     const totalShuttles = levelToTotalShuttles(level, shuttle);
     const totalDistance = totalShuttles * 20;
+    const tier = weightedTier();
+    const conductedBy = tier === 'coach_verified' || Math.random() > 0.5 ? pick(coaches).id : null;
 
     fitnessRows.push({
       athlete_id: a.id,
-      conducted_by: Math.random() > 0.5 ? pick(coaches).id : null,
+      conducted_by: conductedBy,
       test_type: 'yoyo',
-      test_mode: pick(['self', 'coached', 'manual'] as const),
+      test_mode:
+        tier === 'app_measured'
+          ? 'self'
+          : tier === 'coach_verified'
+            ? 'coached'
+            : pick(['self', 'coached', 'manual'] as const),
       level,
       shuttle,
       vo2max,
@@ -1648,6 +1715,7 @@ async function seed() {
               'Post-injury test. Good recovery progress',
             ])
           : null,
+      ...verificationFields(tier, 'yoyo', conductedBy),
     });
   }
 
@@ -1657,12 +1725,20 @@ async function seed() {
     const zone = weightedZone();
     const is20m = Math.random() > 0.4;
     const sprintTime = is20m ? zoneToSprintTime(zone, 20) : zoneToSprintTime(zone, 40);
+    const testType = is20m ? 'sprint_20m' : 'sprint_40m';
+    const tier = weightedTier();
+    const conductedBy = tier === 'coach_verified' || Math.random() > 0.5 ? pick(coaches).id : null;
 
     fitnessRows.push({
       athlete_id: a.id,
-      conducted_by: Math.random() > 0.5 ? pick(coaches).id : null,
-      test_type: is20m ? 'sprint_20m' : 'sprint_40m',
-      test_mode: pick(['self', 'coached'] as const),
+      conducted_by: conductedBy,
+      test_type: testType,
+      test_mode:
+        tier === 'app_measured'
+          ? 'self'
+          : tier === 'coach_verified'
+            ? 'coached'
+            : pick(['self', 'coached'] as const),
       sprint_time: sprintTime,
       sprint_distance: is20m ? 20 : 40,
       zone,
@@ -1676,6 +1752,7 @@ async function seed() {
               'Electronic timing used',
             ])
           : null,
+      ...verificationFields(tier, testType, conductedBy),
     });
   }
 
