@@ -6,20 +6,35 @@ import { useAuth } from './auth-context';
 
 const isWeb = Platform.OS === 'web';
 
+// Detect Expo Go (vs dev-client / standalone). In SDK 53+, remote push
+// notifications were removed from Expo Go on Android — the library still
+// loads but emits a console error at first call. Skip all push setup in
+// Expo Go to silence the error; push works fine in dev-client / EAS builds.
+let isExpoGo = false;
+try {
+  const Constants = require('expo-constants').default;
+  isExpoGo = Constants?.executionEnvironment === 'storeClient';
+} catch (e) {
+  // expo-constants missing or web; treat as non-Expo-Go
+}
+const skipPushSetup = isWeb || (isExpoGo && Platform.OS === 'android');
+
 // Dynamically import expo-notifications to handle SDK version mismatches
 // (e.g., SDK 54 app running in SDK 53 Expo Go)
 let Notifications: typeof import('expo-notifications') | null = null;
 let Device: typeof import('expo-device') | null = null;
 
-try {
-  Notifications = require('expo-notifications');
-  Device = require('expo-device');
-} catch (e) {
-  console.warn('expo-notifications not available:', e);
+if (!skipPushSetup) {
+  try {
+    Notifications = require('expo-notifications');
+    Device = require('expo-device');
+  } catch (e) {
+    console.warn('expo-notifications not available:', e);
+  }
 }
 
 // Configure how notifications appear when the app is in the foreground
-if (!isWeb && Notifications) {
+if (!skipPushSetup && Notifications) {
   try {
     Notifications.setNotificationHandler({
       handleNotification: async () => ({

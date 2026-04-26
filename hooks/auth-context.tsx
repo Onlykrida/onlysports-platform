@@ -85,6 +85,25 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
 
         if (error) {
           console.error('Error getting session:', error);
+          // Stale-token recovery: if the stored refresh token is invalid
+          // (user was deleted server-side, refresh token expired/rotated,
+          // session was revoked), force a clean signOut so AsyncStorage /
+          // localStorage gets cleared and we land on the welcome screen
+          // instead of looping the same crash on every boot.
+          const msg = String(error.message || '').toLowerCase();
+          if (
+            msg.includes('refresh token') ||
+            msg.includes('refresh_token') ||
+            msg.includes('jwt') ||
+            msg.includes('not found')
+          ) {
+            try {
+              await supabase.auth.signOut();
+              if (__DEV__) console.log('Cleared stale auth session');
+            } catch (signOutErr) {
+              console.warn('signOut after stale-token detection failed:', signOutErr);
+            }
+          }
           if (mounted) {
             setIsLoading(false);
           }
