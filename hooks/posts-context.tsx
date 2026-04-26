@@ -569,7 +569,11 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
             console.error('Check: Supabase Dashboard > Storage > posts > Policies');
           }
 
-          return uri;
+          // Refuse to fall back to the local file:// URI. Persisting it would
+          // create a "blank card" on every device except the one that uploaded
+          // (file://, content:// resolve to device-local cache only). Throw so
+          // createPost rejects and surfaces the error to the user.
+          throw new Error(`Upload failed: ${uploadError.message ?? 'unknown'}`);
         }
 
         if (__DEV__) console.log('Posts: Upload successful', { path, size: blob.size });
@@ -580,7 +584,9 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         const publicUrl = publicUrlData?.publicUrl;
         if (!publicUrl) {
           console.error('Posts: Failed to get public URL');
-          return uri;
+          // Same reasoning as the upload-failure case above — refuse to persist
+          // the local URI. The caller should reject the post creation.
+          throw new Error('Upload succeeded but no public URL was returned');
         }
 
         if (__DEV__) console.log(`Posts: Public URL generated for ${mType}:`, publicUrl);

@@ -622,44 +622,55 @@ export default function ProfileScreen() {
               {userPosts.length > 0 ? (
                 postsViewMode === 'grid' ? (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 2 }}>
-                    {userPosts.map((post) => (
-                      <TouchableOpacity
-                        key={post.id}
-                        style={{
-                          width: '32.8%',
-                          aspectRatio: 1,
-                          backgroundColor: theme.colors.surface,
-                          borderRadius: 4,
-                          overflow: 'hidden',
-                        }}
-                        onPress={() => router.push(`/post/${post.id}` as any)}
-                      >
-                        {post.media?.url ? (
-                          <CachedImage
-                            source={post.media.url}
-                            size={100}
-                            placeholder="post"
-                            style={{ width: '100%', height: '100%' }}
-                          />
-                        ) : (
-                          <View
-                            style={{
-                              flex: 1,
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              padding: 8,
-                            }}
-                          >
-                            <Text
-                              style={{ color: theme.colors.textSecondary, fontSize: 12 }}
-                              numberOfLines={3}
+                    {userPosts.map((post) => {
+                      // Prefer the thumbnail (always an image) over .url (may be
+                      // a video URL for highlight posts). Strip device-local URIs
+                      // that don't resolve cross-platform (legacy data from a
+                      // pre-fix upload regression — see posts-context upload helper).
+                      const rawSrc = post.media?.thumbnail || post.media?.url;
+                      const gridSrc =
+                        rawSrc && !rawSrc.startsWith('file://') && !rawSrc.startsWith('content://')
+                          ? rawSrc
+                          : null;
+                      return (
+                        <TouchableOpacity
+                          key={post.id}
+                          style={{
+                            width: '32.8%',
+                            aspectRatio: 1,
+                            backgroundColor: theme.colors.surface,
+                            borderRadius: 4,
+                            overflow: 'hidden',
+                          }}
+                          onPress={() => router.push(`/post/${post.id}` as any)}
+                        >
+                          {gridSrc ? (
+                            <CachedImage
+                              source={gridSrc}
+                              size={100}
+                              placeholder="post"
+                              style={{ width: '100%', height: '100%' }}
+                            />
+                          ) : (
+                            <View
+                              style={{
+                                flex: 1,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                padding: 8,
+                              }}
                             >
-                              {post.content}
-                            </Text>
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                    ))}
+                              <Text
+                                style={{ color: theme.colors.textSecondary, fontSize: 12 }}
+                                numberOfLines={3}
+                              >
+                                {post.content}
+                              </Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 ) : (
                   <View style={{ gap: 12 }}>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Image, ImageStyle } from 'expo-image';
 import { User, ImageIcon } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
@@ -13,6 +13,19 @@ interface CachedImageProps {
 }
 
 const blurhash = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+
+// file:// URIs are device-local cache paths that only resolve on the device
+// where they were created. They can sneak into the DB when post-upload to
+// Supabase Storage fails and the upload helper falls back to the original
+// local URI. On web they're unfetchable; on a different native device they're
+// also unfetchable. Treat as broken everywhere so the placeholder renders
+// instead of a perpetual blurhash.
+const isUsableSource = (source: string | null | undefined): source is string => {
+  if (!source) return false;
+  if (source.startsWith('file://')) return false;
+  if (source.startsWith('content://') && Platform.OS === 'web') return false;
+  return true;
+};
 
 export default function CachedImage({
   source,
@@ -34,7 +47,7 @@ export default function CachedImage({
     backgroundColor: theme.colors.surface,
   };
 
-  if (!source || hasError) {
+  if (!isUsableSource(source) || hasError) {
     return (
       <View style={[styles.placeholder, containerStyle, style as any]}>
         {placeholder === 'avatar' ? (
