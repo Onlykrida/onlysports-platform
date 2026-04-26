@@ -7,6 +7,30 @@ import { useAuth } from './auth-context';
 import { useOpportunities } from './opportunities-context';
 import { mockPosts } from '@/mocks/data';
 
+// Native-only: expo-file-system. Required for the base64 path that's
+// the only reliable way to upload a local file:// URI to Supabase Storage
+// from React Native (passing a Blob directly to .upload() fails with
+// "Network request failed" on Android Expo Go because RN's fetch doesn't
+// reliably send Blob bodies).
+let FileSystem: typeof import('expo-file-system') | null = null;
+if (Platform.OS !== 'web') {
+  try {
+    FileSystem = require('expo-file-system');
+  } catch {
+    // module unavailable — fall back to fetch+blob path
+  }
+}
+
+// Decode a base64 string to an ArrayBuffer using only built-ins.
+// Used as the upload body for native uploads to Supabase Storage.
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
 function getErrorMessage(error: unknown): string {
   if (!error) return 'Unknown error';
   if (typeof error === 'string') return error;
@@ -479,45 +503,68 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
             userId: user.id,
           });
 
-        // Fetch the file and create blob first so we can detect the real type
-        if (__DEV__) console.log('Posts: fetching file from URI...');
-        const response = await fetch(uri);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+        // Build the upload body. Web reads via fetch+blob (file URIs are
+        // typically blob: or http: there). Native reads via expo-file-system
+        // as base64 then decodes to ArrayBuffer — passing a Blob directly to
+        // supabase.storage.upload() on Android Expo Go fails with an opaque
+        // "Network request failed" because RN's fetch can't send Blob bodies
+        // reliably.
+        let uploadBody: ArrayBuffer | Blob;
+        let detectedSize: number;
+        let detectedType: string | undefined;
+
+        if (Platform.OS !== 'web' && FileSystem) {
+          if (__DEV__) console.log('Posts: reading native file as base64...');
+          const base64 = await FileSystem.readAsStringAsync(uri, {
+            encoding: 'base64',
+          } as any);
+          uploadBody = base64ToArrayBuffer(base64);
+          detectedSize = uploadBody.byteLength;
+          detectedType = undefined; // expo-file-system doesn't return MIME; we fall through to defaults below
+        } else {
+          if (__DEV__) console.log('Posts: fetching file from URI (web path)...');
+          const response = await fetch(uri);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+          }
+          const blob = await response.blob();
+          if (Platform.OS === 'web') {
+            uploadBody = await blob.arrayBuffer();
+          } else {
+            uploadBody = blob;
+          }
+          detectedSize = blob.size;
+          detectedType = blob.type;
         }
 
-        const blob = await response.blob();
         if (__DEV__)
-          console.log('Posts: blob created', {
-            size: blob.size,
-            type: blob.type,
-            sizeInMB: (blob.size / (1024 * 1024)).toFixed(2),
+          console.log('Posts: upload body ready', {
+            size: detectedSize,
+            type: detectedType,
+            sizeInMB: (detectedSize / (1024 * 1024)).toFixed(2),
           });
 
-        if (blob.size === 0) {
-          throw new Error('Blob is empty');
+        if (detectedSize === 0) {
+          throw new Error('Upload body is empty');
         }
 
         // Check file size against bucket limits (50MB for posts)
         const MAX_SIZE_MB = 50;
-        const fileSizeMB = blob.size / (1024 * 1024);
+        const fileSizeMB = detectedSize / (1024 * 1024);
         if (fileSizeMB > MAX_SIZE_MB) {
-          console.error(
-            `Posts: File too large (${fileSizeMB.toFixed(1)}MB). Max is ${MAX_SIZE_MB}MB.`,
-          );
-          return uri;
+          throw new Error(`File too large (${fileSizeMB.toFixed(1)}MB). Max is ${MAX_SIZE_MB}MB.`);
         }
 
-        // Use the blob's actual MIME type when available, fall back to defaults
+        // Use the detected MIME type when available, fall back to defaults
         const defaultType = mType === 'image' ? 'image/jpeg' : 'video/mp4';
         const contentType =
-          blob.type && blob.type !== 'application/octet-stream' ? blob.type : defaultType;
+          detectedType && detectedType !== 'application/octet-stream' ? detectedType : defaultType;
         if (__DEV__)
           console.log(
             'Posts: uploading with content type:',
             contentType,
-            '(blob type:',
-            blob.type,
+            '(detected:',
+            detectedType,
             ')',
           );
 
@@ -540,13 +587,10 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
 
         if (__DEV__) console.log('Posts: Upload path:', path, '| Bucket: posts');
 
-        // Convert blob to ArrayBuffer for more reliable web uploads
-        const arrayBuffer = Platform.OS === 'web' ? await blob.arrayBuffer() : blob;
-
         // Upload to Supabase Storage - posts bucket
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('posts')
-          .upload(path, arrayBuffer, {
+          .upload(path, uploadBody, {
             contentType,
             upsert: false,
             cacheControl: '3600',
@@ -576,7 +620,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
           throw new Error(`Upload failed: ${uploadError.message ?? 'unknown'}`);
         }
 
-        if (__DEV__) console.log('Posts: Upload successful', { path, size: blob.size });
+        if (__DEV__) console.log('Posts: Upload successful', { path, size: detectedSize });
 
         // Get public URL for the uploaded file
         const { data: publicUrlData } = supabase.storage.from('posts').getPublicUrl(path);
