@@ -192,8 +192,7 @@ const styles = StyleSheet.create({
   },
   reasoning: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.cyan,
-    fontStyle: 'italic',
+    color: theme.colors.textSecondary,
     marginTop: theme.spacing.xs,
     lineHeight: 18,
   },

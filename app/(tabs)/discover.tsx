@@ -39,6 +39,7 @@ import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { DiscoverSkeleton } from '@/components/SkeletonScreens';
 import VerificationBadge from '@/components/VerificationBadge';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
+import { getZoneMeta, type ZoneName } from '@/constants/fitness-test-data';
 
 interface DiscoverState {
   searchQuery: string;
@@ -492,32 +493,39 @@ export default function DiscoverScreen() {
               {item.bio}
             </Text>
           )}
-          {item.role === 'athlete' && athleteZones[item.id] && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-              <Text style={{ fontSize: 10, color: theme.colors.textSecondary, fontWeight: '600' }}>
-                FITNESS
-              </Text>
-              <View
-                style={{
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: 4,
-                  backgroundColor: 'rgba(48,209,88,0.1)',
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontWeight: '700',
-                    color: '#30D158',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {athleteZones[item.id]}
-                </Text>
-              </View>
-            </View>
-          )}
+          {item.role === 'athlete' &&
+            athleteZones[item.id] &&
+            (() => {
+              const zoneMeta = getZoneMeta(athleteZones[item.id] as ZoneName);
+              return (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                  <Text
+                    style={{ fontSize: 10, color: theme.colors.textSecondary, fontWeight: '600' }}
+                  >
+                    FITNESS
+                  </Text>
+                  <View
+                    style={{
+                      paddingHorizontal: 6,
+                      paddingVertical: 2,
+                      borderRadius: 4,
+                      backgroundColor: zoneMeta.color + '20',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: '700',
+                        color: zoneMeta.color,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {athleteZones[item.id]}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })()}
           {renderRoleSpecificInfo(item)}
           <View style={styles.userActions}>
             <TouchableOpacity

@@ -310,7 +310,8 @@ User: ${userContext.name} (${userContext.role})${userContext.sport ? `, Sport: $
 
 Be helpful, concise, and encouraging. Use sports terminology naturally.
 Keep responses under 150 words unless the user asks for detail.
-Never be demotivating. Frame everything as growth and opportunity.`;
+Never be demotivating. Frame everything as growth and opportunity.
+Reply in plain prose only. Do NOT use markdown — no asterisks for bold/italic, no # headings, no - bullet dashes, no backticks. Plain sentences and paragraphs only. Use line breaks for structure. Emojis are fine if they fit the tone.`;
 
   const apiMessages: AIMessage[] = messages.map((m) => ({
     role: m.role,

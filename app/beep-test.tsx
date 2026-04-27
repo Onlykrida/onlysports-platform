@@ -82,6 +82,25 @@ export default function FitnessTestScreen() {
             Track your athletic performance across key fitness metrics
           </Text>
 
+          {/* How Verification Works — promoted to top so users see the moat first */}
+          <View style={styles.tiersSection}>
+            <Text style={styles.tiersSectionTitle}>How Verification Works</Text>
+            <Text style={styles.tiersSectionDesc}>
+              Higher verification = more scout trust = more visibility
+            </Text>
+            {(['self_reported', 'app_measured', 'coach_verified', 'center_tested'] as const).map(
+              (tier) => {
+                const meta = getTierMeta(tier);
+                return (
+                  <View key={tier} style={styles.tierRow}>
+                    <VerificationBadge tier={tier} size="md" showLabel />
+                    <Text style={styles.tierRowDesc}>{meta.description}</Text>
+                  </View>
+                );
+              },
+            )}
+          </View>
+
           {/* Section: Yo-Yo IR1 Endurance */}
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionDot, { backgroundColor: theme.colors.primary }]} />
@@ -193,25 +212,6 @@ export default function FitnessTestScreen() {
               {' \u2014 '}Measures lower-body explosive power. Essential for volleyball, basketball,
               and track & field.
             </Text>
-          </View>
-
-          {/* How Verification Works */}
-          <View style={styles.tiersSection}>
-            <Text style={styles.tiersSectionTitle}>How Verification Works</Text>
-            <Text style={styles.tiersSectionDesc}>
-              Higher verification = more scout trust = more visibility
-            </Text>
-            {(['self_reported', 'app_measured', 'coach_verified', 'center_tested'] as const).map(
-              (tier) => {
-                const meta = getTierMeta(tier);
-                return (
-                  <View key={tier} style={styles.tierRow}>
-                    <VerificationBadge tier={tier} size="md" showLabel />
-                    <Text style={styles.tierRowDesc}>{meta.description}</Text>
-                  </View>
-                );
-              },
-            )}
           </View>
         </ScrollView>
       </SafeAreaView>

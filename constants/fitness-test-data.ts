@@ -36,6 +36,12 @@ const ZONE_META: Record<ZoneName, { label: string; color: string; tagline: strin
   unstoppable: { label: 'UNSTOPPABLE', color: '#FFD700', tagline: "You're in rare company" },
 };
 
+// Public lookup so discover/profile cards can color-code zone badges without
+// hardcoding hex values per zone.
+export function getZoneMeta(name: ZoneName): { label: string; color: string; tagline: string } {
+  return ZONE_META[name] ?? ZONE_META.starter;
+}
+
 // ── Yo-Yo IR1 Level Table ──────────────────────────────────
 export const YOYO_LEVELS = [
   { level: 5, speed: 10.0, shuttles: 1, cumulativeShuttles: 1, cumulativeDistance: 40 },

@@ -6,8 +6,8 @@ import { useAI } from '@/hooks/ai-context';
 
 const IMPACT_COLORS: Record<string, string> = {
   high: theme.colors.primary,
-  medium: theme.colors.accent,
-  low: theme.colors.cyan,
+  medium: theme.colors.cyan,
+  low: theme.colors.textMuted,
 };
 
 export default function AIProfileCoach() {
