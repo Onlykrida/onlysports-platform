@@ -95,7 +95,7 @@ export default function RequestVerificationModal({
     setSelectedCoachId(null);
     setQuery('');
     setAthleteNotes('');
-  }, [selectedCoach, requestCoachVerification, testResultId, onSubmitted]);
+  }, [selectedCoach, requestCoachVerification, testResultId, onSubmitted, athleteNotes]);
 
   const renderCoach = useCallback(
     ({ item }: { item: User }) => {

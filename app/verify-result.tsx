@@ -52,7 +52,7 @@ type RejectReason =
   | 'incomplete_test'
   | 'other';
 
-const REJECT_REASONS: Array<{ key: RejectReason; label: string; subtitle: string }> = [
+const REJECT_REASONS: { key: RejectReason; label: string; subtitle: string }[] = [
   {
     key: 'not_present',
     label: "I wasn't there",
