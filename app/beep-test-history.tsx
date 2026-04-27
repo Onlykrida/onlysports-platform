@@ -23,7 +23,6 @@ import {
   getAgilityZone,
   getVerticalJumpZone,
   getAgeGroup,
-  ZONE_DEFINITIONS,
 } from '@/constants/fitness-test-data';
 import type { Gender, AgeGroup, TestType, ZoneDefinition } from '@/constants/fitness-test-data';
 import type { FitnessTestResult } from '@/types';

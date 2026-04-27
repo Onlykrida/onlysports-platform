@@ -9,7 +9,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { X, Send, Search } from 'lucide-react-native';
 import { theme } from '@/constants/theme';

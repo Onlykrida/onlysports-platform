@@ -1,13 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Animated,
-} from 'react-native';
-import { Sparkles, ChevronDown, ChevronUp, ArrowRight, AlertCircle } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { Sparkles, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { useAI } from '@/hooks/ai-context';
 

@@ -15,7 +15,6 @@ import { BackgroundGradient } from '@/components/BackgroundGradient';
 import { Camera, Video, FileText, X, ImageIcon } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import CachedImage from '@/components/CachedImage';
-import { Button } from '@/components/Button';
 import * as ImagePicker from 'expo-image-picker';
 import { usePosts } from '@/hooks/posts-context';
 import { useAuth } from '@/hooks/auth-context';

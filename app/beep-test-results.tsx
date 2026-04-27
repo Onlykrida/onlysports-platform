@@ -1,13 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
@@ -35,7 +27,7 @@ import { BackgroundGradient } from '@/components/BackgroundGradient';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/hooks/auth-context';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
-import { FitnessTestResult, VerificationTier } from '@/types';
+import { VerificationTier } from '@/types';
 import {
   calculateVO2max,
   calculateDistance,
@@ -50,7 +42,6 @@ import {
   SPRINT_TIPS,
   AGILITY_TIPS,
   JUMP_TIPS,
-  ZoneDefinition,
   TestType,
   Gender,
   AgeGroup,

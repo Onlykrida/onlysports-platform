@@ -8,9 +8,8 @@ import {
   MessageCircle,
   Bell,
   Plus,
-  Sparkles,
 } from 'lucide-react-native';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { TouchableOpacity, View, Platform } from 'react-native';
 
 const Haptics = Platform.OS !== 'web' ? require('expo-haptics') : null;

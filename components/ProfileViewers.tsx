@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Eye, ChevronRight, TrendingUp } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Eye, TrendingUp } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';

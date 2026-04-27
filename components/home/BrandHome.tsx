@@ -7,20 +7,11 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import BgGradient from '@/components/BackgroundGradient';
 import CachedImage from '@/components/CachedImage';
-import {
-  TrendingUp,
-  Heart,
-  Users,
-  Eye,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
-} from 'lucide-react-native';
+import { TrendingUp, Heart, Users, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
 import { User } from '@/types';

@@ -12,7 +12,7 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X, DollarSign, Users, Trophy, Award, Briefcase, GraduationCap } from 'lucide-react-native';
+import { X, DollarSign, Users, Trophy, Briefcase, GraduationCap } from 'lucide-react-native';
 import { theme, formatRoleName } from '@/constants/theme';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
@@ -22,7 +22,12 @@ interface CreateOpportunityModalProps {
   onClose: () => void;
 }
 
-type OpportunityCategory = 'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
+type OpportunityCategory =
+  | 'tryouts'
+  | 'tournaments'
+  | 'sponsorships'
+  | 'scholarships'
+  | 'contracts';
 
 interface CategoryConfig {
   id: OpportunityCategory;
@@ -38,35 +43,35 @@ const categories: CategoryConfig[] = [
     label: 'Tryouts',
     icon: Users,
     color: theme.colors.primary,
-    description: 'Team tryouts and player evaluations'
+    description: 'Team tryouts and player evaluations',
   },
   {
     id: 'tournaments',
     label: 'Tournaments',
     icon: Trophy,
     color: theme.colors.secondary,
-    description: 'Competitive tournaments and events'
+    description: 'Competitive tournaments and events',
   },
   {
     id: 'sponsorships',
     label: 'Sponsorships',
     icon: DollarSign,
     color: theme.colors.accent,
-    description: 'Sponsorship opportunities and partnerships'
+    description: 'Sponsorship opportunities and partnerships',
   },
   {
     id: 'scholarships',
     label: 'Scholarships',
     icon: GraduationCap,
     color: theme.colors.success,
-    description: 'Educational scholarships and grants'
+    description: 'Educational scholarships and grants',
   },
   {
     id: 'contracts',
     label: 'Contracts',
     icon: Briefcase,
     color: '#FF6F00',
-    description: 'Professional contracts and job opportunities'
+    description: 'Professional contracts and job opportunities',
   },
 ];
 
@@ -134,28 +139,28 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
   };
 
   const updateFormData = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const addRequirement = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      requirements: [...prev.requirements, '']
+      requirements: [...prev.requirements, ''],
     }));
   };
 
   const updateRequirement = (index: number, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      requirements: prev.requirements.map((req, i) => i === index ? value : req)
+      requirements: prev.requirements.map((req, i) => (i === index ? value : req)),
     }));
   };
 
   const removeRequirement = (index: number) => {
     if (formData.requirements.length > 1) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        requirements: prev.requirements.filter((_, i) => i !== index)
+        requirements: prev.requirements.filter((_, i) => i !== index),
       }));
     }
   };
@@ -166,17 +171,17 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
     if (!formData.sport.trim()) return 'Sport is required';
     if (!formData.location.trim()) return 'Location is required';
     if (!formData.deadline.trim()) return 'Deadline is required';
-    
+
     // Validate deadline format (basic check)
     const deadlineDate = new Date(formData.deadline);
     if (isNaN(deadlineDate.getTime())) {
       return 'Please enter a valid deadline date (YYYY-MM-DD)';
     }
-    
+
     if (deadlineDate <= new Date()) {
       return 'Deadline must be in the future';
     }
-    
+
     return null;
   };
 
@@ -193,7 +198,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const opportunityData: Omit<Opportunity, 'id' | 'createdAt' | 'updatedAt' | 'teamId'> = {
         title: formData.title.trim(),
@@ -203,11 +208,11 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
         location: formData.location.trim(),
         deadline: formData.deadline,
         paid: formData.paid,
-        requirements: formData.requirements.filter(req => req.trim() !== ''),
+        requirements: formData.requirements.filter((req) => req.trim() !== ''),
       };
 
       const { error } = await createOpportunity(opportunityData);
-      
+
       if (error) {
         Alert.alert('Error', error);
       } else {
@@ -223,7 +228,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
 
   const getRecommendedCategories = () => {
     if (!user?.role) return categories;
-    
+
     const roleRecommendations: Record<string, OpportunityCategory[]> = {
       coach: ['tryouts', 'tournaments'],
       scout: ['tryouts', 'scholarships', 'tournaments'],
@@ -232,11 +237,11 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
       academy: ['scholarships', 'tryouts'],
       team: ['tryouts', 'tournaments', 'sponsorships'],
     };
-    
+
     const recommended = roleRecommendations[user.role] || [];
-    return categories.map(cat => ({
+    return categories.map((cat) => ({
       ...cat,
-      recommended: recommended.includes(cat.id)
+      recommended: recommended.includes(cat.id),
     }));
   };
 
@@ -244,14 +249,20 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
     <View style={styles.categoryContainer}>
       <Text style={styles.sectionTitle}>Select Opportunity Type</Text>
       <Text style={styles.sectionSubtitle}>
-        {user?.role === 'coach' && `As a ${formatRoleName('coach')}, you can post tryouts, camps, and tournaments`}
-        {user?.role === 'scout' && `As a ${formatRoleName('scout')}, you can post tryouts, scholarships, and tournaments`}
-        {user?.role === 'gym' && `As a ${formatRoleName('gym')}, you can post camps and training programs`}
-        {user?.role === 'brand' && `As a ${formatRoleName('brand')}, you can post sponsorships and tournaments`}
-        {user?.role === 'academy' && `As an ${formatRoleName('academy')}, you can post camps, scholarships, and tryouts`}
-        {(!user?.role || !['coach', 'scout', 'gym', 'brand', 'academy'].includes(user.role)) && 'Choose the type of opportunity you want to create'}
+        {user?.role === 'coach' &&
+          `As a ${formatRoleName('coach')}, you can post tryouts, camps, and tournaments`}
+        {user?.role === 'scout' &&
+          `As a ${formatRoleName('scout')}, you can post tryouts, scholarships, and tournaments`}
+        {user?.role === 'gym' &&
+          `As a ${formatRoleName('gym')}, you can post camps and training programs`}
+        {user?.role === 'brand' &&
+          `As a ${formatRoleName('brand')}, you can post sponsorships and tournaments`}
+        {user?.role === 'academy' &&
+          `As an ${formatRoleName('academy')}, you can post camps, scholarships, and tryouts`}
+        {(!user?.role || !['coach', 'scout', 'gym', 'brand', 'academy'].includes(user.role)) &&
+          'Choose the type of opportunity you want to create'}
       </Text>
-      
+
       <ScrollView style={styles.categoriesScroll} showsVerticalScrollIndicator={false}>
         {getRecommendedCategories().map((category) => {
           const IconComponent = category.icon;
@@ -260,7 +271,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
               key={category.id}
               style={[
                 styles.categoryCard,
-                (category as any).recommended && styles.categoryCardRecommended
+                (category as any).recommended && styles.categoryCardRecommended,
               ]}
               onPress={() => handleCategorySelect(category.id)}
             >
@@ -286,16 +297,13 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
   );
 
   const renderFormFields = () => {
-    const category = categories.find(c => c.id === selectedCategory);
+    const category = categories.find((c) => c.id === selectedCategory);
     if (!category) return null;
 
     return (
       <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.formHeader}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => setStep('category')}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => setStep('category')}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
           <View style={[styles.categoryBadge, { backgroundColor: category.color }]}>
@@ -307,7 +315,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
         {/* Basic Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
-          
+
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Title *</Text>
             <TextInput
@@ -343,7 +351,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
                 placeholderTextColor={theme.colors.textSecondary}
               />
             </View>
-            
+
             <View style={[styles.inputGroup, styles.halfWidth]}>
               <Text style={styles.label}>Location *</Text>
               <TextInput
@@ -431,7 +439,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Tryout Details</Text>
-            
+
             <View style={styles.row}>
               <View style={[styles.inputGroup, styles.halfWidth]}>
                 <Text style={styles.label}>Age Group</Text>
@@ -443,7 +451,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
                   placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
-              
+
               <View style={[styles.inputGroup, styles.halfWidth]}>
                 <Text style={styles.label}>Skill Level</Text>
                 <TextInput
@@ -473,7 +481,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Tournament Details</Text>
-            
+
             <View style={styles.row}>
               <View style={[styles.inputGroup, styles.halfWidth]}>
                 <Text style={styles.label}>Registration Fee</Text>
@@ -485,7 +493,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
                   placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
-              
+
               <View style={[styles.inputGroup, styles.halfWidth]}>
                 <Text style={styles.label}>Prize Pool</Text>
                 <TextInput
@@ -515,7 +523,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Sponsorship Details</Text>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Sponsorship Amount</Text>
               <TextInput
@@ -532,7 +540,12 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={formData.benefits?.join(', ') || ''}
-                onChangeText={(value) => updateFormData('benefits', value.split(', ').filter(b => b.trim()))}
+                onChangeText={(value) =>
+                  updateFormData(
+                    'benefits',
+                    value.split(', ').filter((b) => b.trim()),
+                  )
+                }
                 placeholder="Equipment, training, travel support, etc."
                 placeholderTextColor={theme.colors.textSecondary}
                 multiline
@@ -546,7 +559,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Scholarship Details</Text>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Scholarship Amount</Text>
               <TextInput
@@ -563,7 +576,12 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={formData.eligibilityCriteria?.join(', ') || ''}
-                onChangeText={(value) => updateFormData('eligibilityCriteria', value.split(', ').filter(c => c.trim()))}
+                onChangeText={(value) =>
+                  updateFormData(
+                    'eligibilityCriteria',
+                    value.split(', ').filter((c) => c.trim()),
+                  )
+                }
                 placeholder="GPA requirements, athletic achievements, etc."
                 placeholderTextColor={theme.colors.textSecondary}
                 multiline
@@ -577,7 +595,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
         return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Contract Details</Text>
-            
+
             <View style={styles.row}>
               <View style={[styles.inputGroup, styles.halfWidth]}>
                 <Text style={styles.label}>Contract Type</Text>
@@ -589,7 +607,7 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
                   placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
-              
+
               <View style={[styles.inputGroup, styles.halfWidth]}>
                 <Text style={styles.label}>Duration</Text>
                 <TextInput

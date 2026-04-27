@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Modal,
   Switch,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
@@ -39,7 +38,6 @@ import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { DiscoverSkeleton } from '@/components/SkeletonScreens';
 import VerificationBadge from '@/components/VerificationBadge';
-import { getTierMeta } from '@/constants/verification';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
 
 interface DiscoverState {

@@ -9,21 +9,10 @@ import {
   RefreshControl,
   ActivityIndicator,
   ScrollView,
-  Platform,
 } from 'react-native';
 import BgGradient from '@/components/BackgroundGradient';
 import CachedImage from '@/components/CachedImage';
-import {
-  Zap,
-  MessageSquare,
-  Send,
-  Star,
-  MoreVertical,
-  Trophy,
-  Target,
-  Award,
-  Flame,
-} from 'lucide-react-native';
+import { Zap, MessageSquare, Send, Star, Trophy, Target, Award, Flame } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';

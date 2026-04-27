@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,10 +27,9 @@ import {
   Edit,
   CheckCircle,
   Zap,
-  Heart,
 } from 'lucide-react-native';
 import { theme, formatRoleName } from '@/constants/theme';
-import { User, Post } from '@/types';
+import { User } from '@/types';
 import { useScouting } from '@/hooks/scouting-context';
 import { useAuth } from '@/hooks/auth-context';
 import { useFollow } from '@/hooks/follow-context';

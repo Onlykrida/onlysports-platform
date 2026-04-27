@@ -7,11 +7,10 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import BgGradient from '@/components/BackgroundGradient';
 import CachedImage from '@/components/CachedImage';
-import { Briefcase, Users, FileText, Plus, ChevronRight, Trophy } from 'lucide-react-native';
+import { Briefcase, Users, FileText, Plus, ChevronRight } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
 import { User } from '@/types';

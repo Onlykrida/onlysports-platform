@@ -22,7 +22,7 @@ import {
   ArrowLeft,
   Zap,
 } from 'lucide-react-native';
-import { theme, formatRoleName } from '@/constants/theme';
+import { theme } from '@/constants/theme';
 import CachedImage from '@/components/CachedImage';
 import { useAuth } from '@/hooks/auth-context';
 import { useOpportunities } from '@/hooks/opportunities-context';

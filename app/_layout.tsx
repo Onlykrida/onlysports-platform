@@ -18,7 +18,6 @@ import { ScoutingProvider } from '@/hooks/scouting-context';
 import { FitnessTestProvider } from '@/hooks/fitness-test-context';
 import { AIProvider } from '@/hooks/ai-context';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { theme } from '@/constants/theme';
 import { BackgroundGradient } from '@/components/BackgroundGradient';
 
 SplashScreen.preventAutoHideAsync();
