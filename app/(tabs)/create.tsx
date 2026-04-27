@@ -65,7 +65,7 @@ export default function CreateScreen() {
         setMediaType(type === 'Photo' ? 'image' : 'video');
       }
     } catch (error) {
-      console.error('Error selecting media:', error);
+      if (__DEV__) console.error('Error selecting media:', error);
       Alert.alert('Error', 'Failed to select media');
     }
   };
@@ -96,7 +96,7 @@ export default function CreateScreen() {
         setMediaType('image');
       }
     } catch (error) {
-      console.error('Error capturing photo:', error);
+      if (__DEV__) console.error('Error capturing photo:', error);
       Alert.alert('Error', 'Failed to capture photo');
     }
   };
@@ -144,7 +144,7 @@ export default function CreateScreen() {
         },
       ]);
     } catch (error) {
-      console.error('Error creating post:', error);
+      if (__DEV__) console.error('Error creating post:', error);
       Alert.alert('Error', 'Failed to create post. Please try again.');
     } finally {
       setIsPosting(false);

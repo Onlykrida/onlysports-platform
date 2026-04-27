@@ -50,7 +50,7 @@ export default function BrandHome() {
       const athletes = await getInterestedAthletesForOrg(user.id);
       setInterestedAthletes(athletes);
     } catch (e) {
-      console.error('BrandHome: failed to load data', e);
+      if (__DEV__) console.error('BrandHome: failed to load data', e);
     } finally {
       setLoading(false);
     }
@@ -69,8 +69,9 @@ export default function BrandHome() {
   const handleExpressInterest = useCallback(
     async (athleteId: string) => {
       const { error } = await expressInterest(athleteId);
-      if (error) console.error('Express interest failed:', error);
-      else await loadData();
+      if (error)
+        if (__DEV__) console.error('Express interest failed:', error);
+        else await loadData();
     },
     [expressInterest],
   );

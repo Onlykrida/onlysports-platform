@@ -24,7 +24,7 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
   }
 
   componentDidCatch(error: unknown, info: React.ErrorInfo) {
-    console.error('[ErrorBoundary] Caught error:', error, info);
+    if (__DEV__) console.error('[ErrorBoundary] Caught error:', error, info);
   }
 
   handleReset = () => {

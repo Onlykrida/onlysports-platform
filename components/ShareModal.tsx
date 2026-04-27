@@ -64,7 +64,7 @@ export default function ShareModal({ visible, onClose, post }: ShareModalProps) 
         onClose();
       }
     } catch (error) {
-      console.error('Failed to share post:', error);
+      if (__DEV__) console.error('Failed to share post:', error);
       Alert.alert('Error', 'Failed to share post');
     } finally {
       setIsSharing(false);

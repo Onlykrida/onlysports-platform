@@ -49,7 +49,7 @@ const [SearchProvider, _useSearch] = createContextHook<SearchState>(() => {
         .limit(20);
 
       if (error) {
-        console.error('Search error:', error);
+        if (__DEV__) console.error('Search error:', error);
         setSearchResults([]);
         return;
       }
@@ -65,7 +65,7 @@ const [SearchProvider, _useSearch] = createContextHook<SearchState>(() => {
 
       setSearchResults(results);
     } catch (error) {
-      console.error('Search failed:', error);
+      if (__DEV__) console.error('Search failed:', error);
       setSearchResults([]);
     } finally {
       setIsSearching(false);

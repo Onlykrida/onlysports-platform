@@ -100,7 +100,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
         .limit(50);
 
       if (error) {
-        console.error('Error loading opportunities:', error);
+        if (__DEV__) console.error('Error loading opportunities:', error);
         return;
       }
 
@@ -128,7 +128,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
 
       setOpportunities(formattedOpportunities);
     } catch (error) {
-      console.error('Failed to load opportunities:', error);
+      if (__DEV__) console.error('Failed to load opportunities:', error);
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +152,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
         .limit(100);
 
       if (error) {
-        console.error('Error loading applications:', error);
+        if (__DEV__) console.error('Error loading applications:', error);
         return;
       }
 
@@ -171,7 +171,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
 
       setMyApplications(formattedApplications);
     } catch (error) {
-      console.error('Failed to load applications:', error);
+      if (__DEV__) console.error('Failed to load applications:', error);
     }
   }, [user]);
 
@@ -206,7 +206,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
         .limit(100);
 
       if (error) {
-        console.error('Error loading received applications:', error);
+        if (__DEV__) console.error('Error loading received applications:', error);
         return;
       }
 
@@ -227,7 +227,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
 
       setReceivedApplications(formattedApplications);
     } catch (error) {
-      console.error('Failed to load received applications:', error);
+      if (__DEV__) console.error('Failed to load received applications:', error);
     }
   }, [user]);
 
@@ -251,14 +251,14 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
         });
 
         if (error) {
-          console.error('Error creating opportunity:', error);
+          if (__DEV__) console.error('Error creating opportunity:', error);
           return { error: error.message };
         }
 
         await loadOpportunities();
         return {};
       } catch (error) {
-        console.error('Failed to create opportunity:', error);
+        if (__DEV__) console.error('Failed to create opportunity:', error);
         return { error: 'Failed to create opportunity' };
       }
     },
@@ -292,7 +292,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
         });
 
         if (error) {
-          console.error('Error applying to opportunity:', error);
+          if (__DEV__) console.error('Error applying to opportunity:', error);
           return { error: error.message };
         }
 
@@ -318,7 +318,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
         await loadMyApplications();
         return {};
       } catch (error) {
-        console.error('Failed to apply to opportunity:', error);
+        if (__DEV__) console.error('Failed to apply to opportunity:', error);
         return { error: 'Failed to apply to opportunity' };
       }
     },
@@ -338,7 +338,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
           .eq('id', applicationId);
 
         if (error) {
-          console.error('Error updating application status:', error);
+          if (__DEV__) console.error('Error updating application status:', error);
           return { error: error.message };
         }
 
@@ -371,7 +371,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
         await loadReceivedApplications();
         return {};
       } catch (error) {
-        console.error('Failed to update application status:', error);
+        if (__DEV__) console.error('Failed to update application status:', error);
         return { error: 'Failed to update application status' };
       }
     },

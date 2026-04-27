@@ -29,7 +29,7 @@ if (!skipPushSetup) {
     Notifications = require('expo-notifications');
     Device = require('expo-device');
   } catch (e) {
-    console.warn('expo-notifications not available:', e);
+    if (__DEV__) console.warn('expo-notifications not available:', e);
   }
 }
 
@@ -46,7 +46,7 @@ if (!skipPushSetup && Notifications) {
       }),
     });
   } catch (e) {
-    console.warn('Failed to set notification handler:', e);
+    if (__DEV__) console.warn('Failed to set notification handler:', e);
   }
 }
 
@@ -148,16 +148,18 @@ async function savePushTokenToSupabase(userId: string, token: string) {
     if (error) {
       // The push_token column may not exist yet — handle gracefully
       if (error.code === '42703' || error.message?.includes('push_token')) {
-        console.warn(
-          'push_token column does not exist on profiles table. ' +
-            'Run: ALTER TABLE profiles ADD COLUMN push_token TEXT;',
-        );
+        if (__DEV__) {
+          console.warn(
+            'push_token column does not exist on profiles table. ' +
+              'Run: ALTER TABLE profiles ADD COLUMN push_token TEXT;',
+          );
+        }
       } else {
-        console.error('Error saving push token:', error);
+        if (__DEV__) console.error('Error saving push token:', error);
       }
     }
   } catch (error) {
-    console.error('Failed to save push token to Supabase:', error);
+    if (__DEV__) console.error('Failed to save push token to Supabase:', error);
   }
 }
 

@@ -245,10 +245,12 @@ export default function DiscoverScreen() {
   useEffect(() => {
     if (currentUser && !hasInitializedFilters) {
       if (__DEV__)
-        console.log('Discover: Initializing filters based on user profile', {
-          userRole: currentUser.role,
-          userSport: currentUser.sport,
-        });
+        if (__DEV__) {
+          console.log('Discover: Initializing filters based on user profile', {
+            userRole: currentUser.role,
+            userSport: currentUser.sport,
+          });
+        }
 
       // Determine sport and role filters based on user profile
       const sport = currentUser.sport || null;
@@ -291,10 +293,12 @@ export default function DiscoverScreen() {
 
   const loadUsers = useCallback(async () => {
     if (__DEV__)
-      console.log('Discover: loadUsers start', {
-        isSupabaseConfigured,
-        currentUserId: currentUser?.id,
-      });
+      if (__DEV__) {
+        console.log('Discover: loadUsers start', {
+          isSupabaseConfigured,
+          currentUserId: currentUser?.id,
+        });
+      }
     dispatch({ type: 'LOAD_USERS_START' });
 
     try {
@@ -308,7 +312,7 @@ export default function DiscoverScreen() {
       if (__DEV__) console.log('Discover: refreshUsers requested');
     } catch (error) {
       const msg = getErrorMessage(error);
-      console.error('Failed to load users:', msg, error);
+      if (__DEV__) console.error('Failed to load users:', msg, error);
       dispatch({ type: 'LOAD_USERS_ERROR', error: msg });
     } finally {
       dispatch({ type: 'SET_LOADING', loading: false });
@@ -326,9 +330,11 @@ export default function DiscoverScreen() {
 
   useEffect(() => {
     if (__DEV__)
-      console.log('Discover: sync local users with cachedUsers', {
-        cachedCount: cachedUsers.length,
-      });
+      if (__DEV__) {
+        console.log('Discover: sync local users with cachedUsers', {
+          cachedCount: cachedUsers.length,
+        });
+      }
     dispatch({ type: 'SET_USERS', users: cachedUsers });
   }, [cachedUsers]);
 

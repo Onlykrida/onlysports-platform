@@ -59,7 +59,7 @@ export default function SettingsScreen() {
         setNotificationsEnabled(JSON.parse(notifications));
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
+      if (__DEV__) console.error('Error loading settings:', error);
     }
   };
 
@@ -67,7 +67,7 @@ export default function SettingsScreen() {
     try {
       await AsyncStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
-      console.error('Error saving settings:', error);
+      if (__DEV__) console.error('Error saving settings:', error);
     }
   };
 

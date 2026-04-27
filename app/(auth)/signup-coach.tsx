@@ -88,7 +88,7 @@ export default function SignupCoachScreen() {
       }
       router.replace('/');
     } catch (error) {
-      console.error('Signup coach error:', error);
+      if (__DEV__) console.error('Signup coach error:', error);
       setErrors({ general: 'Signup failed. Please try again.' });
     } finally {
       setLoading(false);

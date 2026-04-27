@@ -60,7 +60,7 @@ export default function GroupChatScreen() {
         }, 100);
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      if (__DEV__) console.error('Failed to send message:', error);
       Alert.alert('Error', 'Failed to send message');
       setMessageText(text);
     } finally {

@@ -147,7 +147,7 @@ export default function UserProfileScreen() {
         .maybeSingle();
 
       if (userError) {
-        console.error('Error loading user profile:', userError);
+        if (__DEV__) console.error('Error loading user profile:', userError);
         Alert.alert('Error', 'Failed to load user profile');
         return;
       }
@@ -222,7 +222,7 @@ export default function UserProfileScreen() {
         }
       }
     } catch (error) {
-      console.error('Failed to load user profile:', error);
+      if (__DEV__) console.error('Failed to load user profile:', error);
       Alert.alert('Error', 'Failed to load user profile');
     } finally {
       setIsLoading(false);
@@ -311,7 +311,7 @@ export default function UserProfileScreen() {
         }
       }
     } catch (error) {
-      console.error('Follow action failed:', error);
+      if (__DEV__) console.error('Follow action failed:', error);
       Alert.alert('Error', 'Failed to update follow status');
     } finally {
       setIsFollowLoading(false);
@@ -341,10 +341,12 @@ export default function UserProfileScreen() {
         }
       } else {
         if (__DEV__)
-          console.log('UserProfile: Expressing interest', {
-            profileUserId: profileUser.id,
-            currentUserId: currentUser.id,
-          });
+          if (__DEV__) {
+            console.log('UserProfile: Expressing interest', {
+              profileUserId: profileUser.id,
+              currentUserId: currentUser.id,
+            });
+          }
         const result = await expressInterest(profileUser.id);
         if (result.error) {
           Alert.alert('Error', result.error);
@@ -389,7 +391,7 @@ export default function UserProfileScreen() {
         }
       }
     } catch (error) {
-      console.error('Interest action failed:', error);
+      if (__DEV__) console.error('Interest action failed:', error);
       Alert.alert('Error', 'Failed to update interest status');
     } finally {
       setIsInterestLoading(false);

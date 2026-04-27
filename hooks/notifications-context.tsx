@@ -50,7 +50,7 @@ const [NotificationProvider, _useNotifications] = createContextHook<Notification
         .limit(50);
 
       if (error) {
-        console.error('Error loading notifications:', error);
+        if (__DEV__) console.error('Error loading notifications:', error);
         return;
       }
 
@@ -67,7 +67,7 @@ const [NotificationProvider, _useNotifications] = createContextHook<Notification
 
       setNotifications(notificationsList);
     } catch (error) {
-      console.error('Failed to load notifications:', error);
+      if (__DEV__) console.error('Failed to load notifications:', error);
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +133,7 @@ const [NotificationProvider, _useNotifications] = createContextHook<Notification
         .eq('id', notificationId);
 
       if (error) {
-        console.error('Error marking notification as read:', error);
+        if (__DEV__) console.error('Error marking notification as read:', error);
         return;
       }
 
@@ -143,7 +143,7 @@ const [NotificationProvider, _useNotifications] = createContextHook<Notification
         ),
       );
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      if (__DEV__) console.error('Failed to mark notification as read:', error);
     }
   }, []);
 
@@ -158,13 +158,13 @@ const [NotificationProvider, _useNotifications] = createContextHook<Notification
         .eq('read', false);
 
       if (error) {
-        console.error('Error marking all notifications as read:', error);
+        if (__DEV__) console.error('Error marking all notifications as read:', error);
         return;
       }
 
       setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+      if (__DEV__) console.error('Failed to mark all notifications as read:', error);
     }
   }, [user]);
 
@@ -175,13 +175,13 @@ const [NotificationProvider, _useNotifications] = createContextHook<Notification
       const { error } = await supabase.from('notifications').delete().eq('id', notificationId);
 
       if (error) {
-        console.error('Error deleting notification:', error);
+        if (__DEV__) console.error('Error deleting notification:', error);
         return;
       }
 
       setNotifications((prev) => prev.filter((notification) => notification.id !== notificationId));
     } catch (error) {
-      console.error('Failed to delete notification:', error);
+      if (__DEV__) console.error('Failed to delete notification:', error);
     }
   }, []);
 
@@ -206,10 +206,10 @@ const [NotificationProvider, _useNotifications] = createContextHook<Notification
         });
 
         if (error) {
-          console.error('Error creating notification:', error);
+          if (__DEV__) console.error('Error creating notification:', error);
         }
       } catch (error) {
-        console.error('Failed to create notification:', error);
+        if (__DEV__) console.error('Failed to create notification:', error);
       }
     },
     [],

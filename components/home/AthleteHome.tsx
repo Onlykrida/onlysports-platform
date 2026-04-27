@@ -72,7 +72,7 @@ export default function AthleteHome() {
       ]);
       setInterestedOrgs(orgs);
     } catch (e) {
-      console.error('Failed to load interested orgs:', e);
+      if (__DEV__) console.error('Failed to load interested orgs:', e);
     } finally {
       setLoadingOrgs(false);
     }
@@ -81,7 +81,7 @@ export default function AthleteHome() {
   const handleDeletePost = useCallback(
     async (postId: string) => {
       const result = await deletePost(postId);
-      if (result.error) console.error('Failed to delete post:', result.error);
+      if (result.error) if (__DEV__) console.error('Failed to delete post:', result.error);
     },
     [deletePost],
   );

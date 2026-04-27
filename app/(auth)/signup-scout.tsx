@@ -95,7 +95,7 @@ export default function SignupScoutScreen() {
       }
       router.replace('/');
     } catch (error) {
-      console.error('Signup scout error:', error);
+      if (__DEV__) console.error('Signup scout error:', error);
       setErrors({ general: 'Signup failed. Please try again.' });
     } finally {
       setLoading(false);

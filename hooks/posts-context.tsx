@@ -153,26 +153,30 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
           }
 
           lastError = error;
-          console.warn(
-            'Select attempt failed with fields',
-            fields.join(','),
-            '->',
-            getErrorMessage(error),
-          );
+          if (__DEV__) {
+            console.warn(
+              'Select attempt failed with fields',
+              fields.join(','),
+              '->',
+              getErrorMessage(error),
+            );
+          }
         } catch (err) {
           lastError = err;
-          console.warn(
-            'Select attempt threw with fields',
-            fields.join(','),
-            '->',
-            getErrorMessage(err),
-          );
+          if (__DEV__) {
+            console.warn(
+              'Select attempt threw with fields',
+              fields.join(','),
+              '->',
+              getErrorMessage(err),
+            );
+          }
         }
       }
 
       if (lastError) {
         const msg = getErrorMessage(lastError);
-        console.error('Error loading posts from database:', msg, lastError);
+        if (__DEV__) console.error('Error loading posts from database:', msg, lastError);
         const sortedMockPosts = mockPosts.sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
@@ -309,7 +313,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
 
       setPosts(allPosts);
     } catch (error) {
-      console.error('Failed to load posts:', getErrorMessage(error), error);
+      if (__DEV__) console.error('Failed to load posts:', getErrorMessage(error), error);
       setPosts(
         mockPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
       );
@@ -434,7 +438,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         );
       });
     } catch (error) {
-      console.error('Failed to load more posts:', getErrorMessage(error), error);
+      if (__DEV__) console.error('Failed to load more posts:', getErrorMessage(error), error);
     } finally {
       setIsLoadingMore(false);
     }
@@ -461,21 +465,23 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         });
 
         if (createError) {
-          console.error('Error creating profile:', getErrorMessage(createError), createError);
+          if (__DEV__)
+            console.error('Error creating profile:', getErrorMessage(createError), createError);
           return false;
         }
 
         if (__DEV__) console.log('Profile created successfully');
         return true;
       } else if (checkError) {
-        console.error('Error checking profile:', getErrorMessage(checkError), checkError);
+        if (__DEV__)
+          console.error('Error checking profile:', getErrorMessage(checkError), checkError);
         return false;
       }
 
       // Profile exists
       return true;
     } catch (error) {
-      console.error('Error ensuring profile exists:', getErrorMessage(error), error);
+      if (__DEV__) console.error('Error ensuring profile exists:', getErrorMessage(error), error);
       return false;
     }
   }, [user]);
@@ -490,18 +496,20 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
       }
 
       if (!user?.id) {
-        console.error('Posts: No user ID available for upload');
+        if (__DEV__) console.error('Posts: No user ID available for upload');
         return uri;
       }
 
       try {
         if (__DEV__)
-          console.log('Posts: Starting media upload', {
-            uri,
-            mType,
-            platform: Platform.OS,
-            userId: user.id,
-          });
+          if (__DEV__) {
+            console.log('Posts: Starting media upload', {
+              uri,
+              mType,
+              platform: Platform.OS,
+              userId: user.id,
+            });
+          }
 
         // Build the upload body. Web reads via fetch+blob (file URIs are
         // typically blob: or http: there). Native reads via expo-file-system
@@ -538,11 +546,13 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         }
 
         if (__DEV__)
-          console.log('Posts: upload body ready', {
-            size: detectedSize,
-            type: detectedType,
-            sizeInMB: (detectedSize / (1024 * 1024)).toFixed(2),
-          });
+          if (__DEV__) {
+            console.log('Posts: upload body ready', {
+              size: detectedSize,
+              type: detectedType,
+              sizeInMB: (detectedSize / (1024 * 1024)).toFixed(2),
+            });
+          }
 
         if (detectedSize === 0) {
           throw new Error('Upload body is empty');
@@ -560,13 +570,15 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         const contentType =
           detectedType && detectedType !== 'application/octet-stream' ? detectedType : defaultType;
         if (__DEV__)
-          console.log(
-            'Posts: uploading with content type:',
-            contentType,
-            '(detected:',
-            detectedType,
-            ')',
-          );
+          if (__DEV__) {
+            console.log(
+              'Posts: uploading with content type:',
+              contentType,
+              '(detected:',
+              detectedType,
+              ')',
+            );
+          }
 
         // Generate filename with correct extension based on actual content type
         const extMap: Record<string, string> = {
@@ -597,20 +609,22 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
           });
 
         if (uploadError) {
-          console.error('Posts: Storage upload failed', {
-            bucket: 'posts',
-            path,
-            error: uploadError,
-            message: uploadError.message,
-          });
+          if (__DEV__) {
+            console.error('Posts: Storage upload failed', {
+              bucket: 'posts',
+              path,
+              error: uploadError,
+              message: uploadError.message,
+            });
+          }
 
           if (
             uploadError.message?.includes('policy') ||
             uploadError.message?.includes('permission')
           ) {
-            console.error('STORAGE PERMISSIONS ERROR');
-            console.error('The "posts" bucket has permission issues.');
-            console.error('Check: Supabase Dashboard > Storage > posts > Policies');
+            if (__DEV__) console.error('STORAGE PERMISSIONS ERROR');
+            if (__DEV__) console.error('The "posts" bucket has permission issues.');
+            if (__DEV__) console.error('Check: Supabase Dashboard > Storage > posts > Policies');
           }
 
           // Refuse to fall back to the local file:// URI. Persisting it would
@@ -627,7 +641,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
 
         const publicUrl = publicUrlData?.publicUrl;
         if (!publicUrl) {
-          console.error('Posts: Failed to get public URL');
+          if (__DEV__) console.error('Posts: Failed to get public URL');
           // Same reasoning as the upload-failure case above — refuse to persist
           // the local URI. The caller should reject the post creation.
           throw new Error('Upload succeeded but no public URL was returned');
@@ -636,20 +650,24 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         if (__DEV__) console.log(`Posts: Public URL generated for ${mType}:`, publicUrl);
         return publicUrl;
       } catch (error) {
-        console.error('Posts: upload exception', {
-          error,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-        });
+        if (__DEV__) {
+          console.error('Posts: upload exception', {
+            error,
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+          });
+        }
 
         // Provide more specific error information
         if (error instanceof Error) {
           if (error.message.includes('fetch')) {
-            console.error(
-              'Posts: Failed to fetch the media file. This might be a network issue or the file might not be accessible.',
-            );
+            if (__DEV__) {
+              console.error(
+                'Posts: Failed to fetch the media file. This might be a network issue or the file might not be accessible.',
+              );
+            }
           } else if (error.message.includes('blob')) {
-            console.error('Posts: Failed to create blob from the media file.');
+            if (__DEV__) console.error('Posts: Failed to create blob from the media file.');
           }
         }
 
@@ -708,14 +726,14 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
 
         if (error) {
           const msg = getErrorMessage(error);
-          console.error('Error creating post:', msg, error);
+          if (__DEV__) console.error('Error creating post:', msg, error);
           return { error: msg };
         }
 
         await loadPosts();
         return {};
       } catch (error) {
-        console.error('Failed to create post:', getErrorMessage(error), error);
+        if (__DEV__) console.error('Failed to create post:', getErrorMessage(error), error);
         return { error: 'Failed to create post. Please try again.' };
       }
     },
@@ -737,14 +755,16 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
       }
 
       if (__DEV__)
-        console.log(
-          'Toggling like for post:',
-          postId,
-          'current isLiked:',
-          post.isLiked,
-          'current likes:',
-          post.likes,
-        );
+        if (__DEV__) {
+          console.log(
+            'Toggling like for post:',
+            postId,
+            'current isLiked:',
+            post.isLiked,
+            'current likes:',
+            post.likes,
+          );
+        }
 
       if (!isSupabaseConfigured) {
         // Optimistically update the UI for mock data
@@ -796,7 +816,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
             .eq('post_id', postId);
 
           if (error) {
-            console.error('Error unliking post:', getErrorMessage(error), error);
+            if (__DEV__) console.error('Error unliking post:', getErrorMessage(error), error);
             // Revert optimistic update on error
             setPosts((prevPosts) =>
               prevPosts.map((p) => {
@@ -822,7 +842,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
           });
 
           if (error) {
-            console.error('Error liking post:', getErrorMessage(error), error);
+            if (__DEV__) console.error('Error liking post:', getErrorMessage(error), error);
             // Revert optimistic update on error
             setPosts((prevPosts) =>
               prevPosts.map((p) => {
@@ -847,7 +867,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         // Don't reload posts immediately - let the optimistic update persist
         // The real-time subscription will eventually sync the correct counts
       } catch (error) {
-        console.error('Failed to toggle post like:', getErrorMessage(error), error);
+        if (__DEV__) console.error('Failed to toggle post like:', getErrorMessage(error), error);
         // Revert optimistic update on error
         setPosts((prevPosts) =>
           prevPosts.map((p) => {
@@ -924,7 +944,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
 
         if (error) {
           const msg = getErrorMessage(error);
-          console.error('Error updating post:', msg, error);
+          if (__DEV__) console.error('Error updating post:', msg, error);
           return { error: msg };
         }
 
@@ -946,7 +966,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         );
         return {};
       } catch (error) {
-        console.error('Failed to update post:', getErrorMessage(error), error);
+        if (__DEV__) console.error('Failed to update post:', getErrorMessage(error), error);
         return { error: 'Failed to update post. Please try again.' };
       }
     },
@@ -973,7 +993,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
 
         if (error) {
           const msg = getErrorMessage(error);
-          console.error('Error deleting post:', msg, error);
+          if (__DEV__) console.error('Error deleting post:', msg, error);
           return { error: msg };
         }
 
@@ -981,7 +1001,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
         return {};
       } catch (error) {
-        console.error('Failed to delete post:', getErrorMessage(error), error);
+        if (__DEV__) console.error('Failed to delete post:', getErrorMessage(error), error);
         return { error: 'Failed to delete post. Please try again.' };
       }
     },
@@ -1186,7 +1206,7 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
       if (__DEV__) console.log('getLikedAthletes: Found', athletes.length, 'liked athletes');
       return athletes;
     } catch (error) {
-      console.error('getLikedAthletes: Error', error);
+      if (__DEV__) console.error('getLikedAthletes: Error', error);
       return [];
     }
   }, []);

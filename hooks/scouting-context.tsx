@@ -593,9 +593,11 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
         if (error) {
           if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
             if (__DEV__)
-              console.log(
-                'ScoutingProvider: ai_recommendations table not found, returning empty results',
-              );
+              if (__DEV__) {
+                console.log(
+                  'ScoutingProvider: ai_recommendations table not found, returning empty results',
+                );
+              }
             return [];
           }
           if (__DEV__) console.log('ScoutingProvider: getInterestedForPlayer error', error);
@@ -872,10 +874,12 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
         // If no existing recommendations found and user is a scout, compute fresh ones
         if (recs.length === 0 && currentUser.role === 'scout') {
           if (__DEV__)
-            console.log(
-              'ScoutingProvider: No cached recommendations, computing fresh for scout',
-              currentUser.id,
-            );
+            if (__DEV__) {
+              console.log(
+                'ScoutingProvider: No cached recommendations, computing fresh for scout',
+                currentUser.id,
+              );
+            }
           await computeForScout(currentUser.id);
         }
       }
@@ -936,10 +940,12 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
 
       try {
         if (__DEV__)
-          console.log('ScoutingProvider: Expressing interest', {
-            scoutId: currentUser.id,
-            athleteId,
-          });
+          if (__DEV__) {
+            console.log('ScoutingProvider: Expressing interest', {
+              scoutId: currentUser.id,
+              athleteId,
+            });
+          }
 
         const { error: recError } = await supabase.from('ai_recommendations').upsert(
           {
@@ -959,7 +965,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
         );
 
         if (recError && recError.code !== 'PGRST205') {
-          console.error('Failed to express interest:', recError);
+          if (__DEV__) console.error('Failed to express interest:', recError);
           return { error: 'Failed to express interest' };
         }
 
@@ -989,7 +995,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
 
         return {};
       } catch (error) {
-        console.error('Express interest failed:', error);
+        if (__DEV__) console.error('Express interest failed:', error);
         return { error: 'Failed to express interest' };
       }
     },
@@ -1004,10 +1010,12 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
 
       try {
         if (__DEV__)
-          console.log('ScoutingProvider: Removing interest', {
-            scoutId: currentUser.id,
-            athleteId,
-          });
+          if (__DEV__) {
+            console.log('ScoutingProvider: Removing interest', {
+              scoutId: currentUser.id,
+              athleteId,
+            });
+          }
 
         const { error } = await supabase
           .from('ai_recommendations')
@@ -1018,11 +1026,13 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
         if (error) {
           if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
             if (__DEV__)
-              console.log(
-                'ScoutingProvider: ai_recommendations table not found, removing from local cache only',
-              );
+              if (__DEV__) {
+                console.log(
+                  'ScoutingProvider: ai_recommendations table not found, removing from local cache only',
+                );
+              }
           } else {
-            console.error('Failed to remove interest:', error);
+            if (__DEV__) console.error('Failed to remove interest:', error);
             return { error: 'Failed to remove interest' };
           }
         }
@@ -1038,7 +1048,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
 
         return {};
       } catch (error) {
-        console.error('Remove interest failed:', error);
+        if (__DEV__) console.error('Remove interest failed:', error);
         return { error: 'Failed to remove interest' };
       }
     },
@@ -1067,7 +1077,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
         if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
           return [];
         }
-        console.error('Failed to get interested athletes:', error);
+        if (__DEV__) console.error('Failed to get interested athletes:', error);
         return [];
       }
 
@@ -1083,15 +1093,17 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
         .eq('role', 'athlete');
 
       if (profilesError) {
-        console.error('Failed to get athlete profiles:', profilesError);
+        if (__DEV__) console.error('Failed to get athlete profiles:', profilesError);
         return [];
       }
 
       if (__DEV__)
-        console.log('ScoutingProvider: Interested athletes fetched', {
-          orgId,
-          count: (profilesData || []).length,
-        });
+        if (__DEV__) {
+          console.log('ScoutingProvider: Interested athletes fetched', {
+            orgId,
+            count: (profilesData || []).length,
+          });
+        }
       return (profilesData || []).map(
         (profile: any) =>
           ({
@@ -1108,7 +1120,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
           }) as User,
       );
     } catch (error) {
-      console.error('Get interested athletes failed:', error);
+      if (__DEV__) console.error('Get interested athletes failed:', error);
       return [];
     }
   }, []);
@@ -1126,7 +1138,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
         if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
           return [];
         }
-        console.error('Failed to get interested organizations:', error);
+        if (__DEV__) console.error('Failed to get interested organizations:', error);
         return [];
       }
 
@@ -1139,7 +1151,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
         .in('id', scoutIds);
 
       if (profilesError) {
-        console.error('Failed to get profiles:', profilesError);
+        if (__DEV__) console.error('Failed to get profiles:', profilesError);
         return [];
       }
 
@@ -1158,7 +1170,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
           }) as User,
       );
     } catch (error) {
-      console.error('Get interested organizations failed:', error);
+      if (__DEV__) console.error('Get interested organizations failed:', error);
       return [];
     }
   }, []);

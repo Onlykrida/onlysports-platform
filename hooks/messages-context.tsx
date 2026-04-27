@@ -90,7 +90,7 @@ const [MessagesProvider, _useMessages] = createContextHook<MessagesState>(() => 
         .limit(500);
 
       if (error) {
-        console.error('Error loading conversations:', error);
+        if (__DEV__) console.error('Error loading conversations:', error);
         return;
       }
 
@@ -124,7 +124,7 @@ const [MessagesProvider, _useMessages] = createContextHook<MessagesState>(() => 
 
       setConversations(Array.from(conversationMap.values()));
     } catch (error) {
-      console.error('Failed to load conversations:', error);
+      if (__DEV__) console.error('Failed to load conversations:', error);
     } finally {
       setIsLoading(false);
     }
@@ -157,7 +157,7 @@ const [MessagesProvider, _useMessages] = createContextHook<MessagesState>(() => 
           .limit(100);
 
         if (error) {
-          console.error('Error loading messages:', error);
+          if (__DEV__) console.error('Error loading messages:', error);
           return;
         }
 
@@ -180,7 +180,7 @@ const [MessagesProvider, _useMessages] = createContextHook<MessagesState>(() => 
           [conversationId]: formattedMessages,
         }));
       } catch (error) {
-        console.error('Failed to load messages:', error);
+        if (__DEV__) console.error('Failed to load messages:', error);
       }
     },
     [user],
@@ -203,7 +203,7 @@ const [MessagesProvider, _useMessages] = createContextHook<MessagesState>(() => 
         });
 
         if (error) {
-          console.error('Error sending message:', error);
+          if (__DEV__) console.error('Error sending message:', error);
           return { error: error.message };
         }
 
@@ -218,7 +218,7 @@ const [MessagesProvider, _useMessages] = createContextHook<MessagesState>(() => 
               { senderId: user.id, content: content.substring(0, 50), messageId: null },
             );
           } catch (notificationError) {
-            console.error('Failed to send message notification:', notificationError);
+            if (__DEV__) console.error('Failed to send message notification:', notificationError);
           }
         }
 
@@ -230,7 +230,7 @@ const [MessagesProvider, _useMessages] = createContextHook<MessagesState>(() => 
 
         return {};
       } catch (error) {
-        console.error('Failed to send message:', error);
+        if (__DEV__) console.error('Failed to send message:', error);
         return { error: 'Failed to send message' };
       }
     },
@@ -250,7 +250,7 @@ const [MessagesProvider, _useMessages] = createContextHook<MessagesState>(() => 
           .neq('status', 'read');
 
         if (error) {
-          console.error('Error marking messages as read:', error);
+          if (__DEV__) console.error('Error marking messages as read:', error);
           return;
         }
 
@@ -259,7 +259,7 @@ const [MessagesProvider, _useMessages] = createContextHook<MessagesState>(() => 
           prev.map((conv) => (conv.id === conversationId ? { ...conv, unreadCount: 0 } : conv)),
         );
       } catch (error) {
-        console.error('Failed to mark messages as read:', error);
+        if (__DEV__) console.error('Failed to mark messages as read:', error);
       }
     },
     [user],

@@ -345,14 +345,14 @@ export default function FitnessTestHistoryScreen() {
           setIsLoading(false);
           return;
         }
-        console.error('Failed to load fitness test history:', error);
+        if (__DEV__) console.error('Failed to load fitness test history:', error);
         setIsLoading(false);
         return;
       }
 
       setResults((data as FitnessTestResult[]) || []);
     } catch (e) {
-      console.error('FitnessTestHistory: load exception', e);
+      if (__DEV__) console.error('FitnessTestHistory: load exception', e);
     } finally {
       setIsLoading(false);
     }

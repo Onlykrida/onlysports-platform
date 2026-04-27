@@ -87,7 +87,7 @@ export default function SignupScreen() {
           const upd = await updateProfile(updates);
           if (upd.error) {
             // Profile update failed but signup succeeded - don't block, just log
-            console.warn('Profile update after signup failed:', upd.error);
+            if (__DEV__) console.warn('Profile update after signup failed:', upd.error);
           }
         }
         // Navigation will be handled by onAuthStateChange listener in auth-context.
@@ -95,7 +95,7 @@ export default function SignupScreen() {
         router.replace('/');
       }
     } catch (error) {
-      console.error('Signup error:', error);
+      if (__DEV__) console.error('Signup error:', error);
       setErrors({ general: 'Signup failed. Please try again.' });
     } finally {
       setLoading(false);

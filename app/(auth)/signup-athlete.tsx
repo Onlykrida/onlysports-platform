@@ -105,7 +105,7 @@ export default function SignupAthleteScreen() {
       }
       router.replace('/');
     } catch (error) {
-      console.error('Signup athlete error:', error);
+      if (__DEV__) console.error('Signup athlete error:', error);
       setErrors({ general: 'Signup failed. Please try again.' });
     } finally {
       setLoading(false);

@@ -58,7 +58,7 @@ const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
         .eq('follower_id', user.id);
 
       if (followingError) {
-        console.error('Error loading following:', followingError);
+        if (__DEV__) console.error('Error loading following:', followingError);
       } else {
         const followingUsers = (followingData || [])
           .map((item: any) => item.profiles)
@@ -88,7 +88,7 @@ const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
         .eq('following_id', user.id);
 
       if (followersError) {
-        console.error('Error loading followers:', followersError);
+        if (__DEV__) console.error('Error loading followers:', followersError);
       } else {
         const followerUsers = (followersData || [])
           .map((item: any) => item.profiles)
@@ -104,7 +104,7 @@ const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
         setFollowers(followerUsers);
       }
     } catch (error) {
-      console.error('Failed to load follows:', error);
+      if (__DEV__) console.error('Failed to load follows:', error);
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +149,7 @@ const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
           .single();
 
         if (userError || !targetUser) {
-          console.error('Target user not found:', userError);
+          if (__DEV__) console.error('Target user not found:', userError);
           return { error: 'User not found' };
         }
 
@@ -159,7 +159,7 @@ const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
         });
 
         if (error) {
-          console.error('Follow error:', error);
+          if (__DEV__) console.error('Follow error:', error);
           // Handle specific constraint violations
           if (error.code === '23514' && error.message.includes('follows_no_self_follow')) {
             return { error: 'You cannot follow yourself' };
@@ -181,7 +181,7 @@ const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
         await loadFollows();
         return {};
       } catch (error) {
-        console.error('Follow failed:', error);
+        if (__DEV__) console.error('Follow failed:', error);
         return { error: 'Failed to follow user' };
       }
     },
@@ -207,7 +207,7 @@ const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
           .eq('following_id', userId);
 
         if (error) {
-          console.error('Unfollow error:', error);
+          if (__DEV__) console.error('Unfollow error:', error);
           return { error: error.message };
         }
 
@@ -216,7 +216,7 @@ const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
         await loadFollows();
         return {};
       } catch (error) {
-        console.error('Unfollow failed:', error);
+        if (__DEV__) console.error('Unfollow failed:', error);
         return { error: 'Failed to unfollow user' };
       }
     },
@@ -233,13 +233,13 @@ const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
         .eq('following_id', userId);
 
       if (error) {
-        console.error('Error getting followers count:', error);
+        if (__DEV__) console.error('Error getting followers count:', error);
         return 0;
       }
 
       return count || 0;
     } catch (error) {
-      console.error('Failed to get followers count:', error);
+      if (__DEV__) console.error('Failed to get followers count:', error);
       return 0;
     }
   }, []);
@@ -254,13 +254,13 @@ const [FollowProvider, _useFollow] = createContextHook<FollowState>(() => {
         .eq('follower_id', userId);
 
       if (error) {
-        console.error('Error getting following count:', error);
+        if (__DEV__) console.error('Error getting following count:', error);
         return 0;
       }
 
       return count || 0;
     } catch (error) {
-      console.error('Failed to get following count:', error);
+      if (__DEV__) console.error('Failed to get following count:', error);
       return 0;
     }
   }, []);

@@ -11,10 +11,10 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
+import {
   Trophy,
-  Users, 
-  DollarSign, 
+  Users,
+  DollarSign,
   FileSignature,
   GraduationCap,
   ChevronRight,
@@ -25,7 +25,12 @@ import { useOpportunities } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
 import { router } from 'expo-router';
 
-type OpportunityCategory = 'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
+type OpportunityCategory =
+  | 'tryouts'
+  | 'tournaments'
+  | 'sponsorships'
+  | 'scholarships'
+  | 'contracts';
 type OpportunityType = 'paid' | 'unpaid' | 'local' | 'national' | 'short-term' | 'long-term';
 
 interface OpportunityData {
@@ -50,7 +55,7 @@ export default function CreateOpportunityScreen() {
   const [showCategoryModal, setShowCategoryModal] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  
+
   const [opportunityData, setOpportunityData] = useState<OpportunityData>({
     category: null,
     type: [],
@@ -64,7 +69,7 @@ export default function CreateOpportunityScreen() {
     ageRange: '',
     skillLevel: '',
     contactInfo: '',
-    additionalInfo: ''
+    additionalInfo: '',
   });
 
   const categories = [
@@ -73,55 +78,57 @@ export default function CreateOpportunityScreen() {
       title: 'Tryouts',
       description: 'Team tryouts and player evaluations',
       icon: Trophy,
-      color: theme.colors.primary
+      color: theme.colors.primary,
     },
     {
       id: 'tournaments' as OpportunityCategory,
       title: 'Tournaments',
       description: 'Competitions and tournaments',
       icon: Users,
-      color: theme.colors.secondary
+      color: theme.colors.secondary,
     },
     {
       id: 'sponsorships' as OpportunityCategory,
       title: 'Sponsorships',
       description: 'Brand partnerships and sponsorship deals',
       icon: DollarSign,
-      color: theme.colors.accent
+      color: theme.colors.accent,
     },
     {
       id: 'scholarships' as OpportunityCategory,
       title: 'Scholarships',
       description: 'Educational scholarships and grants',
       icon: GraduationCap,
-      color: theme.colors.info
+      color: theme.colors.info,
     },
     {
       id: 'contracts' as OpportunityCategory,
       title: 'Contracts',
       description: 'Professional contracts and opportunities',
       icon: FileSignature,
-      color: theme.colors.orange
-    }
+      color: theme.colors.orange,
+    },
   ];
 
   const handleCategorySelect = (category: OpportunityCategory) => {
-    setOpportunityData(prev => ({ ...prev, category }));
+    setOpportunityData((prev) => ({ ...prev, category }));
     setShowCategoryModal(false);
     setShowCreateModal(true);
   };
 
   const handleTypeToggle = (type: OpportunityType) => {
-    setOpportunityData(prev => ({
+    setOpportunityData((prev) => ({
       ...prev,
-      type: prev.type.includes(type) 
-        ? prev.type.filter(t => t !== type)
-        : [...prev.type, type]
+      type: prev.type.includes(type) ? prev.type.filter((t) => t !== type) : [...prev.type, type],
     }));
   };
 
   const handleCreateOpportunity = async () => {
-    if (!opportunityData.category || !opportunityData.title.trim() || !opportunityData.description.trim()) {
+    if (
+      !opportunityData.category ||
+      !opportunityData.title.trim() ||
+      !opportunityData.description.trim()
+    ) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -133,7 +140,7 @@ export default function CreateOpportunityScreen() {
 
     try {
       setIsCreating(true);
-      console.log('Creating opportunity:', opportunityData);
+      if (__DEV__) console.log('Creating opportunity:', opportunityData);
       Alert.alert('Success', 'Your opportunity has been posted!', [
         {
           text: 'OK',
@@ -141,11 +148,11 @@ export default function CreateOpportunityScreen() {
             resetOpportunityData();
             refreshOpportunities();
             router.back();
-          }
-        }
+          },
+        },
       ]);
     } catch (error) {
-      console.error('Error creating opportunity:', error);
+      if (__DEV__) console.error('Error creating opportunity:', error);
       Alert.alert('Error', 'Failed to create opportunity. Please try again.');
     } finally {
       setIsCreating(false);
@@ -166,7 +173,7 @@ export default function CreateOpportunityScreen() {
       ageRange: '',
       skillLevel: '',
       contactInfo: '',
-      additionalInfo: ''
+      additionalInfo: '',
     });
   };
 
@@ -179,10 +186,7 @@ export default function CreateOpportunityScreen() {
           <Text style={styles.noPermissionText}>
             Only coaches, scouts, and teams can create opportunities.
           </Text>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -207,7 +211,7 @@ export default function CreateOpportunityScreen() {
                 <X size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView style={styles.categoriesList}>
               {categories.map((category) => {
                 const IconComponent = category.icon;
@@ -248,24 +252,33 @@ export default function CreateOpportunityScreen() {
           <View style={[styles.modalContent, { maxHeight: '90%' }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create Opportunity</Text>
-              <TouchableOpacity onPress={() => {
-                setShowCreateModal(false);
-                setShowCategoryModal(true);
-                resetOpportunityData();
-              }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowCreateModal(false);
+                  setShowCategoryModal(true);
+                  resetOpportunityData();
+                }}
+              >
                 <X size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView style={styles.formContainer}>
               {opportunityData.category && (
                 <View style={styles.selectedCategory}>
                   {(() => {
-                    const selectedCategory = categories.find(c => c.id === opportunityData.category);
+                    const selectedCategory = categories.find(
+                      (c) => c.id === opportunityData.category,
+                    );
                     const IconComponent = selectedCategory?.icon || Trophy;
                     return (
                       <>
-                        <View style={[styles.categoryBadge, { backgroundColor: selectedCategory?.color + '20' }]}>
+                        <View
+                          style={[
+                            styles.categoryBadge,
+                            { backgroundColor: selectedCategory?.color + '20' },
+                          ]}
+                        >
                           <IconComponent size={20} color={selectedCategory?.color} />
                         </View>
                         <Text style={styles.selectedCategoryText}>{selectedCategory?.title}</Text>
@@ -279,62 +292,74 @@ export default function CreateOpportunityScreen() {
               <View style={styles.formSection}>
                 <Text style={styles.sectionTitle}>Type</Text>
                 <View style={styles.typeSelector}>
-                  {['paid', 'unpaid', 'local', 'national', 'short-term', 'long-term'].map((type) => (
-                    <TouchableOpacity
-                      key={type}
-                      style={[
-                        styles.typeChip,
-                        opportunityData.type.includes(type as OpportunityType) && styles.typeChipSelected
-                      ]}
-                      onPress={() => handleTypeToggle(type as OpportunityType)}
-                    >
-                      <Text style={[
-                        styles.typeChipText,
-                        opportunityData.type.includes(type as OpportunityType) && styles.typeChipTextSelected
-                      ]}>
-                        {type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ')}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                  {['paid', 'unpaid', 'local', 'national', 'short-term', 'long-term'].map(
+                    (type) => (
+                      <TouchableOpacity
+                        key={type}
+                        style={[
+                          styles.typeChip,
+                          opportunityData.type.includes(type as OpportunityType) &&
+                            styles.typeChipSelected,
+                        ]}
+                        onPress={() => handleTypeToggle(type as OpportunityType)}
+                      >
+                        <Text
+                          style={[
+                            styles.typeChipText,
+                            opportunityData.type.includes(type as OpportunityType) &&
+                              styles.typeChipTextSelected,
+                          ]}
+                        >
+                          {type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ')}
+                        </Text>
+                      </TouchableOpacity>
+                    ),
+                  )}
                 </View>
               </View>
 
               {/* Basic Information */}
               <View style={styles.formSection}>
                 <Text style={styles.sectionTitle}>Basic Information</Text>
-                
+
                 <TextInput
                   style={styles.input}
                   placeholder="Title *"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.title}
-                  onChangeText={(text) => setOpportunityData(prev => ({ ...prev, title: text }))}
+                  onChangeText={(text) => setOpportunityData((prev) => ({ ...prev, title: text }))}
                 />
-                
+
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder="Description *"
                   placeholderTextColor={theme.colors.textSecondary}
                   multiline
                   value={opportunityData.description}
-                  onChangeText={(text) => setOpportunityData(prev => ({ ...prev, description: text }))}
+                  onChangeText={(text) =>
+                    setOpportunityData((prev) => ({ ...prev, description: text }))
+                  }
                   textAlignVertical="top"
                 />
-                
+
                 <TextInput
                   style={styles.input}
                   placeholder="Location *"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.location}
-                  onChangeText={(text) => setOpportunityData(prev => ({ ...prev, location: text }))}
+                  onChangeText={(text) =>
+                    setOpportunityData((prev) => ({ ...prev, location: text }))
+                  }
                 />
-                
+
                 <TextInput
                   style={styles.input}
                   placeholder="Deadline (e.g., March 15, 2024)"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.deadline}
-                  onChangeText={(text) => setOpportunityData(prev => ({ ...prev, deadline: text }))}
+                  onChangeText={(text) =>
+                    setOpportunityData((prev) => ({ ...prev, deadline: text }))
+                  }
                 />
               </View>
 
@@ -347,14 +372,18 @@ export default function CreateOpportunityScreen() {
                     placeholder="Age Range (e.g., 16-18)"
                     placeholderTextColor={theme.colors.textSecondary}
                     value={opportunityData.ageRange}
-                    onChangeText={(text) => setOpportunityData(prev => ({ ...prev, ageRange: text }))}
+                    onChangeText={(text) =>
+                      setOpportunityData((prev) => ({ ...prev, ageRange: text }))
+                    }
                   />
                   <TextInput
                     style={styles.input}
                     placeholder="Skill Level Required"
                     placeholderTextColor={theme.colors.textSecondary}
                     value={opportunityData.skillLevel}
-                    onChangeText={(text) => setOpportunityData(prev => ({ ...prev, skillLevel: text }))}
+                    onChangeText={(text) =>
+                      setOpportunityData((prev) => ({ ...prev, skillLevel: text }))
+                    }
                   />
                 </View>
               )}
@@ -367,14 +396,18 @@ export default function CreateOpportunityScreen() {
                     placeholder="Compensation/Benefits"
                     placeholderTextColor={theme.colors.textSecondary}
                     value={opportunityData.compensation}
-                    onChangeText={(text) => setOpportunityData(prev => ({ ...prev, compensation: text }))}
+                    onChangeText={(text) =>
+                      setOpportunityData((prev) => ({ ...prev, compensation: text }))
+                    }
                   />
                   <TextInput
                     style={styles.input}
                     placeholder="Duration"
                     placeholderTextColor={theme.colors.textSecondary}
                     value={opportunityData.duration}
-                    onChangeText={(text) => setOpportunityData(prev => ({ ...prev, duration: text }))}
+                    onChangeText={(text) =>
+                      setOpportunityData((prev) => ({ ...prev, duration: text }))
+                    }
                   />
                 </View>
               )}
@@ -387,14 +420,18 @@ export default function CreateOpportunityScreen() {
                     placeholder="Scholarship Amount"
                     placeholderTextColor={theme.colors.textSecondary}
                     value={opportunityData.compensation}
-                    onChangeText={(text) => setOpportunityData(prev => ({ ...prev, compensation: text }))}
+                    onChangeText={(text) =>
+                      setOpportunityData((prev) => ({ ...prev, compensation: text }))
+                    }
                   />
                   <TextInput
                     style={styles.input}
                     placeholder="Academic Requirements"
                     placeholderTextColor={theme.colors.textSecondary}
                     value={opportunityData.skillLevel}
-                    onChangeText={(text) => setOpportunityData(prev => ({ ...prev, skillLevel: text }))}
+                    onChangeText={(text) =>
+                      setOpportunityData((prev) => ({ ...prev, skillLevel: text }))
+                    }
                   />
                 </View>
               )}
@@ -402,32 +439,38 @@ export default function CreateOpportunityScreen() {
               {/* Additional Information */}
               <View style={styles.formSection}>
                 <Text style={styles.sectionTitle}>Additional Information</Text>
-                
+
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder="Requirements"
                   placeholderTextColor={theme.colors.textSecondary}
                   multiline
                   value={opportunityData.requirements}
-                  onChangeText={(text) => setOpportunityData(prev => ({ ...prev, requirements: text }))}
+                  onChangeText={(text) =>
+                    setOpportunityData((prev) => ({ ...prev, requirements: text }))
+                  }
                   textAlignVertical="top"
                 />
-                
+
                 <TextInput
                   style={styles.input}
                   placeholder="Contact Information"
                   placeholderTextColor={theme.colors.textSecondary}
                   value={opportunityData.contactInfo}
-                  onChangeText={(text) => setOpportunityData(prev => ({ ...prev, contactInfo: text }))}
+                  onChangeText={(text) =>
+                    setOpportunityData((prev) => ({ ...prev, contactInfo: text }))
+                  }
                 />
-                
+
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder="Additional Notes"
                   placeholderTextColor={theme.colors.textSecondary}
                   multiline
                   value={opportunityData.additionalInfo}
-                  onChangeText={(text) => setOpportunityData(prev => ({ ...prev, additionalInfo: text }))}
+                  onChangeText={(text) =>
+                    setOpportunityData((prev) => ({ ...prev, additionalInfo: text }))
+                  }
                   textAlignVertical="top"
                 />
               </View>
@@ -435,10 +478,13 @@ export default function CreateOpportunityScreen() {
               <TouchableOpacity
                 style={[
                   styles.submitButton,
-                  (!opportunityData.title.trim() || !opportunityData.description.trim()) && styles.submitButtonDisabled
+                  (!opportunityData.title.trim() || !opportunityData.description.trim()) &&
+                    styles.submitButtonDisabled,
                 ]}
                 onPress={handleCreateOpportunity}
-                disabled={isCreating || !opportunityData.title.trim() || !opportunityData.description.trim()}
+                disabled={
+                  isCreating || !opportunityData.title.trim() || !opportunityData.description.trim()
+                }
               >
                 {isCreating ? (
                   <ActivityIndicator size="small" color={theme.colors.white} />

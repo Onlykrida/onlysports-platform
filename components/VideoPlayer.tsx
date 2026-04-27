@@ -69,7 +69,8 @@ function VideoPlayerNative({
         setIsLoading(false);
         setError(null);
       } else if (status.status === 'error') {
-        console.error('[VideoPlayer] Video error:', JSON.stringify(status.error, null, 2));
+        if (__DEV__)
+          console.error('[VideoPlayer] Video error:', JSON.stringify(status.error, null, 2));
 
         let errorMsg = 'Unable to play this video';
         if (status.error) {

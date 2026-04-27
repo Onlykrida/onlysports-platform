@@ -54,7 +54,7 @@ if (isSupabaseConfigured) {
       },
     });
   } catch (error) {
-    console.error('❌ Failed to create Supabase client:', error);
+    if (__DEV__) console.error('❌ Failed to create Supabase client:', error);
     supabase = createMockClient();
   }
 } else {

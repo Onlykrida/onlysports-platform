@@ -73,7 +73,7 @@ export default function ProfileViewers({ userId }: ProfileViewersProps) {
         setViewers(mapped);
       }
     } catch (error) {
-      console.error('Failed to load profile viewers:', error);
+      if (__DEV__) console.error('Failed to load profile viewers:', error);
     } finally {
       setIsLoading(false);
     }

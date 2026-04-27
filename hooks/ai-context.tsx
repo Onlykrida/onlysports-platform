@@ -169,7 +169,7 @@ const [AIProvider, _useAI] = createContextHook<AIState>(() => {
       const summary = await generateAthleteProfileSummary(user);
       setProfileSummary(summary);
     } catch (error) {
-      console.error('Failed to generate summary:', error);
+      if (__DEV__) console.error('Failed to generate summary:', error);
     } finally {
       setIsSummaryLoading(false);
     }
@@ -182,7 +182,7 @@ const [AIProvider, _useAI] = createContextHook<AIState>(() => {
       const tips = await generateProfileSuggestions(user);
       setProfileTips(tips);
     } catch (error) {
-      console.error('Failed to get profile tips:', error);
+      if (__DEV__) console.error('Failed to get profile tips:', error);
     } finally {
       setIsTipsLoading(false);
     }
@@ -196,7 +196,7 @@ const [AIProvider, _useAI] = createContextHook<AIState>(() => {
         const matches = await generateOpportunityMatch(user, opportunities);
         setOpportunityMatches(matches);
       } catch (error) {
-        console.error('Failed to match opportunities:', error);
+        if (__DEV__) console.error('Failed to match opportunities:', error);
       } finally {
         setIsMatchingLoading(false);
       }
@@ -212,7 +212,7 @@ const [AIProvider, _useAI] = createContextHook<AIState>(() => {
         const recs = await getSmartScoutRecommendations(preferences, athletes);
         setScoutRecommendations(recs);
       } catch (error) {
-        console.error('Failed to get recommendations:', error);
+        if (__DEV__) console.error('Failed to get recommendations:', error);
       } finally {
         setIsRecommendationsLoading(false);
       }

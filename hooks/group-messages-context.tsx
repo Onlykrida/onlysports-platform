@@ -104,7 +104,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
         ) {
           if (__DEV__) console.log('group_members table not found, skipping');
         } else {
-          console.warn('Error loading group memberships:', memberError.message);
+          if (__DEV__) console.warn('Error loading group memberships:', memberError.message);
         }
         setGroups([]);
         return;
@@ -130,7 +130,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
         .in('id', groupIds);
 
       if (groupsError) {
-        console.error('Error loading groups:', groupsError);
+        if (__DEV__) console.error('Error loading groups:', groupsError);
         return;
       }
 
@@ -168,7 +168,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
 
       setGroups(groupList);
     } catch (error) {
-      console.error('Failed to load groups:', error);
+      if (__DEV__) console.error('Failed to load groups:', error);
     } finally {
       setIsLoading(false);
     }
@@ -197,7 +197,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
           .limit(100);
 
         if (error) {
-          console.error('Error loading group messages:', error);
+          if (__DEV__) console.error('Error loading group messages:', error);
           return;
         }
 
@@ -217,7 +217,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
           [groupId]: formatted,
         }));
       } catch (error) {
-        console.error('Failed to load group messages:', error);
+        if (__DEV__) console.error('Failed to load group messages:', error);
       }
     },
     [user],
@@ -238,7 +238,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
         });
 
         if (error) {
-          console.error('Error sending group message:', error);
+          if (__DEV__) console.error('Error sending group message:', error);
           return { error: error.message };
         }
 
@@ -248,7 +248,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
 
         return {};
       } catch (error) {
-        console.error('Failed to send group message:', error);
+        if (__DEV__) console.error('Failed to send group message:', error);
         return { error: 'Failed to send message' };
       }
     },
@@ -274,7 +274,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
           .single();
 
         if (groupError) {
-          console.error('Error creating group:', groupError);
+          if (__DEV__) console.error('Error creating group:', groupError);
           return { error: groupError.message };
         }
 
@@ -291,7 +291,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
           .insert(membersToInsert);
 
         if (membersError) {
-          console.error('Error adding group members:', membersError);
+          if (__DEV__) console.error('Error adding group members:', membersError);
           return { error: membersError.message };
         }
 
@@ -307,7 +307,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
                 { groupId, groupName: name },
               );
             } catch (e) {
-              console.error('Failed to send group notification:', e);
+              if (__DEV__) console.error('Failed to send group notification:', e);
             }
           }
         }
@@ -315,7 +315,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
         await loadGroups();
         return { groupId };
       } catch (error) {
-        console.error('Failed to create group:', error);
+        if (__DEV__) console.error('Failed to create group:', error);
         return { error: 'Failed to create group' };
       }
     },
@@ -334,14 +334,14 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
           .insert({ group_id: groupId, user_id: userId, role: 'member' });
 
         if (error) {
-          console.error('Error adding member:', error);
+          if (__DEV__) console.error('Error adding member:', error);
           return { error: error.message };
         }
 
         await loadGroups();
         return {};
       } catch (error) {
-        console.error('Failed to add member:', error);
+        if (__DEV__) console.error('Failed to add member:', error);
         return { error: 'Failed to add member' };
       }
     },
@@ -362,14 +362,14 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
           .eq('user_id', userId);
 
         if (error) {
-          console.error('Error removing member:', error);
+          if (__DEV__) console.error('Error removing member:', error);
           return { error: error.message };
         }
 
         await loadGroups();
         return {};
       } catch (error) {
-        console.error('Failed to remove member:', error);
+        if (__DEV__) console.error('Failed to remove member:', error);
         return { error: 'Failed to remove member' };
       }
     },
@@ -390,7 +390,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
           .eq('user_id', user.id);
 
         if (error) {
-          console.error('Error leaving group:', error);
+          if (__DEV__) console.error('Error leaving group:', error);
           return { error: error.message };
         }
 
@@ -404,7 +404,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
 
         return {};
       } catch (error) {
-        console.error('Failed to leave group:', error);
+        if (__DEV__) console.error('Failed to leave group:', error);
         return { error: 'Failed to leave group' };
       }
     },
@@ -431,7 +431,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
           .eq('group_id', groupId);
 
         if (error) {
-          console.error('Error loading group members:', error);
+          if (__DEV__) console.error('Error loading group members:', error);
           return [];
         }
 
@@ -445,7 +445,7 @@ const [GroupsProvider, _useGroups] = createContextHook<GroupsState>(() => {
           userAvatar: m.user?.avatar,
         }));
       } catch (error) {
-        console.error('Failed to load group members:', error);
+        if (__DEV__) console.error('Failed to load group members:', error);
         return [];
       }
     },

@@ -47,7 +47,7 @@ export default function TeamHome() {
       const athletes = await getInterestedAthletesForOrg(user.id);
       setRoster(athletes);
     } catch (e) {
-      console.error('TeamHome: failed to load data', e);
+      if (__DEV__) console.error('TeamHome: failed to load data', e);
     } finally {
       setLoading(false);
     }

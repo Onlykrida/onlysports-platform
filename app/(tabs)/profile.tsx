@@ -83,7 +83,7 @@ export default function ProfileScreen() {
       setFollowingCount(followingCountResult);
       setUserPostsCount(userPosts.length);
     } catch (error) {
-      console.error('Failed to load counts:', error);
+      if (__DEV__) console.error('Failed to load counts:', error);
     }
   }, [user?.id, userPosts.length, getFollowersCount, getFollowingCount]);
 
@@ -203,7 +203,7 @@ export default function ProfileScreen() {
         }
       }
     } catch (error) {
-      console.error('Error picking profile image:', error);
+      if (__DEV__) console.error('Error picking profile image:', error);
       Alert.alert('Error', 'Failed to update profile picture');
     }
   };

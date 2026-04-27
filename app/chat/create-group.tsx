@@ -52,7 +52,7 @@ export default function CreateGroupScreen() {
         .eq('follower_id', user.id);
 
       if (followError) {
-        console.error('Error loading follows:', followError);
+        if (__DEV__) console.error('Error loading follows:', followError);
         return;
       }
 
@@ -70,7 +70,7 @@ export default function CreateGroupScreen() {
         .in('id', followingIds);
 
       if (profilesError) {
-        console.error('Error loading profiles:', profilesError);
+        if (__DEV__) console.error('Error loading profiles:', profilesError);
         return;
       }
 
@@ -85,7 +85,7 @@ export default function CreateGroupScreen() {
       setUsers(selectableUsers);
       setFilteredUsers(selectableUsers);
     } catch (error) {
-      console.error('Failed to load users:', error);
+      if (__DEV__) console.error('Failed to load users:', error);
     } finally {
       setIsLoadingUsers(false);
     }
@@ -134,7 +134,7 @@ export default function CreateGroupScreen() {
         });
       }
     } catch (error) {
-      console.error('Failed to create group:', error);
+      if (__DEV__) console.error('Failed to create group:', error);
       Alert.alert('Error', 'Failed to create group');
     } finally {
       setIsCreating(false);

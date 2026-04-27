@@ -84,7 +84,7 @@ export default function ScoutHome() {
         await getScoutDashboard();
       }
     } catch (e) {
-      console.error('ScoutHome: failed to load data', e);
+      if (__DEV__) console.error('ScoutHome: failed to load data', e);
     } finally {
       setLoading(false);
     }
@@ -99,7 +99,7 @@ export default function ScoutHome() {
       setRecommendations(freshRecs);
       await getScoutDashboard();
     } catch (e) {
-      console.error('ScoutHome: refresh failed', e);
+      if (__DEV__) console.error('ScoutHome: refresh failed', e);
     } finally {
       setRefreshing(false);
     }

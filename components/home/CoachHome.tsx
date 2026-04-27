@@ -42,7 +42,7 @@ export default function CoachHome() {
       const athletes = await getInterestedAthletesForOrg(user.id);
       setMyAthletes(athletes);
     } catch (e) {
-      console.error('CoachHome: failed to load athletes', e);
+      if (__DEV__) console.error('CoachHome: failed to load athletes', e);
     } finally {
       setLoadingAthletes(false);
     }

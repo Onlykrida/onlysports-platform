@@ -67,7 +67,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
       // Safety timeout must be longer than profile timeout (8s) to avoid race
       const timeout = setTimeout(() => {
         if (mounted) {
-          console.warn('Auth initialization timed out after 10s');
+          if (__DEV__) console.warn('Auth initialization timed out after 10s');
           setIsLoading(false);
         }
       }, 10000);
@@ -84,7 +84,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         clearTimeout(timeout);
 
         if (error) {
-          console.error('Error getting session:', error);
+          if (__DEV__) console.error('Error getting session:', error);
           // Stale-token recovery: if the stored refresh token is invalid
           // (user was deleted server-side, refresh token expired/rotated,
           // session was revoked), force a clean signOut so AsyncStorage /
@@ -101,7 +101,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
               await supabase.auth.signOut();
               if (__DEV__) console.log('Cleared stale auth session');
             } catch (signOutErr) {
-              console.warn('signOut after stale-token detection failed:', signOutErr);
+              if (__DEV__) console.warn('signOut after stale-token detection failed:', signOutErr);
             }
           }
           if (mounted) {
@@ -122,7 +122,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         }
       } catch (error) {
         clearTimeout(timeout);
-        console.error('Failed to initialize auth:', error);
+        if (__DEV__) console.error('Failed to initialize auth:', error);
         if (mounted) {
           setIsLoading(false);
         }
@@ -164,7 +164,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
     const abortController = new AbortController();
     const profileTimeout = setTimeout(() => {
       timedOut = true;
-      console.warn('Profile loading timed out after 8s, creating fallback user');
+      if (__DEV__) console.warn('Profile loading timed out after 8s, creating fallback user');
       abortController.abort();
       setUser(createFallbackUser(supabaseUser));
       setIsLoading(false);
@@ -200,13 +200,16 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
       }
 
       if (error) {
-        console.error('Error loading profile:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-        });
+        if (__DEV__) {
+          console.error('Error loading profile:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          });
+        }
         // Other database errors - still create basic user to avoid infinite loading
-        console.error('Database error loading profile, creating fallback user:', error.message);
+        if (__DEV__)
+          console.error('Database error loading profile, creating fallback user:', error.message);
         safeSetUser(createFallbackUser(supabaseUser));
       } else if (!profile) {
         if (__DEV__) console.log('No profile found for user, attempting to create profile...');
@@ -225,7 +228,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
             .single();
 
           if (createError) {
-            console.error('Failed to create profile:', createError);
+            if (__DEV__) console.error('Failed to create profile:', createError);
             safeSetUser(createFallbackUser(supabaseUser));
           } else if (newProfile) {
             if (__DEV__) console.log('Profile created successfully:', newProfile);
@@ -248,7 +251,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
             safeSetUser(createdUser);
           }
         } catch (createError) {
-          console.error('Exception creating profile:', createError);
+          if (__DEV__) console.error('Exception creating profile:', createError);
           safeSetUser(createFallbackUser(supabaseUser));
         }
       } else if (profile) {
@@ -275,10 +278,12 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         safeSetUser(createFallbackUser(supabaseUser));
       }
     } catch (error) {
-      console.error('Failed to load user profile:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        error: error,
-      });
+      if (__DEV__) {
+        console.error('Failed to load user profile:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          error: error,
+        });
+      }
 
       // Create fallback user to prevent infinite loading
       if (!timedOut) {
@@ -305,13 +310,13 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
       });
 
       if (error) {
-        console.error('Login error:', error);
+        if (__DEV__) console.error('Login error:', error);
         return { error: error.message };
       }
 
       return {};
     } catch (error) {
-      console.error('Login failed:', error);
+      if (__DEV__) console.error('Login failed:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Login failed. Please try again.';
       return { error: errorMessage };
@@ -337,7 +342,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         });
 
         if (authError) {
-          console.error('Signup error:', authError);
+          if (__DEV__) console.error('Signup error:', authError);
           return { error: authError.message };
         }
 
@@ -376,13 +381,15 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
                 .single();
 
               if (profileError) {
-                console.error('Profile creation error details:', {
-                  code: profileError.code,
-                  message: profileError.message,
-                  details: profileError.details,
-                  hint: profileError.hint,
-                  retry: retryCount + 1,
-                });
+                if (__DEV__) {
+                  console.error('Profile creation error details:', {
+                    code: profileError.code,
+                    message: profileError.message,
+                    details: profileError.details,
+                    hint: profileError.hint,
+                    retry: retryCount + 1,
+                  });
+                }
 
                 if (profileError.code === '23505') {
                   if (__DEV__) console.log('Profile already exists (duplicate key), continuing...');
@@ -391,9 +398,11 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
 
                 if (profileError.code === '23503' && retryCount < maxRetries - 1) {
                   if (__DEV__)
-                    console.log(
-                      `Foreign key constraint error, retrying in ${(retryCount + 1) * 1000}ms...`,
-                    );
+                    if (__DEV__) {
+                      console.log(
+                        `Foreign key constraint error, retrying in ${(retryCount + 1) * 1000}ms...`,
+                      );
+                    }
                   await new Promise((resolve) => setTimeout(resolve, (retryCount + 1) * 1000));
                   retryCount++;
                   continue;
@@ -422,14 +431,15 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
                   errorMessage = profileError.message;
                 }
 
-                console.error('Profile creation returning error:', errorMessage);
+                if (__DEV__) console.error('Profile creation returning error:', errorMessage);
                 return { error: errorMessage };
               } else {
                 if (__DEV__) console.log('Profile created successfully:', profileData);
                 break;
               }
             } catch (retryError) {
-              console.error(`Profile creation attempt ${retryCount + 1} failed:`, retryError);
+              if (__DEV__)
+                console.error(`Profile creation attempt ${retryCount + 1} failed:`, retryError);
               if (retryCount === maxRetries - 1) {
                 throw retryError;
               }
@@ -446,7 +456,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
           console.log('Signup completed without session (likely email verification required).');
         return {};
       } catch (error) {
-        console.error('Signup failed:', error);
+        if (__DEV__) console.error('Signup failed:', error);
         const errorMessage =
           error instanceof Error ? error.message : 'Signup failed. Please try again.';
         return { error: errorMessage };
@@ -461,7 +471,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
       setUser(null);
       setSession(null);
     } catch (error) {
-      console.error('Logout error:', error);
+      if (__DEV__) console.error('Logout error:', error);
     }
   }, []);
 
@@ -547,11 +557,12 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
               if (__DEV__)
                 console.log('Avatar uploaded to storage successfully:', { path, publicUrl });
             } else {
-              console.warn('Storage upload failed, falling back to direct URI', uploadError);
+              if (__DEV__)
+                console.warn('Storage upload failed, falling back to direct URI', uploadError);
               avatarUrl = inputAvatar;
             }
           } catch (e) {
-            console.warn('Avatar upload exception, falling back to direct URI', e);
+            if (__DEV__) console.warn('Avatar upload exception, falling back to direct URI', e);
             avatarUrl = inputAvatar;
           }
         }
@@ -579,7 +590,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         const { error } = await supabase.from('profiles').update(payload).eq('id', userId);
 
         if (error) {
-          console.error('Profile update error:', error);
+          if (__DEV__) console.error('Profile update error:', error);
           return { error: error.message };
         }
 
@@ -596,7 +607,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
 
         return {};
       } catch (error) {
-        console.error('Profile update failed:', error);
+        if (__DEV__) console.error('Profile update failed:', error);
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to update profile. Please try again.';
         return { error: errorMessage };
@@ -623,7 +634,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
       const { error: profileError } = await supabase.from('profiles').delete().eq('id', user.id);
 
       if (profileError) {
-        console.error('Error deleting profile:', profileError);
+        if (__DEV__) console.error('Error deleting profile:', profileError);
         return { error: 'Failed to delete profile. Please try again.' };
       }
 
@@ -635,7 +646,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
       if (__DEV__) console.log('Account deleted successfully');
       return {};
     } catch (error) {
-      console.error('Account deletion failed:', error);
+      if (__DEV__) console.error('Account deletion failed:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to delete account. Please try again.';
       return { error: errorMessage };

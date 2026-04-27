@@ -53,7 +53,7 @@ export default function LoginScreen() {
       }
       // Navigation handled by Redirect in _layout.tsx when isAuthenticated changes
     } catch (error) {
-      console.error('Login error:', error);
+      if (__DEV__) console.error('Login error:', error);
       setErrors({ general: 'Login failed. Please try again.' });
     } finally {
       setLoading(false);

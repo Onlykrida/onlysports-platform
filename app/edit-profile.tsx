@@ -118,7 +118,7 @@ export default function EditProfileScreen() {
         setFormData((prev) => ({ ...prev, avatar: result.assets[0].uri }));
       }
     } catch (error) {
-      console.error('Error picking profile image:', error);
+      if (__DEV__) console.error('Error picking profile image:', error);
       Alert.alert('Error', 'Failed to pick profile image');
     }
   };
@@ -142,7 +142,7 @@ export default function EditProfileScreen() {
         setFormData((prev) => ({ ...prev, coverPhoto: result.assets[0].uri }));
       }
     } catch (error) {
-      console.error('Error picking cover image:', error);
+      if (__DEV__) console.error('Error picking cover image:', error);
       Alert.alert('Error', 'Failed to pick cover image');
     }
   };

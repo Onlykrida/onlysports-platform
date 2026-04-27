@@ -109,7 +109,7 @@ export default function CommentsModal({
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error loading comments:', error);
+        if (__DEV__) console.error('Error loading comments:', error);
         setComments([]);
         return;
       }
@@ -139,7 +139,7 @@ export default function CommentsModal({
 
       setComments(formattedComments);
     } catch (error) {
-      console.error('Failed to load comments:', error);
+      if (__DEV__) console.error('Failed to load comments:', error);
       setComments([]);
     } finally {
       setIsLoading(false);
@@ -207,7 +207,7 @@ export default function CommentsModal({
       });
 
       if (error) {
-        console.error('Error creating comment:', error);
+        if (__DEV__) console.error('Error creating comment:', error);
         Alert.alert('Error', 'Failed to post comment');
         return;
       }
@@ -219,7 +219,7 @@ export default function CommentsModal({
       // Refresh posts to update comment count
       await refreshPosts();
     } catch (error) {
-      console.error('Failed to submit comment:', error);
+      if (__DEV__) console.error('Failed to submit comment:', error);
       Alert.alert('Error', 'Failed to post comment');
     } finally {
       setIsSubmitting(false);
@@ -244,7 +244,7 @@ export default function CommentsModal({
               .eq('user_id', user.id);
 
             if (error) {
-              console.error('Error deleting comment:', error);
+              if (__DEV__) console.error('Error deleting comment:', error);
               Alert.alert('Error', 'Failed to delete comment');
               return;
             }
@@ -255,7 +255,7 @@ export default function CommentsModal({
             // Refresh posts to update comment count
             await refreshPosts();
           } catch (error) {
-            console.error('Failed to delete comment:', error);
+            if (__DEV__) console.error('Failed to delete comment:', error);
             Alert.alert('Error', 'Failed to delete comment');
           } finally {
             setDeletingIds((prev) => {
@@ -298,7 +298,7 @@ export default function CommentsModal({
           .eq('comment_id', commentId);
 
         if (error) {
-          console.error('Error unliking comment:', error);
+          if (__DEV__) console.error('Error unliking comment:', error);
           // Revert optimistic update
           setComments((prev) =>
             prev.map((c) =>
@@ -315,7 +315,7 @@ export default function CommentsModal({
         });
 
         if (error) {
-          console.error('Error liking comment:', error);
+          if (__DEV__) console.error('Error liking comment:', error);
           // Revert optimistic update
           setComments((prev) =>
             prev.map((c) =>
@@ -326,7 +326,7 @@ export default function CommentsModal({
         }
       }
     } catch (error) {
-      console.error('Failed to toggle comment like:', error);
+      if (__DEV__) console.error('Failed to toggle comment like:', error);
       // Revert optimistic update
       setComments((prev) =>
         prev.map((c) =>

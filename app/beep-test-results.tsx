@@ -302,7 +302,7 @@ export default function BeepTestResultsScreen() {
         Alert.alert('Error', result.error || 'Failed to save result. Please try again.');
       }
     } catch (e) {
-      console.warn('FitnessTestResults: save exception', e);
+      if (__DEV__) console.warn('FitnessTestResults: save exception', e);
       Alert.alert('Error', 'An unexpected error occurred.');
     } finally {
       setIsSaving(false);
@@ -337,7 +337,7 @@ export default function BeepTestResultsScreen() {
         Alert.alert('Error', result.error || 'Failed to save results.');
       }
     } catch (e) {
-      console.warn('FitnessTestResults: coach save exception', e);
+      if (__DEV__) console.warn('FitnessTestResults: coach save exception', e);
       Alert.alert('Error', 'An error occurred while saving results.');
     } finally {
       setIsSaving(false);

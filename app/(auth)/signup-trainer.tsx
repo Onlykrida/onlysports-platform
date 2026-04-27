@@ -90,7 +90,7 @@ export default function SignupTrainerScreen() {
       }
       router.replace('/');
     } catch (error) {
-      console.error('Signup trainer error:', error);
+      if (__DEV__) console.error('Signup trainer error:', error);
       setErrors({ general: 'Signup failed. Please try again.' });
     } finally {
       setLoading(false);

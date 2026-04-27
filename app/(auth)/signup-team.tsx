@@ -81,7 +81,7 @@ export default function SignupTeamScreen() {
       }
       router.replace('/');
     } catch (error) {
-      console.error('Signup team error:', error);
+      if (__DEV__) console.error('Signup team error:', error);
       setErrors({ general: 'Signup failed. Please try again.' });
     } finally {
       setLoading(false);

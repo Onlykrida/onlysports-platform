@@ -85,7 +85,7 @@ export default function TeamDashboardScreen() {
       await loadReceivedApplications();
       await loadOpportunities();
     } catch (e) {
-      console.error('TeamDashboard: loadData failed', e);
+      if (__DEV__) console.error('TeamDashboard: loadData failed', e);
     } finally {
       setLoading(false);
     }

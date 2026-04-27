@@ -106,7 +106,7 @@ export default function BeepTestLiveScreen() {
           soundRef.current = loadedSound;
         }
       } catch (err) {
-        console.warn('BeepTest: Could not load audio file', err);
+        if (__DEV__) console.warn('BeepTest: Could not load audio file', err);
       }
     }
     loadSound();

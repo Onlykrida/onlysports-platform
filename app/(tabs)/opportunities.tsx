@@ -396,7 +396,7 @@ export default function OpportunitiesScreen() {
 
     try {
       setIsCreating(true);
-      console.log('Creating opportunity:', opportunityData);
+      if (__DEV__) console.log('Creating opportunity:', opportunityData);
       Alert.alert('Success', 'Your opportunity has been posted!', [
         {
           text: 'OK',
@@ -408,7 +408,7 @@ export default function OpportunitiesScreen() {
         },
       ]);
     } catch (error) {
-      console.error('Error creating opportunity:', error);
+      if (__DEV__) console.error('Error creating opportunity:', error);
       Alert.alert('Error', 'Failed to create opportunity. Please try again.');
     } finally {
       setIsCreating(false);
