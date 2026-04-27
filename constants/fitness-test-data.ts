@@ -3,7 +3,10 @@
 // ============================================
 
 // ── Types ──────────────────────────────────────────────────
-export type TestType = 'yoyo' | 'sprint_20m' | 'sprint_40m' | 'agility_ttest' | 'vertical_jump';
+// TestType re-exports FitnessTestType from types/index.ts as the single source
+// of truth. Schema CHECK constraint in supabase-v15-prereq.sql must match.
+import type { FitnessTestType } from '@/types';
+export type TestType = FitnessTestType;
 export type ZoneName = 'starter' | 'building' | 'rising' | 'strong' | 'elite' | 'unstoppable';
 export type Gender = 'male' | 'female';
 export type AgeGroup = 'u16' | 'u18' | 'u21' | 'senior';

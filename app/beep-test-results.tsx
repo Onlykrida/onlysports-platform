@@ -66,11 +66,23 @@ interface CoachResult {
 }
 
 const TEST_LABELS: Record<TestType, string> = {
+  // v1.0
   yoyo: 'Yo-Yo Test',
   sprint_20m: '20m Sprint',
   sprint_40m: '40m Sprint',
   agility_ttest: 'Agility T-Test',
   vertical_jump: 'Vertical Jump',
+  // v1.5 wedge — refined label copy ships with each test screen
+  sprint_10m: '10m Sprint',
+  sprint_30m: '30m Sprint',
+  gps_time_trial: 'GPS Time Trial',
+  juggling_count: 'Juggling',
+  wall_volley_count: 'Wall Volley',
+  dribble_cones_count: 'Dribble Cones',
+  spot_shooting_pct: 'Spot Shooting',
+  drag_flick_accuracy: 'Drag Flick',
+  crossing_accuracy: 'Crossing',
+  bowling_accuracy: 'Bowling Line+Length',
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────

@@ -316,11 +316,23 @@ export interface BeepTestResult {
 }
 
 export type FitnessTestType =
+  // existing (v1.0)
   | 'yoyo'
   | 'sprint_20m'
   | 'sprint_40m'
   | 'agility_ttest'
-  | 'vertical_jump';
+  | 'vertical_jump'
+  // v1.5 wedge — must match supabase-v15-prereq.sql CHECK constraint
+  | 'sprint_10m'
+  | 'sprint_30m'
+  | 'gps_time_trial'
+  | 'juggling_count'
+  | 'wall_volley_count'
+  | 'dribble_cones_count'
+  | 'spot_shooting_pct'
+  | 'drag_flick_accuracy'
+  | 'crossing_accuracy'
+  | 'bowling_accuracy';
 export type FitnessZone = 'starter' | 'building' | 'rising' | 'strong' | 'elite' | 'unstoppable';
 
 export type VerificationTier =

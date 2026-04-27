@@ -42,12 +42,28 @@ import {
 } from '@/constants/fitness-test-data';
 
 // ── Test type metadata ─────────────────────────────────
+// v1.5 wedge tests are NOT manual-entry — they require sensor/camera capture.
+// Manual fallback exists for v1.0 tests only. v1.5 entries default to title=label
+// to keep TS happy if a stray v1.5 test_type ever lands in this screen, but the
+// manual-entry UI is gated on the v1.0 set elsewhere (see line 55-61 below).
 const TEST_META: Record<TestType, { title: string; shortTitle: string }> = {
   yoyo: { title: 'Yo-Yo Intermittent Recovery Test', shortTitle: 'Yo-Yo Test' },
   sprint_20m: { title: '20m Sprint Test', shortTitle: '20m Sprint' },
   sprint_40m: { title: '40m Sprint Test', shortTitle: '40m Sprint' },
   agility_ttest: { title: 'Agility T-Test', shortTitle: 'T-Test' },
   vertical_jump: { title: 'Vertical Jump Test', shortTitle: 'Vertical Jump' },
+  // v1.5 tests are sensor/camera captured, not manual — these stubs exist only
+  // so Record<TestType,...> stays type-complete. Manual screen never renders them.
+  sprint_10m: { title: '10m Sprint Test', shortTitle: '10m Sprint' },
+  sprint_30m: { title: '30m Sprint Test', shortTitle: '30m Sprint' },
+  gps_time_trial: { title: 'GPS Time Trial', shortTitle: 'GPS' },
+  juggling_count: { title: 'Juggling Counter', shortTitle: 'Juggle' },
+  wall_volley_count: { title: 'Wall Volley Counter', shortTitle: 'Volley' },
+  dribble_cones_count: { title: 'Dribble Cones Counter', shortTitle: 'Dribble' },
+  spot_shooting_pct: { title: 'Spot Shooting %', shortTitle: 'Shooting' },
+  drag_flick_accuracy: { title: 'Drag Flick Accuracy', shortTitle: 'Flick' },
+  crossing_accuracy: { title: 'Crossing Accuracy', shortTitle: 'Cross' },
+  bowling_accuracy: { title: 'Bowling Line + Length', shortTitle: 'Bowl' },
 };
 
 export default function FitnessTestManualScreen() {

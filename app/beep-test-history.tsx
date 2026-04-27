@@ -36,6 +36,7 @@ const TEST_TYPE_CONFIG: Record<
   TestType,
   { label: string; shortLabel: string; unit: string; lowerIsBetter: boolean }
 > = {
+  // v1.0
   yoyo: { label: 'Yo-Yo IR1', shortLabel: 'Yo-Yo', unit: 'm', lowerIsBetter: false },
   sprint_20m: { label: '20m Sprint', shortLabel: '20m', unit: 's', lowerIsBetter: true },
   sprint_40m: { label: '40m Sprint', shortLabel: '40m', unit: 's', lowerIsBetter: true },
@@ -46,14 +47,62 @@ const TEST_TYPE_CONFIG: Record<
     unit: 'cm',
     lowerIsBetter: false,
   },
+  // v1.5 wedge
+  sprint_10m: { label: '10m Sprint', shortLabel: '10m', unit: 's', lowerIsBetter: true },
+  sprint_30m: { label: '30m Sprint', shortLabel: '30m', unit: 's', lowerIsBetter: true },
+  gps_time_trial: { label: 'GPS Time Trial', shortLabel: 'GPS', unit: 's', lowerIsBetter: true },
+  juggling_count: { label: 'Juggling', shortLabel: 'Juggle', unit: 'reps', lowerIsBetter: false },
+  wall_volley_count: {
+    label: 'Wall Volley',
+    shortLabel: 'Volley',
+    unit: 'reps',
+    lowerIsBetter: false,
+  },
+  dribble_cones_count: {
+    label: 'Dribble Cones',
+    shortLabel: 'Dribble',
+    unit: 'reps',
+    lowerIsBetter: false,
+  },
+  spot_shooting_pct: {
+    label: 'Spot Shooting',
+    shortLabel: 'Shoot',
+    unit: '%',
+    lowerIsBetter: false,
+  },
+  drag_flick_accuracy: {
+    label: 'Drag Flick',
+    shortLabel: 'Flick',
+    unit: '%',
+    lowerIsBetter: false,
+  },
+  crossing_accuracy: { label: 'Crossing', shortLabel: 'Cross', unit: '%', lowerIsBetter: false },
+  bowling_accuracy: {
+    label: 'Bowling Line+Length',
+    shortLabel: 'Bowl',
+    unit: '%',
+    lowerIsBetter: false,
+  },
 };
 
 const ALL_TEST_TYPES: TestType[] = [
+  // v1.0
   'yoyo',
   'sprint_20m',
   'sprint_40m',
   'agility_ttest',
   'vertical_jump',
+  // v1.5 — appended in display order; per-sport filtering at render time
+  'sprint_10m',
+  'sprint_30m',
+  'gps_time_trial',
+  'juggling_count',
+  'wall_volley_count',
+  'dribble_cones_count',
+  'spot_shooting_pct',
+  'drag_flick_accuracy',
+  'crossing_accuracy',
+  'bowling_accuracy',
 ];
 
 function formatDate(dateStr: string): string {

@@ -32,11 +32,23 @@ const TEST_TYPE_CONFIG: Record<
   FitnessTestType,
   { label: string; shortLabel: string; unit: string; icon: typeof Timer }
 > = {
+  // v1.0
   yoyo: { label: 'Yo-Yo IR1', shortLabel: 'Yo-Yo', unit: 'm', icon: Timer },
   sprint_20m: { label: '20m Sprint', shortLabel: '20m', unit: 's', icon: Zap },
   sprint_40m: { label: '40m Sprint', shortLabel: '40m', unit: 's', icon: Zap },
   agility_ttest: { label: 'Agility T-Test', shortLabel: 'Agility', unit: 's', icon: Wind },
   vertical_jump: { label: 'Vertical Jump', shortLabel: 'Jump', unit: 'cm', icon: ArrowUp },
+  // v1.5 wedge — placeholder labels; refined by the test screens that ship them
+  sprint_10m: { label: '10m Sprint', shortLabel: '10m', unit: 's', icon: Zap },
+  sprint_30m: { label: '30m Sprint', shortLabel: '30m', unit: 's', icon: Zap },
+  gps_time_trial: { label: 'GPS Time Trial', shortLabel: 'GPS', unit: 's', icon: Timer },
+  juggling_count: { label: 'Juggling Count', shortLabel: 'Juggle', unit: 'reps', icon: Timer },
+  wall_volley_count: { label: 'Wall Volley', shortLabel: 'Volley', unit: 'reps', icon: Timer },
+  dribble_cones_count: { label: 'Dribble Cones', shortLabel: 'Dribble', unit: 'reps', icon: Wind },
+  spot_shooting_pct: { label: 'Spot Shooting', shortLabel: 'Shooting', unit: '%', icon: ArrowUp },
+  drag_flick_accuracy: { label: 'Drag Flick', shortLabel: 'Flick', unit: '%', icon: ArrowUp },
+  crossing_accuracy: { label: 'Crossing', shortLabel: 'Cross', unit: '%', icon: ArrowUp },
+  bowling_accuracy: { label: 'Bowling Line+Length', shortLabel: 'Bowl', unit: '%', icon: ArrowUp },
 };
 
 // ─── Props ──────────────────────────────────────────────────────────────────────
