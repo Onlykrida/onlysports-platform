@@ -33,6 +33,10 @@ yarn-error.*
 supabase/.temp/
 supabase/.branches/
 
+# Claude Code runtime locks (per-session)
+.claude/scheduled_tasks.lock
+.claude/server.json
+
 # macOS
 .DS_Store
 *.pem
