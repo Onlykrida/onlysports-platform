@@ -1,7 +1,15 @@
 import { User, UserRole } from '@/types';
+import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 
-const ANTHROPIC_API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
-const API_URL = 'https://api.anthropic.com/v1/messages';
+// All Claude API traffic goes through the Supabase Edge Function
+// (supabase/functions/claude-proxy/index.ts). The function validates the
+// caller's Supabase JWT, allow-lists models + request fields, enforces a
+// per-user rate limit, and forwards to Anthropic with a server-side key.
+//
+// We no longer ship ANTHROPIC_API_KEY in the client bundle.
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const API_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/claude-proxy` : '';
+
 // Use Opus 4.6 for deep analysis, Sonnet 4.6 for quick tasks
 const MODEL_SMART = 'claude-opus-4-6';
 const MODEL_FAST = 'claude-sonnet-4-6';
@@ -22,8 +30,16 @@ async function callClaude(
   maxTokens: number = MAX_TOKENS,
   options?: { useSmartModel?: boolean; useThinking?: boolean },
 ): Promise<string> {
-  if (!ANTHROPIC_API_KEY || ANTHROPIC_API_KEY === 'PASTE_YOUR_ROTATED_KEY_HERE') {
-    throw new Error('Anthropic API key not configured');
+  if (!isSupabaseConfigured || !API_URL) {
+    throw new Error('AI service not configured (Supabase URL missing)');
+  }
+
+  // Pull the user's JWT — the proxy rejects anonymous calls.
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error('AI requires sign-in. Please log in to use Krida AI features.');
   }
 
   const model = options?.useSmartModel ? MODEL_SMART : MODEL_FAST;
@@ -47,8 +63,7 @@ async function callClaude(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -57,8 +72,14 @@ async function callClaude(
     clearTimeout(timeout);
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Claude API error (${response.status}): ${error}`);
+      const errorBody = await response.text();
+      // The proxy returns structured JSON for known failures
+      // (rate_limited, invalid_model, function_misconfigured, etc.).
+      // Surface those readably in the error message.
+      if (response.status === 429) {
+        throw new Error('AI rate limit reached. Please try again in a few minutes.');
+      }
+      throw new Error(`Claude proxy error (${response.status}): ${errorBody}`);
     }
 
     const data: ClaudeResponse = await response.json();
@@ -300,5 +321,7 @@ Never be demotivating. Frame everything as growth and opportunity.`;
 }
 
 export function isAIConfigured(): boolean {
-  return !!ANTHROPIC_API_KEY && ANTHROPIC_API_KEY !== 'PASTE_YOUR_ROTATED_KEY_HERE';
+  // AI now lives behind the Supabase Edge Function — if Supabase is reachable,
+  // AI is reachable. Per-call sign-in check happens inside callClaude().
+  return !!isSupabaseConfigured && !!API_URL;
 }
