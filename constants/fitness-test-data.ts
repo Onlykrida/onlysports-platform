@@ -311,24 +311,70 @@ export function getAgeGroup(dateOfBirth?: string | Date): AgeGroup {
 // Boundaries: [starter_slower_than, building, rising, strong, elite]
 // Anything faster than elite = unstoppable
 // Times in seconds (lower is better)
-const SPRINT_THRESHOLDS: Record<Gender, Record<AgeGroup, Record<20 | 40, number[]>>> = {
+//
+// 10m and 30m thresholds derived proportionally from the validated 20m/40m
+// baselines using sport-science coefficients (10m ≈ 0.55 × 20m; 30m ≈ the
+// average of 20m and 40m). These should be re-tuned once we have enough
+// OnlyKrida-collected data to calibrate against actual youth populations.
+type SprintDistance = 10 | 20 | 30 | 40;
+const SPRINT_THRESHOLDS: Record<Gender, Record<AgeGroup, Record<SprintDistance, number[]>>> = {
   male: {
-    senior: { 20: [3.8, 3.4, 3.1, 2.8, 2.6], 40: [7.0, 6.5, 6.0, 5.5, 5.0] },
-    u21: { 20: [3.9, 3.5, 3.2, 2.9, 2.7], 40: [7.2, 6.7, 6.2, 5.7, 5.2] },
-    u18: { 20: [4.1, 3.7, 3.4, 3.1, 2.8], 40: [7.5, 7.0, 6.5, 6.0, 5.5] },
-    u16: { 20: [4.4, 4.0, 3.6, 3.3, 3.0], 40: [8.0, 7.5, 7.0, 6.5, 5.8] },
+    senior: {
+      10: [2.1, 1.9, 1.75, 1.6, 1.5],
+      20: [3.8, 3.4, 3.1, 2.8, 2.6],
+      30: [5.4, 4.95, 4.55, 4.15, 3.8],
+      40: [7.0, 6.5, 6.0, 5.5, 5.0],
+    },
+    u21: {
+      10: [2.15, 1.95, 1.8, 1.65, 1.55],
+      20: [3.9, 3.5, 3.2, 2.9, 2.7],
+      30: [5.55, 5.1, 4.7, 4.3, 3.95],
+      40: [7.2, 6.7, 6.2, 5.7, 5.2],
+    },
+    u18: {
+      10: [2.25, 2.05, 1.9, 1.75, 1.6],
+      20: [4.1, 3.7, 3.4, 3.1, 2.8],
+      30: [5.8, 5.35, 4.95, 4.55, 4.15],
+      40: [7.5, 7.0, 6.5, 6.0, 5.5],
+    },
+    u16: {
+      10: [2.4, 2.2, 2.0, 1.85, 1.7],
+      20: [4.4, 4.0, 3.6, 3.3, 3.0],
+      30: [6.2, 5.75, 5.3, 4.9, 4.4],
+      40: [8.0, 7.5, 7.0, 6.5, 5.8],
+    },
   },
   female: {
-    senior: { 20: [4.3, 3.9, 3.6, 3.3, 3.1], 40: [7.5, 7.0, 6.5, 6.0, 5.5] },
-    u21: { 20: [4.4, 4.0, 3.7, 3.4, 3.2], 40: [7.7, 7.2, 6.7, 6.2, 5.7] },
-    u18: { 20: [4.6, 4.2, 3.9, 3.6, 3.3], 40: [8.0, 7.5, 7.0, 6.5, 6.0] },
-    u16: { 20: [4.9, 4.5, 4.1, 3.8, 3.5], 40: [8.5, 8.0, 7.5, 7.0, 6.3] },
+    senior: {
+      10: [2.35, 2.15, 2.0, 1.85, 1.75],
+      20: [4.3, 3.9, 3.6, 3.3, 3.1],
+      30: [5.9, 5.45, 5.05, 4.65, 4.3],
+      40: [7.5, 7.0, 6.5, 6.0, 5.5],
+    },
+    u21: {
+      10: [2.4, 2.2, 2.05, 1.9, 1.8],
+      20: [4.4, 4.0, 3.7, 3.4, 3.2],
+      30: [6.05, 5.6, 5.2, 4.8, 4.45],
+      40: [7.7, 7.2, 6.7, 6.2, 5.7],
+    },
+    u18: {
+      10: [2.5, 2.3, 2.15, 2.0, 1.85],
+      20: [4.6, 4.2, 3.9, 3.6, 3.3],
+      30: [6.3, 5.85, 5.45, 5.05, 4.65],
+      40: [8.0, 7.5, 7.0, 6.5, 6.0],
+    },
+    u16: {
+      10: [2.65, 2.45, 2.25, 2.1, 1.95],
+      20: [4.9, 4.5, 4.1, 3.8, 3.5],
+      30: [6.7, 6.25, 5.8, 5.4, 4.9],
+      40: [8.5, 8.0, 7.5, 7.0, 6.3],
+    },
   },
 };
 
 export function getSprintZone(
   time: number,
-  distance: 20 | 40,
+  distance: SprintDistance,
   gender: Gender = 'male',
   ageGroup: AgeGroup = 'senior',
 ): ZoneDefinition {

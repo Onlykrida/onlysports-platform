@@ -52,11 +52,24 @@ function computeYoYoDerived(level: number, shuttle: number, gender: Gender, ageG
 
 function computeSprintZone(
   time: number,
-  distance: 20 | 40,
+  distance: 10 | 20 | 30 | 40,
   gender: Gender,
   ageGroup: AgeGroup,
 ): FitnessZone {
   return getSprintZone(time, distance, gender, ageGroup).name;
+}
+
+function sprintTestTypeForDistance(distance: 10 | 20 | 30 | 40): FitnessTestType {
+  switch (distance) {
+    case 10:
+      return 'sprint_10m';
+    case 20:
+      return 'sprint_20m';
+    case 30:
+      return 'sprint_30m';
+    case 40:
+      return 'sprint_40m';
+  }
 }
 
 function computeAgilityZone(time: number, gender: Gender, ageGroup: AgeGroup): FitnessZone {
@@ -94,7 +107,7 @@ interface FitnessTestContextValue {
     athlete_id: string;
     test_mode: 'self' | 'manual';
     sprint_time: number;
-    sprint_distance: 20 | 40;
+    sprint_distance: 10 | 20 | 30 | 40;
     gender?: Gender;
     dateOfBirth?: string;
     notes?: string;
@@ -387,7 +400,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       athlete_id: string;
       test_mode: 'self' | 'manual';
       sprint_time: number;
-      sprint_distance: 20 | 40;
+      sprint_distance: 10 | 20 | 30 | 40;
       gender?: Gender;
       dateOfBirth?: string;
       notes?: string;
@@ -401,7 +414,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
         const gender = data.gender ?? userGender;
         const ageGroup = data.dateOfBirth ? getAgeGroup(data.dateOfBirth) : userAgeGroup;
         const zone = computeSprintZone(data.sprint_time, data.sprint_distance, gender, ageGroup);
-        const testType: FitnessTestType = data.sprint_distance === 20 ? 'sprint_20m' : 'sprint_40m';
+        const testType: FitnessTestType = sprintTestTypeForDistance(data.sprint_distance);
 
         const { error } = await supabase.from(TABLE).insert({
           athlete_id: data.athlete_id,

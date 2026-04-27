@@ -12,6 +12,11 @@ import {
   Timer,
   TrendingUp,
   ArrowUp,
+  Camera,
+  Lock,
+  Activity,
+  Target,
+  Crosshair,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { TestType } from '@/constants/fitness-test-data';
@@ -29,10 +34,24 @@ interface SpeedTestCard {
 
 const SPEED_POWER_TESTS: SpeedTestCard[] = [
   {
+    title: 'SPRINT 10M',
+    description: 'Pure acceleration test — first 10 metres only.',
+    testType: 'sprint_10m',
+    icon: <Zap size={22} color={theme.colors.primary} />,
+    accentColor: theme.colors.primary,
+  },
+  {
     title: 'SPRINT 20M',
     description: 'Measure your explosive acceleration over 20 metres.',
     testType: 'sprint_20m',
     icon: <Zap size={22} color={theme.colors.cyan} />,
+    accentColor: theme.colors.cyan,
+  },
+  {
+    title: 'SPRINT 30M',
+    description: 'Acceleration plus transition into top-end speed.',
+    testType: 'sprint_30m',
+    icon: <Timer size={22} color={theme.colors.cyan} />,
     accentColor: theme.colors.cyan,
   },
   {
@@ -55,6 +74,67 @@ const SPEED_POWER_TESTS: SpeedTestCard[] = [
     testType: 'vertical_jump',
     icon: <ArrowUp size={22} color="#BF5AF2" />,
     accentColor: '#BF5AF2',
+  },
+];
+
+// Sport-specific tests requiring camera/CV pipelines or GPS — marked as
+// coming-soon for v1.5. Schema (test_type CHECK + FitnessTestType union)
+// already supports these so save paths can land later without migration.
+interface ComingSoonCard {
+  title: string;
+  description: string;
+  sportTag: string;
+  icon: React.ReactNode;
+}
+
+const COMING_SOON_TESTS: ComingSoonCard[] = [
+  {
+    title: 'GPS TIME TRIAL',
+    description: 'Cricket 2km, athletics Cooper, badminton AIR-BT pace.',
+    sportTag: 'Multiple sports',
+    icon: <Activity size={20} color={theme.colors.textSecondary} />,
+  },
+  {
+    title: 'JUGGLING COUNTER',
+    description: 'Camera-tracked ball control reps in 60 seconds.',
+    sportTag: 'Football',
+    icon: <Camera size={20} color={theme.colors.textSecondary} />,
+  },
+  {
+    title: 'WALL VOLLEY',
+    description: 'Continuous wall-volley count — racket sport agility.',
+    sportTag: 'Badminton · Tennis',
+    icon: <Camera size={20} color={theme.colors.textSecondary} />,
+  },
+  {
+    title: 'DRIBBLE CONES',
+    description: 'Slalom timed dribble through cones with CV verification.',
+    sportTag: 'Basketball · Football',
+    icon: <Camera size={20} color={theme.colors.textSecondary} />,
+  },
+  {
+    title: 'SPOT SHOOTING %',
+    description: 'Shots-made vs attempted across five spots.',
+    sportTag: 'Basketball',
+    icon: <Crosshair size={20} color={theme.colors.textSecondary} />,
+  },
+  {
+    title: 'DRAG FLICK ACCURACY',
+    description: 'Penalty-corner drag flicks — accuracy & power.',
+    sportTag: 'Hockey',
+    icon: <Target size={20} color={theme.colors.textSecondary} />,
+  },
+  {
+    title: 'CROSSING ACCURACY',
+    description: 'Crosses landing in defined target zones.',
+    sportTag: 'Football',
+    icon: <Target size={20} color={theme.colors.textSecondary} />,
+  },
+  {
+    title: 'BOWLING LINE + LENGTH',
+    description: 'Bowling accuracy across line + length targets.',
+    sportTag: 'Cricket',
+    icon: <Target size={20} color={theme.colors.textSecondary} />,
   },
 ];
 
@@ -182,6 +262,45 @@ export default function FitnessTestScreen() {
               </View>
               <ChevronRight size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
+          ))}
+
+          {/* Section: Sport-Specific (Coming Soon) — camera/CV + GPS pipelines */}
+          <View style={[styles.sectionHeader, { marginTop: theme.spacing.lg }]}>
+            <View style={[styles.sectionDot, { backgroundColor: theme.colors.textMuted }]} />
+            <Text style={styles.sectionTitle}>SPORT-SPECIFIC</Text>
+            <View style={styles.comingSoonPill}>
+              <Text style={styles.comingSoonPillText}>SOON</Text>
+            </View>
+          </View>
+          <Text style={styles.comingSoonIntro}>
+            These need camera or GPS verification — we’re shipping them sport-by-sport over the next
+            two waves. Tell us which one you want first.
+          </Text>
+
+          {COMING_SOON_TESTS.map((test) => (
+            <View key={test.title} style={[styles.testCard, styles.testCardLocked]}>
+              <View style={styles.testCardLeft}>
+                <View
+                  style={[styles.iconBadge, { backgroundColor: theme.colors.textMuted + '20' }]}
+                >
+                  {test.icon}
+                </View>
+                <View style={styles.testCardText}>
+                  <View style={styles.lockedTitleRow}>
+                    <Text style={styles.testCardTitleLocked} numberOfLines={1} ellipsizeMode="tail">
+                      {test.title}
+                    </Text>
+                    <Text style={styles.sportTag} numberOfLines={1} ellipsizeMode="tail">
+                      {test.sportTag}
+                    </Text>
+                  </View>
+                  <Text style={styles.testCardDescription} numberOfLines={2} ellipsizeMode="tail">
+                    {test.description}
+                  </Text>
+                </View>
+              </View>
+              <Lock size={16} color={theme.colors.textMuted} />
+            </View>
           ))}
 
           {/* Info Section */}
@@ -345,6 +464,47 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     lineHeight: 18,
+  },
+  testCardLocked: {
+    opacity: 0.7,
+  },
+  testCardTitleLocked: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    flex: 1,
+  },
+  lockedTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  sportTag: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    fontWeight: theme.fontWeight.semibold,
+    letterSpacing: 0.5,
+  },
+  comingSoonPill: {
+    backgroundColor: theme.colors.textMuted + '30',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: theme.spacing.xs,
+  },
+  comingSoonPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: theme.colors.textSecondary,
+    letterSpacing: 1,
+  },
+  comingSoonIntro: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: theme.spacing.xs,
   },
   infoSection: {
     backgroundColor: '#1a1a1a',

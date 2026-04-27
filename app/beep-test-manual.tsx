@@ -69,13 +69,24 @@ export default function FitnessTestManualScreen() {
   const params = useLocalSearchParams<{ testType?: string }>();
   const testType: TestType = [
     'yoyo',
+    'sprint_10m',
     'sprint_20m',
+    'sprint_30m',
     'sprint_40m',
     'agility_ttest',
     'vertical_jump',
   ].includes(params.testType ?? '')
     ? (params.testType as TestType)
     : 'yoyo';
+
+  // Helper: which sprint distance does this test type represent?
+  const sprintDistance = (() => {
+    if (testType === 'sprint_10m') return 10 as const;
+    if (testType === 'sprint_20m') return 20 as const;
+    if (testType === 'sprint_30m') return 30 as const;
+    if (testType === 'sprint_40m') return 40 as const;
+    return null;
+  })();
 
   const { user: currentUser } = useAuth();
   const { saveYoYoResult, saveSprintResult, saveAgilityResult, saveJumpResult } = useFitnessTest();
@@ -117,15 +128,14 @@ export default function FitnessTestManualScreen() {
 
   // ── Sprint derived ──────────────────────────────────
   const sprintResults = useMemo(() => {
-    if (testType !== 'sprint_20m' && testType !== 'sprint_40m') return null;
+    if (sprintDistance === null) return null;
     const time = parseFloat(timeInput);
     if (isNaN(time) || time <= 0) return null;
-    const sprintDist: 20 | 40 = testType === 'sprint_20m' ? 20 : 40;
-    const zone = getSprintZone(time, sprintDist, gender, ageGroup);
-    const speed = Math.round((sprintDist / time) * 3.6 * 100) / 100; // m/s -> km/h
+    const zone = getSprintZone(time, sprintDistance, gender, ageGroup);
+    const speed = Math.round((sprintDistance / time) * 3.6 * 100) / 100; // m/s -> km/h
     const tips = SPRINT_TIPS[zone.name];
     return { time, zone, speed, tips };
-  }, [testType, timeInput, gender, ageGroup]);
+  }, [sprintDistance, timeInput, gender, ageGroup]);
 
   // ── Agility derived ─────────────────────────────────
   const agilityResults = useMemo(() => {
@@ -214,13 +224,13 @@ export default function FitnessTestManualScreen() {
           notes: notes.trim() || undefined,
           verification_tier: 'self_reported' as const,
         });
-      } else if (testType === 'sprint_20m' || testType === 'sprint_40m') {
+      } else if (sprintDistance !== null) {
         const time = parseFloat(timeInput);
         result = await saveSprintResult({
           athlete_id: currentUser.id,
           test_mode: 'manual',
           sprint_time: time,
-          sprint_distance: testType === 'sprint_20m' ? 20 : 40,
+          sprint_distance: sprintDistance,
           gender,
           dateOfBirth: (currentUser as any)?.date_of_birth,
           notes: notes.trim() || undefined,
@@ -373,9 +383,7 @@ export default function FitnessTestManualScreen() {
             )}
 
             {/* ── Sprint / Agility: Time input ── */}
-            {(testType === 'sprint_20m' ||
-              testType === 'sprint_40m' ||
-              testType === 'agility_ttest') && (
+            {(sprintDistance !== null || testType === 'agility_ttest') && (
               <View style={styles.timeInputContainer}>
                 <Text style={styles.pickerLabel} numberOfLines={1}>
                   Time (seconds)
@@ -391,17 +399,25 @@ export default function FitnessTestManualScreen() {
                     if (parts[1] && parts[1].length > 2) return;
                     setTimeInput(cleaned);
                   }}
-                  placeholder={testType === 'agility_ttest' ? 'e.g. 10.25' : 'e.g. 3.45'}
+                  placeholder={
+                    testType === 'agility_ttest'
+                      ? 'e.g. 10.25'
+                      : sprintDistance === 10
+                        ? 'e.g. 1.85'
+                        : sprintDistance === 20
+                          ? 'e.g. 3.45'
+                          : sprintDistance === 30
+                            ? 'e.g. 4.65'
+                            : 'e.g. 5.50'
+                  }
                   placeholderTextColor={theme.colors.textMuted}
                   keyboardType="decimal-pad"
                   returnKeyType="done"
                 />
                 <Text style={styles.pickerHint} numberOfLines={1} ellipsizeMode="tail">
-                  {testType === 'sprint_20m'
-                    ? 'Enter your 20m sprint time to 2 decimal places'
-                    : testType === 'sprint_40m'
-                      ? 'Enter your 40m sprint time to 2 decimal places'
-                      : 'Enter your T-Test completion time to 2 decimal places'}
+                  {sprintDistance !== null
+                    ? `Enter your ${sprintDistance}m sprint time to 2 decimal places`
+                    : 'Enter your T-Test completion time to 2 decimal places'}
                 </Text>
               </View>
             )}

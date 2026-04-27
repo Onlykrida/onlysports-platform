@@ -202,9 +202,15 @@ export default function BeepTestResultsScreen() {
       return { distance, vo2max, peakSpeed, zone, nextZoneTarget, tips };
     }
 
-    if (testType === 'sprint_20m' || testType === 'sprint_40m') {
-      const dist = testType === 'sprint_20m' ? 20 : 40;
-      const zone = getSprintZone(sprintTime, dist as 20 | 40, gender, ageGroup);
+    const sprintDistMap: Record<string, 10 | 20 | 30 | 40 | undefined> = {
+      sprint_10m: 10,
+      sprint_20m: 20,
+      sprint_30m: 30,
+      sprint_40m: 40,
+    };
+    const dist = sprintDistMap[testType];
+    if (dist) {
+      const zone = getSprintZone(sprintTime, dist, gender, ageGroup);
       const speed = sprintTime > 0 ? Math.round((dist / sprintTime) * 3.6 * 10) / 10 : 0;
       const tips = SPRINT_TIPS[zone.name] ?? SPRINT_TIPS.starter;
       return { zone, tips, speed };
@@ -260,7 +266,12 @@ export default function BeepTestResultsScreen() {
           sensor_data: sensorDataParam,
           video_url: videoUrl ?? undefined,
         });
-      } else if (testType === 'sprint_20m' || testType === 'sprint_40m') {
+      } else if (
+        testType === 'sprint_10m' ||
+        testType === 'sprint_20m' ||
+        testType === 'sprint_30m' ||
+        testType === 'sprint_40m'
+      ) {
         result = await saveSprintResult({
           athlete_id: currentUser.id,
           test_mode: 'self',
@@ -389,7 +400,13 @@ export default function BeepTestResultsScreen() {
 
   const renderSprintStats = () => {
     const { speed } = computedResults as any;
-    const dist = testType === 'sprint_20m' ? 20 : 40;
+    const distLookup: Record<string, number> = {
+      sprint_10m: 10,
+      sprint_20m: 20,
+      sprint_30m: 30,
+      sprint_40m: 40,
+    };
+    const dist = distLookup[testType] ?? 20;
     return (
       <View style={styles.statsGrid}>
         <StatCard
@@ -449,7 +466,9 @@ export default function BeepTestResultsScreen() {
     switch (testType) {
       case 'yoyo':
         return renderYoYoStats();
+      case 'sprint_10m':
       case 'sprint_20m':
+      case 'sprint_30m':
       case 'sprint_40m':
         return renderSprintStats();
       case 'agility_ttest':
@@ -469,7 +488,9 @@ export default function BeepTestResultsScreen() {
             Level {soloLevel}.{soloShuttle}
           </Text>
         );
+      case 'sprint_10m':
       case 'sprint_20m':
+      case 'sprint_30m':
       case 'sprint_40m':
         return <Text style={styles.resultLevel}>{sprintTime.toFixed(2)}s</Text>;
       case 'agility_ttest':
