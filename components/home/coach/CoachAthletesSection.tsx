@@ -20,8 +20,14 @@ interface CoachAthletesSectionProps {
   onUserPress: (userId: string) => void;
 }
 
-const AthleteChip: React.FC<{ item: User; onPress: (userId: string) => void }> = React.memo(
-  ({ item, onPress }) => (
+const AthleteChip = React.memo(function AthleteChip({
+  item,
+  onPress,
+}: {
+  item: User;
+  onPress: (userId: string) => void;
+}) {
+  return (
     <TouchableOpacity
       style={styles.athleteChip}
       onPress={() => onPress(item.id)}
@@ -37,8 +43,8 @@ const AthleteChip: React.FC<{ item: User; onPress: (userId: string) => void }> =
         </Text>
       </View>
     </TouchableOpacity>
-  ),
-);
+  );
+});
 
 const CoachAthletesSection: React.FC<CoachAthletesSectionProps> = ({
   athletes,

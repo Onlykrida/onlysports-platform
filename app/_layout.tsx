@@ -32,27 +32,41 @@ function PushNotificationRegistrar() {
 }
 
 // Grouped providers to reduce nesting depth and isolate re-render domains
-const SocialProviders = memo(({ children }: { children: React.ReactNode }) => (
-  <NotificationProvider>
-    <FollowProvider>{children}</FollowProvider>
-  </NotificationProvider>
-));
+const SocialProviders = memo(function SocialProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <NotificationProvider>
+      <FollowProvider>{children}</FollowProvider>
+    </NotificationProvider>
+  );
+});
 
-const CommunicationProviders = memo(({ children }: { children: React.ReactNode }) => (
-  <MessagesProvider>
-    <GroupsProvider>{children}</GroupsProvider>
-  </MessagesProvider>
-));
+const CommunicationProviders = memo(function CommunicationProviders({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <MessagesProvider>
+      <GroupsProvider>{children}</GroupsProvider>
+    </MessagesProvider>
+  );
+});
 
-const ContentProviders = memo(({ children }: { children: React.ReactNode }) => (
-  <UsersProvider>
-    <PostsProvider>
-      <ScoutingProvider>
-        <FitnessTestProvider>{children}</FitnessTestProvider>
-      </ScoutingProvider>
-    </PostsProvider>
-  </UsersProvider>
-));
+const ContentProviders = memo(function ContentProviders({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <UsersProvider>
+      <PostsProvider>
+        <ScoutingProvider>
+          <FitnessTestProvider>{children}</FitnessTestProvider>
+        </ScoutingProvider>
+      </PostsProvider>
+    </UsersProvider>
+  );
+});
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
