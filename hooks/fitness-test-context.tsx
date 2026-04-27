@@ -168,14 +168,28 @@ interface FitnessTestContextValue {
   getHistoryByType: (testType: FitnessTestType) => FitnessTestResult[];
 
   // Verification
-  requestCoachVerification: (testResultId: string, coachId: string) => Promise<{ error?: string }>;
+  requestCoachVerification: (
+    testResultId: string,
+    coachId: string,
+    athleteNotes?: string,
+  ) => Promise<{ error?: string }>;
   approveVerification: (
     requestId: string,
     testResultId: string,
     mode: 'remote_video' | 'in_person',
     notes?: string,
   ) => Promise<{ error?: string }>;
-  rejectVerification: (requestId: string) => Promise<{ error?: string }>;
+  rejectVerification: (
+    requestId: string,
+    reason?:
+      | 'not_present'
+      | 'video_unclear'
+      | 'video_missing'
+      | 'wrong_athlete'
+      | 'incomplete_test'
+      | 'other',
+    notes?: string,
+  ) => Promise<{ error?: string }>;
 
   // Refresh
   refreshHistory: () => Promise<void>;
@@ -641,19 +655,29 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
   // ── Verification helpers ────────────────────────────
 
   const requestCoachVerification = useCallback(
-    async (testResultId: string, coachId: string): Promise<{ error?: string }> => {
+    async (
+      testResultId: string,
+      coachId: string,
+      athleteNotes?: string,
+    ): Promise<{ error?: string }> => {
       if (!currentUser) return { error: 'Not authenticated' };
       try {
         // We need the inserted request id to link the notification deep-link
         // back to /verify-result, so chain .select('id').single().
+        // athlete_notes column is added by supabase-verification-notes.sql;
+        // sending it before that migration runs would be silently dropped by
+        // PostgREST (unknown column → 400). To stay safe pre-migration, we
+        // omit the field when it's empty.
+        const insertPayload: Record<string, any> = {
+          test_result_id: testResultId,
+          athlete_id: currentUser.id,
+          coach_id: coachId,
+          status: 'pending',
+        };
+        if (athleteNotes) insertPayload.athlete_notes = athleteNotes;
         const { data: inserted, error } = await supabase
           .from('verification_requests')
-          .insert({
-            test_result_id: testResultId,
-            athlete_id: currentUser.id,
-            coach_id: coachId,
-            status: 'pending',
-          })
+          .insert(insertPayload)
           .select('id')
           .single();
         if (error) return { error: error.message };
@@ -781,8 +805,20 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
   // Reject a verification request. Centralized here so the notification fires
   // alongside the status update — verify-result.tsx used to do the update
   // inline, which meant athletes never got notified about rejections.
+  // The reason becomes part of the athlete's notification copy so they know
+  // what to fix and retry instead of giving up.
   const rejectVerification = useCallback(
-    async (requestId: string): Promise<{ error?: string }> => {
+    async (
+      requestId: string,
+      reason?:
+        | 'not_present'
+        | 'video_unclear'
+        | 'video_missing'
+        | 'wrong_athlete'
+        | 'incomplete_test'
+        | 'other',
+      notes?: string,
+    ): Promise<{ error?: string }> => {
       if (!currentUser) return { error: 'Not authenticated' };
       try {
         // Get athlete_id for the notification
@@ -794,24 +830,52 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
         if (fetchError) return { error: fetchError.message };
         const athleteId = (requestRow as any)?.athlete_id as string | undefined;
 
+        const updatePayload: Record<string, any> = {
+          status: 'rejected',
+          resolved_at: new Date().toISOString(),
+        };
+        if (reason) updatePayload.reject_reason = reason;
+        if (notes) updatePayload.coach_notes = notes;
+
         const { error } = await supabase
           .from('verification_requests')
-          .update({ status: 'rejected', resolved_at: new Date().toISOString() })
+          .update(updatePayload)
           .eq('id', requestId);
         if (error) return { error: error.message };
 
         if (athleteId) {
+          // Map reason to actionable copy. The athlete should know what to
+          // try next — re-record video, find another verifier, etc.
+          const reasonCopy: Record<string, string> = {
+            not_present: "wasn't present at the test. Find a coach who was, or upload video proof.",
+            video_unclear:
+              "couldn't verify from the video — too blurry or angle didn't show the test. Try recording in good light with the full setup visible.",
+            video_missing:
+              "needs video proof since they weren't present. Upload a clear recording and request again.",
+            wrong_athlete:
+              "couldn't confirm the athlete in the video. Make sure your face is visible at the start.",
+            incomplete_test:
+              'flagged the test as incomplete. Re-run the full protocol and submit a fresh result.',
+            other: notes ? `declined with this note: "${notes}"` : 'declined the verification.',
+          };
+          const message = `${currentUser.name} ${
+            reason
+              ? (reasonCopy[reason] ?? 'declined this verification.')
+              : 'declined this verification.'
+          }`;
+
           await supabase
             .from('notifications')
             .insert({
               user_id: athleteId,
               type: 'verification_rejected',
               title: 'Verification declined',
-              message: `${currentUser.name} couldn't verify this result — they weren't present and there's no video proof. Try uploading a video or finding another verifier.`,
+              message,
               data: {
                 request_id: requestId,
                 verifier_id: currentUser.id,
                 verifier_name: currentUser.name,
+                reason: reason ?? null,
               },
               read: false,
             })

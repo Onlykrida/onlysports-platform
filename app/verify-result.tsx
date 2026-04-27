@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
@@ -42,6 +44,47 @@ interface FullTestResult {
   test_date: string;
 }
 
+type RejectReason =
+  | 'not_present'
+  | 'video_unclear'
+  | 'video_missing'
+  | 'wrong_athlete'
+  | 'incomplete_test'
+  | 'other';
+
+const REJECT_REASONS: Array<{ key: RejectReason; label: string; subtitle: string }> = [
+  {
+    key: 'not_present',
+    label: "I wasn't there",
+    subtitle: 'No physical attendance, no video either',
+  },
+  {
+    key: 'video_unclear',
+    label: 'Video unclear',
+    subtitle: 'Too blurry, bad angle, or test not visible',
+  },
+  {
+    key: 'video_missing',
+    label: 'No video uploaded',
+    subtitle: 'Athlete needs to upload proof first',
+  },
+  {
+    key: 'wrong_athlete',
+    label: "Can't confirm it's the athlete",
+    subtitle: "Face isn't visible at the start",
+  },
+  {
+    key: 'incomplete_test',
+    label: 'Test looks incomplete',
+    subtitle: 'Protocol not fully followed',
+  },
+  {
+    key: 'other',
+    label: 'Other reason',
+    subtitle: 'Add a free-text note below',
+  },
+];
+
 export default function VerifyResultScreen() {
   const { requestId, testResultId, athleteName, athleteAvatar } = useLocalSearchParams<{
     requestId: string;
@@ -52,12 +95,18 @@ export default function VerifyResultScreen() {
 
   const { approveVerification, rejectVerification } = useFitnessTest();
   const [fullResult, setFullResult] = useState<FullTestResult | null>(null);
+  const [athleteNotes, setAthleteNotesState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pickedMode, setPickedMode] = useState<'remote_video' | 'in_person' | null>(null);
+  const [showRejectPicker, setShowRejectPicker] = useState(false);
+  const [pickedReason, setPickedReason] = useState<RejectReason | null>(null);
+  const [otherReasonText, setOtherReasonText] = useState('');
 
   // Fetch the full row — old version only had whatever was passed in params.
   // Need video_url + every metric so the verifier sees the actual evidence.
+  // Also pulls athlete_notes from the verification_requests row so the
+  // verifier can read context the athlete attached to the request.
   useEffect(() => {
     const load = async () => {
       if (!isSupabaseConfigured || !testResultId) {
@@ -65,18 +114,33 @@ export default function VerifyResultScreen() {
         return;
       }
       try {
-        const { data, error } = await supabase
-          .from('fitness_test_results')
-          .select(
-            'id, test_type, test_mode, zone, level, shuttle, sprint_time, agility_time, jump_height, vo2max, total_distance, video_url, sensor_data, test_date',
-          )
-          .eq('id', testResultId)
-          .maybeSingle();
-        if (error) {
-          if (__DEV__) console.warn('VerifyResult: fetch error', error);
+        const [resultResponse, requestResponse] = await Promise.all([
+          supabase
+            .from('fitness_test_results')
+            .select(
+              'id, test_type, test_mode, zone, level, shuttle, sprint_time, agility_time, jump_height, vo2max, total_distance, video_url, sensor_data, test_date',
+            )
+            .eq('id', testResultId)
+            .maybeSingle(),
+          requestId
+            ? supabase
+                .from('verification_requests')
+                .select('athlete_notes')
+                .eq('id', requestId)
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
+        ]);
+
+        if (resultResponse.error) {
+          if (__DEV__) console.warn('VerifyResult: fetch error', resultResponse.error);
           setFullResult(null);
         } else {
-          setFullResult(data as any);
+          setFullResult(resultResponse.data as any);
+        }
+        // athlete_notes is pre-migration-safe: PostgREST returns
+        // PGRST204 (column not found) gracefully here. Just ignore on error.
+        if (!requestResponse.error && (requestResponse.data as any)?.athlete_notes) {
+          setAthleteNotesState((requestResponse.data as any).athlete_notes);
         }
       } catch (e) {
         if (__DEV__) console.warn('VerifyResult: load exception', e);
@@ -85,7 +149,7 @@ export default function VerifyResultScreen() {
       }
     };
     void load();
-  }, [testResultId]);
+  }, [testResultId, requestId]);
 
   const formatValue = useCallback((r: FullTestResult | null): string => {
     if (!r) return '-';
@@ -115,21 +179,27 @@ export default function VerifyResultScreen() {
     ]);
   };
 
-  const handleReject = async () => {
-    if (!requestId) return;
+  // Step 1 of reject: open the reason picker. We don't auto-reject without a
+  // reason — the athlete needs categorical feedback to know what to fix.
+  const handleReject = () => {
+    setShowRejectPicker(true);
+  };
+
+  // Step 2 of reject: user picked a reason (and optional free text); send.
+  const submitReject = async () => {
+    if (!requestId || !pickedReason) return;
     setIsProcessing(true);
-    // Goes through the context method so the athlete gets a notification
-    // alongside the status flip — used to be an inline supabase update,
-    // which silently dropped the notification path.
-    const { error } = await rejectVerification(requestId);
+    const notes = pickedReason === 'other' ? otherReasonText.trim() || undefined : undefined;
+    const { error } = await rejectVerification(requestId, pickedReason, notes);
     setIsProcessing(false);
     if (error) {
       Alert.alert('Error', error);
-    } else {
-      Alert.alert('Declined', 'Verification request declined.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      return;
     }
+    setShowRejectPicker(false);
+    Alert.alert('Declined', 'Verification request declined. The athlete has been notified.', [
+      { text: 'OK', onPress: () => router.back() },
+    ]);
   };
 
   const hasVideo = !!fullResult?.video_url;
@@ -182,6 +252,16 @@ export default function VerifyResultScreen() {
                 <Text style={styles.noVideoText}>
                   Athlete didn’t upload video proof. Verify only if you were physically present.
                 </Text>
+              </View>
+            )}
+
+            {/* Athlete-attached note — context the athlete added when sending
+                the request. Helps the verifier understand circumstances
+                without a separate DM thread. */}
+            {athleteNotes && (
+              <View style={styles.notesCard}>
+                <Text style={styles.notesLabel}>NOTE FROM ATHLETE</Text>
+                <Text style={styles.notesBody}>{athleteNotes}</Text>
               </View>
             )}
 
@@ -285,6 +365,81 @@ export default function VerifyResultScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Reject reason picker modal — categorical reason becomes part of
+          the athlete notification copy so they know what to fix and retry */}
+      <Modal
+        visible={showRejectPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowRejectPicker(false)}
+      >
+        <SafeAreaView style={styles.container}>
+          <View style={styles.pickerHeader}>
+            <Text style={styles.pickerTitle}>Why are you declining?</Text>
+            <TouchableOpacity
+              onPress={() => setShowRejectPicker(false)}
+              style={styles.headerButton}
+              hitSlop={8}
+            >
+              <Text style={styles.pickerCancel}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 20, gap: 10 }}>
+            <Text style={styles.pickerSubtitle}>
+              The athlete will see this in their notification. Specific feedback helps them retry
+              with a better recording or find the right verifier.
+            </Text>
+            {REJECT_REASONS.map((r) => (
+              <TouchableOpacity
+                key={r.key}
+                style={[styles.reasonRow, pickedReason === r.key && styles.reasonRowActive]}
+                onPress={() => setPickedReason(r.key)}
+                activeOpacity={0.7}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[styles.reasonLabel, pickedReason === r.key && styles.reasonLabelActive]}
+                  >
+                    {r.label}
+                  </Text>
+                  <Text style={styles.reasonSubtitle}>{r.subtitle}</Text>
+                </View>
+                {pickedReason === r.key && <CheckCircle size={20} color={theme.colors.primary} />}
+              </TouchableOpacity>
+            ))}
+            {pickedReason === 'other' && (
+              <TextInput
+                style={styles.otherInput}
+                placeholder="Tell the athlete what was wrong"
+                placeholderTextColor={theme.colors.textMuted}
+                value={otherReasonText}
+                onChangeText={setOtherReasonText}
+                multiline
+                maxLength={300}
+                returnKeyType="done"
+                blurOnSubmit
+              />
+            )}
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                styles.rejectBtnSolid,
+                (!pickedReason || isProcessing) && styles.actionBtnDisabled,
+              ]}
+              onPress={submitReject}
+              disabled={!pickedReason || isProcessing}
+              activeOpacity={0.85}
+            >
+              {isProcessing ? (
+                <ActivityIndicator color={theme.colors.red} />
+              ) : (
+                <Text style={styles.rejectBtnSolidText}>Send decline</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -412,4 +567,101 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.cardBorder,
   },
   rejectBtnText: { color: theme.colors.red, fontSize: 15, fontWeight: '600' },
+
+  // Athlete-attached note card
+  notesCard: {
+    backgroundColor: theme.colors.cyan + '15',
+    borderRadius: 12,
+    padding: 14,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.cyan + '33',
+  },
+  notesLabel: {
+    fontSize: 10,
+    color: theme.colors.cyan,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+  },
+  notesBody: {
+    fontSize: 13,
+    color: theme.colors.text,
+    lineHeight: 19,
+  },
+
+  // Reject reason picker modal
+  pickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.cardBorder,
+  },
+  pickerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  pickerCancel: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: '600',
+  },
+  pickerSubtitle: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  reasonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    backgroundColor: theme.colors.cardBg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  reasonRowActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '15',
+  },
+  reasonLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  reasonLabelActive: {
+    color: theme.colors.primary,
+  },
+  reasonSubtitle: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  otherInput: {
+    backgroundColor: theme.colors.cardBg,
+    borderRadius: 12,
+    padding: 12,
+    minHeight: 80,
+    fontSize: 13,
+    color: theme.colors.text,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: theme.colors.cardBorder,
+  },
+  rejectBtnSolid: {
+    backgroundColor: theme.colors.red + '15',
+    borderWidth: 1,
+    borderColor: theme.colors.red,
+    marginTop: 8,
+  },
+  rejectBtnSolidText: {
+    color: theme.colors.red,
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });

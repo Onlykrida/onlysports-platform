@@ -44,6 +44,7 @@ export default function RequestVerificationModal({
 
   const [query, setQuery] = useState('');
   const [selectedCoachId, setSelectedCoachId] = useState<string | null>(null);
+  const [athleteNotes, setAthleteNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,7 +80,11 @@ export default function RequestVerificationModal({
     if (!selectedCoach) return;
     setIsSubmitting(true);
     setError(null);
-    const result = await requestCoachVerification(testResultId, selectedCoach.id);
+    const result = await requestCoachVerification(
+      testResultId,
+      selectedCoach.id,
+      athleteNotes.trim() || undefined,
+    );
     setIsSubmitting(false);
     if (result.error) {
       setError(result.error);
@@ -89,6 +94,7 @@ export default function RequestVerificationModal({
     // Reset for next time
     setSelectedCoachId(null);
     setQuery('');
+    setAthleteNotes('');
   }, [selectedCoach, requestCoachVerification, testResultId, onSubmitted]);
 
   const renderCoach = useCallback(
@@ -195,6 +201,24 @@ export default function RequestVerificationModal({
         )}
 
         <View style={styles.footer}>
+          {/* Optional context note — only shown after a verifier is selected,
+              so the user is committed enough to bother adding context. */}
+          {selectedCoach && (
+            <View style={styles.notesField}>
+              <Text style={styles.notesLabel}>Add a note (optional)</Text>
+              <TextInput
+                style={styles.notesInput}
+                placeholder="e.g. Tested at LB Nagar ground Sunday morning"
+                placeholderTextColor={theme.colors.textMuted}
+                value={athleteNotes}
+                onChangeText={setAthleteNotes}
+                multiline
+                maxLength={300}
+                returnKeyType="done"
+                blurOnSubmit
+              />
+            </View>
+          )}
           <TouchableOpacity
             style={[
               styles.submitButton,
@@ -366,5 +390,25 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
     textAlign: 'center',
+  },
+  notesField: {
+    gap: 6,
+  },
+  notesLabel: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textSecondary,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  notesInput: {
+    backgroundColor: theme.colors.cardBg,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.sm,
+    minHeight: 60,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
+    textAlignVertical: 'top',
+    ...theme.dashBorder,
   },
 });
