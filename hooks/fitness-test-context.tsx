@@ -101,7 +101,7 @@ interface FitnessTestContextValue {
     verification_tier?: VerificationTier;
     video_url?: string;
     sensor_data?: Record<string, any>;
-  }) => Promise<{ error?: string }>;
+  }) => Promise<{ error?: string; id?: string }>;
 
   saveSprintResult: (data: {
     athlete_id: string;
@@ -114,7 +114,7 @@ interface FitnessTestContextValue {
     verification_tier?: VerificationTier;
     video_url?: string;
     sensor_data?: Record<string, any>;
-  }) => Promise<{ error?: string }>;
+  }) => Promise<{ error?: string; id?: string }>;
 
   saveAgilityResult: (data: {
     athlete_id: string;
@@ -126,7 +126,7 @@ interface FitnessTestContextValue {
     verification_tier?: VerificationTier;
     video_url?: string;
     sensor_data?: Record<string, any>;
-  }) => Promise<{ error?: string }>;
+  }) => Promise<{ error?: string; id?: string }>;
 
   saveJumpResult: (data: {
     athlete_id: string;
@@ -138,7 +138,7 @@ interface FitnessTestContextValue {
     verification_tier?: VerificationTier;
     video_url?: string;
     sensor_data?: Record<string, any>;
-  }) => Promise<{ error?: string }>;
+  }) => Promise<{ error?: string; id?: string }>;
 
   saveBatchYoYoResults: (
     results: Array<{
@@ -349,36 +349,40 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       verification_tier?: VerificationTier;
       video_url?: string;
       sensor_data?: Record<string, any>;
-    }): Promise<{ error?: string }> => {
+    }): Promise<{ error?: string; id?: string }> => {
       if (!isSupabaseConfigured) return { error: 'Database not configured' };
       try {
         const gender = data.gender ?? userGender;
         const ageGroup = data.dateOfBirth ? getAgeGroup(data.dateOfBirth) : userAgeGroup;
         const derived = computeYoYoDerived(data.level, data.shuttle, gender, ageGroup);
 
-        const { error } = await supabase.from(TABLE).insert({
-          athlete_id: data.athlete_id,
-          conducted_by: data.conducted_by ?? null,
-          test_type: 'yoyo' as const,
-          test_mode: data.test_mode,
-          level: data.level,
-          shuttle: data.shuttle,
-          vo2max: derived.vo2max,
-          total_distance: derived.total_distance,
-          total_shuttles: derived.total_shuttles,
-          peak_speed: derived.peak_speed,
-          zone: derived.zone,
-          notes: data.notes ?? null,
-          verification_tier: deriveVerificationTier({
-            explicit: data.verification_tier,
+        const { data: inserted, error } = await supabase
+          .from(TABLE)
+          .insert({
+            athlete_id: data.athlete_id,
+            conducted_by: data.conducted_by ?? null,
+            test_type: 'yoyo' as const,
             test_mode: data.test_mode,
-            has_sensor_data: !!data.sensor_data,
-          }),
-          video_url: data.video_url || null,
-          sensor_data: data.sensor_data || null,
-          verified_by: data.conducted_by || null,
-          verified_at: data.conducted_by ? new Date().toISOString() : null,
-        });
+            level: data.level,
+            shuttle: data.shuttle,
+            vo2max: derived.vo2max,
+            total_distance: derived.total_distance,
+            total_shuttles: derived.total_shuttles,
+            peak_speed: derived.peak_speed,
+            zone: derived.zone,
+            notes: data.notes ?? null,
+            verification_tier: deriveVerificationTier({
+              explicit: data.verification_tier,
+              test_mode: data.test_mode,
+              has_sensor_data: !!data.sensor_data,
+            }),
+            video_url: data.video_url || null,
+            sensor_data: data.sensor_data || null,
+            verified_by: data.conducted_by || null,
+            verified_at: data.conducted_by ? new Date().toISOString() : null,
+          })
+          .select('id')
+          .single();
 
         if (error) {
           if (isTableMissing(error)) return { error: 'Fitness test table not set up yet' };
@@ -386,7 +390,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
           return { error: error.message };
         }
         await refreshAfterSave(data.athlete_id);
-        return {};
+        return { id: (inserted as any)?.id };
       } catch (e) {
         if (__DEV__) console.log('FitnessTest: saveYoYo exception', e);
         return { error: 'Failed to save Yo-Yo result' };
@@ -408,7 +412,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       video_url?: string;
       sensor_data?: Record<string, any>;
       conducted_by?: string;
-    }): Promise<{ error?: string }> => {
+    }): Promise<{ error?: string; id?: string }> => {
       if (!isSupabaseConfigured) return { error: 'Database not configured' };
       try {
         const gender = data.gender ?? userGender;
@@ -416,31 +420,35 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
         const zone = computeSprintZone(data.sprint_time, data.sprint_distance, gender, ageGroup);
         const testType: FitnessTestType = sprintTestTypeForDistance(data.sprint_distance);
 
-        const { error } = await supabase.from(TABLE).insert({
-          athlete_id: data.athlete_id,
-          test_type: testType,
-          test_mode: data.test_mode,
-          sprint_time: data.sprint_time,
-          sprint_distance: data.sprint_distance,
-          zone,
-          notes: data.notes ?? null,
-          verification_tier: deriveVerificationTier({
-            explicit: data.verification_tier,
+        const { data: inserted, error } = await supabase
+          .from(TABLE)
+          .insert({
+            athlete_id: data.athlete_id,
+            test_type: testType,
             test_mode: data.test_mode,
-            has_sensor_data: !!data.sensor_data,
-          }),
-          video_url: data.video_url || null,
-          sensor_data: data.sensor_data || null,
-          verified_by: data.conducted_by || null,
-          verified_at: data.conducted_by ? new Date().toISOString() : null,
-        });
+            sprint_time: data.sprint_time,
+            sprint_distance: data.sprint_distance,
+            zone,
+            notes: data.notes ?? null,
+            verification_tier: deriveVerificationTier({
+              explicit: data.verification_tier,
+              test_mode: data.test_mode,
+              has_sensor_data: !!data.sensor_data,
+            }),
+            video_url: data.video_url || null,
+            sensor_data: data.sensor_data || null,
+            verified_by: data.conducted_by || null,
+            verified_at: data.conducted_by ? new Date().toISOString() : null,
+          })
+          .select('id')
+          .single();
 
         if (error) {
           if (isTableMissing(error)) return { error: 'Fitness test table not set up yet' };
           return { error: error.message };
         }
         await refreshAfterSave(data.athlete_id);
-        return {};
+        return { id: (inserted as any)?.id };
       } catch (e) {
         return { error: 'Failed to save sprint result' };
       }
@@ -460,37 +468,41 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       video_url?: string;
       sensor_data?: Record<string, any>;
       conducted_by?: string;
-    }): Promise<{ error?: string }> => {
+    }): Promise<{ error?: string; id?: string }> => {
       if (!isSupabaseConfigured) return { error: 'Database not configured' };
       try {
         const gender = data.gender ?? userGender;
         const ageGroup = data.dateOfBirth ? getAgeGroup(data.dateOfBirth) : userAgeGroup;
         const zone = computeAgilityZone(data.agility_time, gender, ageGroup);
 
-        const { error } = await supabase.from(TABLE).insert({
-          athlete_id: data.athlete_id,
-          test_type: 'agility_ttest' as const,
-          test_mode: data.test_mode,
-          agility_time: data.agility_time,
-          zone,
-          notes: data.notes ?? null,
-          verification_tier: deriveVerificationTier({
-            explicit: data.verification_tier,
+        const { data: inserted, error } = await supabase
+          .from(TABLE)
+          .insert({
+            athlete_id: data.athlete_id,
+            test_type: 'agility_ttest' as const,
             test_mode: data.test_mode,
-            has_sensor_data: !!data.sensor_data,
-          }),
-          video_url: data.video_url || null,
-          sensor_data: data.sensor_data || null,
-          verified_by: data.conducted_by || null,
-          verified_at: data.conducted_by ? new Date().toISOString() : null,
-        });
+            agility_time: data.agility_time,
+            zone,
+            notes: data.notes ?? null,
+            verification_tier: deriveVerificationTier({
+              explicit: data.verification_tier,
+              test_mode: data.test_mode,
+              has_sensor_data: !!data.sensor_data,
+            }),
+            video_url: data.video_url || null,
+            sensor_data: data.sensor_data || null,
+            verified_by: data.conducted_by || null,
+            verified_at: data.conducted_by ? new Date().toISOString() : null,
+          })
+          .select('id')
+          .single();
 
         if (error) {
           if (isTableMissing(error)) return { error: 'Fitness test table not set up yet' };
           return { error: error.message };
         }
         await refreshAfterSave(data.athlete_id);
-        return {};
+        return { id: (inserted as any)?.id };
       } catch (e) {
         return { error: 'Failed to save agility result' };
       }
@@ -510,37 +522,41 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       video_url?: string;
       sensor_data?: Record<string, any>;
       conducted_by?: string;
-    }): Promise<{ error?: string }> => {
+    }): Promise<{ error?: string; id?: string }> => {
       if (!isSupabaseConfigured) return { error: 'Database not configured' };
       try {
         const gender = data.gender ?? userGender;
         const ageGroup = data.dateOfBirth ? getAgeGroup(data.dateOfBirth) : userAgeGroup;
         const zone = computeJumpZone(data.jump_height, gender, ageGroup);
 
-        const { error } = await supabase.from(TABLE).insert({
-          athlete_id: data.athlete_id,
-          test_type: 'vertical_jump' as const,
-          test_mode: data.test_mode,
-          jump_height: data.jump_height,
-          zone,
-          notes: data.notes ?? null,
-          verification_tier: deriveVerificationTier({
-            explicit: data.verification_tier,
+        const { data: inserted, error } = await supabase
+          .from(TABLE)
+          .insert({
+            athlete_id: data.athlete_id,
+            test_type: 'vertical_jump' as const,
             test_mode: data.test_mode,
-            has_sensor_data: !!data.sensor_data,
-          }),
-          video_url: data.video_url || null,
-          sensor_data: data.sensor_data || null,
-          verified_by: data.conducted_by || null,
-          verified_at: data.conducted_by ? new Date().toISOString() : null,
-        });
+            jump_height: data.jump_height,
+            zone,
+            notes: data.notes ?? null,
+            verification_tier: deriveVerificationTier({
+              explicit: data.verification_tier,
+              test_mode: data.test_mode,
+              has_sensor_data: !!data.sensor_data,
+            }),
+            video_url: data.video_url || null,
+            sensor_data: data.sensor_data || null,
+            verified_by: data.conducted_by || null,
+            verified_at: data.conducted_by ? new Date().toISOString() : null,
+          })
+          .select('id')
+          .single();
 
         if (error) {
           if (isTableMissing(error)) return { error: 'Fitness test table not set up yet' };
           return { error: error.message };
         }
         await refreshAfterSave(data.athlete_id);
-        return {};
+        return { id: (inserted as any)?.id };
       } catch (e) {
         return { error: 'Failed to save vertical jump result' };
       }

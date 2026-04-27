@@ -25,6 +25,7 @@ import { getTierMeta } from '@/constants/verification';
 import { supabase } from '@/constants/supabase';
 import { BackgroundGradient } from '@/components/BackgroundGradient';
 import { Button } from '@/components/Button';
+import RequestVerificationModal from '@/components/RequestVerificationModal';
 import { useAuth } from '@/hooks/auth-context';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
 import { VerificationTier } from '@/types';
@@ -108,6 +109,9 @@ export default function BeepTestResultsScreen() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [hasSaved, setHasSaved] = useState(false);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [verificationSentTo, setVerificationSentTo] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
@@ -254,7 +258,7 @@ export default function BeepTestResultsScreen() {
 
     setIsSaving(true);
     try {
-      let result: { error?: string };
+      let result: { error?: string; id?: string };
 
       if (testType === 'yoyo') {
         result = await saveYoYoResult({
@@ -305,10 +309,10 @@ export default function BeepTestResultsScreen() {
 
       if (!result.error) {
         setHasSaved(true);
+        if (result.id) setSavedResultId(result.id);
         Haptics?.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Saved', `Your ${testLabel} result has been saved!`, [
-          { text: 'OK', onPress: () => router.replace('/(tabs)/profile' as any) },
-        ]);
+        // Don't auto-navigate — user may want to request coach verification next.
+        // The post-save verification CTA below the result card handles next steps.
       } else {
         Alert.alert('Error', result.error || 'Failed to save result. Please try again.');
       }
@@ -641,28 +645,44 @@ export default function BeepTestResultsScreen() {
               </View>
             )}
 
-            {/* Coach Verify CTA */}
+            {/* Coach Verify CTA — three states:
+                  pre-save: informational (encourage save first)
+                  post-save (no request yet): primary button to open picker
+                  post-request-sent: success state.
+                Solo-render branch only (testMode === 'self' is already guaranteed
+                by the parent if-block at line 515), so no testMode check here. */}
             {verificationTier !== 'coach_verified' && verificationTier !== 'center_tested' && (
-              <View
-                style={{
-                  padding: 14,
-                  backgroundColor: 'rgba(100,210,255,0.08)',
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: 'rgba(100,210,255,0.2)',
-                  marginVertical: 12,
-                  gap: 4,
-                }}
-              >
-                <Text style={{ fontSize: 14, color: '#64D2FF', fontWeight: '700' }}>
-                  Want higher trust?
-                </Text>
-                <Text style={{ fontSize: 12, color: theme.colors.textSecondary }}>
+              <View style={styles.verifyCta}>
+                <Text style={styles.verifyCtaTitle}>Want higher trust?</Text>
+                <Text style={styles.verifyCtaSubtitle}>
                   Coach-Verified athletes get 5x more scout attention
                 </Text>
-                <Text style={{ fontSize: 11, color: theme.colors.textMuted, marginTop: 4 }}>
-                  After saving, invite your coach to verify this result
-                </Text>
+
+                {!hasSaved ? (
+                  <Text style={styles.verifyCtaHint}>
+                    Save your result first, then invite a coach to verify it.
+                  </Text>
+                ) : verificationSentTo ? (
+                  <View style={styles.verifySentRow}>
+                    <CheckCircle size={16} color={theme.colors.primary} />
+                    <Text style={styles.verifySentText}>
+                      Verification request sent to {verificationSentTo}
+                    </Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.verifyCtaButton}
+                    onPress={() => setVerificationModalOpen(true)}
+                    activeOpacity={0.85}
+                    disabled={!savedResultId}
+                  >
+                    <Text style={styles.verifyCtaButtonText}>
+                      {savedResultId
+                        ? 'Request coach verification →'
+                        : 'Saved — request unavailable for this result'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
 
@@ -686,6 +706,18 @@ export default function BeepTestResultsScreen() {
               />
             </View>
           </ScrollView>
+          {savedResultId && (
+            <RequestVerificationModal
+              visible={verificationModalOpen}
+              testResultId={savedResultId}
+              testTypeLabel={testLabel}
+              onClose={() => setVerificationModalOpen(false)}
+              onSubmitted={(coachName) => {
+                setVerificationSentTo(coachName);
+                setVerificationModalOpen(false);
+              }}
+            />
+          )}
         </SafeAreaView>
       </BackgroundGradient>
     );
@@ -966,6 +998,60 @@ const styles = StyleSheet.create({
   actions: {
     gap: theme.spacing.sm,
     marginTop: theme.spacing.md,
+  },
+
+  // ── Coach Verification CTA ──────────────────────────────────────────────
+  verifyCta: {
+    padding: 14,
+    backgroundColor: theme.colors.cyan + '15',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.cyan + '33',
+    marginVertical: 12,
+    gap: 4,
+  },
+  verifyCtaTitle: {
+    fontSize: 14,
+    color: theme.colors.cyan,
+    fontWeight: '700',
+  },
+  verifyCtaSubtitle: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+  },
+  verifyCtaHint: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    marginTop: 4,
+  },
+  verifyCtaButton: {
+    backgroundColor: theme.colors.cyan,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  verifyCtaButtonText: {
+    color: theme.colors.black,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  verifySentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: theme.colors.primary + '15',
+    borderRadius: 8,
+  },
+  verifySentText: {
+    fontSize: 13,
+    color: theme.colors.primary,
+    fontWeight: '600',
+    flex: 1,
   },
 
   // ── Coach Results ───────────────────────────────────────────────────────
