@@ -6,6 +6,7 @@ import BgGradient from '@/components/BackgroundGradient';
 import DashboardHeader from '@/components/home/scout/DashboardHeader';
 import CoachQuickActions from '@/components/home/coach/CoachQuickActions';
 import CoachAthletesSection from '@/components/home/coach/CoachAthletesSection';
+import CoachVerificationQueue from '@/components/home/coach/CoachVerificationQueue';
 import MiniPostCard from '@/components/home/coach/MiniPostCard';
 import SectionHeader from '@/components/home/shared/SectionHeader';
 import { theme } from '@/constants/theme';
@@ -84,6 +85,7 @@ export default function CoachHome() {
         onFindAthletes={() => router.push('/(tabs)/discover' as any)}
         onMessages={() => router.push('/(tabs)/messages' as any)}
       />
+      {user?.id && <CoachVerificationQueue coachId={user.id} />}
       <CoachAthletesSection
         athletes={myAthletes}
         isLoading={loadingAthletes}

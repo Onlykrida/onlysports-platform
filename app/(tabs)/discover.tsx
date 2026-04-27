@@ -60,6 +60,7 @@ interface DiscoverState {
   sportDropdownOpen: boolean;
   roleDropdownOpen: boolean;
   minVerificationTier: string | null;
+  minZone: ZoneName | null;
 }
 
 type DiscoverAction =
@@ -89,7 +90,8 @@ type DiscoverAction =
   | { type: 'CLEAR_SEARCH' }
   | { type: 'LOAD_USERS_START' }
   | { type: 'LOAD_USERS_ERROR'; error: string }
-  | { type: 'SET_MIN_VERIFICATION'; payload: string | null };
+  | { type: 'SET_MIN_VERIFICATION'; payload: string | null }
+  | { type: 'SET_MIN_ZONE'; payload: ZoneName | null };
 
 const initialState: DiscoverState = {
   searchQuery: '',
@@ -110,7 +112,11 @@ const initialState: DiscoverState = {
   sportDropdownOpen: false,
   roleDropdownOpen: false,
   minVerificationTier: null,
+  minZone: null,
 };
+
+const ZONE_ORDER: ZoneName[] = ['starter', 'building', 'rising', 'strong', 'elite', 'unstoppable'];
+const TIER_ORDER_LIST = ['self_reported', 'app_measured', 'coach_verified', 'center_tested'];
 
 function discoverReducer(state: DiscoverState, action: DiscoverAction): DiscoverState {
   switch (action.type) {
@@ -200,6 +206,8 @@ function discoverReducer(state: DiscoverState, action: DiscoverAction): Discover
       return { ...state, error: action.error, users: [], isLoading: false };
     case 'SET_MIN_VERIFICATION':
       return { ...state, minVerificationTier: action.payload };
+    case 'SET_MIN_ZONE':
+      return { ...state, minZone: action.payload };
     default:
       return state;
   }
@@ -236,6 +244,7 @@ export default function DiscoverScreen() {
   const { track } = useAnalytics();
   const { fetchLatestBatch } = useFitnessTest();
   const [athleteZones, setAthleteZones] = useState<Record<string, string>>({});
+  const [athleteTiers, setAthleteTiers] = useState<Record<string, string>>({});
 
   useEffect(() => {
     track(EVENTS.SCREEN_VIEW, { screen: 'discover' });
@@ -381,12 +390,43 @@ export default function DiscoverScreen() {
         }
       }
 
+      // Fitness-zone filter — only applies to athletes. If a min zone is set,
+      // exclude athletes whose latest Yo-Yo zone is below the threshold OR
+      // who have no recorded zone at all (filter is opt-in, so missing-data
+      // exclusion is the correct semantic — scout asked specifically for zone≥X).
+      let matchesZone = true;
+      if (state.minZone && user.role === 'athlete') {
+        const userZone = athleteZones[user.id];
+        if (!userZone) {
+          matchesZone = false;
+        } else {
+          const userIdx = ZONE_ORDER.indexOf(userZone as ZoneName);
+          const minIdx = ZONE_ORDER.indexOf(state.minZone);
+          matchesZone = userIdx >= 0 && userIdx >= minIdx;
+        }
+      }
+
+      // Verification-tier filter — same opt-in semantic.
+      let matchesTier = true;
+      if (state.minVerificationTier && user.role === 'athlete') {
+        const userTier = athleteTiers[user.id];
+        if (!userTier) {
+          matchesTier = false;
+        } else {
+          const userIdx = TIER_ORDER_LIST.indexOf(userTier);
+          const minIdx = TIER_ORDER_LIST.indexOf(state.minVerificationTier);
+          matchesTier = userIdx >= 0 && userIdx >= minIdx;
+        }
+      }
+
       return (
         matchesSearch &&
         matchesSport &&
         matchesRole &&
         matchesLocation &&
         matchesVerified &&
+        matchesZone &&
+        matchesTier &&
         isRelevantMatch
       );
     });
@@ -398,6 +438,10 @@ export default function DiscoverScreen() {
     locationFilter,
     verifiedOnly,
     currentUser,
+    state.minZone,
+    state.minVerificationTier,
+    athleteZones,
+    athleteTiers,
   ]);
 
   useEffect(() => {
@@ -409,10 +453,13 @@ export default function DiscoverScreen() {
     fetchLatestBatch(athleteIds, 'yoyo')
       .then((batchMap) => {
         const zones: Record<string, string> = {};
+        const tiers: Record<string, string> = {};
         batchMap.forEach((result, id) => {
           if (result?.zone) zones[id] = result.zone;
+          if (result?.verification_tier) tiers[id] = result.verification_tier;
         });
         setAthleteZones(zones);
+        setAthleteTiers(tiers);
       })
       .catch(() => {});
   }, [filteredUsers]);
@@ -953,6 +1000,57 @@ export default function DiscoverScreen() {
                         </Text>
                       </TouchableOpacity>
                     ))}
+                  </ScrollView>
+                </View>
+              )}
+
+            {/* Fitness Zone Filter — visible to scouts/coaches/teams/academies. The
+                Yo-Yo IR1 zone is the primary athletic-performance scan tool;
+                tier above is trustworthiness, this is performance level. Both can
+                stack (e.g. "Strong+ AND Coach-Verified+"). */}
+            {currentUser?.role &&
+              ['scout', 'coach', 'team', 'academy'].includes(currentUser.role) && (
+                <View style={styles.filterRow}>
+                  <Text style={styles.filterLabel}>Min. Fitness Zone</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{ marginTop: 6 }}
+                  >
+                    {[
+                      { key: null as ZoneName | null, label: 'Any' },
+                      { key: 'building' as ZoneName | null, label: 'Building+' },
+                      { key: 'rising' as ZoneName | null, label: 'Rising+' },
+                      { key: 'strong' as ZoneName | null, label: 'Strong+' },
+                      { key: 'elite' as ZoneName | null, label: 'Elite+' },
+                      { key: 'unstoppable' as ZoneName | null, label: 'Unstoppable' },
+                    ].map((opt) => {
+                      const isActive = state.minZone === opt.key;
+                      const zoneColor = opt.key ? getZoneMeta(opt.key).color : theme.colors.text;
+                      return (
+                        <TouchableOpacity
+                          key={opt.key ?? 'any'}
+                          style={[
+                            styles.filterChip,
+                            { marginRight: 8 },
+                            isActive && {
+                              backgroundColor: zoneColor + '20',
+                              borderColor: zoneColor,
+                            },
+                          ]}
+                          onPress={() => dispatch({ type: 'SET_MIN_ZONE', payload: opt.key })}
+                        >
+                          <Text
+                            style={[
+                              styles.filterChipText,
+                              isActive && { color: zoneColor, fontWeight: '700' },
+                            ]}
+                          >
+                            {opt.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </ScrollView>
                 </View>
               )}

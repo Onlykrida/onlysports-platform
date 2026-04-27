@@ -14,6 +14,7 @@ import { useFitnessTest } from '@/hooks/fitness-test-context';
 
 import DashboardHeader from './scout/DashboardHeader';
 import ScoutStatsBar from './scout/ScoutStatsBar';
+import ScoutPrimaryActions from './scout/ScoutPrimaryActions';
 import AthleteMatchCard from './scout/AthleteMatchCard';
 import ShortlistSection from './scout/ShortlistSection';
 import SectionHeader from './shared/SectionHeader';
@@ -156,6 +157,10 @@ export default function ScoutHome() {
           matchedCount={matchedCount}
           shortlistCount={shortlistCount}
           contactedCount={contactedCount}
+        />
+        <ScoutPrimaryActions
+          onRefineMatches={() => router.push('/scout-preferences' as any)}
+          onBrowseAll={() => router.push('/(tabs)/discover' as any)}
         />
         <View style={{ marginHorizontal: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
           <SectionHeader title="TOP MATCHES" count={recommendations.length} />
