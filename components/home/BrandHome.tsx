@@ -154,7 +154,7 @@ export default function BrandHome() {
           </Text>
         </View>
         <View style={styles.interestedBadge}>
-          <Heart size={12} color="#FF9F0A" fill="#FF9F0A" />
+          <Heart size={12} color={theme.colors.orange} fill={theme.colors.orange} />
         </View>
       </TouchableOpacity>
     ),
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   headerAccent: {
     width: 4,
     height: 24,
-    backgroundColor: '#FF9F0A',
+    backgroundColor: theme.colors.orange,
     borderRadius: 2,
     marginRight: theme.spacing.md,
   },
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.md,
     borderLeftWidth: 3,
-    borderLeftColor: '#30D158',
+    borderLeftColor: theme.colors.orange,
     paddingLeft: 12,
     flex: 1,
   },
@@ -329,17 +329,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
-  countBadgeText: { color: '#0a0a0a', fontSize: 10, fontWeight: theme.fontWeight.black },
+  countBadgeText: {
+    color: theme.colors.background,
+    fontSize: 10,
+    fontWeight: theme.fontWeight.black,
+  },
 
   // Athlete Card
   athleteCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginHorizontal: theme.spacing.sm,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.08)',
+    ...theme.dashBorder,
   },
   athleteInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.sm },
   athleteAvatar: {
@@ -347,7 +349,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#FF9F0A',
+    borderColor: theme.colors.orange,
     marginRight: theme.spacing.sm,
     flexShrink: 0,
   },
@@ -373,32 +375,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     borderRadius: theme.borderRadius.sm,
-    backgroundColor: '#FF9F0A',
+    backgroundColor: theme.colors.orange,
   },
   interestBtnActive: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: '#FF9F0A',
+    borderColor: theme.colors.orange,
   },
   interestBtnText: {
     fontSize: 11,
     fontWeight: theme.fontWeight.black,
-    color: '#0a0a0a',
+    color: theme.colors.background,
     letterSpacing: 1,
   },
-  interestBtnTextActive: { color: '#FF9F0A' },
+  interestBtnTextActive: { color: theme.colors.orange },
 
   // Interested Card
   interestedCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.08)',
+    ...theme.dashBorder,
     gap: theme.spacing.sm,
   },
   interestedAvatar: {
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: '#FF9F0A',
+    borderColor: theme.colors.orange,
     flexShrink: 0,
   },
   interestedName: {
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,159,10,0.15)',
+    backgroundColor: theme.colors.orange + '26',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -427,14 +427,12 @@ const styles = StyleSheet.create({
 
   // Empty
   emptyCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.lg,
     alignItems: 'center',
     marginHorizontal: theme.spacing.sm,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.08)',
+    ...theme.dashBorder,
   },
   emptyText: {
     fontSize: theme.fontSize.md,

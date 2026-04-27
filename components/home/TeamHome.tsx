@@ -12,7 +12,7 @@ import BgGradient from '@/components/BackgroundGradient';
 import CachedImage from '@/components/CachedImage';
 import { Briefcase, Users, FileText, Plus, ChevronRight } from 'lucide-react-native';
 import { router } from 'expo-router';
-import { theme } from '@/constants/theme';
+import { theme, roleAccents } from '@/constants/theme';
 import { User } from '@/types';
 import { useScouting } from '@/hooks/scouting-context';
 import { useAuth } from '@/hooks/auth-context';
@@ -150,7 +150,7 @@ export default function TeamHome() {
             onPress={() => router.push('/(tabs)/opportunities' as any)}
             activeOpacity={0.7}
           >
-            <FileText size={20} color="#FF9F0A" />
+            <FileText size={20} color={theme.colors.orange} />
             <View style={{ flex: 1 }}>
               <Text style={styles.manageOppsText} numberOfLines={1} ellipsizeMode="tail">
                 REVIEW APPLICATIONS
@@ -171,7 +171,7 @@ export default function TeamHome() {
         onPress={() => router.push('/opportunities/create' as any)}
         activeOpacity={0.7}
       >
-        <Plus size={20} color="#0a0a0a" />
+        <Plus size={20} color={theme.colors.background} />
         <Text style={styles.newOppButtonText}>POST NEW OPPORTUNITY</Text>
       </TouchableOpacity>
 
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   headerAccent: {
     width: 4,
     height: 24,
-    backgroundColor: '#30D158',
+    backgroundColor: roleAccents.team.accent,
     borderRadius: 2,
     marginRight: theme.spacing.md,
   },
@@ -267,19 +267,22 @@ const styles = StyleSheet.create({
   // Stats
   statsBar: {
     flexDirection: 'row',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     marginHorizontal: theme.spacing.sm,
     marginBottom: theme.spacing.md,
     padding: theme.spacing.md,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.08)',
+    ...theme.dashBorder,
   },
   statItem: { flex: 1, alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 28, fontWeight: '900', color: '#30D158' },
-  statLabel: { fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 1 },
-  statDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.08)', marginVertical: 4 },
+  statValue: { fontSize: 28, fontWeight: '900', color: roleAccents.team.accent },
+  statLabel: {
+    fontSize: 10,
+    color: theme.colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  statDivider: { width: 1, backgroundColor: theme.colors.cardBorder, marginVertical: 4 },
 
   // Section
   sectionContainer: { marginHorizontal: theme.spacing.sm, marginBottom: theme.spacing.sm },
@@ -288,7 +291,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.md,
     borderLeftWidth: 3,
-    borderLeftColor: '#30D158',
+    borderLeftColor: roleAccents.team.accent,
     paddingLeft: 12,
   },
   sectionTitle: {
@@ -308,18 +311,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
-  countBadgeText: { color: '#0a0a0a', fontSize: 10, fontWeight: theme.fontWeight.black },
+  countBadgeText: {
+    color: theme.colors.background,
+    fontSize: 10,
+    fontWeight: theme.fontWeight.black,
+  },
 
   // Manage Opps
   manageOppsCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.08)',
+    ...theme.dashBorder,
     gap: theme.spacing.md,
   },
   manageOppsText: {
@@ -339,7 +344,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#30D158',
+    backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.md,
     marginHorizontal: theme.spacing.sm,
     marginBottom: theme.spacing.md,
@@ -349,7 +354,7 @@ const styles = StyleSheet.create({
   newOppButtonText: {
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.black,
-    color: '#0a0a0a',
+    color: theme.colors.background,
     letterSpacing: 1,
   },
 
@@ -357,13 +362,11 @@ const styles = StyleSheet.create({
   rosterCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginHorizontal: theme.spacing.sm,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.08)',
+    ...theme.dashBorder,
     gap: theme.spacing.sm,
   },
   rosterAvatar: {
@@ -388,14 +391,12 @@ const styles = StyleSheet.create({
 
   // Empty
   emptyCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.lg,
     alignItems: 'center',
     marginHorizontal: theme.spacing.sm,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.08)',
+    ...theme.dashBorder,
   },
   emptyText: {
     fontSize: theme.fontSize.md,

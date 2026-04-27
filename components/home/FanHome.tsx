@@ -14,7 +14,7 @@ import BgGradient from '@/components/BackgroundGradient';
 import CachedImage from '@/components/CachedImage';
 import { Zap, MessageSquare, Send, Star, Trophy, Target, Award, Flame } from 'lucide-react-native';
 import { router } from 'expo-router';
-import { theme } from '@/constants/theme';
+import { theme, roleAccents } from '@/constants/theme';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { Post, User } from '@/types';
 import { usePosts } from '@/hooks/posts-context';
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   headerAccent: {
     width: 4,
     height: 24,
-    backgroundColor: '#30D158',
+    backgroundColor: roleAccents.fan.accent,
     borderRadius: 2,
     marginRight: theme.spacing.md,
   },
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.md,
     borderLeftWidth: 3,
-    borderLeftColor: '#30D158',
+    borderLeftColor: roleAccents.fan.accent,
     paddingLeft: 12,
   },
   sectionTitle: {
@@ -392,14 +392,12 @@ const styles = StyleSheet.create({
   // Trending
   trendingList: { paddingHorizontal: 0, gap: theme.spacing.sm },
   trendingCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     alignItems: 'center',
     width: 100,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.08)',
+    ...theme.dashBorder,
   },
   trendingAvatar: {
     width: 48,
@@ -425,13 +423,11 @@ const styles = StyleSheet.create({
 
   // Post
   postContainer: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     marginHorizontal: theme.spacing.sm,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.08)',
+    ...theme.dashBorder,
   },
   postHeader: {
     flexDirection: 'row',
@@ -460,7 +456,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: 'rgba(255,255,255,0.15)',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
   },
   userDetails: { flex: 1 },
   userName: {
@@ -482,7 +478,7 @@ const styles = StyleSheet.create({
   postTime: { fontSize: theme.fontSize.xs, color: theme.colors.textMuted },
   postContent: {
     fontSize: theme.fontSize.md,
-    color: '#888',
+    color: theme.colors.textMuted,
     lineHeight: 22,
     marginBottom: theme.spacing.md,
     fontWeight: theme.fontWeight.regular,
@@ -504,7 +500,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingTop: theme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: theme.colors.cardBorder,
   },
   actionButton: {
     flexDirection: 'row',
