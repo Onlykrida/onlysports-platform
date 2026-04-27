@@ -158,10 +158,14 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
 
   const loadUserProfile = async (supabaseUser: SupabaseUser) => {
     // Safety timeout: if profile loading takes longer than 8s, create fallback user
+    // and abort the in-flight Supabase query so it can't write a profile after the
+    // user has already been routed to home (which used to cause silent late writes).
     let timedOut = false;
+    const abortController = new AbortController();
     const profileTimeout = setTimeout(() => {
       timedOut = true;
       console.warn('Profile loading timed out after 8s, creating fallback user');
+      abortController.abort();
       setUser(createFallbackUser(supabaseUser));
       setIsLoading(false);
     }, 8000);
@@ -185,7 +189,15 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
+        .abortSignal(abortController.signal)
         .maybeSingle();
+
+      // If the abort fired, supabase-js returns an error; bail out before doing
+      // anything else — the timeout handler already set a fallback user.
+      if (timedOut) {
+        clearTimeout(profileTimeout);
+        return;
+      }
 
       if (error) {
         console.error('Error loading profile:', {
@@ -209,6 +221,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
               verified: false,
             })
             .select()
+            .abortSignal(abortController.signal)
             .single();
 
           if (createError) {

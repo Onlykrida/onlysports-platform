@@ -66,11 +66,48 @@ const ALLOWED_MODELS = new Set([
 
 // Per-user rate limit. Tunable.
 const REQUESTS_PER_HOUR = 30;
+// Short-window in-memory fallback. Used when the DB-backed limiter can't run
+// (table missing, PostgREST hiccup). Bites at 5 req/min/user.
+const FALLBACK_REQUESTS_PER_WINDOW = 5;
+const FALLBACK_WINDOW_MS = 60_000;
 
 interface RateLimitResult {
   ok: boolean;
   remaining: number;
   resetAt: number;
+  reason?: 'db' | 'fallback' | 'block';
+}
+
+// In-memory bucket per Deno isolate. Edge functions are short-lived, so this
+// is a coarse defense, not a precise counter — it survives the lifetime of the
+// isolate and resets when the function cold-starts. The DB-backed limit above
+// is the real ceiling (30/hr); this just ensures we have *something* if the DB
+// path errors. Map<userId, timestamps[]>.
+const fallbackBucket = new Map<string, number[]>();
+
+function fallbackRateLimit(userId: string): RateLimitResult {
+  const now = Date.now();
+  const cutoff = now - FALLBACK_WINDOW_MS;
+  const stamps = (fallbackBucket.get(userId) ?? []).filter((t) => t > cutoff);
+
+  if (stamps.length >= FALLBACK_REQUESTS_PER_WINDOW) {
+    fallbackBucket.set(userId, stamps);
+    return {
+      ok: false,
+      remaining: 0,
+      resetAt: stamps[0] + FALLBACK_WINDOW_MS,
+      reason: 'block',
+    };
+  }
+
+  stamps.push(now);
+  fallbackBucket.set(userId, stamps);
+  return {
+    ok: true,
+    remaining: FALLBACK_REQUESTS_PER_WINDOW - stamps.length,
+    resetAt: now + FALLBACK_WINDOW_MS,
+    reason: 'fallback',
+  };
 }
 
 async function checkRateLimit(
@@ -79,26 +116,39 @@ async function checkRateLimit(
 ): Promise<RateLimitResult> {
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-  const { count, error } = await supabaseAdmin
-    .from('claude_usage')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('called_at', oneHourAgo);
+  try {
+    const { count, error } = await supabaseAdmin
+      .from('claude_usage')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('called_at', oneHourAgo);
 
-  if (error) {
-    // If the usage table is missing or unreachable, fail open with a warning
-    // (better to keep AI features working than to hard-block all users on a
-    // logging table issue). Production should monitor this path.
-    console.warn('claude-proxy: rate limit check failed', error.message);
-    return { ok: true, remaining: REQUESTS_PER_HOUR, resetAt: Date.now() + 3600000 };
+    if (error) {
+      // The usage table is missing or PostgREST returned an error. Previously
+      // this fail-OPENed (let the request through with REQUESTS_PER_HOUR
+      // remaining) which is a wallet-drain hazard if the table gets dropped
+      // or hangs. Fall back to an in-memory short-window limiter instead —
+      // still degraded, but bounded. The DB error is logged; production should
+      // alert on `rate limit check failed`.
+      console.warn(
+        'claude-proxy: rate limit check failed, using in-memory fallback',
+        error.message,
+      );
+      return fallbackRateLimit(userId);
+    }
+
+    const used = count ?? 0;
+    return {
+      ok: used < REQUESTS_PER_HOUR,
+      remaining: Math.max(0, REQUESTS_PER_HOUR - used),
+      resetAt: Date.now() + 3600000,
+      reason: 'db',
+    };
+  } catch (err) {
+    // Network or thrown-error path — same fallback behavior.
+    console.warn('claude-proxy: rate limit check threw, using in-memory fallback', err);
+    return fallbackRateLimit(userId);
   }
-
-  const used = count ?? 0;
-  return {
-    ok: used < REQUESTS_PER_HOUR,
-    remaining: Math.max(0, REQUESTS_PER_HOUR - used),
-    resetAt: Date.now() + 3600000,
-  };
 }
 
 async function logUsage(

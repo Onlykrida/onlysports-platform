@@ -24,6 +24,22 @@ interface ClaudeResponse {
   content: Array<{ type: string; text: string }>;
 }
 
+async function postToProxy(
+  body: Record<string, any>,
+  accessToken: string,
+  signal: AbortSignal,
+): Promise<Response> {
+  return fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+}
+
 async function callClaude(
   messages: AIMessage[],
   systemPrompt: string,
@@ -59,15 +75,19 @@ async function callClaude(
   }
 
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
+    let response = await postToProxy(body, session.access_token, controller.signal);
+
+    // 401 from the proxy means the JWT was rejected by Supabase auth.getUser().
+    // Most common cause: the access token is past its TTL (~1hr default) and the
+    // refresh in supabase-js v2 hasn't fired yet (or the offline cache is stale).
+    // Try a single explicit refresh + retry before surfacing "AI broken" to the
+    // user. If refresh also fails, the user is genuinely signed out.
+    if (response.status === 401) {
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (!refreshError && refreshed.session?.access_token) {
+        response = await postToProxy(body, refreshed.session.access_token, controller.signal);
+      }
+    }
 
     clearTimeout(timeout);
 
@@ -78,6 +98,9 @@ async function callClaude(
       // Surface those readably in the error message.
       if (response.status === 429) {
         throw new Error('AI rate limit reached. Please try again in a few minutes.');
+      }
+      if (response.status === 401) {
+        throw new Error('AI session expired. Please sign out and sign back in.');
       }
       throw new Error(`Claude proxy error (${response.status}): ${errorBody}`);
     }
