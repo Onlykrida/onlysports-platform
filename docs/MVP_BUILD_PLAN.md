@@ -164,6 +164,106 @@ This is the parental-consent + DPDP compliance work designed in this session's `
 
 ---
 
+## v1.5 — Sport-specific fitness battery wedge (decided 2026-04-26)
+
+CEO review (`/plan-ceo-review`) on `docs/RESEARCH_ATHLETE_TESTS_BY_SPORT.md` selected **Option C: Wedge** (5 cross-sport phone-measurable tests, all 7 sports, ~2 wks original estimate / ~4–6 wks honest estimate after outside-voice review).
+
+**Locked test menu**:
+
+1. CMJ vertical jump (MyJump-style flight-time, front camera + MediaPipe BlazePose)
+2. Sprint splits 10m / 20m / 30m / 40m (Photo Finish pattern, finish-line camera + audio start cue)
+3. GPS time trial (2km cricket / Cooper athletics / AIR-BT badminton pace target, `expo-location`)
+4. Counter (60s CV count) — applies as football juggling, badminton wall-volley, basketball dribble. Each variant is a separate ML model + UX, the "single test" framing is shorthand
+5. Spot accuracy % — applies as basketball spot-shooting, hockey drag-flick zones, football crossing, cricket bowling line+length. Same caveat: each variant is its own training data + tripod setup
+
+All ship at `verification_tier='app_measured'` (0.85×) in the existing 4-tier system. Schema extension is additive (new `test_type` ENUM values on `fitness_test_results`). Reuses `constants/verification.ts`, `components/VerificationBadge.tsx`, `hooks/fitness-test-context.tsx`, `hooks/sensor-context.tsx`, `app/beep-test*.tsx` pattern.
+
+### Trade-off accepted: §9(3) video-persistence exposure for under-18 athletes
+
+The CEO review's outside voice flagged that tests 4 and 5 require video persistence for under-18 athletes, which DPDP §9(3) makes illegal without the Wave 4 parental-consent flow (substantive provisions live 13 May 2027). The recommendation was to split into v1.5a (scalar-only: CMJ + sprint splits + GPS, ships pre-Wave-4) + v1.5b (video tests, gated on Wave 4).
+
+**Decision: ship the original 5-test wedge as-is, accept the §9(3) exposure window** (today through 13 May 2027 enforcement). Rationale: enforcement-timeline gamble + Wave 4 is itself blocked on lawyer + ground research, splitting v1.5 means waiting for the founder's own action. Future-Anirudh: if DPDP enforcement starts earlier than 13 May 2027 OR if your lawyer returns Lawyer #3 with the strict reading, v1.5b's video tests will need to be retroactively gated.
+
+### v1.5 prerequisites (foundation work — ~2 days before any v1.5 screen code lands)
+
+Code review on 2026-04-26 (`/code-reviewer`) flagged three P0s that block v1.5 saves on day one. These must land FIRST:
+
+1. **`test_type` schema migration** (P0-1, ~1 day). Current `fitness_test_results.test_type CHECK (test_type IN (...))` only allows 5 values. Every v1.5 save (`cmj_jump`, `sprint_10m`, `gps_2km`, `juggling_count`, etc.) will reject with PG `23514 check_violation`. Fix: convert column to a real Postgres ENUM (`CREATE TYPE fitness_test_type AS ENUM (...)`) with the full v1.5 superset, OR drop+recreate the CHECK with the superset. Also reconcile `types/index.ts:318` `FitnessTestType` and `constants/fitness-test-data.ts:6` `TestType` (currently declared independently, will drift).
+
+2. **Canonical schema reconciliation** (P0-2, ~half day). `fitness_test_results`, `verification_requests`, `test_attestations`, `scout_shortlist`, `profile_views`, `analytics_events`, `groups`, `group_members`, `group_messages` are referenced by code but missing from `supabase-canonical-schema.sql`. `scout_shortlist` doesn't exist in any SQL file at all. Fix: merge `supabase-*.sql` files into the canonical schema in dependency order, write the missing `scout_shortlist` migration, archive scattered files to `supabase/applied/`.
+
+3. **Move Claude API server-side** (P0-3, ~1-2 days, also resolves a security finding). `EXPO_PUBLIC_ANTHROPIC_API_KEY` is bundled into the client (web devtools + IPA/APK extraction). Deploy a Supabase Edge Function as a Claude API proxy, rotate the current key. v1.5's CV pipeline will multiply Claude calls — fixing this BEFORE v1.5 ships matters.
+
+**During v1.5 work** (concurrent, not blocking):
+
+- **Refactor `saveTest` to single dispatch + extract `deriveVerificationTier`** (P1-1 + P1-3, ~half day). Single source of truth for verification tier. Required for the `coach_verified` sprint flow.
+- **Promote `sensor-context.tsx` to a real context** (P1-2, ~half day). Currently `useRef`-based; won't survive cross-screen flows (camera-positioning → live capture → results).
+- **GPS anti-cheat** (P1-5, ~3–5 days, already in v1.5 scope per D3). Implement `validateGpsAccelerometerCorrelation()`.
+- **ESLint cleanup** (P1-4, ~30 min). 24 errors accumulated; `npm run lint -- --fix` for auto-fixable, manual for `react/no-unescaped-entities` + 2 `react/display-name`.
+- **`console.log` without `__DEV__` audit** (P1-6, ~30 min). Several unguarded logs inflate production bundle.
+
+**Revised v1.5 timeline**: 13–15 wks elapsed (from 12–14 wks). Two days of foundation work before any screen code lands.
+
+### Open items for the engineering plan (`/plan-eng-review`)
+
+1. **The "5 tests" is honestly 12** — 4 ML/CV variants for test 4, 4 ML/CV variants for test 5, plus the 3 scalar tests. Engineering scope should reflect that. ~4–6 wks elapsed including validation.
+2. **MediaPipe RN runtime integration** — first-time addition. iOS Tasks API + Android Camera2 high-fps differ; both need code paths. ~1 week alone.
+3. **Anti-cheat for GPS time trial** — accelerometer cross-check vs Strava-style spoofing on rooted Androids. Without this, `app_measured` on spoofed data is worse than no data. Required for the verification multiplier to mean anything.
+4. **Junior norm tables** — research doc cites elite adult cutoffs; first 1000 users are 13–16. Plan 4–6 wks post-launch seeded norm-building with a "preliminary norms" UI label.
+5. **MediaPipe runtime choice (path-dependent)** — `react-native-mediapipe` community wrapper vs raw Tasks API + native bridge. Once chosen, becomes load-bearing for every future on-device CV test (drag-flick zones, dribble counters, spot-shooting %). Pick deliberately.
+6. **Per-sport test menu UX** — athlete sees their sport's tests by default, can browse all. Feature-flag `features.fitness_tests_v15`.
+7. **Camera-tripod-positioning instruction screen** — the highest-friction UX step; the visual instruction IS the test. Recommend `/plan-design-review` before engineering.
+
+### Design decisions (from /plan-design-review, 2026-04-27)
+
+**Locked design calls** (full 7-pass review, score 3/10 → 8/10 after fixes):
+
+1. **Test menu information architecture** — sport-aware sections with 'Show all tests' fold (D2). Cricketer sees Cricket section first, then Other Tests below. Per-sport mapping in `constants/fitness-test-data.ts`. Reuses existing beep-test card pattern (`app/beep-test.tsx:30-59`).
+
+2. **Camera-positioning instruction screen** — net-new screen with: (a) all-caps page title "POSITION YOUR PHONE", (b) ASCII-style illustrated diagram showing phone-on-tripod + 2m distance + athlete in frame, (c) numbered ① ② ③ instructions, (d) primary CTA "I'M READY" (full-width green pill), (e) secondary "Need help? Watch 30s tutorial" link. The visual diagram IS the test instruction — the highest-leverage UX in the wedge.
+
+3. **Live capture screen** — extends `app/beep-test-live.tsx` pattern. Adds: live camera preview with pose-detection skeleton overlay, green confidence ring with percentage when stable, "Pose stable for Xs" progress bar before countdown. 3-2-1-go countdown overlays the camera. Visual + haptic + audio countdown for accessibility.
+
+4. **Result screen hierarchy** — extends `app/beep-test-results.tsx` pattern. Order:
+   - Personal-best banner (only on PB) — Lucide `Trophy` icon, NO emoji
+   - **ZONE LABEL** (Starter/Building/Rising/Strong/Elite/Unstoppable) — biggest type, green pill
+   - Raw number (jump height in cm, sprint time, etc.) — secondary, large
+   - VerificationBadge inline with tier multiplier shown
+   - "vs your last result" delta (D3) — auto-flips to per-cohort percentile when (age, city, sport) cohort hits N=50
+   - Growth-oriented copy hook: "Want to level up? See what Strong-zone jumpers do differently →" (links AI suggestions)
+   - Two-button choice: [Test again] [Share with scout]
+
+5. **Sprint two-screen flow** — athlete-side cue screen (audio "3-2-1 go!") + coach-side scrub screen (frame-stepping timeline with MARK START / MARK FINISH). Reuses pattern of `app/verify-result.tsx`. Coach role distinguishes via `verification_tier='coach_verified'`.
+
+6. **Interaction state coverage** — full table built (loading/empty/error/success/partial × 5 screens). Empty states use never-demotivate copy ("Set your sport in profile to see tailored tests" not "No tests found"). Error states reuse existing toast/full-screen patterns from auth-context.
+
+7. **New components** (4 net-new, integrated PR sequencing per D4):
+   - `<TestResultZoneCard>` — zone label > tier badge > number > delta/percentile composition
+   - `<CameraPositioningGuide>` — diagram + numbered list + CTA
+   - `<PoseDetectionOverlay>` — confidence ring + percentage + stability bar
+   - `<FrameScrubber>` — coach-side timeline + MARK frame buttons
+     Each ships inline with its first consuming screen (D4 — integrated, not foundation PR).
+
+8. **Accessibility commitments**:
+   - Touch targets 44px min for all primary CTAs
+   - `accessibilityLabel` on every test card (matches existing beep-test pattern)
+   - Visual countdown overlays the audio "3-2-1 go" (hearing-impaired)
+   - Haptic pulse on countdown ticks via `expo-haptics` (Vihaan-without-headphones)
+   - Color contrast: athlete green `#30D158` on `#0a0a0a` is 9.5:1, exceeds WCAG AA
+
+9. **Deferred to v1.6**:
+   - Tablet form factor (mobile-fits-acceptably for v1.5)
+   - Real per-cohort percentiles (auto-activate at N=50 per cohort)
+   - Typography upgrade (no `fontFamily` defined anywhere → RN system default. Pre-existing AI-slop risk; project-wide TODO not v1.5-blocking)
+
+10. **AI-slop blacklist**: 9/10 patterns clean. Two findings: (a) NO emoji in result screens — use Lucide icons (Trophy, Sparkles). (b) System-default typography is the "I gave up on typography" tell — TODO for project-wide, not v1.5-blocking.
+
+### Telugu Titans research partnership (parallel non-engineering track)
+
+The kabaddi-specific tests (30s raid loop, toe-touch precision, single-leg balance) are deferred from v1.5 engineering, BUT the research partnership should start in week 1 regardless. Research clock (IRB → data collection → peer review = 6–9 months) is independent of engineering clock. Outreach email to Telugu Titans S&C in week 1; the kabaddi paper is the durable moat in the entire research artifact.
+
+---
+
 ## Wave 5 — Future (placeholder)
 
 After Wave 4 ships:
