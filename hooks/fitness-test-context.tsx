@@ -1,6 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
+import { deriveVerificationTier } from '@/constants/verification';
 import { useAuth } from '@/hooks/auth-context';
 import { FitnessTestResult, FitnessTestType, FitnessZone, VerificationTier } from '@/types';
 import {
@@ -220,13 +221,11 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
         }
         const results = (data || []).map((r: any) => ({
           ...r,
-          verification_tier:
-            r.verification_tier ||
-            (r.test_mode === 'coached'
-              ? 'coach_verified'
-              : r.test_mode === 'self'
-                ? 'app_measured'
-                : 'self_reported'),
+          verification_tier: deriveVerificationTier({
+            explicit: r.verification_tier,
+            test_mode: r.test_mode,
+            has_sensor_data: !!r.sensor_data,
+          }),
         }));
         return (results as unknown as FitnessTestResult[])?.[0] ?? null;
       } catch (e) {
@@ -253,13 +252,11 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
         }
         const results = (data || []).map((r: any) => ({
           ...r,
-          verification_tier:
-            r.verification_tier ||
-            (r.test_mode === 'coached'
-              ? 'coach_verified'
-              : r.test_mode === 'self'
-                ? 'app_measured'
-                : 'self_reported'),
+          verification_tier: deriveVerificationTier({
+            explicit: r.verification_tier,
+            test_mode: r.test_mode,
+            has_sensor_data: !!r.sensor_data,
+          }),
         }));
         return results as unknown as FitnessTestResult[];
       } catch (e) {
@@ -359,13 +356,11 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
           peak_speed: derived.peak_speed,
           zone: derived.zone,
           notes: data.notes ?? null,
-          verification_tier:
-            data.verification_tier ||
-            (data.test_mode === 'coached'
-              ? 'coach_verified'
-              : data.sensor_data
-                ? 'app_measured'
-                : 'self_reported'),
+          verification_tier: deriveVerificationTier({
+            explicit: data.verification_tier,
+            test_mode: data.test_mode,
+            has_sensor_data: !!data.sensor_data,
+          }),
           video_url: data.video_url || null,
           sensor_data: data.sensor_data || null,
           verified_by: data.conducted_by || null,
@@ -416,8 +411,11 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
           sprint_distance: data.sprint_distance,
           zone,
           notes: data.notes ?? null,
-          verification_tier:
-            data.verification_tier || (data.sensor_data ? 'app_measured' : 'self_reported'),
+          verification_tier: deriveVerificationTier({
+            explicit: data.verification_tier,
+            test_mode: data.test_mode,
+            has_sensor_data: !!data.sensor_data,
+          }),
           video_url: data.video_url || null,
           sensor_data: data.sensor_data || null,
           verified_by: data.conducted_by || null,
@@ -463,8 +461,11 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
           agility_time: data.agility_time,
           zone,
           notes: data.notes ?? null,
-          verification_tier:
-            data.verification_tier || (data.sensor_data ? 'app_measured' : 'self_reported'),
+          verification_tier: deriveVerificationTier({
+            explicit: data.verification_tier,
+            test_mode: data.test_mode,
+            has_sensor_data: !!data.sensor_data,
+          }),
           video_url: data.video_url || null,
           sensor_data: data.sensor_data || null,
           verified_by: data.conducted_by || null,
@@ -510,8 +511,11 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
           jump_height: data.jump_height,
           zone,
           notes: data.notes ?? null,
-          verification_tier:
-            data.verification_tier || (data.sensor_data ? 'app_measured' : 'self_reported'),
+          verification_tier: deriveVerificationTier({
+            explicit: data.verification_tier,
+            test_mode: data.test_mode,
+            has_sensor_data: !!data.sensor_data,
+          }),
           video_url: data.video_url || null,
           sensor_data: data.sensor_data || null,
           verified_by: data.conducted_by || null,

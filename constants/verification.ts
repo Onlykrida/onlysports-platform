@@ -75,3 +75,29 @@ export function getHighestTier(tiers: VerificationTier[]): VerificationTier {
 export function isHigherTier(a: VerificationTier, b: VerificationTier): boolean {
   return VERIFICATION_TIERS[a].order > VERIFICATION_TIERS[b].order;
 }
+
+// Single source of truth for deriving the verification tier of a fitness test
+// result. Used in both save paths (insert) and fetch backfill (legacy rows
+// without a stored tier). Keep all callers using this — duplicating the
+// rule on the read side and the write side leads to drift, which leads to
+// scout-confidence multipliers being wrong.
+//
+// Rules (highest precedence first):
+// 1. Explicit `verification_tier` provided by caller → use it
+// 2. `test_mode === 'coached'` → coach_verified
+// 3. `sensor_data` present OR `test_mode === 'self'` → app_measured
+// 4. Otherwise (`test_mode === 'manual'`, no sensor) → self_reported
+//
+// `center_tested` is never derived automatically — it must come in via
+// the explicit field, set by an admin/center operator after a verified
+// in-person test.
+export function deriveVerificationTier(input: {
+  explicit?: VerificationTier | null;
+  test_mode?: 'self' | 'coached' | 'manual' | null;
+  has_sensor_data?: boolean;
+}): VerificationTier {
+  if (input.explicit) return input.explicit;
+  if (input.test_mode === 'coached') return 'coach_verified';
+  if (input.has_sensor_data || input.test_mode === 'self') return 'app_measured';
+  return 'self_reported';
+}
