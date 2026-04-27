@@ -70,7 +70,12 @@ npx tsx scripts/nuke-and-seed.ts   # Reset DB + reseed
 - `EXPO_PUBLIC_SUPABASE_URL` — Supabase project URL
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key
 - `SUPABASE_SERVICE_ROLE_KEY` — For admin operations / seed scripts
-- `EXPO_PUBLIC_ANTHROPIC_API_KEY` — Claude API key for AI features
+
+**Anthropic API key** is NOT in `.env` anymore. Claude calls go through the
+`claude-proxy` Supabase Edge Function (see `supabase/functions/claude-proxy/`),
+which holds the key as a server-side secret. The client never sees the key.
+Don't add `EXPO_PUBLIC_ANTHROPIC_API_KEY` back — `EXPO_PUBLIC_*` vars are
+inlined into the JS bundle and extractable from any shipped binary.
 
 Without Supabase keys, the app runs with a mock client (see `constants/supabase.ts`).
 

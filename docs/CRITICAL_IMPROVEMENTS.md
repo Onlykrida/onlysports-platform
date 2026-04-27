@@ -27,18 +27,37 @@
 
 ---
 
-## 1. Move AI API Key Server-Side
+## 1. Move AI API Key Server-Side ✅ RESOLVED 2026-04-27
 
-| Field        | Detail                                                    |
-| ------------ | --------------------------------------------------------- |
-| **Priority** | P0 — Must fix before any public launch                    |
-| **Category** | Security                                                  |
-| **Impact**   | Critical — exposed API key = unlimited spend by attackers |
-| **Effort**   | 3 days                                                    |
+| Field        | Detail                                                                      |
+| ------------ | --------------------------------------------------------------------------- |
+| **Status**   | ✅ Shipped — `claude-proxy` edge function deployed, services/ai.ts cut over |
+| **Priority** | P0 — was a launch-blocker                                                   |
+| **Category** | Security                                                                    |
+| **Impact**   | Critical — exposed API key = unlimited spend by attackers                   |
+| **Effort**   | ~half day actual (vs 3 days estimated)                                      |
 
-### Description
+### Resolution
 
-The Anthropic API key (`EXPO_PUBLIC_ANTHROPIC_API_KEY`) is currently embedded in the client bundle via `EXPO_PUBLIC_` prefix. Any user can extract this key from the JavaScript bundle and make unlimited API calls at OnlyKrida's expense. This is the single most critical security vulnerability in the platform.
+Closed via the `claude-proxy` Supabase Edge Function at
+`supabase/functions/claude-proxy/`. The function holds `ANTHROPIC_API_KEY` as a
+server-side Supabase secret, validates the caller's Supabase JWT, allow-lists
+models + request fields, enforces a per-user rate limit (30/hr in
+`claude_usage` table), and forwards to Anthropic.
+
+`services/ai.ts` now calls the proxy URL with the user's JWT in the
+`Authorization` header. The old client-bundled `EXPO_PUBLIC_ANTHROPIC_API_KEY`
+has been removed from `.env`. The leaked key was rotated and revoked in the
+Anthropic dashboard.
+
+See `supabase/functions/claude-proxy/DEPLOY.md` for the deploy + rollback
+runbook.
+
+---
+
+### Original description (kept for context)
+
+The Anthropic API key (`EXPO_PUBLIC_ANTHROPIC_API_KEY`) was embedded in the client bundle via `EXPO_PUBLIC_` prefix. Any user could extract this key from the JavaScript bundle and make unlimited API calls at OnlyKrida's expense. This was the single most critical security vulnerability in the platform.
 
 ### Risk If Not Addressed
 
