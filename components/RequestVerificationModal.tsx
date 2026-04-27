@@ -47,12 +47,15 @@ export default function RequestVerificationModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Coach + trainer roles can both verify; show both. Sort by:
-  // 1. Already-followed coaches at top (signal of relationship)
+  // Coach, trainer, AND scout can all verify. Athletes choose deliberately —
+  // a scout who watches the video is a different trust signal from a coach
+  // who was at the test in person, but both are valid verifiers. UI will show
+  // role on each row so the athlete picks intentionally. Sort by:
+  // 1. Already-followed verifiers at top (signal of relationship)
   // 2. Then alphabetical by name
   const coaches = useMemo(() => {
     const filtered = users
-      .filter((u) => u.role === 'coach' || u.role === 'trainer')
+      .filter((u) => u.role === 'coach' || u.role === 'trainer' || u.role === 'scout')
       .filter((u) => {
         if (!query.trim()) return true;
         const q = query.toLowerCase();
@@ -207,7 +210,9 @@ export default function RequestVerificationModal({
               <>
                 <ShieldCheck size={18} color={theme.colors.black} />
                 <Text style={styles.submitText}>
-                  {selectedCoach ? `Send Request to ${selectedCoach.name}` : 'Pick a coach'}
+                  {selectedCoach
+                    ? `Send Request to ${selectedCoach.name}`
+                    : 'Pick a coach, trainer, or scout'}
                 </Text>
               </>
             )}

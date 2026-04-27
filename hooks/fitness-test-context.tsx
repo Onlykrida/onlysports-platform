@@ -172,6 +172,7 @@ interface FitnessTestContextValue {
   approveVerification: (
     requestId: string,
     testResultId: string,
+    mode: 'remote_video' | 'in_person',
     notes?: string,
   ) => Promise<{ error?: string }>;
 
@@ -660,6 +661,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
     async (
       requestId: string,
       testResultId: string,
+      mode: 'remote_video' | 'in_person',
       notes?: string,
     ): Promise<{ error?: string }> => {
       if (!currentUser) return { error: 'Not authenticated' };
@@ -674,10 +676,14 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
           .eq('id', requestId);
         if (reqError) return { error: reqError.message };
 
+        // Upgrade tier to coach_verified AND record HOW it was verified.
+        // The mode is the trust differentiator: in_person > remote_video.
+        // verification_mode column is added by supabase-verification-mode.sql.
         const { error: testError } = await supabase
           .from('fitness_test_results')
           .update({
             verification_tier: 'coach_verified',
+            verification_mode: mode,
             verified_by: currentUser.id,
             verified_at: new Date().toISOString(),
             verification_notes: notes,
