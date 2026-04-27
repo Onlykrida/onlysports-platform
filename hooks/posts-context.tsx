@@ -141,9 +141,13 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
             .select(selectStr)
             .order('created_at', { ascending: false })
             .limit(PAGE_SIZE);
+          // 15s per attempt (was 8s) — Supabase cold-start over a slow first
+          // network can comfortably exceed 8s. Falling back early was the root
+          // cause of the "first run shows mock data, restart shows real data"
+          // bug — by the time the timeout fired, the query was almost done.
           const { data, error } = (await withTimeout(
             query.then((r: any) => r),
-            8000,
+            15000,
           )) as { data: any[] | null; error: any };
 
           if (!error) {
@@ -175,13 +179,17 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
       }
 
       if (lastError) {
+        // Supabase IS configured but the query failed (timeout, permission,
+        // schema mismatch, network drop). Previously we fell back to bundled
+        // mockPosts here, which made the feed show fake users (Raj Sharma,
+        // Coach Martinez, etc.) on cold-start before real data loaded.
+        // Mock fallback is reserved strictly for !isSupabaseConfigured (see
+        // line ~106 above); when configured, surface an empty feed and the
+        // user can pull-to-refresh. The Empty state copy in the feed handles
+        // the messaging.
         const msg = getErrorMessage(lastError);
         if (__DEV__) console.error('Error loading posts from database:', msg, lastError);
-        const sortedMockPosts = mockPosts.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
-        if (__DEV__) console.log('Falling back to mock posts:', sortedMockPosts.length, 'posts');
-        setPosts(sortedMockPosts);
+        setPosts([]);
         return;
       }
 
@@ -313,10 +321,20 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
 
       setPosts(allPosts);
     } catch (error) {
+      // Same reasoning as the inner timeout-fallback: don't substitute fake
+      // bundled posts (Raj Sharma, Coach Martinez, etc.) when the real query
+      // fails for a configured Supabase. Surface empty + log; the user can
+      // pull-to-refresh.
       if (__DEV__) console.error('Failed to load posts:', getErrorMessage(error), error);
-      setPosts(
-        mockPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-      );
+      if (!isSupabaseConfigured) {
+        setPosts(
+          mockPosts.sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        );
+      } else {
+        setPosts([]);
+      }
     } finally {
       setIsLoading(false);
     }
