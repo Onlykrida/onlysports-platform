@@ -332,9 +332,12 @@ export default function FitnessTestHistoryScreen() {
 
     setIsLoading(true);
     try {
+      // Pull the verifier profile alongside the result so the row can show
+      // "Verified by [Name] · [mode]". The FK fitness_test_results.verified_by
+      // → profiles.id makes this expansion safe.
       const { data, error } = await supabase
         .from('fitness_test_results')
-        .select('*')
+        .select('*, verifier:verified_by(name, role)')
         .eq('athlete_id', targetId)
         .eq('test_type', activeTestType)
         .order('test_date', { ascending: false })
@@ -350,7 +353,7 @@ export default function FitnessTestHistoryScreen() {
         return;
       }
 
-      setResults((data as FitnessTestResult[]) || []);
+      setResults((data as any[]) || []);
     } catch (e) {
       if (__DEV__) console.error('FitnessTestHistory: load exception', e);
     } finally {
@@ -778,6 +781,36 @@ function ResultCard({
           {getTestModeLabel(result)}
         </Text>
       </View>
+      {/* Verifier line \u2014 appears only for verified results. The mode pill
+          tells you whether they were physically present or watched a video. */}
+      {(result as any).verifier?.name && (
+        <View style={styles.verifierRow}>
+          <Text style={styles.verifierText} numberOfLines={1} ellipsizeMode="tail">
+            Verified by <Text style={styles.verifierName}>{(result as any).verifier.name}</Text>
+          </Text>
+          {(result as any).verification_mode && (
+            <View
+              style={[
+                styles.modePill,
+                (result as any).verification_mode === 'in_person' && styles.modePillStrong,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.modePillText,
+                  (result as any).verification_mode === 'in_person' && styles.modePillTextStrong,
+                ]}
+              >
+                {(result as any).verification_mode === 'in_person'
+                  ? 'In-Person'
+                  : (result as any).verification_mode === 'remote_video'
+                    ? 'Video'
+                    : 'Sensor'}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -1077,5 +1110,41 @@ const styles = StyleSheet.create({
   resultMetaDot: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
+  },
+  verifierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.xs,
+    paddingTop: theme.spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.cardBorder,
+  },
+  verifierText: {
+    flex: 1,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+  },
+  verifierName: {
+    color: theme.colors.text,
+    fontWeight: theme.fontWeight.semibold,
+  },
+  modePill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: theme.colors.cyan + '22',
+  },
+  modePillStrong: {
+    backgroundColor: theme.colors.primary + '26',
+  },
+  modePillText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: theme.colors.cyan,
+    letterSpacing: 0.5,
+  },
+  modePillTextStrong: {
+    color: theme.colors.primary,
   },
 });
