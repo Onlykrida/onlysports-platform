@@ -19,7 +19,7 @@ const Haptics = Platform.OS !== 'web' ? require('expo-haptics') : null;
 const Audio = Platform.OS !== 'web' ? require('expo-av').Audio : null;
 import { theme } from '@/constants/theme';
 import { BackgroundGradient } from '@/components/BackgroundGradient';
-import { useSensorRecording } from '@/hooks/sensor-context';
+import { useSensorRecording } from '@/hooks/useSensorRecording';
 import {
   YOYO_LEVELS,
   getMaxShuttlesForLevel,

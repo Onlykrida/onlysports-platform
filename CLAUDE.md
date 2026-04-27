@@ -102,7 +102,7 @@ Context providers under `hooks/` using `@nkzw/create-context-hook`:
 - `ai-context.tsx` — Claude AI features (chat, profile coach, scout recommendations)
 - `users-context.tsx` — User cache, search
 - `search-context.tsx` — Discover search
-- `sensor-context.tsx` — Phone-sensor capture for in-app fitness tests (used by `app/beep-test-live.tsx`)
+- `useSensorRecording.ts` — Phone-sensor capture hook for in-app fitness tests (used by `app/beep-test-live.tsx`). Per-component hook, not a context — no provider, no DEFAULTS pattern needed.
 
 `zustand` and `@tanstack/react-query` are installed (legacy / experimental surfaces) but the convention is `@nkzw/create-context-hook`. Don't introduce them in new features without the user's explicit OK.
 
