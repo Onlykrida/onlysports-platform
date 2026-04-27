@@ -113,6 +113,10 @@ export default function UserProfileScreen() {
     Partial<Record<FitnessTestType, FitnessTestResult>>
   >({});
   const [fitnessTestHistory, setFitnessTestHistory] = useState<FitnessTestResult[]>([]);
+  // Track-record stat: how many fitness tests has this user verified?
+  // Only meaningful for coach/trainer/scout. Loaded on demand in
+  // loadUserProfile when the role qualifies.
+  const [verifiedCount, setVerifiedCount] = useState<number>(0);
 
   useEffect(() => {
     if (id) {
@@ -185,6 +189,19 @@ export default function UserProfileScreen() {
 
         setFollowersCount(followersCountResult);
         setFollowingCount(followingCountResult);
+
+        // For coaches/scouts/trainers, fetch how many tests they've verified.
+        // Social proof for athletes choosing whom to request verification from.
+        // head:true with count='exact' is a single-roundtrip count, no rows
+        // pulled. PGRST205 = column missing pre-migration; treat as 0.
+        if (userData.role === 'coach' || userData.role === 'trainer' || userData.role === 'scout') {
+          const { count, error: countError } = await supabase
+            .from('fitness_test_results')
+            .select('*', { count: 'exact', head: true })
+            .eq('verified_by', id);
+          if (!countError) setVerifiedCount(count ?? 0);
+          else if (__DEV__) console.log('UserProfile: verified count load error', countError);
+        }
       }
 
       if (userData?.role === 'athlete') {
@@ -882,6 +899,20 @@ export default function UserProfileScreen() {
             <Text style={styles.statValue}>{userPosts.length}</Text>
             <Text style={styles.statLabel}>Posts</Text>
           </View>
+          {/* Verifier track record — only for coach/scout/trainer roles. Hides
+              when count is 0 to avoid "Verified 0" looking like a flaw —
+              early-stage verifiers don't need that on their profile. */}
+          {(profileUser.role === 'coach' ||
+            profileUser.role === 'trainer' ||
+            profileUser.role === 'scout') &&
+            verifiedCount > 0 && (
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: theme.colors.primary }]}>
+                  {verifiedCount}
+                </Text>
+                <Text style={styles.statLabel}>Verified</Text>
+              </View>
+            )}
         </View>
 
         {/* Achievements Section */}

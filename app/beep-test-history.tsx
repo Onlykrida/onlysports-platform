@@ -353,7 +353,32 @@ export default function FitnessTestHistoryScreen() {
         return;
       }
 
-      setResults((data as any[]) || []);
+      const resultRows = (data as any[]) || [];
+
+      // Annotate each result with its latest pending verification request
+      // (if any). Athletes use this to know "I already asked someone, don't
+      // re-spam" and to see which verifier they're waiting on.
+      const testResultIds = resultRows.map((r) => r.id).filter(Boolean);
+      if (testResultIds.length > 0) {
+        const { data: pendingReqs } = await supabase
+          .from('verification_requests')
+          .select('test_result_id, status, coach:coach_id(name)')
+          .in('test_result_id', testResultIds)
+          .eq('status', 'pending');
+        const byTestId = new Map<string, any>();
+        for (const req of (pendingReqs as any[]) ?? []) {
+          // If multiple pending requests exist for the same test (athlete
+          // re-requested after a long wait), the first one wins — usually
+          // the most recently inserted will sort by created_at later, but
+          // for the badge it doesn't matter: any pending = show pending.
+          if (!byTestId.has(req.test_result_id)) byTestId.set(req.test_result_id, req);
+        }
+        for (const r of resultRows) {
+          r.pending_request = byTestId.get(r.id) ?? null;
+        }
+      }
+
+      setResults(resultRows);
     } catch (e) {
       if (__DEV__) console.error('FitnessTestHistory: load exception', e);
     } finally {
@@ -811,6 +836,19 @@ function ResultCard({
           )}
         </View>
       )}
+      {/* Pending verification badge — only when there's an active pending
+          request AND no verifier yet (no double-stack with verifier row). */}
+      {!(result as any).verifier?.name && (result as any).pending_request && (
+        <View style={styles.pendingRow}>
+          <View style={styles.pendingDot} />
+          <Text style={styles.pendingText} numberOfLines={1} ellipsizeMode="tail">
+            Pending review
+            {(result as any).pending_request.coach?.name
+              ? ` by ${(result as any).pending_request.coach.name}`
+              : ''}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -1146,5 +1184,26 @@ const styles = StyleSheet.create({
   },
   modePillTextStrong: {
     color: theme.colors.primary,
+  },
+  pendingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.xs,
+    paddingTop: theme.spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.cardBorder,
+  },
+  pendingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.orange,
+  },
+  pendingText: {
+    flex: 1,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.orange,
+    fontWeight: theme.fontWeight.semibold,
   },
 });

@@ -90,6 +90,32 @@ export default function NotificationsScreen() {
       if (!notification.read) {
         markAsRead(notification.id);
       }
+      // Verification flow deep-links — three types from the verification work:
+      //   verification_request → verifier taps → /verify-result
+      //   verification_approved/rejected → athlete taps → fitness history
+      // The notification data jsonb carries the IDs needed by each target.
+      if (notification.type === 'verification_request' && notification.data) {
+        router.push({
+          pathname: '/verify-result' as any,
+          params: {
+            requestId: String(notification.data.request_id ?? ''),
+            testResultId: String(notification.data.test_result_id ?? ''),
+            athleteName: String(notification.data.athlete_name ?? ''),
+            athleteAvatar: String(notification.data.athlete_avatar ?? ''),
+          },
+        });
+        return;
+      }
+      if (
+        notification.type === 'verification_approved' ||
+        notification.type === 'verification_rejected'
+      ) {
+        // Land athlete on their fitness history so they can see the verified
+        // result (or where to retry after rejection).
+        router.push('/beep-test-history' as any);
+        return;
+      }
+      // Legacy 'coach_verification_request' kept for any in-flight rows
       if (notification.type === 'coach_verification_request' && notification.data) {
         router.push({ pathname: '/verify-result' as any, params: notification.data });
         return;

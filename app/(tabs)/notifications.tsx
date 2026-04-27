@@ -74,6 +74,26 @@ const formatTimeAgo = (date: Date) => {
 };
 
 const handleNotificationPress = (notification: Notification) => {
+  // Verification flow deep-links — see verification work in commit history
+  if (notification.type === 'verification_request' && notification.data) {
+    router.push({
+      pathname: '/verify-result' as any,
+      params: {
+        requestId: String(notification.data.request_id ?? ''),
+        testResultId: String(notification.data.test_result_id ?? ''),
+        athleteName: String(notification.data.athlete_name ?? ''),
+        athleteAvatar: String(notification.data.athlete_avatar ?? ''),
+      },
+    });
+    return;
+  }
+  if (
+    notification.type === 'verification_approved' ||
+    notification.type === 'verification_rejected'
+  ) {
+    router.push('/beep-test-history' as any);
+    return;
+  }
   switch (notification.type) {
     case 'like':
     case 'comment':
