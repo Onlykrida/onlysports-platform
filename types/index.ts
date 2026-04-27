@@ -219,6 +219,9 @@ export interface Notification {
     | 'mention'
     | 'system'
     | 'application'
+    | 'verification_request'
+    | 'verification_approved'
+    | 'verification_rejected'
     | 'coach_verification_request';
   title: string;
   message: string;

@@ -50,7 +50,7 @@ export default function VerifyResultScreen() {
     athleteAvatar?: string;
   }>();
 
-  const { approveVerification } = useFitnessTest();
+  const { approveVerification, rejectVerification } = useFitnessTest();
   const [fullResult, setFullResult] = useState<FullTestResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -118,13 +118,13 @@ export default function VerifyResultScreen() {
   const handleReject = async () => {
     if (!requestId) return;
     setIsProcessing(true);
-    const { error } = await supabase
-      .from('verification_requests')
-      .update({ status: 'rejected', resolved_at: new Date().toISOString() })
-      .eq('id', requestId);
+    // Goes through the context method so the athlete gets a notification
+    // alongside the status flip — used to be an inline supabase update,
+    // which silently dropped the notification path.
+    const { error } = await rejectVerification(requestId);
     setIsProcessing(false);
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Error', error);
     } else {
       Alert.alert('Declined', 'Verification request declined.', [
         { text: 'OK', onPress: () => router.back() },

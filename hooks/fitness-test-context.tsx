@@ -175,6 +175,7 @@ interface FitnessTestContextValue {
     mode: 'remote_video' | 'in_person',
     notes?: string,
   ) => Promise<{ error?: string }>;
+  rejectVerification: (requestId: string) => Promise<{ error?: string }>;
 
   // Refresh
   refreshHistory: () => Promise<void>;
@@ -195,6 +196,7 @@ const FITNESS_TEST_DEFAULTS: FitnessTestContextValue = {
   getHistoryByType: () => [],
   requestCoachVerification: async () => ({}),
   approveVerification: async () => ({}),
+  rejectVerification: async () => ({}),
   refreshHistory: async () => {},
 };
 
@@ -642,13 +644,50 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
     async (testResultId: string, coachId: string): Promise<{ error?: string }> => {
       if (!currentUser) return { error: 'Not authenticated' };
       try {
-        const { error } = await supabase.from('verification_requests').insert({
-          test_result_id: testResultId,
-          athlete_id: currentUser.id,
-          coach_id: coachId,
-          status: 'pending',
-        });
+        // We need the inserted request id to link the notification deep-link
+        // back to /verify-result, so chain .select('id').single().
+        const { data: inserted, error } = await supabase
+          .from('verification_requests')
+          .insert({
+            test_result_id: testResultId,
+            athlete_id: currentUser.id,
+            coach_id: coachId,
+            status: 'pending',
+          })
+          .select('id')
+          .single();
         if (error) return { error: error.message };
+
+        // Notify the verifier. Best-effort — if the CHECK constraint on
+        // notifications.type doesn't include 'verification_request' yet
+        // (pre-migration env), the insert errors but doesn't fail the
+        // request. The verifier still gets the row in their queue card.
+        const requestId = (inserted as any)?.id;
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: coachId,
+            type: 'verification_request',
+            title: 'Verification request',
+            message: `${currentUser.name} wants you to verify their fitness test result`,
+            data: {
+              test_result_id: testResultId,
+              request_id: requestId,
+              athlete_id: currentUser.id,
+              athlete_name: currentUser.name,
+              athlete_avatar: currentUser.avatar ?? null,
+            },
+            read: false,
+          })
+          .then(({ error: notifyError }: { error: { message: string } | null }) => {
+            if (notifyError && __DEV__) {
+              console.log(
+                'FitnessTest: notify-verifier failed (non-blocking)',
+                notifyError.message,
+              );
+            }
+          });
+
         return {};
       } catch (e: any) {
         return { error: e.message };
@@ -666,6 +705,16 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
     ): Promise<{ error?: string }> => {
       if (!currentUser) return { error: 'Not authenticated' };
       try {
+        // Pull athlete_id from the request first — we need it to address the
+        // approval notification. Single roundtrip; fail fast if request missing.
+        const { data: requestRow, error: fetchError } = await supabase
+          .from('verification_requests')
+          .select('athlete_id')
+          .eq('id', requestId)
+          .maybeSingle();
+        if (fetchError) return { error: fetchError.message };
+        const athleteId = (requestRow as any)?.athlete_id as string | undefined;
+
         const { error: reqError } = await supabase
           .from('verification_requests')
           .update({
@@ -691,6 +740,35 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
           .eq('id', testResultId);
         if (testError) return { error: testError.message };
 
+        // Notify the athlete. Best-effort — non-blocking on notification fail.
+        if (athleteId) {
+          const modePhrase = mode === 'in_person' ? 'in-person' : 'via video review';
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: athleteId,
+              type: 'verification_approved',
+              title: 'Verification approved!',
+              message: `${currentUser.name} verified your fitness test ${modePhrase}. Tier upgraded to Coach-Verified.`,
+              data: {
+                test_result_id: testResultId,
+                request_id: requestId,
+                verifier_id: currentUser.id,
+                verifier_name: currentUser.name,
+                mode,
+              },
+              read: false,
+            })
+            .then(({ error: notifyError }: { error: { message: string } | null }) => {
+              if (notifyError && __DEV__) {
+                console.log(
+                  'FitnessTest: notify-athlete-approve failed (non-blocking)',
+                  notifyError.message,
+                );
+              }
+            });
+        }
+
         await refreshHistory();
         return {};
       } catch (e: any) {
@@ -698,6 +776,61 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       }
     },
     [currentUser, refreshHistory],
+  );
+
+  // Reject a verification request. Centralized here so the notification fires
+  // alongside the status update — verify-result.tsx used to do the update
+  // inline, which meant athletes never got notified about rejections.
+  const rejectVerification = useCallback(
+    async (requestId: string): Promise<{ error?: string }> => {
+      if (!currentUser) return { error: 'Not authenticated' };
+      try {
+        // Get athlete_id for the notification
+        const { data: requestRow, error: fetchError } = await supabase
+          .from('verification_requests')
+          .select('athlete_id')
+          .eq('id', requestId)
+          .maybeSingle();
+        if (fetchError) return { error: fetchError.message };
+        const athleteId = (requestRow as any)?.athlete_id as string | undefined;
+
+        const { error } = await supabase
+          .from('verification_requests')
+          .update({ status: 'rejected', resolved_at: new Date().toISOString() })
+          .eq('id', requestId);
+        if (error) return { error: error.message };
+
+        if (athleteId) {
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: athleteId,
+              type: 'verification_rejected',
+              title: 'Verification declined',
+              message: `${currentUser.name} couldn't verify this result — they weren't present and there's no video proof. Try uploading a video or finding another verifier.`,
+              data: {
+                request_id: requestId,
+                verifier_id: currentUser.id,
+                verifier_name: currentUser.name,
+              },
+              read: false,
+            })
+            .then(({ error: notifyError }: { error: { message: string } | null }) => {
+              if (notifyError && __DEV__) {
+                console.log(
+                  'FitnessTest: notify-athlete-reject failed (non-blocking)',
+                  notifyError.message,
+                );
+              }
+            });
+        }
+
+        return {};
+      } catch (e: any) {
+        return { error: e.message };
+      }
+    },
+    [currentUser],
   );
 
   // ── Auto-load for athletes ─────────────────────────
@@ -727,6 +860,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       getHistoryByType,
       requestCoachVerification,
       approveVerification,
+      rejectVerification,
       refreshHistory,
     }),
     [
@@ -744,6 +878,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       getHistoryByType,
       requestCoachVerification,
       approveVerification,
+      rejectVerification,
       refreshHistory,
     ],
   );
