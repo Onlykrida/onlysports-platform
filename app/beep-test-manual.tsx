@@ -37,7 +37,6 @@ import {
   type TestType,
   type Gender,
   type AgeGroup,
-  type ZoneName,
   type ZoneDefinition,
 } from '@/constants/fitness-test-data';
 
@@ -261,7 +260,7 @@ export default function FitnessTestManualScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (e) {
-      console.log('FitnessTestManual: save exception', e);
+      if (__DEV__) console.log('FitnessTestManual: save exception', e);
       Alert.alert('Error', 'An unexpected error occurred.');
     } finally {
       setIsSaving(false);

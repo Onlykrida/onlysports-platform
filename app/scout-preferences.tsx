@@ -132,7 +132,7 @@ export default function ScoutPreferencesScreen() {
         ) {
           // No row found or table doesn't exist
         } else {
-          console.log('ScoutPreferences: load error', error);
+          if (__DEV__) console.log('ScoutPreferences: load error', error);
         }
         setIsLoading(false);
         return;
@@ -150,7 +150,7 @@ export default function ScoutPreferencesScreen() {
         setWeightEndurance(row.weight_endurance ?? 0.15);
       }
     } catch (e) {
-      console.log('ScoutPreferences: load exception', e);
+      if (__DEV__) console.log('ScoutPreferences: load exception', e);
     } finally {
       setIsLoading(false);
     }
@@ -228,7 +228,7 @@ export default function ScoutPreferencesScreen() {
         void computeForScout(user.id);
       }
     } catch (e) {
-      console.log('ScoutPreferences: save exception', e);
+      if (__DEV__) console.log('ScoutPreferences: save exception', e);
       Alert.alert('Error', 'An unexpected error occurred.');
     } finally {
       setIsSaving(false);

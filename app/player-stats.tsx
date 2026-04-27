@@ -93,7 +93,7 @@ export default function PlayerStatsScreen() {
         ) {
           // No row found or table doesn't exist - that's fine
         } else {
-          console.log('PlayerStats: load error', error);
+          if (__DEV__) console.log('PlayerStats: load error', error);
         }
         setIsLoading(false);
         return;
@@ -109,7 +109,7 @@ export default function PlayerStatsScreen() {
         setStamina(row.stamina ?? 50);
       }
     } catch (e) {
-      console.log('PlayerStats: load exception', e);
+      if (__DEV__) console.log('PlayerStats: load exception', e);
     } finally {
       setIsLoading(false);
     }
@@ -178,7 +178,7 @@ export default function PlayerStatsScreen() {
         // player_stats changes and auto-recomputes for the current scout.
       }
     } catch (e) {
-      console.log('PlayerStats: save exception', e);
+      if (__DEV__) console.log('PlayerStats: save exception', e);
       Alert.alert('Error', 'An unexpected error occurred.');
     } finally {
       setIsSaving(false);
