@@ -70,22 +70,24 @@ const ContentProviders = memo(function ContentProviders({
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // Hide splash screen only after auth resolves
+  // Hide the splash as soon as the layout mounts. Previously we waited for
+  // auth to resolve, which froze the user on the splash for up to 10s on
+  // cold starts (no cached session, AsyncStorage warming, Supabase first
+  // network call). Welcome screen has its own fade-in animation, so it
+  // shows immediately while auth resolves in the background. The Redirect
+  // components below transition the user to /(tabs) once isAuthenticated
+  // flips to true. Net effect: app feels instant on first open.
   useEffect(() => {
-    if (!isLoading) {
-      SplashScreen.hideAsync();
-    }
-  }, [isLoading]);
+    SplashScreen.hideAsync();
+  }, []);
 
   if (__DEV__)
     console.log('RootLayoutNav: isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
 
-  if (isLoading) {
-    // Keep splash screen visible — return null (not a spinner)
-    return null;
-  }
-
-  // Redirect unauthenticated users to welcome, authenticated users away from auth screens
+  // Default to the unauthenticated stack while auth is still resolving.
+  // This is safe: if auth resolves to authenticated, the (tabs) Redirect
+  // below fires and replaces the welcome screen. If it resolves to
+  // unauthenticated, we're already on the right stack.
   if (!isAuthenticated) {
     return (
       <BackgroundGradient>
