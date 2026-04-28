@@ -166,6 +166,22 @@ function RootLayoutNav() {
                           presentation: 'modal',
                         }}
                       />
+                      {/* Screens that set their own headers in-component via
+                          <Stack.Screen options={{...}}>. Registered here so the
+                          route table is complete and we get a default title
+                          before the in-component override kicks in (avoids the
+                          "verify-result" route name flashing on push). */}
+                      <Stack.Screen name="verify-result" options={{ title: 'Verify Result' }} />
+                      <Stack.Screen name="player-stats" options={{ title: 'Player Stats' }} />
+                      <Stack.Screen
+                        name="scout-preferences"
+                        options={{ title: 'Scouting Preferences' }}
+                      />
+                      <Stack.Screen name="privacy-policy" options={{ title: 'Privacy Policy' }} />
+                      <Stack.Screen
+                        name="terms-of-service"
+                        options={{ title: 'Terms of Service' }}
+                      />
                     </Stack>
                   </AIProvider>
                 </ContentProviders>
