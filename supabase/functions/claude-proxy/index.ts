@@ -66,6 +66,41 @@ const ALLOWED_MODELS = new Set([
 
 // Per-user rate limit. Tunable.
 const REQUESTS_PER_HOUR = 30;
+
+// CORS allow-list. Configure via Supabase function secret:
+//   supabase secrets set ALLOWED_ORIGINS="https://onlykrida.com,https://app.onlykrida.com"
+// Native mobile clients send no Origin header; those are passed through (the
+// JWT validation below is the actual gate). When ALLOWED_ORIGINS is unset, we
+// allow only localhost dev origins so a stray production deploy without
+// configured secrets cannot expose the proxy to arbitrary cross-origin callers.
+const DEV_FALLBACK_ORIGINS = [
+  'http://localhost:8081',
+  'http://localhost:19006',
+  'http://localhost:3000',
+];
+
+function pickAllowedOrigin(req: Request): string | null {
+  const origin = req.headers.get('origin');
+  if (!origin) return null; // native mobile — no Origin header
+  const envList = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const allowList = envList.length > 0 ? envList : DEV_FALLBACK_ORIGINS;
+  return allowList.includes(origin) ? origin : null;
+}
+
+function corsHeaders(req: Request): Record<string, string> {
+  const allowed = pickAllowedOrigin(req);
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    Vary: 'Origin',
+  };
+  if (allowed) headers['Access-Control-Allow-Origin'] = allowed;
+  return headers;
+}
+
 // Short-window in-memory fallback. Used when the DB-backed limiter can't run
 // (table missing, PostgREST hiccup). Bites at 5 req/min/user.
 const FALLBACK_REQUESTS_PER_WINDOW = 5;
@@ -178,11 +213,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      },
+      headers: corsHeaders(req),
     });
   }
 
@@ -327,8 +358,8 @@ Deno.serve(async (req) => {
   return new Response(responseBody, {
     status: anthropicResponse.status,
     headers: {
+      ...corsHeaders(req),
       'content-type': anthropicResponse.headers.get('content-type') ?? 'application/json',
-      'access-control-allow-origin': '*',
       'x-ratelimit-remaining': String(limit.remaining - 1),
     },
   });

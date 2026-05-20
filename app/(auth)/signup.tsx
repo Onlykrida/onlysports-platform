@@ -46,8 +46,8 @@ export default function SignupScreen() {
 
     if (!password) {
       newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'At least 6 characters';
+    } else if (password.length < 10) {
+      newErrors.password = 'At least 10 characters';
     }
 
     if (password !== confirmPassword) {

@@ -145,7 +145,7 @@ export default function UserProfileScreen() {
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select(
-          'id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at',
+          'id, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at',
         )
         .eq('id', id)
         .maybeSingle();
@@ -166,7 +166,7 @@ export default function UserProfileScreen() {
       if (userData) {
         const user: User = {
           id: userData.id,
-          email: userData.email,
+          email: '',
           name: userData.name,
           role: userData.role,
           avatar: userData.avatar,

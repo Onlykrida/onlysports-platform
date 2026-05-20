@@ -357,7 +357,10 @@ CREATE POLICY "Profiles are viewable by everyone"
 
 CREATE POLICY "Users can insert their own profile"
     ON public.profiles FOR INSERT
-    WITH CHECK (true);  -- allows service-role & auth trigger inserts
+    WITH CHECK (auth.uid()::text = id::text);
+-- Note: service_role bypasses RLS by default. The handle_new_user() trigger uses
+-- SECURITY DEFINER and also bypasses RLS. So this policy applies only to direct
+-- user inserts via the anon/authenticated keys, which must match auth.uid().
 
 CREATE POLICY "Users can update their own profile"
     ON public.profiles FOR UPDATE
