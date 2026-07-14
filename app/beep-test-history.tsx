@@ -145,21 +145,39 @@ function getZoneEmoji(zone: string): string {
   }
 }
 
+// All four sprint distances share the sprint_time field; missing this mapping
+// sent sprint_10m/30m into the default branches below ("—" rows, zero chart
+// values, Infinity axis labels).
+function sprintDistanceFor(testType: TestType): 10 | 20 | 30 | 40 | null {
+  switch (testType) {
+    case 'sprint_10m':
+      return 10;
+    case 'sprint_20m':
+      return 20;
+    case 'sprint_30m':
+      return 30;
+    case 'sprint_40m':
+      return 40;
+    default:
+      return null;
+  }
+}
+
 function getZoneForResult(
   result: FitnessTestResult,
   gender: Gender,
   ageGroup: AgeGroup,
 ): ZoneDefinition {
+  const sprintDist = sprintDistanceFor(result.test_type);
+  if (sprintDist !== null) {
+    return getSprintZone(result.sprint_time ?? 0, sprintDist, gender, ageGroup);
+  }
   switch (result.test_type) {
     case 'yoyo': {
       const distance =
         result.total_distance ?? calculateDistance(result.level ?? 5, result.shuttle ?? 1);
       return getZone(distance, gender, ageGroup);
     }
-    case 'sprint_20m':
-      return getSprintZone(result.sprint_time ?? 0, 20, gender, ageGroup);
-    case 'sprint_40m':
-      return getSprintZone(result.sprint_time ?? 0, 40, gender, ageGroup);
     case 'agility_ttest':
       return getAgilityZone(result.agility_time ?? 0, gender, ageGroup);
     case 'vertical_jump':
@@ -173,7 +191,9 @@ function getPrimaryMetric(result: FitnessTestResult): number {
   switch (result.test_type) {
     case 'yoyo':
       return result.total_distance ?? calculateDistance(result.level ?? 5, result.shuttle ?? 1);
+    case 'sprint_10m':
     case 'sprint_20m':
+    case 'sprint_30m':
     case 'sprint_40m':
       return result.sprint_time ?? 0;
     case 'agility_ttest':
@@ -199,9 +219,11 @@ function formatPrimaryMetric(result: FitnessTestResult): string {
   switch (result.test_type) {
     case 'yoyo':
       return `L${result.level ?? '?'}.${result.shuttle ?? '?'}`;
+    case 'sprint_10m':
     case 'sprint_20m':
+    case 'sprint_30m':
     case 'sprint_40m':
-      return `${(result.sprint_time ?? 0).toFixed(2)}s`;
+      return result.sprint_time != null ? `${result.sprint_time.toFixed(2)}s` : '—';
     case 'agility_ttest':
       return `${(result.agility_time ?? 0).toFixed(2)}s`;
     case 'vertical_jump':
@@ -267,7 +289,9 @@ function formatImprovementDiff(diff: number, testType: TestType): string {
   switch (testType) {
     case 'yoyo':
       return `${diff.toFixed(0)}m`;
+    case 'sprint_10m':
     case 'sprint_20m':
+    case 'sprint_30m':
     case 'sprint_40m':
     case 'agility_ttest':
       return `${diff.toFixed(2)}s`;
@@ -629,7 +653,10 @@ function ProgressChart({
   // Format y-axis label based on test type
   function formatYLabel(val: number): string {
     if (config.lowerIsBetter) {
-      // Invert back to actual time
+      // Invert back to actual time. Guard val <= 0: with missing metrics the
+      // range padding produces zero/negative steps, which rendered as
+      // "Infinity s" / "-200.0s" on the axis.
+      if (val <= 0) return '';
       const actualTime = 100 / val;
       return `${actualTime.toFixed(1)}s`;
     }
