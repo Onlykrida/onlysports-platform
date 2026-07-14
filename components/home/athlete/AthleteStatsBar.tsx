@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   statLabel: {
-    fontSize: 8,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.textMuted,
     letterSpacing: 1,

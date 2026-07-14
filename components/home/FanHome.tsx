@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   trendingSport: {
-    fontSize: 8,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
     letterSpacing: 0.5,
   },

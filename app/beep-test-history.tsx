@@ -1045,7 +1045,7 @@ const styles = StyleSheet.create({
     paddingRight: theme.spacing.xs,
   },
   yAxisLabel: {
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
     textAlign: 'right',
   },
@@ -1075,7 +1075,7 @@ const styles = StyleSheet.create({
   },
   dotLabel: {
     position: 'absolute',
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
     width: 40,
@@ -1089,7 +1089,7 @@ const styles = StyleSheet.create({
   },
   xAxisLabel: {
     position: 'absolute',
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
     width: 40,
     textAlign: 'center',
@@ -1207,7 +1207,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary + '26',
   },
   modePillText: {
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     fontWeight: '700',
     color: theme.colors.cyan,
     letterSpacing: 0.5,

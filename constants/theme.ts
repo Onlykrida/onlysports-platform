@@ -54,7 +54,7 @@ export const theme = {
     // Text colors
     text: '#f0f0f0',
     textSecondary: '#C7C7CC',
-    textMuted: '#888888',
+    textMuted: '#9A9AA0', // lifted from #888 — AA contrast on card surfaces (design audit W1)
     textOnCard: '#f0f0f0',
     textOnLight: '#0a0a0a',
     textOnDark: '#f0f0f0',

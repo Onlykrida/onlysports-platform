@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   charCount: {
-    color: '#666',
+    color: theme.colors.textMuted,
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,

@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   },
   lastMessage: {
     fontSize: theme.fontSize.sm,
-    color: '#666',
+    color: theme.colors.textMuted,
   },
   unreadMessage: {
     color: '#f0f0f0',

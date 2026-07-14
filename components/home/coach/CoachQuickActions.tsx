@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     ...theme.dashBorder,
   },
   quickActionLabel: {
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.black,
     color: theme.colors.textSecondary,
     letterSpacing: 1,

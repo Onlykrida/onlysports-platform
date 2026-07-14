@@ -186,7 +186,7 @@ export default function NotificationsTab() {
               deleteNotification(item.id);
             }}
           >
-            <Trash2 size={16} color="#666" />
+            <Trash2 size={16} color={theme.colors.textMuted} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -197,7 +197,7 @@ export default function NotificationsTab() {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconContainer}>
-        <Bell size={40} color="#666" />
+        <Bell size={40} color={theme.colors.textMuted} />
       </View>
       <Text style={styles.emptyTitle} numberOfLines={1} ellipsizeMode="tail">
         No notifications yet
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
   },
   notificationTime: {
     fontSize: 10,
-    color: '#666',
+    color: theme.colors.textMuted,
     fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   },
   emptyMessage: {
     fontSize: theme.fontSize.md,
-    color: '#666',
+    color: theme.colors.textMuted,
     textAlign: 'center',
     lineHeight: 22,
   },
