@@ -44,7 +44,7 @@ const PRESETS = {
   },
   opportunities: {
     icon: Briefcase,
-    title: 'Opportunities loading...',
+    title: 'Opportunities loading…',
     subtitle: 'New tryouts, scholarships, and tournaments are posted daily. Check back soon!',
     ctaLabel: 'Browse All',
   },
