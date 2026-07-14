@@ -310,6 +310,13 @@ export default function DiscoverScreen() {
   const serverCursorRef = useRef<ProfileCursor | null>(null);
   const serverHasMoreRef = useRef<boolean>(true);
   const serverLoadingRef = useRef<boolean>(false);
+  // A filter-change reset that races an in-flight page fetch must not be
+  // dropped — remember it and re-run once the current request settles.
+  const pendingResetRef = useRef<boolean>(false);
+  // Cap for the auto-fill loop below: client refinements (zone/tier/region)
+  // can empty out a whole server page; without a cap the loop could scan the
+  // entire table on one gesture.
+  const autoFillPagesRef = useRef<number>(0);
   const [isPaging, setIsPaging] = useState<boolean>(false);
 
   const currentFilters = useMemo(
@@ -324,13 +331,17 @@ export default function DiscoverScreen() {
 
   const loadServer = useCallback(
     async (reset: boolean) => {
-      if (serverLoadingRef.current) return;
+      if (serverLoadingRef.current) {
+        if (reset) pendingResetRef.current = true;
+        return;
+      }
       if (!reset && !serverHasMoreRef.current) return;
       serverLoadingRef.current = true;
       if (reset) {
         dispatch({ type: 'LOAD_USERS_START' });
         serverCursorRef.current = null;
         serverHasMoreRef.current = true;
+        autoFillPagesRef.current = 0;
       } else {
         setIsPaging(true);
       }
@@ -358,10 +369,18 @@ export default function DiscoverScreen() {
         serverLoadingRef.current = false;
         setIsPaging(false);
         dispatch({ type: 'SET_LOADING', loading: false });
+        if (pendingResetRef.current) {
+          pendingResetRef.current = false;
+          setTimeout(() => loadServerRef.current?.(true), 0);
+        }
       }
     },
     [currentFilters, searchProfiles, getErrorMessage],
   );
+  // Self-reference for the deferred re-reset above (useCallback can't call
+  // itself directly).
+  const loadServerRef = useRef<typeof loadServer | null>(null);
+  loadServerRef.current = loadServer;
 
   // Retry/refresh buttons and pull-to-refresh reset to page 1.
   const loadUsers = useCallback(() => {
@@ -473,6 +492,23 @@ export default function DiscoverScreen() {
     athleteZones,
     athleteTiers,
   ]);
+
+  // Auto-fill: client refinements (zone/tier/region/query) can empty out every
+  // row fetched so far even though matching athletes exist on later pages.
+  // With zero visible rows the FlatList never mounts, so onEndReached can't
+  // fire and pagination dead-ends on a false "no matches". Keep fetching
+  // (capped at 5 extra pages per reset) while the server has more.
+  useEffect(() => {
+    if (filteredUsers.length > 0) {
+      autoFillPagesRef.current = 0;
+      return;
+    }
+    if (isLoadingUsers || serverLoadingRef.current) return;
+    if (!serverHasMoreRef.current) return;
+    if (autoFillPagesRef.current >= 5) return;
+    autoFillPagesRef.current += 1;
+    void loadServer(false);
+  }, [filteredUsers.length, isLoadingUsers, loadServer]);
 
   // Stable key of athlete IDs derived from `users` (NOT `filteredUsers`).
   // Deriving from filteredUsers created an infinite loop: the effect below
