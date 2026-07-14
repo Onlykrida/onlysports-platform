@@ -521,7 +521,7 @@ export default function BeepTestResultsScreen() {
           <Stack.Screen
             options={{
               title: `${testLabel.toUpperCase()} RESULTS`,
-              headerStyle: { backgroundColor: 'transparent' },
+              headerStyle: { backgroundColor: theme.colors.background },
               headerTintColor: theme.colors.text,
               headerLeft: () => (
                 <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
@@ -731,7 +731,7 @@ export default function BeepTestResultsScreen() {
         <Stack.Screen
           options={{
             title: `${testLabel.toUpperCase()} RESULTS`,
-            headerStyle: { backgroundColor: 'transparent' },
+            headerStyle: { backgroundColor: theme.colors.background },
             headerTintColor: theme.colors.text,
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>

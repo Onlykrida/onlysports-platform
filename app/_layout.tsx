@@ -140,29 +140,35 @@ function RootLayoutNav() {
                         options={{ title: 'Team Dashboard', headerShown: false }}
                       />
                       <Stack.Screen name="chat" options={{ headerShown: false }} />
+                      {/* Fitness routes: headerShown must be true — each screen
+                          defines its own title + back button via in-component
+                          <Stack.Screen options>, which headerShown:false here
+                          would suppress (no back button = dead-end flow).
+                          beep-test-live still hides the header mid-test via its
+                          own override. */}
                       <Stack.Screen
                         name="beep-test"
-                        options={{ title: 'Fitness Tests', headerShown: false }}
+                        options={{ title: 'Fitness Tests', headerShown: true }}
                       />
                       <Stack.Screen
                         name="beep-test-live"
-                        options={{ title: 'Yo-Yo Test', headerShown: false }}
+                        options={{ title: 'Yo-Yo Test', headerShown: true }}
                       />
                       <Stack.Screen
                         name="beep-test-manual"
-                        options={{ title: 'Enter Result', headerShown: false }}
+                        options={{ title: 'Enter Result', headerShown: true }}
                       />
                       <Stack.Screen
                         name="beep-test-results"
-                        options={{ title: 'Results', headerShown: false }}
+                        options={{ title: 'Results', headerShown: true }}
                       />
                       <Stack.Screen
                         name="beep-test-history"
-                        options={{ title: 'Fitness History', headerShown: false }}
+                        options={{ title: 'Fitness History', headerShown: true }}
                       />
                       <Stack.Screen
                         name="guided-test"
-                        options={{ title: 'Guided Test', headerShown: false }}
+                        options={{ title: 'Guided Test', headerShown: true }}
                       />
                       <Stack.Screen
                         name="ai-assistant"

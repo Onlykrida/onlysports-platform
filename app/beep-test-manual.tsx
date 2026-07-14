@@ -324,7 +324,7 @@ export default function FitnessTestManualScreen() {
         <Stack.Screen
           options={{
             title: `Enter ${meta.shortTitle} Result`,
-            headerStyle: { backgroundColor: 'transparent' },
+            headerStyle: { backgroundColor: theme.colors.background },
             headerTintColor: theme.colors.text,
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>

@@ -145,7 +145,7 @@ export default function FitnessTestScreen() {
         <Stack.Screen
           options={{
             title: 'Fitness Testing',
-            headerStyle: { backgroundColor: 'transparent' },
+            headerStyle: { backgroundColor: theme.colors.background },
             headerTintColor: theme.colors.text,
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>

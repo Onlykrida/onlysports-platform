@@ -85,7 +85,7 @@ export default function GuidedTestScreen() {
         <Stack.Screen
           options={{
             title: 'Guided Test',
-            headerStyle: { backgroundColor: 'transparent' },
+            headerStyle: { backgroundColor: theme.colors.background },
             headerTintColor: theme.colors.text,
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>

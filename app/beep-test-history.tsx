@@ -441,7 +441,7 @@ export default function FitnessTestHistoryScreen() {
         <Stack.Screen
           options={{
             title: `${config.label} History`,
-            headerStyle: { backgroundColor: 'transparent' },
+            headerStyle: { backgroundColor: theme.colors.background },
             headerTintColor: theme.colors.text,
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
