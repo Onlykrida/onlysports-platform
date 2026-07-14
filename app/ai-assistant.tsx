@@ -20,7 +20,10 @@ import { useAI } from '@/hooks/ai-context';
 import { useAuth } from '@/hooks/auth-context';
 import { ChatMessage } from '@/services/ai';
 
-const QUICK_ACTIONS = [
+// Quick prompts are role-aware: the welcome copy already adapts per role,
+// but scouts/coaches were getting athlete prompts ("Improve my profile",
+// "Training tips") — wrong ask for the personas who pay for the product.
+const ATHLETE_QUICK_ACTIONS = [
   {
     id: 'profile',
     label: 'Improve my profile',
@@ -46,6 +49,66 @@ const QUICK_ACTIONS = [
     prompt: 'Give me specific training tips to improve my performance in my sport.',
   },
 ];
+
+const SCOUT_QUICK_ACTIONS = [
+  {
+    id: 'find-talent',
+    label: 'Find talent',
+    icon: Target,
+    prompt: 'Help me find promising athletes that match what I scout for.',
+  },
+  {
+    id: 'criteria',
+    label: 'Refine my criteria',
+    icon: TrendingUp,
+    prompt: 'How should I set my scouting preferences to surface better athlete matches?',
+  },
+  {
+    id: 'evaluate',
+    label: 'Evaluate an athlete',
+    icon: User,
+    prompt: 'What should I look for when evaluating an athlete profile and their fitness results?',
+  },
+  {
+    id: 'trust',
+    label: 'Verification tiers',
+    icon: Zap,
+    prompt: 'Explain the fitness verification tiers and how much I should trust each one.',
+  },
+];
+
+const COACH_QUICK_ACTIONS = [
+  {
+    id: 'team',
+    label: 'Manage my team',
+    icon: User,
+    prompt: 'How can I use OnlyKrida to track and develop my team of athletes?',
+  },
+  {
+    id: 'find-talent',
+    label: 'Discover talent',
+    icon: Target,
+    prompt: 'Help me discover promising new athletes for my squad.',
+  },
+  {
+    id: 'testing',
+    label: 'Fitness testing',
+    icon: TrendingUp,
+    prompt: 'Which fitness tests should I run with my athletes and how do I verify results?',
+  },
+  {
+    id: 'training',
+    label: 'Training plans',
+    icon: Zap,
+    prompt: 'Give me training plan ideas to improve my athletes across fitness zones.',
+  },
+];
+
+function quickActionsForRole(role?: string) {
+  if (role === 'scout') return SCOUT_QUICK_ACTIONS;
+  if (role === 'coach' || role === 'trainer') return COACH_QUICK_ACTIONS;
+  return ATHLETE_QUICK_ACTIONS;
+}
 
 function TypingIndicator() {
   const dots = [
@@ -200,7 +263,7 @@ export default function AIAssistantScreen() {
             </Text>
 
             <View style={styles.quickActions}>
-              {QUICK_ACTIONS.map((action) => (
+              {quickActionsForRole(user?.role).map((action) => (
                 <TouchableOpacity
                   key={action.id}
                   style={styles.quickActionButton}
