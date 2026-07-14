@@ -192,7 +192,7 @@ export default function MessagesScreen() {
       <BackgroundGradient>
         <SafeAreaView style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Messages</Text>
+            <Text style={styles.headerTitle}>Chats</Text>
             <TouchableOpacity style={styles.createGroupButton} onPress={handleCreateGroup}>
               <Plus size={22} color="#000" />
             </TouchableOpacity>
@@ -207,7 +207,7 @@ export default function MessagesScreen() {
     <BackgroundGradient>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Messages</Text>
+          <Text style={styles.headerTitle}>Chats</Text>
           <TouchableOpacity style={styles.createGroupButton} onPress={handleCreateGroup}>
             <Plus size={22} color="#000" />
           </TouchableOpacity>

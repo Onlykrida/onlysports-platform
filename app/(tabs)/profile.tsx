@@ -412,8 +412,10 @@ export default function ProfileScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <BadgeCheck size={20} color={theme.colors.success} />
+                {/* Keep short: uppercased+letterspaced section titles truncate
+                    at 375px ("ORGANIZATIONS INTERESTED IN Y…") */}
                 <Text style={styles.sectionTitle} numberOfLines={1}>
-                  Organizations Interested in You
+                  Interested in You
                 </Text>
               </View>
               {interestedOrganizations.length > 0 ? (

@@ -247,7 +247,7 @@ export default function FitnessTestScreen() {
                   {test.icon}
                 </View>
                 <View style={styles.testCardText}>
-                  <Text style={styles.testCardTitle} numberOfLines={1} ellipsizeMode="tail">
+                  <Text style={styles.testCardTitle} numberOfLines={2} ellipsizeMode="tail">
                     {test.title}
                   </Text>
                   <Text style={styles.testCardDescription} numberOfLines={2} ellipsizeMode="tail">
