@@ -513,9 +513,14 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         return uri;
       }
 
-      if (!user?.id) {
-        if (__DEV__) console.error('Posts: No user ID available for upload');
+      // Already a remote URL (e.g., editing a post without changing media — caller
+      // passes through the existing Storage URL). Skip re-upload.
+      if (/^https?:\/\//i.test(uri)) {
         return uri;
+      }
+
+      if (!user?.id) {
+        throw new Error('Cannot upload media without an authenticated user');
       }
 
       try {
@@ -689,7 +694,12 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
           }
         }
 
-        return uri; // Fallback to direct URI
+        // Refuse to silently fall back to the local file:// URI — persisting that
+        // would produce a post whose media renders only on the uploading device,
+        // and only until that device's cache is cleared. Surface the failure so
+        // createPost/updatePost reject and the user sees what went wrong.
+        if (error instanceof Error) throw error;
+        throw new Error('Media upload failed');
       }
     },
     [user],
@@ -751,8 +761,9 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         await loadPosts();
         return {};
       } catch (error) {
-        if (__DEV__) console.error('Failed to create post:', getErrorMessage(error), error);
-        return { error: 'Failed to create post. Please try again.' };
+        const msg = getErrorMessage(error);
+        if (__DEV__) console.error('Failed to create post:', msg, error);
+        return { error: msg || 'Failed to create post. Please try again.' };
       }
     },
     [user, loadPosts, ensureUserProfile, uploadMediaIfNeeded],
@@ -984,8 +995,9 @@ const [PostsProvider, _usePosts] = createContextHook<PostsState>(() => {
         );
         return {};
       } catch (error) {
-        if (__DEV__) console.error('Failed to update post:', getErrorMessage(error), error);
-        return { error: 'Failed to update post. Please try again.' };
+        const msg = getErrorMessage(error);
+        if (__DEV__) console.error('Failed to update post:', msg, error);
+        return { error: msg || 'Failed to update post. Please try again.' };
       }
     },
     [user, uploadMediaIfNeeded],

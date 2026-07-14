@@ -31,9 +31,8 @@ import { SearchResult, User } from '@/types';
 import { useSearch } from '@/hooks/search-context';
 import { useFollow } from '@/hooks/follow-context';
 import { useNotifications } from '@/hooks/notifications-context';
-import { isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from '@/hooks/auth-context';
-import { useUsers } from '@/hooks/users-context';
+import { useUsers, type ProfileCursor } from '@/hooks/users-context';
 import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { DiscoverSkeleton } from '@/components/SkeletonScreens';
@@ -298,54 +297,85 @@ export default function DiscoverScreen() {
     }
   }, []);
 
-  const { users: cachedUsers, isLoading: usersIsLoading, refreshUsers } = useUsers();
+  const { isLoading: usersIsLoading, searchProfiles } = useUsers();
 
-  const loadUsers = useCallback(async () => {
-    if (__DEV__)
-      if (__DEV__) {
-        console.log('Discover: loadUsers start', {
-          isSupabaseConfigured,
-          currentUserId: currentUser?.id,
-        });
+  // ── Server-side, keyset-paginated discovery ────────────────────────────────
+  // Previously Discover filtered client-side over an unordered LIMIT 200 cache,
+  // so at scale a scout only ever saw 0.02% of athletes (the kid from Hyderabad
+  // was never in the 200 rows). Now role/sport/location/verified are pushed into
+  // the SQL query and results are paged with a keyset cursor. Zone/tier stay as
+  // a client refinement (they need per-athlete fitness data) applied in the
+  // `filteredUsers` memo on top of the returned page.
+  const serverAccumRef = useRef<User[]>([]);
+  const serverCursorRef = useRef<ProfileCursor | null>(null);
+  const serverHasMoreRef = useRef<boolean>(true);
+  const serverLoadingRef = useRef<boolean>(false);
+  const [isPaging, setIsPaging] = useState<boolean>(false);
+
+  const currentFilters = useMemo(
+    () => ({
+      role: selectedRole,
+      sport: selectedSport,
+      location: locationFilter,
+      verifiedOnly,
+    }),
+    [selectedRole, selectedSport, locationFilter, verifiedOnly],
+  );
+
+  const loadServer = useCallback(
+    async (reset: boolean) => {
+      if (serverLoadingRef.current) return;
+      if (!reset && !serverHasMoreRef.current) return;
+      serverLoadingRef.current = true;
+      if (reset) {
+        dispatch({ type: 'LOAD_USERS_START' });
+        serverCursorRef.current = null;
+        serverHasMoreRef.current = true;
+      } else {
+        setIsPaging(true);
       }
-    dispatch({ type: 'LOAD_USERS_START' });
-
-    try {
-      if (!isSupabaseConfigured) {
-        if (__DEV__) console.log('Discover: using cached users only');
-        dispatch({ type: 'SET_USERS', users: cachedUsers });
-        return;
+      try {
+        const {
+          users: page,
+          nextCursor,
+          error,
+        } = await searchProfiles(currentFilters, reset ? null : serverCursorRef.current, 20);
+        if (error) {
+          dispatch({ type: 'LOAD_USERS_ERROR', error });
+          return;
+        }
+        const merged = reset ? page : [...serverAccumRef.current, ...page];
+        // Dedupe by id (keyset ties / realtime overlap can repeat a row).
+        const seen = new Set<string>();
+        const deduped = merged.filter((u) => (seen.has(u.id) ? false : (seen.add(u.id), true)));
+        serverAccumRef.current = deduped;
+        serverCursorRef.current = nextCursor;
+        serverHasMoreRef.current = !!nextCursor;
+        dispatch({ type: 'SET_USERS', users: deduped });
+      } catch (error) {
+        dispatch({ type: 'LOAD_USERS_ERROR', error: getErrorMessage(error) });
+      } finally {
+        serverLoadingRef.current = false;
+        setIsPaging(false);
+        dispatch({ type: 'SET_LOADING', loading: false });
       }
+    },
+    [currentFilters, searchProfiles, getErrorMessage],
+  );
 
-      await refreshUsers();
-      if (__DEV__) console.log('Discover: refreshUsers requested');
-    } catch (error) {
-      const msg = getErrorMessage(error);
-      if (__DEV__) console.error('Failed to load users:', msg, error);
-      dispatch({ type: 'LOAD_USERS_ERROR', error: msg });
-    } finally {
-      dispatch({ type: 'SET_LOADING', loading: false });
-    }
-  }, [currentUser?.id, getErrorMessage, cachedUsers, refreshUsers]);
+  // Retry/refresh buttons and pull-to-refresh reset to page 1.
+  const loadUsers = useCallback(() => {
+    void loadServer(true);
+  }, [loadServer]);
 
-  const didLoadRef = useRef<boolean>(false);
-
+  // Reload page 1 whenever the server-pushable filters change (and once filters
+  // are initialized from the user's profile). currentFilters is memoized, so
+  // this fires only on an actual filter change, not every render.
   useEffect(() => {
-    if (didLoadRef.current) return;
-    didLoadRef.current = true;
-    if (__DEV__) console.log('Discover: trigger initial loadUsers');
-    loadUsers();
-  }, [loadUsers]);
-
-  useEffect(() => {
-    if (__DEV__)
-      if (__DEV__) {
-        console.log('Discover: sync local users with cachedUsers', {
-          cachedCount: cachedUsers.length,
-        });
-      }
-    dispatch({ type: 'SET_USERS', users: cachedUsers });
-  }, [cachedUsers]);
+    if (!hasInitializedFilters) return;
+    void loadServer(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasInitializedFilters, currentFilters]);
 
   const filteredUsers = useMemo(() => {
     // First deduplicate users by ID and exclude current user
@@ -444,14 +474,29 @@ export default function DiscoverScreen() {
     athleteTiers,
   ]);
 
+  // Stable key of athlete IDs derived from `users` (NOT `filteredUsers`).
+  // Deriving from filteredUsers created an infinite loop: the effect below
+  // sets athleteZones/athleteTiers, filteredUsers' memo depends on those, so
+  // a new array identity re-fired the effect on every fetch completion. Keying
+  // on the raw athlete-id list breaks that cycle — zone/tier state no longer
+  // feeds back into what the effect depends on.
+  const athleteIdsKey = useMemo(
+    () =>
+      users
+        .filter((u) => u.role === 'athlete' && u.id !== currentUser?.id)
+        .map((u) => u.id)
+        .slice(0, 50)
+        .join(','),
+    [users, currentUser?.id],
+  );
+
   useEffect(() => {
-    const athleteIds = filteredUsers
-      .filter((u) => u.role === 'athlete')
-      .map((u) => u.id)
-      .slice(0, 50);
+    const athleteIds = athleteIdsKey ? athleteIdsKey.split(',') : [];
     if (athleteIds.length === 0) return;
+    let cancelled = false;
     fetchLatestBatch(athleteIds, 'yoyo')
       .then((batchMap) => {
+        if (cancelled) return;
         const zones: Record<string, string> = {};
         const tiers: Record<string, string> = {};
         batchMap.forEach((result, id) => {
@@ -462,7 +507,10 @@ export default function DiscoverScreen() {
         setAthleteTiers(tiers);
       })
       .catch(() => {});
-  }, [filteredUsers]);
+    return () => {
+      cancelled = true;
+    };
+  }, [athleteIdsKey, fetchLatestBatch]);
 
   const isInitialLoading = useMemo(() => {
     return (isLoadingUsers || usersIsLoading) && users.length === 0 && !usersError;
@@ -1079,6 +1127,13 @@ export default function DiscoverScreen() {
                 ItemSeparatorComponent={ItemSeparator}
                 refreshing={filteredUsers.length > 0 ? isLoadingUsers || usersIsLoading : false}
                 onRefresh={loadUsers}
+                onEndReached={() => loadServer(false)}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={
+                  isPaging ? (
+                    <ActivityIndicator style={styles.pagingSpinner} color={theme.colors.primary} />
+                  ) : null
+                }
                 {...FLATLIST_PERF_PROPS}
               />
             ) : (
@@ -1408,6 +1463,9 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: theme.spacing.md,
+  },
+  pagingSpinner: {
+    paddingVertical: theme.spacing.lg,
   },
   loadingContainer: {
     flex: 1,

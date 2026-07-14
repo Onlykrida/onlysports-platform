@@ -18,9 +18,10 @@
       "bundleIdentifier": "com.onlykrida.app",
       "infoPlist": {
         "UIBackgroundModes": ["audio", "remote-notification"],
-        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
+        "NSPhotoLibraryUsageDescription": "OnlyKrida uses your photos so you can add highlights and images to your athlete portfolio.",
+        "NSCameraUsageDescription": "OnlyKrida uses your camera to record fitness-test videos and highlights for your portfolio.",
+        "NSMicrophoneUsageDescription": "OnlyKrida uses your microphone to record audio with your highlight and fitness-test videos.",
+        "NSMotionUsageDescription": "OnlyKrida uses motion sensors to measure your performance during in-app fitness tests."
       }
     },
     "android": {
@@ -34,11 +35,11 @@
       },
       "permissions": [
         "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
+        "RECORD_AUDIO",
         "INTERNET",
         "HIGH_SAMPLING_RATE_SENSORS",
-        "VIBRATE"
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {

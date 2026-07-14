@@ -241,13 +241,8 @@ export default function FitnessTestScreen() {
           </View>
 
           {SPEED_POWER_TESTS.map((test) => (
-            <TouchableOpacity
-              key={test.testType}
-              style={styles.testCard}
-              onPress={() => router.push(`/beep-test-manual?testType=${test.testType}` as any)}
-              activeOpacity={0.85}
-            >
-              <View style={styles.testCardLeft}>
+            <View key={test.testType} style={styles.dualCard}>
+              <View style={styles.dualCardTop}>
                 <View style={[styles.iconBadge, { backgroundColor: test.accentColor + '20' }]}>
                   {test.icon}
                 </View>
@@ -260,8 +255,27 @@ export default function FitnessTestScreen() {
                   </Text>
                 </View>
               </View>
-              <ChevronRight size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
+              <View style={styles.dualCtaRow}>
+                <TouchableOpacity
+                  style={[styles.dualCtaPrimary, { backgroundColor: test.accentColor }]}
+                  onPress={() => router.push(`/guided-test?testType=${test.testType}` as any)}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Start guided ${test.title} test`}
+                >
+                  <Text style={styles.dualCtaPrimaryText}>Start Guided</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dualCtaSecondary}
+                  onPress={() => router.push(`/beep-test-manual?testType=${test.testType}` as any)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Enter ${test.title} manually`}
+                >
+                  <Text style={styles.dualCtaSecondaryText}>Enter Manually →</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           ))}
 
           {/* Section: Sport-Specific (Coming Soon) — camera/CV + GPS pipelines */}
@@ -442,6 +456,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  // Dual-CTA Speed/Power card: vertical layout with Start Guided + Enter Manually
+  dualCard: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    gap: theme.spacing.md,
+  },
+  dualCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  dualCtaRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    alignItems: 'center',
+  },
+  dualCtaPrimary: {
+    flex: 1,
+    paddingVertical: theme.spacing.sm + 2,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  dualCtaPrimaryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.black,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  dualCtaSecondary: {
+    paddingVertical: theme.spacing.sm + 2,
+    paddingHorizontal: theme.spacing.md,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  dualCtaSecondaryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textSecondary,
   },
   testCardLeft: {
     flexDirection: 'row',

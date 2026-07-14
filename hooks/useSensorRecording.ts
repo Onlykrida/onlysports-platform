@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { Platform } from 'react-native';
 
 let Accelerometer: any = null;
@@ -102,6 +102,17 @@ export function useSensorRecording() {
     subscription.current = null;
     session.current.endTime = Date.now();
     return { ...session.current };
+  }, []);
+
+  // Safety net: if the component unmounts mid-test (e.g. the athlete backs out
+  // of the Yo-Yo screen with the Android back gesture) without calling
+  // stopRecording, the accelerometer would otherwise keep sampling at 50 Hz
+  // forever — draining the battery and growing session.readings unbounded.
+  useEffect(() => {
+    return () => {
+      subscription.current?.remove();
+      subscription.current = null;
+    };
   }, []);
 
   const getTurnCount = useCallback(() => session.current.turns.length, []);

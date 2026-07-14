@@ -197,7 +197,10 @@ export default function AthleteHome() {
     ],
   );
 
-  const ListHeader = () => (
+  // Element (not a component type): passing a component whose identity changes
+  // every render makes FlatList unmount/remount the whole header on every feed
+  // update (each like, each realtime tick). An element reconciles in place.
+  const ListHeader = (
     <View>
       <WhoIsWatchingSection
         interestedOrgs={interestedOrgs}

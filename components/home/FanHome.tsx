@@ -236,7 +236,9 @@ export default function FanHome() {
     [user?.id, track, likePost],
   );
 
-  const ListHeader = () => (
+  // Element, not a component type — avoids full header remount on every feed
+  // update (see AthleteHome for the detailed rationale).
+  const ListHeader = (
     <View>
       {/* Trending Athletes Horizontal */}
       {trendingAthletes.length > 0 && (

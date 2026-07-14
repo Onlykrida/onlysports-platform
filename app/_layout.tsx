@@ -161,6 +161,10 @@ function RootLayoutNav() {
                         options={{ title: 'Fitness History', headerShown: false }}
                       />
                       <Stack.Screen
+                        name="guided-test"
+                        options={{ title: 'Guided Test', headerShown: false }}
+                      />
+                      <Stack.Screen
                         name="ai-assistant"
                         options={{
                           title: 'Krida AI',

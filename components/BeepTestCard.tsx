@@ -86,8 +86,12 @@ function getZoneForResult(
   switch (result.test_type) {
     case 'yoyo':
       return getZone(result.total_distance ?? 0, gender, ageGroup);
+    case 'sprint_10m':
+      return getSprintZone(result.sprint_time ?? 99, 10, gender, ageGroup);
     case 'sprint_20m':
       return getSprintZone(result.sprint_time ?? 99, 20, gender, ageGroup);
+    case 'sprint_30m':
+      return getSprintZone(result.sprint_time ?? 99, 30, gender, ageGroup);
     case 'sprint_40m':
       return getSprintZone(result.sprint_time ?? 99, 40, gender, ageGroup);
     case 'agility_ttest':
@@ -103,7 +107,9 @@ function getPrimaryValue(result: FitnessTestResult): string {
   switch (result.test_type) {
     case 'yoyo':
       return formatDistance(result.total_distance ?? 0);
+    case 'sprint_10m':
     case 'sprint_20m':
+    case 'sprint_30m':
     case 'sprint_40m':
       return `${result.sprint_time?.toFixed(2) ?? '—'}s`;
     case 'agility_ttest':
@@ -238,7 +244,14 @@ const TestResultRow: React.FC<TestResultRowProps> = ({ result, gender, ageGroup 
           {zone.label}
         </Text>
       </View>
-      {result.verification_tier && <VerificationBadge tier={result.verification_tier} size="sm" />}
+      {result.verification_tier && (
+        <VerificationBadge
+          tier={result.verification_tier}
+          mode={result.verification_mode}
+          testType={result.test_type}
+          size="sm"
+        />
+      )}
     </View>
   );
 };
@@ -315,6 +328,8 @@ const AthleteVariant: React.FC<AthleteVariantProps> = ({
           </View>
           <VerificationBadge
             tier={featuredResult?.verification_tier || 'self_reported'}
+            mode={featuredResult?.verification_mode}
+            testType={featuredResult?.test_type}
             size="md"
             showLabel
           />
@@ -530,7 +545,13 @@ const ScoutVariant: React.FC<ScoutVariantProps> = ({
                   </Text>
                 </View>
                 {result.verification_tier && (
-                  <VerificationBadge tier={result.verification_tier} size="sm" showLabel />
+                  <VerificationBadge
+                    tier={result.verification_tier}
+                    mode={result.verification_mode}
+                    testType={result.test_type}
+                    size="sm"
+                    showLabel
+                  />
                 )}
                 <Text style={styles.scoutValue} numberOfLines={1} ellipsizeMode="tail">
                   {getPrimaryValue(result)}

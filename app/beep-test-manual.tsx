@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
 import VerificationBadge from '@/components/VerificationBadge';
+import RequestVerificationModal from '@/components/RequestVerificationModal';
 import {
   getMaxShuttlesForLevel,
   getSpeedForLevel,
@@ -110,6 +111,15 @@ export default function FitnessTestManualScreen() {
   // ── Shared state ─────────────────────────────────────
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  // ── Verification request modal state ────────────────
+  // After a successful save, athletes get an opt-in path to ask a coach to
+  // verify the result. Approval lifts tier self_reported (0.7×) →
+  // coach_verified (1.0×). Modal is the existing component used by
+  // beep-test-results.tsx after sensor-driven Yo-Yo; here we surface it for
+  // every manual entry path (Yo-Yo + Speed/Power).
+  const [verificationModalVisible, setVerificationModalVisible] = useState(false);
+  const [lastSavedResultId, setLastSavedResultId] = useState<string | null>(null);
 
   // ── Yo-Yo derived ───────────────────────────────────
   const maxShuttles = useMemo(() => getMaxShuttlesForLevel(level), [level]);
@@ -211,7 +221,7 @@ export default function FitnessTestManualScreen() {
 
     setIsSaving(true);
     try {
-      let result: { error?: string } = {};
+      let result: { error?: string; id?: string } = {};
 
       if (testType === 'yoyo') {
         result = await saveYoYoResult({
@@ -266,9 +276,28 @@ export default function FitnessTestManualScreen() {
       }
 
       const zoneName = currentZone?.label ?? 'Unknown';
-      Alert.alert('Saved!', `${meta.shortTitle} result recorded — ${zoneName} zone.`, [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+
+      // If we captured a result id, offer the coach-verification path with
+      // optional video upload (parity with Yo-Yo guided's verification surface).
+      // No id (mock client / unconfigured env) falls back to the simple ack.
+      if (result.id) {
+        setLastSavedResultId(result.id);
+        Alert.alert(
+          'Saved!',
+          `${meta.shortTitle} result recorded — ${zoneName} zone.\n\nWant a coach to verify it? You can attach a video and pick a coach to review.`,
+          [
+            { text: 'Done', style: 'cancel', onPress: () => router.back() },
+            {
+              text: 'Ask a coach',
+              onPress: () => setVerificationModalVisible(true),
+            },
+          ],
+        );
+      } else {
+        Alert.alert('Saved!', `${meta.shortTitle} result recorded — ${zoneName} zone.`, [
+          { text: 'OK', onPress: () => router.back() },
+        ]);
+      }
     } catch (e) {
       if (__DEV__) console.log('FitnessTestManual: save exception', e);
       Alert.alert('Error', 'An unexpected error occurred.');
@@ -668,6 +697,30 @@ export default function FitnessTestManualScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+
+        {/* Coach-verification request modal — opened after a successful save
+            when the athlete taps "Ask a coach". Video upload is enabled so
+            athletes can attach a clip for the coach to review remotely. */}
+        {lastSavedResultId && (
+          <RequestVerificationModal
+            visible={verificationModalVisible}
+            testResultId={lastSavedResultId}
+            testTypeLabel={meta.shortTitle}
+            enableVideoUpload
+            onClose={() => {
+              setVerificationModalVisible(false);
+              router.back();
+            }}
+            onSubmitted={(coachName) => {
+              setVerificationModalVisible(false);
+              Alert.alert(
+                'Sent!',
+                `Verification request sent to ${coachName}. They'll get a notification.`,
+                [{ text: 'OK', onPress: () => router.back() }],
+              );
+            }}
+          />
+        )}
       </SafeAreaView>
     </BackgroundGradient>
   );

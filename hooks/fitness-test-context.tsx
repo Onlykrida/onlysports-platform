@@ -173,6 +173,11 @@ interface FitnessTestContextValue {
     coachId: string,
     athleteNotes?: string,
   ) => Promise<{ error?: string }>;
+  // Attach (or replace) a video to an already-saved test result row. Used by
+  // the post-save coach-verification request flow when the athlete adds a
+  // video AFTER initial save. Updates fitness_test_results.video_url and
+  // returns { error } on failure. Graceful no-op if Supabase isn't configured.
+  updateResultVideo: (testResultId: string, videoUrl: string) => Promise<{ error?: string }>;
   approveVerification: (
     requestId: string,
     testResultId: string,
@@ -209,6 +214,7 @@ const FITNESS_TEST_DEFAULTS: FitnessTestContextValue = {
   fetchLatestBatch: async () => new Map(),
   getHistoryByType: () => [],
   requestCoachVerification: async () => ({}),
+  updateResultVideo: async () => ({}),
   approveVerification: async () => ({}),
   rejectVerification: async () => ({}),
   refreshHistory: async () => {},
@@ -720,6 +726,32 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
     [currentUser],
   );
 
+  // Update the video_url for an existing fitness_test_results row. Used by the
+  // post-save verification-request flow when the athlete attaches a video
+  // AFTER initial save (Yo-Yo manual + Speed/Power manual entries).
+  // Returns gracefully if Supabase isn't configured (mock client environment).
+  const updateResultVideo = useCallback(
+    async (testResultId: string, videoUrl: string): Promise<{ error?: string }> => {
+      if (!currentUser) return { error: 'Not authenticated' };
+      if (!isSupabaseConfigured) return {};
+      try {
+        const { error } = await supabase
+          .from('fitness_test_results')
+          .update({ video_url: videoUrl })
+          .eq('id', testResultId)
+          .eq('athlete_id', currentUser.id);
+        if (error) {
+          if (isTableMissing(error)) return { error: 'Fitness test table not set up yet' };
+          return { error: error.message };
+        }
+        return {};
+      } catch (e: any) {
+        return { error: e.message };
+      }
+    },
+    [currentUser],
+  );
+
   const approveVerification = useCallback(
     async (
       requestId: string,
@@ -923,6 +955,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       fetchLatestBatch,
       getHistoryByType,
       requestCoachVerification,
+      updateResultVideo,
       approveVerification,
       rejectVerification,
       refreshHistory,
@@ -941,6 +974,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       fetchLatestBatch,
       getHistoryByType,
       requestCoachVerification,
+      updateResultVideo,
       approveVerification,
       rejectVerification,
       refreshHistory,

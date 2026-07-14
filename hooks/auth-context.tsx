@@ -531,6 +531,15 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         };
 
         if (shouldTryUpload) {
+          // When a NEW local image fails to upload we must NOT persist the
+          // file://content:// URI: it only resolves on the uploading device, so
+          // every other user (and this user's next reinstall) sees a blank
+          // avatar. Fall back to the previously-saved avatar instead and report
+          // the failure so the caller can surface a retry.
+          const previousAvatar =
+            typeof user?.avatar === 'string' && /^https?:\/\//i.test(user.avatar)
+              ? user.avatar
+              : undefined;
           try {
             const filenameFromUri =
               inputAvatar!.split('?')[0]?.split('/').pop() ?? `avatar-${Date.now()}.jpg`;
@@ -553,16 +562,28 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
             if (!uploadError) {
               const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
               const publicUrl: string | undefined = (pub && (pub as any).publicUrl) || undefined;
-              avatarUrl = publicUrl ?? inputAvatar;
+              avatarUrl = publicUrl ?? previousAvatar;
               if (__DEV__)
                 console.log('Avatar uploaded to storage successfully:', { path, publicUrl });
             } else {
-              if (__DEV__)
-                console.warn('Storage upload failed, falling back to direct URI', uploadError);
-              avatarUrl = inputAvatar;
+              if (__DEV__) console.warn('Storage upload failed', uploadError);
+              // Remote/data URIs are already shareable, so keeping them is safe;
+              // only local URIs must be dropped.
+              avatarUrl = isLocal ? previousAvatar : inputAvatar;
+              if (isLocal) {
+                return {
+                  error:
+                    "Couldn't upload your photo just now — check your connection and try again.",
+                };
+              }
             }
           } catch (e) {
-            if (__DEV__) console.warn('Avatar upload exception, falling back to direct URI', e);
+            if (__DEV__) console.warn('Avatar upload exception', e);
+            if (isLocal) {
+              return {
+                error: "Couldn't upload your photo just now — check your connection and try again.",
+              };
+            }
             avatarUrl = inputAvatar;
           }
         }
