@@ -255,24 +255,28 @@ export default function FitnessTestScreen() {
                   </Text>
                 </View>
               </View>
+              {/* Honest labels: for Speed & Power the "guided" flow is a
+                  setup guide that ends in manual entry — both paths save as
+                  Self-Reported (0.7×). "Start Guided" implied App-Tested and
+                  leaked trust at the tier system's core (design audit W1). */}
               <View style={styles.dualCtaRow}>
                 <TouchableOpacity
                   style={[styles.dualCtaPrimary, { backgroundColor: test.accentColor }]}
                   onPress={() => router.push(`/guided-test?testType=${test.testType}` as any)}
                   activeOpacity={0.85}
                   accessibilityRole="button"
-                  accessibilityLabel={`Start guided ${test.title} test`}
+                  accessibilityLabel={`Open ${test.title} test guide`}
                 >
-                  <Text style={styles.dualCtaPrimaryText}>Start Guided</Text>
+                  <Text style={styles.dualCtaPrimaryText}>Test Guide</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.dualCtaSecondary}
                   onPress={() => router.push(`/beep-test-manual?testType=${test.testType}` as any)}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel={`Enter ${test.title} manually`}
+                  accessibilityLabel={`Enter ${test.title} result manually`}
                 >
-                  <Text style={styles.dualCtaSecondaryText}>Enter Manually →</Text>
+                  <Text style={styles.dualCtaSecondaryText}>Enter Result →</Text>
                 </TouchableOpacity>
               </View>
             </View>

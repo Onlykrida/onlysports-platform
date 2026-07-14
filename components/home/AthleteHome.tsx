@@ -212,7 +212,7 @@ export default function AthleteHome() {
         interestedCount={interestedOrgs.length}
         highlightViews={highlightViews}
       />
-      <AthleteQuickActions />
+      <AthleteQuickActions onLogTraining={() => router.push('/beep-test' as any)} />
       <AthleteFeedHeader />
     </View>
   );

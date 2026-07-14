@@ -17,6 +17,7 @@ import {
 import { theme } from '@/constants/theme';
 import { TestType } from '@/constants/fitness-test-data';
 import { GUIDED_INSTRUCTIONS } from '@/constants/guided-test-instructions';
+import VerificationBadge from '@/components/VerificationBadge';
 import { BackgroundGradient } from '@/components/BackgroundGradient';
 
 interface GuidedTestMeta {
@@ -142,6 +143,17 @@ export default function GuidedTestScreen() {
           <View style={styles.attemptsHint}>
             <Text style={styles.attemptsHintText}>
               Take {instructions.attemptsRecommended} attempts. Enter your best result.
+            </Text>
+          </View>
+
+          {/* Tier honesty: this guide ends in manual entry. Say what that
+              earns BEFORE the athlete does the work — "guided" must not
+              imply the App-Tested tier (design audit W1). */}
+          <View style={styles.tierHonestyRow}>
+            <VerificationBadge tier="self_reported" size="sm" showLabel />
+            <Text style={styles.tierHonestyText}>
+              Results you type in save as Self-Reported (0.7× scout trust). After saving, ask a
+              coach to verify — with video proof it upgrades toward 1.0×.
             </Text>
           </View>
 
@@ -320,6 +332,23 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  tierHonestyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: 'rgba(142,142,147,0.1)',
+    borderRadius: theme.borderRadius.sm,
+  },
+  tierHonestyText: {
+    flex: 1,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    lineHeight: 17,
   },
   primaryCta: {
     flexDirection: 'row',

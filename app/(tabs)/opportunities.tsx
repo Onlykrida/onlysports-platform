@@ -203,8 +203,14 @@ export default function OpportunitiesScreen() {
           onPress={() => track(EVENTS.OPPORTUNITY_VIEWED, { opportunityId: item.id })}
         >
           <View style={styles.cardHeader}>
-            <View style={styles.typeTag}>
-              <Text style={styles.typeText} numberOfLines={1} ellipsizeMode="tail">
+            {/* getTypeColor existed but the tag hardcoded green — every
+                category looked identical (design audit: dead code, wired) */}
+            <View style={[styles.typeTag, { borderColor: getTypeColor(item.type) }]}>
+              <Text
+                style={[styles.typeText, { color: getTypeColor(item.type) }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {item.type.toUpperCase()}
               </Text>
             </View>
