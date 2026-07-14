@@ -12,12 +12,20 @@ import { mockPosts } from '@/mocks/data';
 // from React Native (passing a Blob directly to .upload() fails with
 // "Network request failed" on Android Expo Go because RN's fetch doesn't
 // reliably send Blob bodies).
-let FileSystem: typeof import('expo-file-system') | null = null;
+// SDK 54+: readAsStringAsync lives in the /legacy entry point; the root
+// export throws a deprecation Error on-device ("Method readAsStringAsync
+// imported from expo-file-system is deprecated"), which broke posting
+// with media on native.
+let FileSystem: any = null;
 if (Platform.OS !== 'web') {
   try {
-    FileSystem = require('expo-file-system');
+    FileSystem = require('expo-file-system/legacy');
   } catch {
-    // module unavailable — fall back to fetch+blob path
+    try {
+      FileSystem = require('expo-file-system');
+    } catch {
+      // module unavailable — fall back to fetch+blob path
+    }
   }
 }
 

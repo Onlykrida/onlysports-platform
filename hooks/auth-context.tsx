@@ -515,7 +515,16 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
           }
           if (/^(file:\/\/|content:\/\/)/i.test(uri)) {
             try {
-              const FileSystem = Platform.OS !== 'web' ? require('expo-file-system') : null;
+              // SDK 54+: readAsStringAsync lives in the /legacy entry point;
+              // the root export throws a deprecation Error on-device.
+              let FileSystem: any = null;
+              if (Platform.OS !== 'web') {
+                try {
+                  FileSystem = require('expo-file-system/legacy');
+                } catch {
+                  FileSystem = require('expo-file-system');
+                }
+              }
               if (!FileSystem) throw new Error('File system not available on web');
               const base64 = await FileSystem.readAsStringAsync(uri, {
                 encoding: 'base64' as const,
