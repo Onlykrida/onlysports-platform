@@ -320,7 +320,7 @@ export default function ProfileScreen() {
               <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
                 {user.name}
               </Text>
-              {user.verified && <Text style={styles.verified}>✓</Text>}
+              {user.verified && <BadgeCheck size={16} color={theme.colors.primary} />}
             </View>
             <Text style={styles.role} numberOfLines={1} ellipsizeMode="tail">
               {formatRoleName(user.role)}

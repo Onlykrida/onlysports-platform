@@ -23,6 +23,7 @@ import {
   Bell,
   MessageCircle,
   X,
+  BadgeCheck,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme, formatRoleName } from '@/constants/theme';
@@ -604,7 +605,7 @@ export default function DiscoverScreen() {
             <Text style={styles.userName} numberOfLines={1} ellipsizeMode="tail">
               {item.name}
             </Text>
-            {item.verified && <Text style={styles.verified}>✓</Text>}
+            {item.verified && <BadgeCheck size={13} color={theme.colors.primary} />}
           </View>
           <Text style={styles.userRole} numberOfLines={1} ellipsizeMode="tail">
             {formatRoleName(item.role)}
@@ -737,7 +738,7 @@ export default function DiscoverScreen() {
             <Text style={styles.searchResultName} numberOfLines={1} ellipsizeMode="tail">
               {item.name}
             </Text>
-            {item.verified && <Text style={styles.verified}>✓</Text>}
+            {item.verified && <BadgeCheck size={13} color={theme.colors.primary} />}
           </View>
           {item.subtitle && (
             <Text style={styles.searchResultSubtitle} numberOfLines={1} ellipsizeMode="tail">
