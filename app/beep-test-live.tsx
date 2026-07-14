@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert,
   Animated,
   Dimensions,
   Platform,
@@ -18,6 +17,7 @@ import { ArrowLeft, Plus, UserMinus, Pause, Play, Square, Users, User } from 'lu
 const Haptics = Platform.OS !== 'web' ? require('expo-haptics') : null;
 const Audio = Platform.OS !== 'web' ? require('expo-av').Audio : null;
 import { theme } from '@/constants/theme';
+import { showAlert } from '@/constants/cross-platform-alert';
 import { BackgroundGradient } from '@/components/BackgroundGradient';
 import { useSensorRecording } from '@/hooks/useSensorRecording';
 import {
@@ -383,7 +383,7 @@ export default function BeepTestLiveScreen() {
   }, []);
 
   const confirmStopTest = useCallback(() => {
-    Alert.alert('Stop Test', 'Are you sure you want to stop the test?', [
+    showAlert('Stop Test', 'Are you sure you want to stop the test?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Stop',

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
@@ -20,6 +20,7 @@ import { Platform } from 'react-native';
 const Haptics = Platform.OS !== 'web' ? require('expo-haptics') : null;
 import * as ImagePicker from 'expo-image-picker';
 import { theme } from '@/constants/theme';
+import { showAlert } from '@/constants/cross-platform-alert';
 import VerificationBadge from '@/components/VerificationBadge';
 import { getTierMeta } from '@/constants/verification';
 import { supabase } from '@/constants/supabase';
@@ -132,13 +133,13 @@ export default function BeepTestResultsScreen() {
         .from('test-videos')
         .upload(fileName, blob, { contentType: 'video/mp4' });
       if (error) {
-        Alert.alert('Upload Failed', error.message);
+        showAlert('Upload Failed', error.message);
       } else {
         const { data: urlData } = supabase.storage.from('test-videos').getPublicUrl(fileName);
         setVideoUrl(urlData.publicUrl);
       }
     } catch (e: any) {
-      Alert.alert('Error', 'Failed to upload video');
+      showAlert('Error', 'Failed to upload video');
     } finally {
       setIsUploadingVideo(false);
     }
@@ -252,7 +253,7 @@ export default function BeepTestResultsScreen() {
 
   const handleSaveSolo = async () => {
     if (!currentUser) {
-      Alert.alert('Error', 'You must be logged in to save results.');
+      showAlert('Error', 'You must be logged in to save results.');
       return;
     }
 
@@ -314,11 +315,11 @@ export default function BeepTestResultsScreen() {
         // Don't auto-navigate — user may want to request coach verification next.
         // The post-save verification CTA below the result card handles next steps.
       } else {
-        Alert.alert('Error', result.error || 'Failed to save result. Please try again.');
+        showAlert('Error', result.error || 'Failed to save result. Please try again.');
       }
     } catch (e) {
       if (__DEV__) console.warn('FitnessTestResults: save exception', e);
-      Alert.alert('Error', 'An unexpected error occurred.');
+      showAlert('Error', 'An unexpected error occurred.');
     } finally {
       setIsSaving(false);
     }
@@ -326,7 +327,7 @@ export default function BeepTestResultsScreen() {
 
   const handleSaveCoach = async () => {
     if (!currentUser) {
-      Alert.alert('Error', 'You must be logged in to save results.');
+      showAlert('Error', 'You must be logged in to save results.');
       return;
     }
 
@@ -345,15 +346,15 @@ export default function BeepTestResultsScreen() {
       if (!result.error) {
         setHasSaved(true);
         Haptics?.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Saved', `${coachResults.length} results saved successfully!`, [
+        showAlert('Saved', `${coachResults.length} results saved successfully!`, [
           { text: 'OK', onPress: () => router.replace('/(tabs)/profile' as any) },
         ]);
       } else {
-        Alert.alert('Error', result.error || 'Failed to save results.');
+        showAlert('Error', result.error || 'Failed to save results.');
       }
     } catch (e) {
       if (__DEV__) console.warn('FitnessTestResults: coach save exception', e);
-      Alert.alert('Error', 'An error occurred while saving results.');
+      showAlert('Error', 'An error occurred while saving results.');
     } finally {
       setIsSaving(false);
     }

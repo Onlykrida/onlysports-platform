@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   Modal,
   TextInput,
@@ -14,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, CheckCircle, XCircle, Video, MapPin, Camera } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { showAlert } from '@/constants/cross-platform-alert';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
 import VerificationBadge from '@/components/VerificationBadge';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
@@ -169,12 +169,12 @@ export default function VerifyResultScreen() {
     const result = await approveVerification(requestId, testResultId, mode);
     setIsProcessing(false);
     if (result.error) {
-      Alert.alert('Error', result.error);
+      showAlert('Error', result.error);
       setPickedMode(null);
       return;
     }
     const modeLabel = mode === 'in_person' ? 'In-Person Verified' : 'Video Verified';
-    Alert.alert('Verified!', `${athleteName}'s result has been ${modeLabel.toLowerCase()}.`, [
+    showAlert('Verified!', `${athleteName}'s result has been ${modeLabel.toLowerCase()}.`, [
       { text: 'OK', onPress: () => router.back() },
     ]);
   };
@@ -193,11 +193,11 @@ export default function VerifyResultScreen() {
     const { error } = await rejectVerification(requestId, pickedReason, notes);
     setIsProcessing(false);
     if (error) {
-      Alert.alert('Error', error);
+      showAlert('Error', error);
       return;
     }
     setShowRejectPicker(false);
-    Alert.alert('Declined', 'Verification request declined. The athlete has been notified.', [
+    showAlert('Declined', 'Verification request declined. The athlete has been notified.', [
       { text: 'OK', onPress: () => router.back() },
     ]);
   };
