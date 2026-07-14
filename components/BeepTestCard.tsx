@@ -310,6 +310,8 @@ const AthleteVariant: React.FC<AthleteVariantProps> = ({
               numberOfLines={1}
               ellipsizeMode="tail"
               onPress={onViewHistory}
+              accessibilityRole="button"
+              accessibilityLabel="View fitness test history"
             >
               History
             </Text>

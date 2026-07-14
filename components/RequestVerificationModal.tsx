@@ -231,7 +231,13 @@ export default function RequestVerificationModal({
             <Text style={styles.title}>Request Coach Verification</Text>
             <Text style={styles.subtitle}>{testTypeLabel}</Text>
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={8}>
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.closeButton}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Close verification request"
+          >
             <X size={22} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
@@ -389,9 +395,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.cardBg,

@@ -490,6 +490,9 @@ export default function FitnessTestHistoryScreen() {
                   key={tt}
                   style={[styles.filterTab, isActive && styles.filterTabActive]}
                   onPress={() => setActiveTestType(tt)}
+                  accessibilityRole="tab"
+                  accessibilityLabel={`Show ${ttConfig.label} history`}
+                  accessibilityState={{ selected: isActive }}
                 >
                   <Text style={[styles.filterTabText, isActive && styles.filterTabTextActive]}>
                     {ttConfig.shortLabel}

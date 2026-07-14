@@ -208,6 +208,7 @@ const styles = StyleSheet.create({
   ctaGradient: {
     borderRadius: theme.borderRadius.lg ?? theme.borderRadius.md,
     paddingVertical: theme.spacing.md,
+    minHeight: 44,
     paddingHorizontal: theme.spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
@@ -228,6 +229,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: theme.spacing.sm,
+    minHeight: 44,
   },
   loginText: { color: 'rgba(255,255,255,0.8)' },
   loginLink: { color: theme.colors.secondary, fontWeight: theme.fontWeight.semibold as any },
