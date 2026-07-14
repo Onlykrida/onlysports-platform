@@ -127,6 +127,9 @@ export default function FitnessTestManualScreen() {
   const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [verificationSentTo, setVerificationSentTo] = useState<string | null>(null);
+  // Snapshot at save time: inputs stay editable behind the success panel,
+  // so live currentZone could drift from what was actually saved.
+  const [savedZoneLabel, setSavedZoneLabel] = useState<string | null>(null);
 
   // ── Yo-Yo derived ───────────────────────────────────
   const maxShuttles = useMemo(() => getMaxShuttlesForLevel(level), [level]);
@@ -288,6 +291,7 @@ export default function FitnessTestManualScreen() {
       // result.id may be absent (mock client / unconfigured env) — the panel
       // then simply omits the coach-verification action.
       if (result.id) setLastSavedResultId(result.id);
+      setSavedZoneLabel(currentZone?.label ?? null);
       setSaveState('saved');
     } catch (e) {
       if (__DEV__) console.log('FitnessTestManual: save exception', e);
@@ -322,19 +326,24 @@ export default function FitnessTestManualScreen() {
                 <X size={24} color={theme.colors.text} />
               </TouchableOpacity>
             ),
-            headerRight: () => (
-              <TouchableOpacity
-                onPress={handleSave}
-                style={styles.headerButton}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <ActivityIndicator size="small" color={theme.colors.primary} />
-                ) : (
-                  <Check size={24} color={theme.colors.primary} />
-                )}
-              </TouchableOpacity>
-            ),
+            // Hidden once saved — the success panel owns post-save actions;
+            // leaving this live re-ran handleSave and inserted duplicates.
+            headerRight: () =>
+              saveState === 'saved' ? null : (
+                <TouchableOpacity
+                  onPress={handleSave}
+                  style={styles.headerButton}
+                  disabled={isSaving}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save result"
+                >
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                  ) : (
+                    <Check size={24} color={theme.colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ),
           }}
         />
 
@@ -485,7 +494,9 @@ export default function FitnessTestManualScreen() {
                   </Text>
                 </View>
                 <Text style={styles.zoneTagline} numberOfLines={1} ellipsizeMode="tail">
-                  "{currentZone.tagline}"
+                  {'\u201C'}
+                  {currentZone.tagline}
+                  {'\u201D'}
                 </Text>
 
                 <View style={styles.resultsDivider} />
@@ -602,7 +613,7 @@ export default function FitnessTestManualScreen() {
                   {yoyoResults.nextTarget.distanceNeeded}m) to go
                 </Text>
                 <Text style={styles.goalMotivation} numberOfLines={1} ellipsizeMode="tail">
-                  "You're closer than you think"
+                  {'\u201C'}You&apos;re closer than you think{'\u201D'}
                 </Text>
               </View>
             </View>
@@ -680,7 +691,7 @@ export default function FitnessTestManualScreen() {
               <View style={styles.successHeader}>
                 <Check size={22} color={theme.colors.primary} />
                 <Text style={styles.successTitle}>
-                  Saved! {meta.shortTitle} — {currentZone?.label ?? ''} zone
+                  Saved! {meta.shortTitle} — {savedZoneLabel ?? ''} zone
                 </Text>
               </View>
               {verificationSentTo ? (

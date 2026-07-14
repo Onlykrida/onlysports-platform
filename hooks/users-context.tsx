@@ -48,13 +48,14 @@ interface UsersState {
 
 const STORAGE_KEY = 'users_cache_v2'; // Updated to clear old duplicates
 const SEARCH_COLUMNS =
-  'id, email, name, role, avatar, bio, location, city, state, verified, sport, position, achievements, stats, role_specific_data, followers_count, following_count, created_at';
+  'id, name, role, avatar, bio, location, city, state, verified, sport, position, achievements, stats, role_specific_data, followers_count, following_count, created_at';
 
 // Single source of truth for Supabase profile-row → User mapping.
 function mapProfileRow(p: any): User {
   return {
     id: p.id,
-    email: p.email,
+    // email is PII — never expose other users' emails to the client cache
+    email: '',
     name: p.name,
     role: p.role,
     avatar: p.avatar ?? undefined,
@@ -76,7 +77,11 @@ function mapProfileRow(p: any): User {
 // Commas and parentheses are structural in PostgREST filter syntax; strip them
 // so a search like "a,b)" can't rewrite the query.
 function sanitizeFilterValue(v: string): string {
-  return v.replace(/[(),]/g, ' ').trim();
+  // Also escape ILIKE wildcards: a query of "%" or "_" would match every row.
+  return v
+    .replace(/[(),]/g, ' ')
+    .replace(/([%_])/g, '\\$1')
+    .trim();
 }
 
 const USERS_DEFAULTS: UsersState = {
@@ -283,12 +288,16 @@ const [UsersProvider, _useUsers] = createContextHook<UsersState>(() => {
         if (filters.sport) q = q.eq('sport', filters.sport);
         if (filters.verifiedOnly) q = q.eq('verified', true);
 
-        if (filters.location?.trim()) {
-          const loc = `%${sanitizeFilterValue(filters.location)}%`;
+        // Guard the sanitized value too: input like "(((" trims to '' after
+        // sanitizing, and '%%' would match every row.
+        const locValue = filters.location ? sanitizeFilterValue(filters.location) : '';
+        if (locValue) {
+          const loc = `%${locValue}%`;
           q = q.or(`location.ilike.${loc},city.ilike.${loc},state.ilike.${loc}`);
         }
-        if (filters.query?.trim()) {
-          const s = `%${sanitizeFilterValue(filters.query)}%`;
+        const queryValue = filters.query ? sanitizeFilterValue(filters.query) : '';
+        if (queryValue) {
+          const s = `%${queryValue}%`;
           q = q.or(`name.ilike.${s},sport.ilike.${s},bio.ilike.${s}`);
         }
 

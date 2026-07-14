@@ -122,9 +122,17 @@ async function callClaude(
 
 // Strips closing tags so user input can't break out of <untrusted> wrappers.
 // Used wherever user-controlled text is interpolated into a Claude prompt.
+// Strips to a fixed point: a single pass is bypassable by nesting —
+// '</untr<untrusted>usted>' reconstitutes '</untrusted>' after one strip.
 function sanitizeUserText(s: string | undefined | null): string {
   if (s == null) return '';
-  return String(s).replace(/<\/?untrusted[^>]*>/gi, '');
+  let out = String(s);
+  let prev;
+  do {
+    prev = out;
+    out = out.replace(/<\/?untrusted[^>]*>/gi, '');
+  } while (out !== prev);
+  return out;
 }
 
 export async function generateAthleteProfileSummary(profile: User): Promise<string> {

@@ -1393,26 +1393,6 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     color: theme.colors.textMuted,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.xl * 2,
-    gap: theme.spacing.sm,
-  },
-  emptyText: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.black,
-    color: theme.colors.text,
-    letterSpacing: theme.letterSpacing.wider,
-    textTransform: 'uppercase',
-  },
-  emptySubtext: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    letterSpacing: theme.letterSpacing.wide,
-  },
   navButtonsRow: {
     flexDirection: 'column',
     gap: theme.spacing.sm,

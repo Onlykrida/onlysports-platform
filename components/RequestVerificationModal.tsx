@@ -8,12 +8,12 @@ import {
   TextInput,
   FlatList,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, Search, ShieldCheck, Heart, Video as VideoIcon, Check } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { theme, roleAccents } from '@/constants/theme';
+import { showAlert } from '@/constants/cross-platform-alert';
 import CachedImage from '@/components/CachedImage';
 import { useUsers } from '@/hooks/users-context';
 import { useFollow } from '@/hooks/follow-context';
@@ -67,11 +67,11 @@ export default function RequestVerificationModal({
 
   const handlePickVideo = useCallback(async () => {
     if (!currentUser) {
-      Alert.alert('Not signed in', 'You must be signed in to upload a video.');
+      showAlert('Not signed in', 'You must be signed in to upload a video.');
       return;
     }
     if (!isSupabaseConfigured) {
-      Alert.alert(
+      showAlert(
         'Upload unavailable',
         'Video upload needs Supabase to be configured. Skip the video and send the request without it.',
       );
@@ -93,13 +93,13 @@ export default function RequestVerificationModal({
         .from('test-videos')
         .upload(fileName, blob, { contentType: 'video/mp4' });
       if (uploadError) {
-        Alert.alert('Upload failed', uploadError.message);
+        showAlert('Upload failed', uploadError.message);
         return;
       }
       const { data: urlData } = supabase.storage.from('test-videos').getPublicUrl(fileName);
       setVideoUrl(urlData.publicUrl);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to upload video');
+      showAlert('Error', e?.message ?? 'Failed to upload video');
     } finally {
       setIsUploadingVideo(false);
     }
@@ -228,7 +228,7 @@ export default function RequestVerificationModal({
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Request Coach Verification</Text>
+            <Text style={styles.title}>Request Verification</Text>
             <Text style={styles.subtitle}>{testTypeLabel}</Text>
           </View>
           <TouchableOpacity
@@ -363,7 +363,7 @@ export default function RequestVerificationModal({
             )}
           </TouchableOpacity>
           <Text style={styles.footerHint}>
-            Coach-verified results earn 1.0× scout trust vs 0.85× for app-tested.
+            Verified results earn full 1.0× scout trust — the highest tier a coach can grant.
           </Text>
         </View>
       </SafeAreaView>

@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xs,
   },
   pageTitle: {
-    fontSize: 28,
+    fontSize: theme.fontSize.xxl,
     fontWeight: theme.fontWeight.black,
     color: theme.colors.text,
     textTransform: 'uppercase',

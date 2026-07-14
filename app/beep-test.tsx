@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
   pageTitle: {
-    fontSize: 28,
+    fontSize: theme.fontSize.xxl,
     fontWeight: theme.fontWeight.black,
     color: theme.colors.text,
     textTransform: 'uppercase',

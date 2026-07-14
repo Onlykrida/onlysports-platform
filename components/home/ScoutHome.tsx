@@ -234,26 +234,4 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: theme.spacing.xxl,
   },
-  emptyCard: {
-    backgroundColor: theme.colors.cardBg,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    alignItems: 'center',
-    marginHorizontal: theme.spacing.sm,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: theme.colors.cardBorder,
-  },
-  emptyText: {
-    fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.sm,
-  },
-  emptySubtext: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textMuted,
-    marginTop: 4,
-    textAlign: 'center',
-  },
 });

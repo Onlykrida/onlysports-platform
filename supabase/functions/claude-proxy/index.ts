@@ -86,6 +86,13 @@ function pickAllowedOrigin(req: Request): string | null {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
+  if (envList.length === 0) {
+    // Loud on purpose: fail-closed is correct, but a production web deploy
+    // missing this secret silently CORS-blocks every AI feature otherwise.
+    console.error(
+      'claude-proxy: ALLOWED_ORIGINS not set — falling back to localhost dev origins; web clients on other origins will be blocked',
+    );
+  }
   const allowList = envList.length > 0 ? envList : DEV_FALLBACK_ORIGINS;
   return allowList.includes(origin) ? origin : null;
 }

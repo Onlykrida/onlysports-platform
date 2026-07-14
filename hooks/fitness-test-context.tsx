@@ -739,7 +739,10 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
           .from('fitness_test_results')
           .update({ video_url: videoUrl })
           .eq('id', testResultId)
-          .eq('athlete_id', currentUser.id);
+          .eq('athlete_id', currentUser.id)
+          // Never swap footage on an already-verified result: the coach's
+          // 1.0× trust badge must stay attached to the video they reviewed.
+          .is('verified_at', null);
         if (error) {
           if (isTableMissing(error)) return { error: 'Fitness test table not set up yet' };
           return { error: error.message };
@@ -876,6 +879,10 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
         if (error) return { error: error.message };
 
         if (athleteId) {
+          // Even the fallback carries a next step — a bare "declined" with no
+          // way forward violates the never-demotivate principle.
+          const declineFallback =
+            'declined this one. Ask another coach, or attach a clearer video and request again.';
           // Map reason to actionable copy. The athlete should know what to
           // try next — re-record video, find another verifier, etc.
           const reasonCopy: Record<string, string> = {
@@ -888,14 +895,8 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
               "couldn't confirm the athlete in the video. Make sure your face is visible at the start.",
             incomplete_test:
               'flagged the test as incomplete. Re-run the full protocol and submit a fresh result.',
-            other: notes
-              ? `declined with this note: "${notes}"`
-              : 'declined this one. Ask another coach, or attach a clearer video and request again.',
+            other: notes ? `declined with this note: "${notes}"` : declineFallback,
           };
-          // Even the fallback carries a next step — a bare "declined" with no
-          // way forward violates the never-demotivate principle.
-          const declineFallback =
-            'declined this one. Ask another coach, or attach a clearer video and request again.';
           const message = `${currentUser.name} ${
             reason ? (reasonCopy[reason] ?? declineFallback) : declineFallback
           }`;
