@@ -144,8 +144,17 @@ function VideoPlayerWeb({
   style,
   testID = 'video-player',
 }: VideoPlayerProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // file:// URIs are device-local paths (e.g. ImagePicker cache) that can never
+  // resolve in a browser — the <video> element doesn't even fire onError for
+  // them ("Not allowed to load local resource"), leaving a permanent black box.
+  // Short-circuit to the unavailable state instead of mounting the element.
+  const isDeviceLocalUri = uri.startsWith('file://');
+  const [isLoading, setIsLoading] = useState(!isDeviceLocalUri);
+  const [error, setError] = useState<string | null>(
+    isDeviceLocalUri
+      ? "This video is still on the poster's device and hasn't been uploaded."
+      : null,
+  );
 
   return (
     <View
