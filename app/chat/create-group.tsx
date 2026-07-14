@@ -238,7 +238,7 @@ export default function CreateGroupScreen() {
           <Search size={20} color={theme.colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search people you follow..."
+            placeholder="Search people you follow…"
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={theme.colors.textSecondary}

@@ -888,12 +888,16 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
               "couldn't confirm the athlete in the video. Make sure your face is visible at the start.",
             incomplete_test:
               'flagged the test as incomplete. Re-run the full protocol and submit a fresh result.',
-            other: notes ? `declined with this note: "${notes}"` : 'declined the verification.',
+            other: notes
+              ? `declined with this note: "${notes}"`
+              : 'declined this one. Ask another coach, or attach a clearer video and request again.',
           };
+          // Even the fallback carries a next step — a bare "declined" with no
+          // way forward violates the never-demotivate principle.
+          const declineFallback =
+            'declined this one. Ask another coach, or attach a clearer video and request again.';
           const message = `${currentUser.name} ${
-            reason
-              ? (reasonCopy[reason] ?? 'declined this verification.')
-              : 'declined this verification.'
+            reason ? (reasonCopy[reason] ?? declineFallback) : declineFallback
           }`;
 
           await supabase

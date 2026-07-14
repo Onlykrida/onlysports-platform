@@ -136,7 +136,7 @@ export default function ShareModal({ visible, onClose, post }: ShareModalProps) 
           <Search size={20} color={theme.colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search conversations..."
+            placeholder="Search conversations…"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />

@@ -644,7 +644,7 @@ export default function FitnessTestManualScreen() {
               style={styles.notesInput}
               value={notes}
               onChangeText={setNotes}
-              placeholder="Optional notes about this test..."
+              placeholder="Optional notes about this test…"
               placeholderTextColor={theme.colors.textMuted}
               multiline
               numberOfLines={3}

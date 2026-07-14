@@ -295,7 +295,7 @@ export default function AIAssistantScreen() {
             style={styles.textInput}
             value={input}
             onChangeText={setInput}
-            placeholder="Ask Krida AI anything..."
+            placeholder="Ask Krida AI anything…"
             placeholderTextColor={theme.colors.textMuted}
             multiline
             maxLength={500}

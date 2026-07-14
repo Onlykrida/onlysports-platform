@@ -37,7 +37,7 @@ export default function EditPostModal({ visible, onClose, initialContent, onSave
           multiline
           value={content}
           onChangeText={setContent}
-          placeholder="Update your post..."
+          placeholder="Update your post…"
           placeholderTextColor={theme.colors.textSecondary}
         />
         <TouchableOpacity

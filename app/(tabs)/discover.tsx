@@ -915,7 +915,7 @@ export default function DiscoverScreen() {
             <Search size={20} color={theme.colors.textSecondary} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search people, sports..."
+              placeholder="Search people, sports…"
               value={localSearchQuery}
               onChangeText={(text) => dispatch({ type: 'SET_SEARCH', query: text })}
               onSubmitEditing={handleSearchSubmit}
@@ -1301,7 +1301,7 @@ export default function DiscoverScreen() {
                   <Text style={styles.filterSectionTitle}>Location</Text>
                   <TextInput
                     style={styles.filterInput}
-                    placeholder="Filter by location..."
+                    placeholder="Filter by location…"
                     value={tempLocation}
                     onChangeText={(text) => dispatch({ type: 'SET_TEMP_LOCATION', location: text })}
                     placeholderTextColor={theme.colors.textSecondary}

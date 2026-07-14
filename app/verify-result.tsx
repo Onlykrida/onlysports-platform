@@ -61,7 +61,7 @@ const REJECT_REASONS: { key: RejectReason; label: string; subtitle: string }[] =
   {
     key: 'video_unclear',
     label: 'Video unclear',
-    subtitle: 'Too blurry, bad angle, or test not visible',
+    subtitle: 'Too blurry, unclear angle, or test not visible',
   },
   {
     key: 'video_missing',
