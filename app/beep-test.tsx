@@ -72,8 +72,8 @@ const SPEED_POWER_TESTS: SpeedTestCard[] = [
     title: 'VERTICAL JUMP',
     description: 'Measure your lower-body explosive power.',
     testType: 'vertical_jump',
-    icon: <ArrowUp size={22} color="#BF5AF2" />,
-    accentColor: '#BF5AF2',
+    icon: <ArrowUp size={22} color={theme.colors.purple} />,
+    accentColor: theme.colors.purple,
   },
 ];
 
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   optionCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 2,
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   testCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 1,
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   },
   // Dual-CTA Speed/Power card: vertical layout with Start Guided + Enter Manually
   dualCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 1,
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xs,
   },
   infoSection: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 2,
@@ -597,11 +597,11 @@ const styles = StyleSheet.create({
     marginTop: 24,
     padding: 16,
     backgroundColor: theme.colors.cardBg,
-    borderRadius: 12,
+    borderRadius: theme.borderRadius.md,
     gap: 8,
   },
   tiersSectionTitle: {
-    fontSize: 15,
+    fontSize: theme.fontSize.md,
     color: theme.colors.text,
     fontWeight: '700',
   },
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
   },
   tierRowDesc: {
     flex: 1,
-    fontSize: 11,
+    fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
   },
 });

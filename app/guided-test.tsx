@@ -60,8 +60,8 @@ const GUIDED_META: Partial<Record<TestType, GuidedTestMeta>> = {
   vertical_jump: {
     title: 'VERTICAL JUMP',
     tagline: 'Lower-body explosive power.',
-    icon: <ArrowUp size={28} color="#BF5AF2" />,
-    accentColor: '#BF5AF2',
+    icon: <ArrowUp size={28} color={theme.colors.purple} />,
+    accentColor: theme.colors.purple,
   },
 };
 
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   heroIconBadge: {
     width: 72,
     height: 72,
-    borderRadius: 36,
+    borderRadius: theme.borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: theme.spacing.xs,
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
   },
   section: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 1,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   numberBadge: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: theme.borderRadius.md,
     backgroundColor: theme.colors.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   bullet: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: theme.borderRadius.xs,
     backgroundColor: theme.colors.cyan,
     marginTop: 10,
     marginLeft: 9,

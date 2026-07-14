@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
 
   // Card
   card: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: 'rgba(255,255,255,0.08)',
@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
   zoneBadgeText: {
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.black,
-    color: '#0a0a0a',
+    color: theme.colors.black,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
   zoneBadgeSmallText: {
     fontSize: 10,
     fontWeight: theme.fontWeight.black,
-    color: '#0a0a0a',
+    color: theme.colors.black,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
@@ -718,13 +718,13 @@ const styles = StyleSheet.create({
   progressBarBg: {
     height: 6,
     backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 3,
+    borderRadius: theme.borderRadius.xs,
     marginBottom: theme.spacing.sm,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: theme.borderRadius.xs,
   },
 
   // Stats row

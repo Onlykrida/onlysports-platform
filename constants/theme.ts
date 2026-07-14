@@ -46,6 +46,8 @@ export const theme = {
     cyan: '#64D2FF',
     red: '#FF453A',
     neonGreen: '#30D158',
+    purple: '#BF5AF2', // vertical jump / power accent
+    gold: '#FFD700', // center_tested "Official" verification tier
     warning: '#FF9F0A',
     info: '#64D2FF',
 

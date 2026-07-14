@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Shield, ShieldCheck, ShieldPlus, Eye } from 'lucide-react-native';
+import { theme } from '@/constants/theme';
 
 // NOTE: We inline tier metadata here to avoid circular dependency issues during build.
 // This matches constants/verification.ts which is the source of truth.
@@ -17,10 +18,22 @@ type DisplayState = VerificationTier | 'video_reviewed';
 
 const TIER_META: Record<DisplayState, { color: string; bgColor: string; shortLabel: string }> = {
   self_reported: { color: '#8E8E93', bgColor: 'rgba(142,142,147,0.15)', shortLabel: 'Self' },
-  app_measured: { color: '#64D2FF', bgColor: 'rgba(100,210,255,0.15)', shortLabel: 'App' },
-  coach_verified: { color: '#30D158', bgColor: 'rgba(48,209,88,0.15)', shortLabel: 'Coach' },
-  center_tested: { color: '#FFD700', bgColor: 'rgba(255,215,0,0.15)', shortLabel: 'Official' },
-  video_reviewed: { color: '#FF9F0A', bgColor: 'rgba(255,159,10,0.15)', shortLabel: 'Video' },
+  app_measured: { color: theme.colors.cyan, bgColor: 'rgba(100,210,255,0.15)', shortLabel: 'App' },
+  coach_verified: {
+    color: theme.colors.primary,
+    bgColor: 'rgba(48,209,88,0.15)',
+    shortLabel: 'Coach',
+  },
+  center_tested: {
+    color: theme.colors.gold,
+    bgColor: 'rgba(255,215,0,0.15)',
+    shortLabel: 'Official',
+  },
+  video_reviewed: {
+    color: theme.colors.orange,
+    bgColor: 'rgba(255,159,10,0.15)',
+    shortLabel: 'Video',
+  },
 };
 
 // Speed/Power tests where video verification is too fakeable to display as

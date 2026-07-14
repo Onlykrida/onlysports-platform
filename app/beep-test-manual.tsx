@@ -667,7 +667,9 @@ export default function FitnessTestManualScreen() {
             }}
           >
             <VerificationBadge tier="self_reported" size="sm" showLabel />
-            <Text style={{ flex: 1, fontSize: 11, color: theme.colors.textSecondary }}>
+            <Text
+              style={{ flex: 1, fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+            >
               Manual entries are Self-Reported. Take the guided test for higher trust.
             </Text>
           </View>
@@ -877,7 +879,7 @@ const styles = StyleSheet.create({
 
   // Results Card
   resultsCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 2,
@@ -935,7 +937,7 @@ const styles = StyleSheet.create({
 
   // Goal Card
   goalCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 2,
@@ -962,7 +964,7 @@ const styles = StyleSheet.create({
 
   // Tips Card
   tipsCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 2,
@@ -978,7 +980,7 @@ const styles = StyleSheet.create({
   tipBullet: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: theme.borderRadius.xs,
     backgroundColor: theme.colors.primary,
     marginTop: 7,
     flexShrink: 0,
@@ -1007,7 +1009,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
   },
   saveButton: {
-    backgroundColor: '#30D158',
+    backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.lg,
     paddingVertical: theme.spacing.lg,
     alignItems: 'center',
