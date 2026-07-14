@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, MessageCircle, Users, Plus } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { useMessages, Conversation } from '@/hooks/messages-context';
 import { useGroups, Group } from '@/hooks/group-messages-context';
@@ -82,7 +83,7 @@ export default function MessagesScreen() {
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     if (days < 7) return `${days}d`;
-    return date.toLocaleDateString();
+    return formatDate(date);
   }, []);
 
   const renderConversation = useCallback(

@@ -25,6 +25,7 @@ import {
   UserCheck,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { Notification } from '@/types';
 import { useNotifications } from '@/hooks/notifications-context';
@@ -70,7 +71,7 @@ const formatTimeAgo = (date: Date) => {
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
 
-  return date.toLocaleDateString();
+  return formatDate(date);
 };
 
 const handleNotificationPress = (notification: Notification) => {

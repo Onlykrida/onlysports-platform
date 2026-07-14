@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { Save, X, Camera, Plus, Trash2 } from 'lucide-react-native';
 import { theme, formatRoleName } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import CachedImage from '@/components/CachedImage';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/Button';
@@ -183,7 +184,7 @@ export default function EditProfileScreen() {
       id: Date.now().toString(),
       title: newAchievement.title,
       description: newAchievement.description,
-      date: newAchievement.date || new Date().toLocaleDateString(),
+      date: newAchievement.date || formatDate(new Date()),
       icon: newAchievement.icon,
     };
 

@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, Clock, CheckCircle, XCircle, ChevronLeft } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 
 const ItemSeparator = () => <View style={{ height: theme.spacing.sm }} />;
@@ -70,9 +71,7 @@ export default function MyApplicationsScreen() {
         <View style={styles.metaRow}>
           <View style={styles.metaItem}>
             <Calendar size={14} color={theme.colors.textSecondary} />
-            <Text style={styles.metaText}>
-              Applied {new Date(item.createdAt).toLocaleDateString()}
-            </Text>
+            <Text style={styles.metaText}>Applied {formatDate(item.createdAt)}</Text>
           </View>
         </View>
 

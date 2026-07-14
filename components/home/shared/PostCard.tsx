@@ -14,6 +14,7 @@ import {
 import CachedImage from '@/components/CachedImage';
 import VideoPlayer from '@/components/VideoPlayer';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import { Post } from '@/types';
 
 const { width } = Dimensions.get('window');
@@ -166,7 +167,7 @@ const PostCard: React.FC<PostCardProps> = ({
           </View>
           <View style={styles.opportunityFooter}>
             <Text style={styles.opportunityDeadline}>
-              Deadline: {new Date(post.opportunityData.deadline).toLocaleDateString()}
+              Deadline: {formatDate(post.opportunityData.deadline)}
             </Text>
             {!post.opportunityData.hasApplied ? (
               <TouchableOpacity style={styles.applyButton} onPress={() => onApply?.(post.id)}>

@@ -31,6 +31,7 @@ import {
   Settings2,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import { BackgroundGradient } from '@/components/BackgroundGradient';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
@@ -235,7 +236,7 @@ export default function OpportunitiesScreen() {
             <View style={styles.detailItem}>
               <Calendar size={14} color={theme.colors.cyan} style={styles.detailIcon} />
               <Text style={styles.detailText} numberOfLines={1} ellipsizeMode="tail">
-                Deadline: {new Date(item.deadline).toLocaleDateString()}
+                Deadline: {formatDate(item.deadline)}
               </Text>
             </View>
             <View style={styles.detailItem}>

@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckCircle, XCircle, Clock, ChevronLeft } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import CachedImage from '@/components/CachedImage';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 
@@ -114,9 +115,7 @@ export default function ManageApplicationsScreen() {
             </Text>
           </View>
 
-          <Text style={styles.dateText}>
-            Applied {new Date(item.createdAt).toLocaleDateString()}
-          </Text>
+          <Text style={styles.dateText}>Applied {formatDate(item.createdAt)}</Text>
 
           {item.status === 'pending' && (
             <View style={styles.actionsRow}>
