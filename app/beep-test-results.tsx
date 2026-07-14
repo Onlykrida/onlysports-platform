@@ -21,6 +21,7 @@ const Haptics = Platform.OS !== 'web' ? require('expo-haptics') : null;
 import * as ImagePicker from 'expo-image-picker';
 import { theme } from '@/constants/theme';
 import { showAlert } from '@/constants/cross-platform-alert';
+import { uploadTestVideo } from '@/services/test-video-upload';
 import VerificationBadge from '@/components/VerificationBadge';
 import { getTierMeta } from '@/constants/verification';
 import { supabase } from '@/constants/supabase';
@@ -124,19 +125,14 @@ export default function BeepTestResultsScreen() {
         videoMaxDuration: 60,
       });
       if (result.canceled) return;
+      if (!currentUser) return;
       setIsUploadingVideo(true);
       const asset = result.assets[0];
-      const fileName = `${currentUser?.id}/${Date.now()}.mp4`;
-      const response = await fetch(asset.uri);
-      const blob = await response.blob();
-      const { error } = await supabase.storage
-        .from('test-videos')
-        .upload(fileName, blob, { contentType: 'video/mp4' });
-      if (error) {
-        showAlert('Upload Failed', error.message);
+      const { url, error } = await uploadTestVideo(currentUser.id, asset);
+      if (error || !url) {
+        showAlert('Upload Failed', error ?? 'Failed to upload video');
       } else {
-        const { data: urlData } = supabase.storage.from('test-videos').getPublicUrl(fileName);
-        setVideoUrl(urlData.publicUrl);
+        setVideoUrl(url);
       }
     } catch (e: any) {
       showAlert('Error', 'Failed to upload video');

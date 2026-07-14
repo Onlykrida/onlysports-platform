@@ -14,12 +14,13 @@ import { X, Search, ShieldCheck, Heart, Video as VideoIcon, Check } from 'lucide
 import * as ImagePicker from 'expo-image-picker';
 import { theme, roleAccents } from '@/constants/theme';
 import { showAlert } from '@/constants/cross-platform-alert';
+import { uploadTestVideo } from '@/services/test-video-upload';
 import CachedImage from '@/components/CachedImage';
 import { useUsers } from '@/hooks/users-context';
 import { useFollow } from '@/hooks/follow-context';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
 import { useAuth } from '@/hooks/auth-context';
-import { supabase, isSupabaseConfigured } from '@/constants/supabase';
+import { isSupabaseConfigured } from '@/constants/supabase';
 import type { User } from '@/types';
 
 interface Props {
@@ -86,18 +87,12 @@ export default function RequestVerificationModal({
       if (picked.canceled) return;
       setIsUploadingVideo(true);
       const asset = picked.assets[0];
-      const fileName = `${currentUser.id}/${Date.now()}.mp4`;
-      const response = await fetch(asset.uri);
-      const blob = await response.blob();
-      const { error: uploadError } = await supabase.storage
-        .from('test-videos')
-        .upload(fileName, blob, { contentType: 'video/mp4' });
-      if (uploadError) {
-        showAlert('Upload failed', uploadError.message);
+      const { url, error: uploadError } = await uploadTestVideo(currentUser.id, asset);
+      if (uploadError || !url) {
+        showAlert('Upload failed', uploadError ?? 'Failed to upload video');
         return;
       }
-      const { data: urlData } = supabase.storage.from('test-videos').getPublicUrl(fileName);
-      setVideoUrl(urlData.publicUrl);
+      setVideoUrl(url);
     } catch (e: any) {
       showAlert('Error', e?.message ?? 'Failed to upload video');
     } finally {
