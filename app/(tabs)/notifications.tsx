@@ -209,8 +209,10 @@ export default function NotificationsTab() {
 
   const renderHeader = () => (
     <View style={styles.header}>
+      {/* Matches the tab label — tab said "Alerts", page said
+          "NOTIFICATIONS" (trunk-test wayfinding mismatch) */}
       <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-        Notifications
+        Alerts
       </Text>
       {notifications.some((n) => !n.read) && (
         <TouchableOpacity onPress={markAllAsRead} style={styles.markAllButton}>
