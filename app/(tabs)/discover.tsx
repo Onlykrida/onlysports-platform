@@ -971,8 +971,10 @@ export default function DiscoverScreen() {
             ) : localSearchQuery.length > 0 ? (
               <View style={styles.noResultsContainer}>
                 <Search size={48} color={theme.colors.textSecondary} />
-                <Text style={styles.noResultsTitle}>No results found</Text>
-                <Text style={styles.noResultsMessage}>Try searching for different keywords</Text>
+                <Text style={styles.noResultsTitle}>Nothing matches yet</Text>
+                <Text style={styles.noResultsMessage}>
+                  Try a different name, sport, or location
+                </Text>
               </View>
             ) : (
               <View style={styles.recentSearchesContainer}>
@@ -1139,15 +1141,15 @@ export default function DiscoverScreen() {
             ) : (
               <View style={styles.noUsersContainer}>
                 <Search size={48} color={theme.colors.textSecondary} />
-                <Text style={styles.noUsersTitle}>No users found</Text>
+                <Text style={styles.noUsersTitle}>No one matches those filters yet</Text>
                 <Text style={styles.noUsersMessage}>
                   {selectedSport && selectedRole
-                    ? `No ${selectedRole}s found for ${selectedSport}`
+                    ? `Widen your search — new ${selectedRole}s in ${selectedSport} join every day`
                     : selectedSport
-                      ? `No users found for ${selectedSport}`
+                      ? `Widen your search — new ${selectedSport} talent joins every day`
                       : selectedRole
-                        ? `No ${selectedRole}s found`
-                        : 'No users available at the moment'}
+                        ? `Widen your search — new ${selectedRole}s join every day`
+                        : 'New athletes and scouts join every day — check back soon'}
                 </Text>
                 {(selectedSport || selectedRole) && (
                   <TouchableOpacity

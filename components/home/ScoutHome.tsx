@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import BgGradient from '@/components/BackgroundGradient';
+import EmptyState from '@/components/EmptyState';
 import { Award } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
@@ -202,13 +203,13 @@ export default function ScoutHome() {
         ListHeaderComponent={ListHeader}
         ListFooterComponent={ListFooter}
         ListEmptyComponent={
-          <View style={styles.emptyCard}>
-            <Award size={40} color={theme.colors.textMuted} />
-            <Text style={styles.emptyText}>No matches found</Text>
-            <Text style={styles.emptySubtext}>
-              Set your scouting preferences to get AI-powered athlete recommendations
-            </Text>
-          </View>
+          <EmptyState
+            icon={Award}
+            title="Your next star is out there"
+            subtitle="Set your scouting preferences and AI will surface athletes that match your criteria."
+            ctaLabel="Set Preferences"
+            onCTA={() => router.push('/scout-preferences' as any)}
+          />
         }
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={ItemSeparator}

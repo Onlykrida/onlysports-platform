@@ -36,6 +36,7 @@ import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
 import { Stack, router } from 'expo-router';
 import CreateOpportunityModal from '@/components/CreateOpportunityModal';
+import EmptyState from '@/components/EmptyState';
 import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 import { OpportunitySkeletonList } from '@/components/SkeletonScreens';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
@@ -716,12 +717,10 @@ export default function OpportunitiesScreen() {
           onRefresh={refreshOpportunities}
           refreshing={isLoading}
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No opportunities found</Text>
-              <Text style={styles.emptySubtext}>
-                Try adjusting your filters or check back later
-              </Text>
-            </View>
+            <EmptyState
+              preset="opportunities"
+              subtitle="New tryouts, scholarships, and tournaments are posted daily — try widening your filters or check back soon."
+            />
           }
         />
 

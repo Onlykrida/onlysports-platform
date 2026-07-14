@@ -40,6 +40,7 @@ import { useFitnessTest } from '@/hooks/fitness-test-context';
 import { FitnessTestCard } from '@/components/BeepTestCard';
 import { getAgeGroup } from '@/constants/fitness-test-data';
 import CachedImage from '@/components/CachedImage';
+import EmptyState from '@/components/EmptyState';
 import AIProfileCoach from '@/components/AIProfileCoach';
 import ProfileCompletion from '@/components/ProfileCompletion';
 import ProfileViewers from '@/components/ProfileViewers';
@@ -564,15 +565,12 @@ export default function ProfileScreen() {
                   </View>
                 ))
               ) : (
-                <TouchableOpacity
-                  style={styles.emptyState}
-                  onPress={() => router.push('/player-stats' as any)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Add your stats"
-                >
-                  <Text style={styles.emptyStateText}>No stats available</Text>
-                  <Text style={styles.emptyStateSubtext}>Tap to add your stats</Text>
-                </TouchableOpacity>
+                <EmptyState
+                  preset="stats"
+                  subtitle="Add your stats to show scouts what you're made of."
+                  ctaLabel="Add My Stats"
+                  onCTA={() => router.push('/player-stats' as any)}
+                />
               )}
             </View>
           </View>
