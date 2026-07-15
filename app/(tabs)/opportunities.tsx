@@ -66,11 +66,10 @@ interface OpportunityData {
 
 export default function OpportunitiesScreen() {
   const { user } = useAuth();
-  const { opportunities, isLoading, applyToOpportunity, refreshOpportunities } = useOpportunities();
+  const { opportunities, isLoading, refreshOpportunities } = useOpportunities();
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
-  const [applyingTo, setApplyingTo] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { track } = useAnalytics();
 
@@ -139,38 +138,8 @@ export default function OpportunitiesScreen() {
     return uniqueSports.map((sport) => ({ id: sport.toLowerCase(), label: sport }));
   }, [opportunities]);
 
-  const handleApply = useCallback(
-    async (opportunityId: string) => {
-      if (!user) {
-        Alert.alert('Error', 'You must be logged in to apply');
-        return;
-      }
-
-      if (user.role !== 'athlete') {
-        Alert.alert('Error', 'Only athletes can apply to opportunities');
-        return;
-      }
-
-      setApplyingTo(opportunityId);
-
-      try {
-        const { error } = await applyToOpportunity(opportunityId);
-
-        if (error) {
-          Alert.alert('Error', error);
-        } else {
-          track(EVENTS.OPPORTUNITY_APPLIED, { opportunityId });
-          Alert.alert('Success', 'Your application has been submitted!');
-        }
-      } catch (error) {
-        Alert.alert('Error', 'Failed to submit application');
-      } finally {
-        setApplyingTo(null);
-      }
-    },
-    [user, applyToOpportunity, track],
-  );
-
+  // Applying now happens on the detail screen behind an explicit confirm
+  // step (app/opportunity/[id].tsx) — the card never submits directly.
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'tryouts':
@@ -190,13 +159,17 @@ export default function OpportunitiesScreen() {
 
   const renderOpportunity = useCallback(
     ({ item }: { item: Opportunity }) => {
-      const isApplying = applyingTo === item.id;
       const canApply = user?.role === 'athlete' && !item.hasApplied;
 
       return (
         <TouchableOpacity
           style={styles.opportunityCard}
-          onPress={() => track(EVENTS.OPPORTUNITY_VIEWED, { opportunityId: item.id })}
+          onPress={() => {
+            track(EVENTS.OPPORTUNITY_VIEWED, { opportunityId: item.id });
+            router.push(`/opportunity/${item.id}` as any);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`View ${item.title} details`}
         >
           <View style={styles.cardHeader}>
             {/* getTypeColor existed but the tag hardcoded green — every
@@ -286,19 +259,22 @@ export default function OpportunitiesScreen() {
               </Text>
             </View>
 
+            {/* One blind tap used to submit the application from the card.
+                Now the CTA routes to the detail screen: requirements +
+                what's-shared + explicit confirm (design audit, Wave A). */}
             {canApply && (
               <TouchableOpacity
-                style={[styles.applyButton, isApplying && styles.applyButtonDisabled]}
-                onPress={() => handleApply(item.id)}
-                disabled={isApplying}
+                style={styles.applyButton}
+                onPress={() => {
+                  track(EVENTS.OPPORTUNITY_VIEWED, { opportunityId: item.id });
+                  router.push(`/opportunity/${item.id}` as any);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`View and apply to ${item.title}`}
               >
-                {isApplying ? (
-                  <ActivityIndicator size="small" color={theme.colors.white} />
-                ) : (
-                  <Text style={styles.applyButtonText} numberOfLines={1} ellipsizeMode="tail">
-                    Apply Now
-                  </Text>
-                )}
+                <Text style={styles.applyButtonText} numberOfLines={1} ellipsizeMode="tail">
+                  View & Apply
+                </Text>
               </TouchableOpacity>
             )}
 
@@ -321,7 +297,7 @@ export default function OpportunitiesScreen() {
         </TouchableOpacity>
       );
     },
-    [applyingTo, user, handleApply, getTypeColor],
+    [user, track, getTypeColor],
   );
 
   const types = [

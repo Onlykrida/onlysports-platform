@@ -189,6 +189,10 @@ function RootLayoutNav() {
                           route table is complete and we get a default title
                           before the in-component override kicks in (avoids the
                           "verify-result" route name flashing on push). */}
+                      <Stack.Screen
+                        name="opportunity/[id]"
+                        options={{ title: 'Opportunity', headerShown: true }}
+                      />
                       <Stack.Screen name="verify-result" options={{ title: 'Verify Result' }} />
                       <Stack.Screen name="player-stats" options={{ title: 'Player Stats' }} />
                       <Stack.Screen
