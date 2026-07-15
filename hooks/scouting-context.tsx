@@ -1100,9 +1100,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
 
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select(
-          'id, name, avatar, role, sport, position, verified, role_specific_data, email, created_at',
-        )
+        .select('id, name, avatar, role, sport, position, verified, role_specific_data, created_at')
         .in('id', playerIds)
         .eq('role', 'athlete');
 
@@ -1128,7 +1126,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
             sport: profile.sport,
             position: profile.position,
             verified: profile.verified,
-            email: profile.email,
+            email: '', // profiles.email is not client-readable (column-level grants)
             createdAt: new Date(profile.created_at),
             roleSpecificData: profile.role_specific_data || {},
           }) as User,
@@ -1161,7 +1159,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
 
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, name, avatar, role, sport, verified, role_specific_data, email, created_at')
+        .select('id, name, avatar, role, sport, verified, role_specific_data, created_at')
         .in('id', scoutIds);
 
       if (profilesError) {
@@ -1178,7 +1176,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
             role: profile.role,
             sport: profile.sport,
             verified: profile.verified,
-            email: profile.email,
+            email: '', // profiles.email is not client-readable (column-level grants)
             createdAt: new Date(profile.created_at),
             roleSpecificData: profile.role_specific_data || {},
           }) as User,

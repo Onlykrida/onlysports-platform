@@ -764,6 +764,30 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
     ): Promise<{ error?: string }> => {
       if (!currentUser) return { error: 'Not authenticated' };
       try {
+        // Preferred path: the approve_verification RPC (security hardening
+        // migration). It validates the pending request belongs to THIS
+        // verifier, blocks self-verification, upgrades the tier behind the
+        // guard trigger, and notifies the athlete — atomically, server-side.
+        const { error: rpcError } = await supabase.rpc('approve_verification', {
+          p_request_id: requestId,
+          p_test_result_id: testResultId,
+          p_mode: mode,
+          p_notes: notes ?? null,
+        });
+        if (!rpcError) {
+          await refreshHistory();
+          return {};
+        }
+        // Function not deployed yet (pre-migration environment) → legacy
+        // direct-update path below. Any other RPC error is a real rejection
+        // (not your request, own result, wrong role) — surface it.
+        const missingFn =
+          rpcError.code === 'PGRST202' ||
+          /could not find the function|function .* does not exist/i.test(rpcError.message ?? '');
+        if (!missingFn) return { error: rpcError.message };
+        if (__DEV__)
+          console.log('FitnessTest: approve RPC missing, using legacy direct-update path');
+
         // Pull athlete_id from the request first — we need it to address the
         // approval notification. Single roundtrip; fail fast if request missing.
         const { data: requestRow, error: fetchError } = await supabase

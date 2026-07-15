@@ -841,8 +841,14 @@ END;
 $$;
 
 -- ---------- helper: get_conversations ----------
+-- SECURITY: zero-arg, auth.uid()-scoped. The old get_conversations(user_uuid)
+-- overload let ANY anon-key caller read anyone's DM previews (F1 in the /cso
+-- audit); it is dropped in 20260716_security_hardening.sql and must never be
+-- reintroduced here.
 
-CREATE OR REPLACE FUNCTION public.get_conversations(user_uuid uuid)
+DROP FUNCTION IF EXISTS public.get_conversations(uuid);
+
+CREATE OR REPLACE FUNCTION public.get_conversations()
 RETURNS TABLE (
     participant_id      uuid,
     participant_name    text,
@@ -856,7 +862,12 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+    user_uuid uuid := auth.uid();
 BEGIN
+    IF user_uuid IS NULL THEN
+        RAISE EXCEPTION 'not authenticated';
+    END IF;
     RETURN QUERY
     WITH convos AS (
         SELECT DISTINCT
@@ -1170,9 +1181,59 @@ END $$;
 -- ============================================================================
 
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated;
+-- SECURITY: blanket GRANT ALL (tables + functions, incl. to anon) was the
+-- reason every SECURITY DEFINER helper and PII column was reachable by any
+-- anon-key holder (/cso audit). Authenticated gets table access (RLS scopes
+-- rows; column grants below scope profiles); anon gets nothing by default —
+-- grant anon per-table only when a public surface genuinely needs it.
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+REVOKE ALL ON ALL TABLES    IN SCHEMA public FROM anon;
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA public FROM anon;
+-- anon exceptions (deliberate):
+GRANT INSERT ON public.analytics_events TO anon;  -- pre-login telemetry (null-user policy)
+DO $$
+BEGIN
+  -- waitlist is created by scripts/create-waitlist-table.ts, not this file
+  IF to_regclass('public.waitlist') IS NOT NULL THEN
+    GRANT INSERT ON public.waitlist TO anon;      -- public waitlist form
+  END IF;
+END $$;
+
+-- ============================================================================
+-- 11b. SECURITY HARDENING (mirrors supabase/migrations/20260716_security_hardening.sql)
+-- Keep this section in sync with that migration — canonical file is the
+-- source of truth for fresh environments.
+-- ============================================================================
+
+-- Columns added by side migrations, folded into canonical:
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS city  text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS state text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS date_of_birth date;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS push_token text;
+ALTER TABLE public.fitness_test_results ADD COLUMN IF NOT EXISTS verification_mode text
+  CHECK (verification_mode IN ('remote_video','in_person','sensor_only'));
+
+-- Profiles column-level SELECT: email + push_token are never client-readable.
+REVOKE SELECT ON public.profiles FROM anon, authenticated;
+GRANT SELECT (
+  id, name, role, avatar, cover_photo, bio, location, city, state,
+  verified, sport, position, achievements, stats, role_specific_data,
+  gender, date_of_birth,
+  followers_count, following_count, posts_count,
+  created_at, updated_at
+) ON public.profiles TO authenticated;
+GRANT UPDATE (
+  name, avatar, cover_photo, bio, location, city, state, sport, position,
+  achievements, stats, role_specific_data, gender, date_of_birth, push_token,
+  updated_at
+) ON public.profiles TO authenticated;
+
+-- Guard triggers + approve_verification RPC + search indexes: definitions
+-- live in supabase/migrations/20260716_security_hardening.sql — run that file
+-- after this one on any fresh environment. (Not duplicated inline to keep one
+-- authoritative definition of the security-critical functions.)
 
 -- ============================================================================
 -- 12. VERIFICATION
