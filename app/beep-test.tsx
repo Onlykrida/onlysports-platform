@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     fontSize: theme.fontSize.xxl,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     textTransform: 'uppercase',
     letterSpacing: 2,

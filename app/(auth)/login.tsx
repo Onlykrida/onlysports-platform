@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 36,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.primary,
     marginBottom: theme.spacing.lg,
     letterSpacing: 4,
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: theme.fontSize.xxl,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
     letterSpacing: 3,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   signupTextBold: {
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.orange,
   },
   errorContainer: {

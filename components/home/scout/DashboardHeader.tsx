@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     letterSpacing: 3,
     textTransform: 'uppercase',

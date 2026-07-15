@@ -45,11 +45,7 @@ import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 const ItemSeparator = () => <View style={{ height: 2 }} />;
 
 type OpportunityCategory =
-  | 'tryouts'
-  | 'tournaments'
-  | 'sponsorships'
-  | 'scholarships'
-  | 'contracts';
+  'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
 type OpportunityType = 'paid' | 'unpaid' | 'local' | 'national' | 'short-term' | 'long-term';
 
 interface OpportunityData {
@@ -1062,7 +1058,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     letterSpacing: theme.letterSpacing.wide,
   },
@@ -1111,7 +1107,7 @@ const styles = StyleSheet.create({
   },
   filterTextActive: {
     color: theme.colors.black,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
   },
   listContent: {
     padding: theme.spacing.md,
@@ -1163,7 +1159,7 @@ const styles = StyleSheet.create({
   },
   opportunityTitle: {
     fontSize: 15,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
     letterSpacing: 0.5,
@@ -1253,7 +1249,7 @@ const styles = StyleSheet.create({
   },
   applyButtonText: {
     fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.black,
     letterSpacing: 1,
   },
@@ -1285,7 +1281,7 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: theme.colors.black,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
   },
   headerContent: {
     flexDirection: 'row',
@@ -1315,7 +1311,7 @@ const styles = StyleSheet.create({
   filterBadgeText: {
     color: theme.colors.black,
     fontSize: 12,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
   },
   activeFiltersBar: {
     flexDirection: 'row',
@@ -1371,7 +1367,7 @@ const styles = StyleSheet.create({
   },
   appliedButtonText: {
     fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.primary,
   },
   viewButton: {
@@ -1448,7 +1444,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     letterSpacing: 0.5,
   },
@@ -1480,7 +1476,7 @@ const styles = StyleSheet.create({
   },
   categoryTitle: {
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
@@ -1514,7 +1510,7 @@ const styles = StyleSheet.create({
   selectedCategoryText: {
     flex: 1,
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
   },
   formSection: {
@@ -1522,7 +1518,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
     letterSpacing: 0.5,
@@ -1553,7 +1549,7 @@ const styles = StyleSheet.create({
   },
   typeChipTextSelected: {
     color: theme.colors.black,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
   },
   input: {
     backgroundColor: '#111',
@@ -1587,7 +1583,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.black,
     letterSpacing: 1,
   },

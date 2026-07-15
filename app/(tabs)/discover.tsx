@@ -1030,8 +1030,7 @@ export default function DiscoverScreen() {
               contentContainerStyle={styles.filterContent}
               data={
                 [null, 'athlete', 'scout', 'coach', 'trainer', 'team', 'brand', 'fan'] as (
-                  | string
-                  | null
+                  string | null
                 )[]
               }
               keyExtractor={(item) => item || 'all'}
@@ -1402,7 +1401,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: theme.fontSize.lg,
-    fontWeight: '900' as const,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     letterSpacing: 2,
     textTransform: 'uppercase' as const,
@@ -1498,7 +1497,7 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: '#000',
-    fontWeight: '900' as const,
+    fontFamily: theme.fontFamily.displayBlack,
   },
   listContent: {
     padding: theme.spacing.md,
@@ -1576,7 +1575,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 14,
-    fontWeight: '900' as const,
+    fontFamily: theme.fontFamily.displayBlack,
     color: '#f0f0f0',
     letterSpacing: 0.5,
     flex: 1,
@@ -1682,7 +1681,7 @@ const styles = StyleSheet.create({
   },
   noResultsTitle: {
     fontSize: theme.fontSize.lg,
-    fontWeight: '900' as const,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,

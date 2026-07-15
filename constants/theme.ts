@@ -126,6 +126,16 @@ export const theme = {
     wider: 2,
     widest: 4,
   },
+  // Display typeface (loaded in app/_layout.tsx via @expo-google-fonts/archivo).
+  // Use for page titles, hero numbers, and letterspaced-caps headings — body
+  // text stays on the system stack. IMPORTANT: when a style sets one of these
+  // fontFamily tokens, remove its fontWeight — Android fake-bolds custom fonts
+  // when both are set; the weight is baked into the family name.
+  fontFamily: {
+    display: 'Archivo_800ExtraBold',
+    displayBlack: 'Archivo_900Black',
+    displayBold: 'Archivo_700Bold',
+  },
   fontWeight: {
     regular: '400' as const,
     medium: '500' as const,
