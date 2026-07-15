@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Alert,
   ActivityIndicator,
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, DollarSign, Users, Trophy, Briefcase, GraduationCap } from 'lucide-react-native';
 import { theme, formatRoleName } from '@/constants/theme';
+import { showAlert } from '@/constants/cross-platform-alert';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
 
@@ -23,11 +23,7 @@ interface CreateOpportunityModalProps {
 }
 
 type OpportunityCategory =
-  | 'tryouts'
-  | 'tournaments'
-  | 'sponsorships'
-  | 'scholarships'
-  | 'contracts';
+  'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
 
 interface CategoryConfig {
   id: OpportunityCategory;
@@ -188,12 +184,12 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
   const handleSubmit = async () => {
     const validationError = validateForm();
     if (validationError) {
-      Alert.alert('Validation Error', validationError);
+      showAlert('Validation Error', validationError);
       return;
     }
 
     if (!selectedCategory) {
-      Alert.alert('Error', 'Please select a category');
+      showAlert('Error', 'Please select a category');
       return;
     }
 
@@ -214,13 +210,13 @@ export default function CreateOpportunityModal({ visible, onClose }: CreateOppor
       const { error } = await createOpportunity(opportunityData);
 
       if (error) {
-        Alert.alert('Error', error);
+        showAlert('Error', error);
       } else {
-        Alert.alert('Success', 'Opportunity created successfully!');
+        showAlert('Success', 'Opportunity created successfully!');
         handleClose();
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to create opportunity');
+      showAlert('Error', 'Failed to create opportunity');
     } finally {
       setIsSubmitting(false);
     }
