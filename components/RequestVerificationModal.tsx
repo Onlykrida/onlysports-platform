@@ -66,39 +66,63 @@ export default function RequestVerificationModal({
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
-  const handlePickVideo = useCallback(async () => {
-    if (!currentUser) {
-      showAlert('Not signed in', 'You must be signed in to upload a video.');
-      return;
-    }
-    if (!isSupabaseConfigured) {
-      showAlert(
-        'Upload unavailable',
-        'Video upload needs Supabase to be configured. Skip the video and send the request without it.',
-      );
-      return;
-    }
-    try {
-      const picked = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['videos'],
-        quality: 0.7,
-        videoMaxDuration: 60,
-      });
-      if (picked.canceled) return;
-      setIsUploadingVideo(true);
-      const asset = picked.assets[0];
-      const { url, error: uploadError } = await uploadTestVideo(currentUser.id, asset);
-      if (uploadError || !url) {
-        showAlert('Upload failed', uploadError ?? 'Failed to upload video');
+  // Video proof, Phase A: record fresh (the honest path — the coach sees
+  // footage shot for THIS request) or attach from gallery. Same 60s cap and
+  // streaming upload either way. NEEDS DEVICE QA: launchCameraAsync can't be
+  // exercised from a web session.
+  const handleAttachVideo = useCallback(
+    async (source: 'camera' | 'library') => {
+      if (!currentUser) {
+        showAlert('Not signed in', 'You must be signed in to upload a video.');
         return;
       }
-      setVideoUrl(url);
-    } catch (e: any) {
-      showAlert('Error', e?.message ?? 'Failed to upload video');
-    } finally {
-      setIsUploadingVideo(false);
-    }
-  }, [currentUser]);
+      if (!isSupabaseConfigured) {
+        showAlert(
+          'Upload unavailable',
+          'Video upload needs Supabase to be configured. Skip the video and send the request without it.',
+        );
+        return;
+      }
+      try {
+        let picked: ImagePicker.ImagePickerResult;
+        if (source === 'camera') {
+          const perm = await ImagePicker.requestCameraPermissionsAsync();
+          if (!perm.granted) {
+            showAlert(
+              'Camera permission needed',
+              'Allow camera access to record your test, or attach a video from your gallery instead.',
+            );
+            return;
+          }
+          picked = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['videos'],
+            quality: 0.7,
+            videoMaxDuration: 60,
+          });
+        } else {
+          picked = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['videos'],
+            quality: 0.7,
+            videoMaxDuration: 60,
+          });
+        }
+        if (picked.canceled) return;
+        setIsUploadingVideo(true);
+        const asset = picked.assets[0];
+        const { url, error: uploadError } = await uploadTestVideo(currentUser.id, asset);
+        if (uploadError || !url) {
+          showAlert('Upload failed', uploadError ?? 'Failed to upload video');
+          return;
+        }
+        setVideoUrl(url);
+      } catch (e: any) {
+        showAlert('Error', e?.message ?? 'Failed to upload video');
+      } finally {
+        setIsUploadingVideo(false);
+      }
+    },
+    [currentUser],
+  );
 
   // Coach, trainer, AND scout can all verify. Athletes choose deliberately —
   // a scout who watches the video is a different trust signal from a coach
@@ -289,32 +313,48 @@ export default function RequestVerificationModal({
           {enableVideoUpload && selectedCoach && (
             <View style={styles.videoField}>
               <Text style={styles.notesLabel}>Attach a video (optional)</Text>
-              <TouchableOpacity
-                style={[styles.videoButton, videoUrl && styles.videoButtonDone]}
-                onPress={handlePickVideo}
-                disabled={isUploadingVideo}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  videoUrl ? 'Video attached, tap to replace' : 'Pick a video to upload'
-                }
-              >
-                {isUploadingVideo ? (
+              {videoUrl ? (
+                <TouchableOpacity
+                  style={[styles.videoButton, styles.videoButtonDone]}
+                  onPress={() => setVideoUrl(null)}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Video attached, tap to replace"
+                >
+                  <Check size={16} color={theme.colors.primary} />
+                  <Text style={[styles.videoButtonText, { color: theme.colors.primary }]}>
+                    Video uploaded — tap to replace
+                  </Text>
+                </TouchableOpacity>
+              ) : isUploadingVideo ? (
+                <View style={styles.videoButton}>
                   <ActivityIndicator color={theme.colors.text} />
-                ) : videoUrl ? (
-                  <>
-                    <Check size={16} color={theme.colors.primary} />
-                    <Text style={[styles.videoButtonText, { color: theme.colors.primary }]}>
-                      Video uploaded — tap to replace
-                    </Text>
-                  </>
-                ) : (
-                  <>
+                </View>
+              ) : (
+                <View style={styles.videoBtnRow}>
+                  <TouchableOpacity
+                    style={[styles.videoButton, styles.videoBtnHalf]}
+                    onPress={() => handleAttachVideo('camera')}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Record a video now"
+                  >
+                    <VideoIcon size={16} color={theme.colors.primary} />
+                    <Text style={styles.videoButtonText}>Record now</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.videoButton, styles.videoBtnHalf]}
+                    onPress={() => handleAttachVideo('library')}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Choose a video from your gallery"
+                  >
                     <VideoIcon size={16} color={theme.colors.text} />
-                    <Text style={styles.videoButtonText}>Pick a video (max 60s)</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+                    <Text style={styles.videoButtonText}>From gallery</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              <Text style={styles.videoHint}>Max 60 seconds — full setup and attempt visible.</Text>
             </View>
           )}
           {/* Optional context note — only shown after a verifier is selected,
@@ -551,5 +591,18 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.text,
+  },
+  videoBtnRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  videoBtnHalf: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  videoHint: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    marginTop: theme.spacing.xs,
   },
 });
