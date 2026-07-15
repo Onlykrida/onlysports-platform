@@ -19,7 +19,8 @@ import {
   Crosshair,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
-import { TestType } from '@/constants/fitness-test-data';
+import { TestType, getZoneMeta } from '@/constants/fitness-test-data';
+import { useFitnessTest } from '@/hooks/fitness-test-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
 import VerificationBadge from '@/components/VerificationBadge';
 import { getTierMeta } from '@/constants/verification';
@@ -138,6 +139,125 @@ const COMING_SOON_TESTS: ComingSoonCard[] = [
   },
 ];
 
+// ─── My Combine ────────────────────────────────────────────────────────────
+// The four core tests as one scout-facing scorecard (design audit direction
+// 1b). The hub opens with the athlete's own progress — the tier ladder as a
+// personal status, not a glossary.
+const COMBINE_TESTS: {
+  testType: TestType;
+  label: string;
+  emptyHref: string;
+  format: (r: any) => string;
+}[] = [
+  {
+    testType: 'yoyo',
+    label: 'YO-YO IR1',
+    emptyHref: '/beep-test-live',
+    format: (r) => `L${r.level ?? '?'}.${r.shuttle ?? '?'}`,
+  },
+  {
+    testType: 'sprint_20m',
+    label: 'SPRINT 20M',
+    emptyHref: '/guided-test?testType=sprint_20m',
+    format: (r) => (r.sprint_time != null ? `${r.sprint_time.toFixed(2)}s` : '—'),
+  },
+  {
+    testType: 'agility_ttest',
+    label: 'AGILITY',
+    emptyHref: '/guided-test?testType=agility_ttest',
+    format: (r) => (r.agility_time != null ? `${r.agility_time.toFixed(2)}s` : '—'),
+  },
+  {
+    testType: 'vertical_jump',
+    label: 'V. JUMP',
+    emptyHref: '/guided-test?testType=vertical_jump',
+    format: (r) => (r.jump_height != null ? `${r.jump_height}cm` : '—'),
+  },
+];
+
+const TIER_RANK = {
+  self_reported: 0,
+  app_measured: 1,
+  coach_verified: 2,
+  center_tested: 3,
+} as const;
+
+function combineStatusLine(filled: number, bestTier: keyof typeof TIER_RANK | null): string {
+  if (filled === 0) return 'Your first test takes about 2 minutes. Scouts filter by full combines.';
+  if (bestTier === 'center_tested' || bestTier === 'coach_verified')
+    return 'Coach-verified results carry full 1.0× scout trust. Keep them fresh.';
+  if (bestTier === 'app_measured')
+    return "You're App-Tested (0.85×). Coach verification unlocks full 1.0× trust.";
+  return 'Self-Reported (0.7×) — ask a coach to verify and unlock full 1.0× trust.';
+}
+
+function MyCombineCard() {
+  const { latestByType } = useFitnessTest();
+  const filledTests = COMBINE_TESTS.filter((t) => latestByType[t.testType]);
+  const filled = filledTests.length;
+  const bestTier = filledTests.reduce<keyof typeof TIER_RANK | null>((best, t) => {
+    const tier = latestByType[t.testType]?.verification_tier as keyof typeof TIER_RANK | undefined;
+    if (!tier) return best;
+    if (!best || TIER_RANK[tier] > TIER_RANK[best]) return tier;
+    return best;
+  }, null);
+
+  return (
+    <View style={styles.combineCard}>
+      <View style={styles.combineHeader}>
+        <Text style={styles.combineTitle}>MY COMBINE</Text>
+        <Text style={styles.combineCount}>{filled}/4</Text>
+      </View>
+      <View style={styles.combineGrid}>
+        {COMBINE_TESTS.map((t) => {
+          const result = latestByType[t.testType];
+          if (!result) {
+            return (
+              <TouchableOpacity
+                key={t.testType}
+                style={[styles.combineTile, styles.combineTileEmpty]}
+                onPress={() => router.push(t.emptyHref as any)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Add your ${t.label} result`}
+              >
+                <Text style={styles.combineTileLabel}>{t.label}</Text>
+                <Text style={styles.combineTileAdd}>+ ADD</Text>
+              </TouchableOpacity>
+            );
+          }
+          const zone = getZoneMeta((result.zone ?? 'starter') as any);
+          return (
+            <TouchableOpacity
+              key={t.testType}
+              style={styles.combineTile}
+              onPress={() => router.push('/beep-test-history' as any)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={`${t.label}: ${t.format(result)}, ${zone.label} zone. View history`}
+            >
+              <Text style={styles.combineTileLabel}>{t.label}</Text>
+              <Text style={styles.combineTileValue}>{t.format(result)}</Text>
+              <View style={styles.combineTileMeta}>
+                <Text style={[styles.combineTileZone, { color: zone.color }]} numberOfLines={1}>
+                  {zone.label}
+                </Text>
+                <VerificationBadge
+                  tier={result.verification_tier ?? 'self_reported'}
+                  size="sm"
+                  mode={(result as any).verification_mode}
+                  testType={result.test_type}
+                />
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+      <Text style={styles.combineStatus}>{combineStatusLine(filled, bestTier)}</Text>
+    </View>
+  );
+}
+
 export default function FitnessTestScreen() {
   return (
     <BackgroundGradient style={styles.container}>
@@ -162,24 +282,10 @@ export default function FitnessTestScreen() {
             Track your athletic performance across key fitness metrics
           </Text>
 
-          {/* How Verification Works — promoted to top so users see the moat first */}
-          <View style={styles.tiersSection}>
-            <Text style={styles.tiersSectionTitle}>How Verification Works</Text>
-            <Text style={styles.tiersSectionDesc}>
-              Higher verification = more scout trust = more visibility
-            </Text>
-            {(['self_reported', 'app_measured', 'coach_verified', 'center_tested'] as const).map(
-              (tier) => {
-                const meta = getTierMeta(tier);
-                return (
-                  <View key={tier} style={styles.tierRow}>
-                    <VerificationBadge tier={tier} size="md" showLabel />
-                    <Text style={styles.tierRowDesc}>{meta.description}</Text>
-                  </View>
-                );
-              },
-            )}
-          </View>
+          {/* My Combine — the athlete's own scorecard leads; the tier
+              glossary is demoted to the bottom of the screen ("a lecture
+              before the gym" — design audit) */}
+          <MyCombineCard />
 
           {/* Section: Yo-Yo IR1 Endurance */}
           <View style={styles.sectionHeader}>
@@ -321,6 +427,26 @@ export default function FitnessTestScreen() {
             </View>
           ))}
 
+          {/* How Verification Works — reference glossary, demoted below the
+              action surfaces (your status lives in My Combine at the top) */}
+          <View style={styles.tiersSection}>
+            <Text style={styles.tiersSectionTitle}>How Verification Works</Text>
+            <Text style={styles.tiersSectionDesc}>
+              Higher verification = more scout trust = more visibility
+            </Text>
+            {(['self_reported', 'app_measured', 'coach_verified', 'center_tested'] as const).map(
+              (tier) => {
+                const meta = getTierMeta(tier);
+                return (
+                  <View key={tier} style={styles.tierRow}>
+                    <VerificationBadge tier={tier} size="md" showLabel />
+                    <Text style={styles.tierRowDesc}>{meta.description}</Text>
+                  </View>
+                );
+              },
+            )}
+          </View>
+
           {/* Info Section */}
           <View style={styles.infoSection}>
             <View style={styles.infoHeader}>
@@ -359,6 +485,96 @@ export default function FitnessTestScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+
+  // ── My Combine ──
+  combineCard: {
+    backgroundColor: theme.colors.cardBg,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.cardBorder,
+    padding: theme.spacing.md,
+  },
+  combineHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.md,
+  },
+  combineTitle: {
+    fontSize: theme.fontSize.lg,
+    fontFamily: theme.fontFamily.displayBlack,
+    color: theme.colors.text,
+    letterSpacing: 2,
+  },
+  combineCount: {
+    fontSize: theme.fontSize.md,
+    fontFamily: theme.fontFamily.display,
+    color: theme.colors.primary,
+    fontVariant: ['tabular-nums'],
+  },
+  combineGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+  },
+  combineTile: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.cardBorder,
+    padding: theme.spacing.sm + 2,
+    minHeight: 84,
+  },
+  // Dashed here is deliberate and exclusive: empty = the one sanctioned
+  // dashed-border state (design audit: dashed means "add me", nothing else)
+  combineTileEmpty: {
+    borderStyle: 'dashed',
+    borderWidth: 1.5,
+    borderColor: 'rgba(48,209,88,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  combineTileLabel: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.textMuted,
+    letterSpacing: 1,
+  },
+  combineTileValue: {
+    fontSize: theme.fontSize.xl,
+    fontFamily: theme.fontFamily.displayBlack,
+    color: theme.colors.text,
+    fontVariant: ['tabular-nums'],
+    marginTop: 2,
+  },
+  combineTileAdd: {
+    fontSize: theme.fontSize.md,
+    fontFamily: theme.fontFamily.display,
+    color: theme.colors.primary,
+    letterSpacing: 1,
+  },
+  combineTileMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: theme.spacing.xs,
+    gap: 4,
+  },
+  combineTileZone: {
+    flexShrink: 1,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.extrabold,
+    letterSpacing: 0.5,
+  },
+  combineStatus: {
+    marginTop: theme.spacing.md,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    lineHeight: 18,
   },
   headerButton: {
     padding: theme.spacing.sm,
