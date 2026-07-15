@@ -193,6 +193,7 @@ function RootLayoutNav() {
                         name="opportunity/[id]"
                         options={{ title: 'Opportunity', headerShown: true }}
                       />
+                      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
                       <Stack.Screen name="verify-result" options={{ title: 'Verify Result' }} />
                       <Stack.Screen name="player-stats" options={{ title: 'Player Stats' }} />
                       <Stack.Screen
