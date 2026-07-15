@@ -44,8 +44,8 @@ const [SearchProvider, _useSearch] = createContextHook<SearchState>(() => {
       const sanitized = query.replace(/[,%()\\]/g, '');
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('id, name, email, role, avatar, sport, verified')
-        .or(`name.ilike.%${sanitized}%,email.ilike.%${sanitized}%,sport.ilike.%${sanitized}%`)
+        .select('id, name, role, avatar, sport, verified')
+        .or(`name.ilike.%${sanitized}%,sport.ilike.%${sanitized}%`)
         .limit(20);
 
       if (error) {

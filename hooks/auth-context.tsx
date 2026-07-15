@@ -185,9 +185,15 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         return;
       }
 
+      // Explicit columns, not '*': column-level grants now protect
+      // email/push_token, and select('*') fails the WHOLE query (42501)
+      // when any ungranted column is included. Own email comes from the
+      // auth session (supabaseUser.email), not the profiles row.
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(
+          'id, name, role, avatar, cover_photo, bio, location, city, state, verified, sport, position, achievements, stats, role_specific_data, gender, date_of_birth, followers_count, following_count, posts_count, created_at, updated_at',
+        )
         .eq('id', supabaseUser.id)
         .abortSignal(abortController.signal)
         .maybeSingle();
@@ -223,7 +229,9 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
               role: (supabaseUser.user_metadata?.role as UserRole | undefined) ?? 'athlete',
               verified: false,
             })
-            .select()
+            .select(
+              'id, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at',
+            )
             .abortSignal(abortController.signal)
             .single();
 
@@ -234,7 +242,8 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
             if (__DEV__) console.log('Profile created successfully:', newProfile);
             const createdUser: User = {
               id: newProfile.id,
-              email: newProfile.email,
+              // email comes from the auth session — profiles.email is no longer readable
+              email: supabaseUser.email || '',
               name: newProfile.name,
               role: newProfile.role as UserRole,
               avatar: newProfile.avatar,
@@ -258,7 +267,7 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
         if (__DEV__) console.log('Profile loaded successfully:', profile);
         const loadedUser: User = {
           id: profile.id,
-          email: profile.email,
+          email: supabaseUser.email || '',
           name: profile.name,
           role: profile.role as UserRole,
           avatar: profile.avatar,
@@ -377,7 +386,9 @@ const [AuthProvider, _useAuth] = createContextHook<AuthState>(() => {
                   role,
                   verified: false,
                 })
-                .select()
+                .select(
+                  'id, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at',
+                )
                 .single();
 
               if (profileError) {
