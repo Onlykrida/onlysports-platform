@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   miniPostTime: {
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
   },
   miniPostContent: {

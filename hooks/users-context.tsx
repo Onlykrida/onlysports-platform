@@ -6,6 +6,25 @@ import { mockUsers } from '@/mocks/data';
 import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from '@/hooks/auth-context';
 
+export interface ProfileSearchFilters {
+  query?: string;
+  sport?: string | null;
+  role?: string | null;
+  location?: string;
+  verifiedOnly?: boolean;
+}
+
+export interface ProfileCursor {
+  createdAt: string;
+  id: string;
+}
+
+export interface ProfileSearchPage {
+  users: User[];
+  nextCursor: ProfileCursor | null;
+  error?: string;
+}
+
 interface UsersState {
   users: User[];
   isLoading: boolean;
@@ -13,9 +32,57 @@ interface UsersState {
   findByRole: (role: UserRole) => User[];
   refreshUsers: () => Promise<void>;
   clearAll: () => Promise<void>;
+  /**
+   * Server-side, filtered, keyset-paginated profile search. This is the
+   * scalable discovery path — filters (role/sport/location/verified/text) are
+   * pushed into the SQL query so the candidate set is the WHOLE matching
+   * population, not an arbitrary unordered LIMIT 200 slice. Pass the previous
+   * page's `nextCursor` to fetch the next page.
+   */
+  searchProfiles: (
+    filters: ProfileSearchFilters,
+    cursor?: ProfileCursor | null,
+    pageSize?: number,
+  ) => Promise<ProfileSearchPage>;
 }
 
 const STORAGE_KEY = 'users_cache_v2'; // Updated to clear old duplicates
+const SEARCH_COLUMNS =
+  'id, name, role, avatar, bio, location, city, state, verified, sport, position, achievements, stats, role_specific_data, followers_count, following_count, created_at';
+
+// Single source of truth for Supabase profile-row → User mapping.
+function mapProfileRow(p: any): User {
+  return {
+    id: p.id,
+    // email is PII — never expose other users' emails to the client cache
+    email: '',
+    name: p.name,
+    role: p.role,
+    avatar: p.avatar ?? undefined,
+    bio: p.bio ?? undefined,
+    location: p.location ?? undefined,
+    verified: p.verified ?? false,
+    sport: p.sport ?? undefined,
+    position: p.position ?? undefined,
+    achievements: p.achievements ?? [],
+    stats: p.stats ?? {},
+    roleSpecificData: p.role_specific_data ?? {},
+    followersCount: p.followers_count ?? 0,
+    followingCount: p.following_count ?? 0,
+    createdAt: new Date(p.created_at ?? Date.now()),
+  };
+}
+
+// Escape a user string for safe interpolation into a PostgREST or() filter.
+// Commas and parentheses are structural in PostgREST filter syntax; strip them
+// so a search like "a,b)" can't rewrite the query.
+function sanitizeFilterValue(v: string): string {
+  // Also escape ILIKE wildcards: a query of "%" or "_" would match every row.
+  return v
+    .replace(/[(),]/g, ' ')
+    .replace(/([%_])/g, '\\$1')
+    .trim();
+}
 
 const USERS_DEFAULTS: UsersState = {
   users: [],
@@ -24,6 +91,7 @@ const USERS_DEFAULTS: UsersState = {
   findByRole: () => [],
   refreshUsers: async () => {},
   clearAll: async () => {},
+  searchProfiles: async () => ({ users: [], nextCursor: null }),
 };
 
 const [UsersProvider, _useUsers] = createContextHook<UsersState>(() => {
@@ -61,32 +129,14 @@ const [UsersProvider, _useUsers] = createContextHook<UsersState>(() => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select(
-          'id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, followers_count, following_count, created_at',
-        )
+        .select(SEARCH_COLUMNS)
+        .order('created_at', { ascending: false })
         .limit(200);
       if (error) {
         if (__DEV__) console.log('UsersProvider: remote load error', error);
         return;
       }
-      const remoteUsers: User[] = (data ?? []).map((p: any) => ({
-        id: p.id,
-        email: p.email,
-        name: p.name,
-        role: p.role,
-        avatar: p.avatar ?? undefined,
-        bio: p.bio ?? undefined,
-        location: p.location ?? undefined,
-        verified: p.verified ?? false,
-        sport: p.sport ?? undefined,
-        position: p.position ?? undefined,
-        achievements: p.achievements ?? [],
-        stats: p.stats ?? {},
-        roleSpecificData: p.role_specific_data ?? {},
-        followersCount: p.followers_count ?? 0,
-        followingCount: p.following_count ?? 0,
-        createdAt: new Date(p.created_at ?? Date.now()),
-      }));
+      const remoteUsers: User[] = (data ?? []).map(mapProfileRow);
       // Replace local cache entirely with remote data (no stale mock/test users)
       if (__DEV__) console.log('UsersProvider: loaded', remoteUsers.length, 'users from Supabase');
       setUsers(remoteUsers);
@@ -135,24 +185,7 @@ const [UsersProvider, _useUsers] = createContextHook<UsersState>(() => {
 
             const row = (payload.new ?? payload.old) as any;
             if (!row) return;
-            const updated: User = {
-              id: row.id,
-              email: row.email,
-              name: row.name,
-              role: row.role,
-              avatar: row.avatar ?? undefined,
-              bio: row.bio ?? undefined,
-              location: row.location ?? undefined,
-              verified: row.verified ?? false,
-              sport: row.sport ?? undefined,
-              position: row.position ?? undefined,
-              achievements: row.achievements ?? [],
-              stats: row.stats ?? {},
-              roleSpecificData: row.role_specific_data ?? {},
-              followersCount: row.followers_count ?? 0,
-              followingCount: row.following_count ?? 0,
-              createdAt: new Date(row.created_at ?? Date.now()),
-            };
+            const updated: User = mapProfileRow(row);
             setUsers((prev) => {
               const exists = prev.some((u) => u.id === updated.id);
               return exists
@@ -215,9 +248,100 @@ const [UsersProvider, _useUsers] = createContextHook<UsersState>(() => {
     setUsers([]);
   }, []);
 
+  const searchProfiles = useCallback<UsersState['searchProfiles']>(
+    async (filters, cursor = null, pageSize = 20) => {
+      // Unconfigured / mock mode: filter the in-memory list so Discover still
+      // works without a backend (single page, no real pagination).
+      if (!isSupabaseConfigured) {
+        const q = (filters.query ?? '').toLowerCase();
+        const loc = (filters.location ?? '').toLowerCase();
+        const filtered = (users.length ? users : mockUsers).filter((u) => {
+          if (authUser?.id && u.id === authUser.id) return false;
+          if (filters.role && u.role !== filters.role) return false;
+          if (filters.sport && u.sport !== filters.sport) return false;
+          if (filters.verifiedOnly && !u.verified) return false;
+          if (loc && !(u.location ?? '').toLowerCase().includes(loc)) return false;
+          if (
+            q &&
+            !(
+              u.name.toLowerCase().includes(q) ||
+              (u.sport ?? '').toLowerCase().includes(q) ||
+              (u.bio ?? '').toLowerCase().includes(q)
+            )
+          )
+            return false;
+          return true;
+        });
+        return { users: filtered.slice(0, pageSize), nextCursor: null };
+      }
+
+      try {
+        let q = supabase
+          .from('profiles')
+          .select(SEARCH_COLUMNS)
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .limit(pageSize);
+
+        if (authUser?.id) q = q.neq('id', authUser.id);
+        if (filters.role) q = q.eq('role', filters.role);
+        if (filters.sport) q = q.eq('sport', filters.sport);
+        if (filters.verifiedOnly) q = q.eq('verified', true);
+
+        // Guard the sanitized value too: input like "(((" trims to '' after
+        // sanitizing, and '%%' would match every row.
+        const locValue = filters.location ? sanitizeFilterValue(filters.location) : '';
+        if (locValue) {
+          const loc = `%${locValue}%`;
+          q = q.or(`location.ilike.${loc},city.ilike.${loc},state.ilike.${loc}`);
+        }
+        const queryValue = filters.query ? sanitizeFilterValue(filters.query) : '';
+        if (queryValue) {
+          const s = `%${queryValue}%`;
+          q = q.or(`name.ilike.${s},sport.ilike.${s},bio.ilike.${s}`);
+        }
+
+        // Keyset pagination: rows strictly "after" the cursor under the
+        // (created_at DESC, id DESC) ordering. Keyset (not OFFSET) so deep pages
+        // stay O(pageSize) at 1M rows.
+        if (cursor) {
+          q = q.or(
+            `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`,
+          );
+        }
+
+        const { data, error } = await q;
+        if (error) {
+          if (__DEV__) console.log('UsersProvider: searchProfiles error', error);
+          return { users: [], nextCursor: null, error: error.message };
+        }
+
+        const page = (data ?? []).map(mapProfileRow);
+        const last = data && data.length ? (data[data.length - 1] as any) : null;
+        const nextCursor =
+          last && data && data.length === pageSize
+            ? { createdAt: last.created_at as string, id: last.id as string }
+            : null;
+        return { users: page, nextCursor };
+      } catch (e: any) {
+        if (__DEV__) console.log('UsersProvider: searchProfiles failed', e);
+        return { users: [], nextCursor: null, error: e?.message ?? 'search failed' };
+      }
+    },
+    [authUser?.id, users],
+  );
+
   return useMemo(
-    () => ({ users, isLoading, addOrUpdateUser, findByRole, refreshUsers, clearAll }),
-    [users, isLoading, addOrUpdateUser, findByRole, refreshUsers, clearAll],
+    () => ({
+      users,
+      isLoading,
+      addOrUpdateUser,
+      findByRole,
+      refreshUsers,
+      clearAll,
+      searchProfiles,
+    }),
+    [users, isLoading, addOrUpdateUser, findByRole, refreshUsers, clearAll, searchProfiles],
   );
 });
 

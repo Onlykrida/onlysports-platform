@@ -48,7 +48,7 @@ export default function SignupTeamScreen() {
     if (!email.trim()) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email address';
     if (!password) newErrors.password = 'Password is required';
-    else if (password.length < 6) newErrors.password = 'At least 6 characters';
+    else if (password.length < 10) newErrors.password = 'At least 10 characters';
     if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     if (!sport.trim()) newErrors.sport = 'Sport is required';
     setErrors(newErrors);

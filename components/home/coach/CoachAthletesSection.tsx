@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   athleteChipMeta: {
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
     letterSpacing: 0.5,
   },

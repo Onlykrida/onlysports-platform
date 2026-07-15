@@ -161,7 +161,9 @@ export default function BrandHome() {
     [handleUserPress],
   );
 
-  const ListHeader = () => (
+  // Element, not a component type — avoids full header remount on every feed
+  // update (see AthleteHome for the detailed rationale).
+  const ListHeader = (
     <View>
       {/* Trending Athletes Section */}
       <View style={styles.sectionContainer}>

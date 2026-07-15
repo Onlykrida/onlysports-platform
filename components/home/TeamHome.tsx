@@ -90,7 +90,9 @@ export default function TeamHome() {
     [handleUserPress],
   );
 
-  const ListHeader = () => (
+  // Element, not a component type — avoids full header remount on every feed
+  // update (see AthleteHome for the detailed rationale).
+  const ListHeader = (
     <View>
       {/* Stats Row */}
       <View style={styles.statsBar}>

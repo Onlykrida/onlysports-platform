@@ -25,6 +25,7 @@ import {
   UserCheck,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { Notification } from '@/types';
 import { useNotifications } from '@/hooks/notifications-context';
@@ -70,7 +71,7 @@ const formatTimeAgo = (date: Date) => {
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
 
-  return date.toLocaleDateString();
+  return formatDate(date);
 };
 
 const handleNotificationPress = (notification: Notification) => {
@@ -185,7 +186,7 @@ export default function NotificationsTab() {
               deleteNotification(item.id);
             }}
           >
-            <Trash2 size={16} color="#666" />
+            <Trash2 size={16} color={theme.colors.textMuted} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -196,7 +197,7 @@ export default function NotificationsTab() {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconContainer}>
-        <Bell size={40} color="#666" />
+        <Bell size={40} color={theme.colors.textMuted} />
       </View>
       <Text style={styles.emptyTitle} numberOfLines={1} ellipsizeMode="tail">
         No notifications yet
@@ -209,8 +210,10 @@ export default function NotificationsTab() {
 
   const renderHeader = () => (
     <View style={styles.header}>
+      {/* Matches the tab label — tab said "Alerts", page said
+          "NOTIFICATIONS" (trunk-test wayfinding mismatch) */}
       <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-        Notifications
+        Alerts
       </Text>
       {notifications.some((n) => !n.read) && (
         <TouchableOpacity onPress={markAllAsRead} style={styles.markAllButton}>
@@ -360,7 +363,7 @@ const styles = StyleSheet.create({
   },
   notificationTime: {
     fontSize: 10,
-    color: '#666',
+    color: theme.colors.textMuted,
     fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -402,7 +405,7 @@ const styles = StyleSheet.create({
   },
   emptyMessage: {
     fontSize: theme.fontSize.md,
-    color: '#666',
+    color: theme.colors.textMuted,
     textAlign: 'center',
     lineHeight: 22,
   },

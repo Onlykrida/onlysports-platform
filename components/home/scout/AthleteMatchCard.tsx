@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
   },
   fitScoreLabel: {
-    fontSize: 8,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
     letterSpacing: 1,
   },

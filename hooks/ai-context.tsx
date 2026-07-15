@@ -1,5 +1,5 @@
 import createContextHook from '@nkzw/create-context-hook';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/auth-context';
 import {
   ChatMessage,
@@ -220,25 +220,47 @@ const [AIProvider, _useAI] = createContextHook<AIState>(() => {
     [user, isRecommendationsLoading],
   );
 
-  return {
-    aiMessages,
-    sendAIMessage,
-    clearChat,
-    isChatLoading,
-    profileSummary,
-    generateSummary,
-    isSummaryLoading,
-    profileTips,
-    getProfileTips,
-    isTipsLoading,
-    opportunityMatches,
-    matchOpportunities,
-    isMatchingLoading,
-    scoutRecommendations,
-    getRecommendations,
-    isRecommendationsLoading,
-    isConfigured: isAIConfigured(),
-  };
+  // Memoize the context value so AIProvider re-renders don't hand every AI
+  // consumer a fresh object identity every render (matches the sibling contexts).
+  return useMemo(
+    () => ({
+      aiMessages,
+      sendAIMessage,
+      clearChat,
+      isChatLoading,
+      profileSummary,
+      generateSummary,
+      isSummaryLoading,
+      profileTips,
+      getProfileTips,
+      isTipsLoading,
+      opportunityMatches,
+      matchOpportunities,
+      isMatchingLoading,
+      scoutRecommendations,
+      getRecommendations,
+      isRecommendationsLoading,
+      isConfigured: isAIConfigured(),
+    }),
+    [
+      aiMessages,
+      sendAIMessage,
+      clearChat,
+      isChatLoading,
+      profileSummary,
+      generateSummary,
+      isSummaryLoading,
+      profileTips,
+      getProfileTips,
+      isTipsLoading,
+      opportunityMatches,
+      matchOpportunities,
+      isMatchingLoading,
+      scoutRecommendations,
+      getRecommendations,
+      isRecommendationsLoading,
+    ],
+  );
 });
 
 export { AIProvider };

@@ -173,6 +173,11 @@ interface FitnessTestContextValue {
     coachId: string,
     athleteNotes?: string,
   ) => Promise<{ error?: string }>;
+  // Attach (or replace) a video to an already-saved test result row. Used by
+  // the post-save coach-verification request flow when the athlete adds a
+  // video AFTER initial save. Updates fitness_test_results.video_url and
+  // returns { error } on failure. Graceful no-op if Supabase isn't configured.
+  updateResultVideo: (testResultId: string, videoUrl: string) => Promise<{ error?: string }>;
   approveVerification: (
     requestId: string,
     testResultId: string,
@@ -209,6 +214,7 @@ const FITNESS_TEST_DEFAULTS: FitnessTestContextValue = {
   fetchLatestBatch: async () => new Map(),
   getHistoryByType: () => [],
   requestCoachVerification: async () => ({}),
+  updateResultVideo: async () => ({}),
   approveVerification: async () => ({}),
   rejectVerification: async () => ({}),
   refreshHistory: async () => {},
@@ -720,6 +726,35 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
     [currentUser],
   );
 
+  // Update the video_url for an existing fitness_test_results row. Used by the
+  // post-save verification-request flow when the athlete attaches a video
+  // AFTER initial save (Yo-Yo manual + Speed/Power manual entries).
+  // Returns gracefully if Supabase isn't configured (mock client environment).
+  const updateResultVideo = useCallback(
+    async (testResultId: string, videoUrl: string): Promise<{ error?: string }> => {
+      if (!currentUser) return { error: 'Not authenticated' };
+      if (!isSupabaseConfigured) return {};
+      try {
+        const { error } = await supabase
+          .from('fitness_test_results')
+          .update({ video_url: videoUrl })
+          .eq('id', testResultId)
+          .eq('athlete_id', currentUser.id)
+          // Never swap footage on an already-verified result: the coach's
+          // 1.0× trust badge must stay attached to the video they reviewed.
+          .is('verified_at', null);
+        if (error) {
+          if (isTableMissing(error)) return { error: 'Fitness test table not set up yet' };
+          return { error: error.message };
+        }
+        return {};
+      } catch (e: any) {
+        return { error: e.message };
+      }
+    },
+    [currentUser],
+  );
+
   const approveVerification = useCallback(
     async (
       requestId: string,
@@ -844,6 +879,10 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
         if (error) return { error: error.message };
 
         if (athleteId) {
+          // Even the fallback carries a next step — a bare "declined" with no
+          // way forward violates the never-demotivate principle.
+          const declineFallback =
+            'declined this one. Ask another coach, or attach a clearer video and request again.';
           // Map reason to actionable copy. The athlete should know what to
           // try next — re-record video, find another verifier, etc.
           const reasonCopy: Record<string, string> = {
@@ -856,12 +895,10 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
               "couldn't confirm the athlete in the video. Make sure your face is visible at the start.",
             incomplete_test:
               'flagged the test as incomplete. Re-run the full protocol and submit a fresh result.',
-            other: notes ? `declined with this note: "${notes}"` : 'declined the verification.',
+            other: notes ? `declined with this note: "${notes}"` : declineFallback,
           };
           const message = `${currentUser.name} ${
-            reason
-              ? (reasonCopy[reason] ?? 'declined this verification.')
-              : 'declined this verification.'
+            reason ? (reasonCopy[reason] ?? declineFallback) : declineFallback
           }`;
 
           await supabase
@@ -923,6 +960,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       fetchLatestBatch,
       getHistoryByType,
       requestCoachVerification,
+      updateResultVideo,
       approveVerification,
       rejectVerification,
       refreshHistory,
@@ -941,6 +979,7 @@ const [FitnessTestProvider, _useFitnessTest] = createContextHook<FitnessTestCont
       fetchLatestBatch,
       getHistoryByType,
       requestCoachVerification,
+      updateResultVideo,
       approveVerification,
       rejectVerification,
       refreshHistory,

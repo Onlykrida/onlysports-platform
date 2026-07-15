@@ -168,7 +168,7 @@ export default function ChatScreen() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.messageInput}
-            placeholder="Type a message..."
+            placeholder="Type a message…"
             value={messageText}
             onChangeText={setMessageText}
             multiline

@@ -86,8 +86,12 @@ function getZoneForResult(
   switch (result.test_type) {
     case 'yoyo':
       return getZone(result.total_distance ?? 0, gender, ageGroup);
+    case 'sprint_10m':
+      return getSprintZone(result.sprint_time ?? 99, 10, gender, ageGroup);
     case 'sprint_20m':
       return getSprintZone(result.sprint_time ?? 99, 20, gender, ageGroup);
+    case 'sprint_30m':
+      return getSprintZone(result.sprint_time ?? 99, 30, gender, ageGroup);
     case 'sprint_40m':
       return getSprintZone(result.sprint_time ?? 99, 40, gender, ageGroup);
     case 'agility_ttest':
@@ -103,7 +107,9 @@ function getPrimaryValue(result: FitnessTestResult): string {
   switch (result.test_type) {
     case 'yoyo':
       return formatDistance(result.total_distance ?? 0);
+    case 'sprint_10m':
     case 'sprint_20m':
+    case 'sprint_30m':
     case 'sprint_40m':
       return `${result.sprint_time?.toFixed(2) ?? '—'}s`;
     case 'agility_ttest':
@@ -238,7 +244,14 @@ const TestResultRow: React.FC<TestResultRowProps> = ({ result, gender, ageGroup 
           {zone.label}
         </Text>
       </View>
-      {result.verification_tier && <VerificationBadge tier={result.verification_tier} size="sm" />}
+      {result.verification_tier && (
+        <VerificationBadge
+          tier={result.verification_tier}
+          mode={result.verification_mode}
+          testType={result.test_type}
+          size="sm"
+        />
+      )}
     </View>
   );
 };
@@ -297,6 +310,8 @@ const AthleteVariant: React.FC<AthleteVariantProps> = ({
               numberOfLines={1}
               ellipsizeMode="tail"
               onPress={onViewHistory}
+              accessibilityRole="button"
+              accessibilityLabel="View fitness test history"
             >
               History
             </Text>
@@ -315,6 +330,8 @@ const AthleteVariant: React.FC<AthleteVariantProps> = ({
           </View>
           <VerificationBadge
             tier={featuredResult?.verification_tier || 'self_reported'}
+            mode={featuredResult?.verification_mode}
+            testType={featuredResult?.test_type}
             size="md"
             showLabel
           />
@@ -530,7 +547,13 @@ const ScoutVariant: React.FC<ScoutVariantProps> = ({
                   </Text>
                 </View>
                 {result.verification_tier && (
-                  <VerificationBadge tier={result.verification_tier} size="sm" showLabel />
+                  <VerificationBadge
+                    tier={result.verification_tier}
+                    mode={result.verification_mode}
+                    testType={result.test_type}
+                    size="sm"
+                    showLabel
+                  />
                 )}
                 <Text style={styles.scoutValue} numberOfLines={1} ellipsizeMode="tail">
                   {getPrimaryValue(result)}
@@ -631,7 +654,7 @@ const styles = StyleSheet.create({
 
   // Card
   card: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: 'rgba(255,255,255,0.08)',
@@ -658,7 +681,7 @@ const styles = StyleSheet.create({
   zoneBadgeText: {
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.black,
-    color: '#0a0a0a',
+    color: theme.colors.black,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -672,7 +695,7 @@ const styles = StyleSheet.create({
   zoneBadgeSmallText: {
     fontSize: 10,
     fontWeight: theme.fontWeight.black,
-    color: '#0a0a0a',
+    color: theme.colors.black,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
@@ -697,13 +720,13 @@ const styles = StyleSheet.create({
   progressBarBg: {
     height: 6,
     backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 3,
+    borderRadius: theme.borderRadius.xs,
     marginBottom: theme.spacing.sm,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: theme.borderRadius.xs,
   },
 
   // Stats row

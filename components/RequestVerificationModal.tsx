@@ -10,18 +10,28 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X, Search, ShieldCheck, Heart } from 'lucide-react-native';
+import { X, Search, ShieldCheck, Heart, Video as VideoIcon, Check } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { theme, roleAccents } from '@/constants/theme';
+import { showAlert } from '@/constants/cross-platform-alert';
+import { uploadTestVideo } from '@/services/test-video-upload';
 import CachedImage from '@/components/CachedImage';
 import { useUsers } from '@/hooks/users-context';
 import { useFollow } from '@/hooks/follow-context';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
+import { useAuth } from '@/hooks/auth-context';
+import { isSupabaseConfigured } from '@/constants/supabase';
 import type { User } from '@/types';
 
 interface Props {
   visible: boolean;
   testResultId: string;
   testTypeLabel: string;
+  /** When true, surfaces an optional video upload section. The video is
+   *  uploaded to the test-videos storage bucket and the URL is attached to
+   *  the result row before the verification request fires. Used by the
+   *  manual-entry post-save flow (Yo-Yo + Speed/Power). */
+  enableVideoUpload?: boolean;
   onClose: () => void;
   onSubmitted: (coachName: string) => void;
 }
@@ -35,18 +45,60 @@ export default function RequestVerificationModal({
   visible,
   testResultId,
   testTypeLabel,
+  enableVideoUpload = false,
   onClose,
   onSubmitted,
 }: Props) {
   const { users } = useUsers();
   const { isFollowing } = useFollow();
-  const { requestCoachVerification } = useFitnessTest();
+  const { requestCoachVerification, updateResultVideo } = useFitnessTest();
+  const { user: currentUser } = useAuth();
 
   const [query, setQuery] = useState('');
   const [selectedCoachId, setSelectedCoachId] = useState<string | null>(null);
   const [athleteNotes, setAthleteNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Optional video upload state — only used when enableVideoUpload is true.
+  // Upload happens immediately on pick; URL is held client-side until submit,
+  // when updateResultVideo writes it back to the fitness_test_results row.
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+
+  const handlePickVideo = useCallback(async () => {
+    if (!currentUser) {
+      showAlert('Not signed in', 'You must be signed in to upload a video.');
+      return;
+    }
+    if (!isSupabaseConfigured) {
+      showAlert(
+        'Upload unavailable',
+        'Video upload needs Supabase to be configured. Skip the video and send the request without it.',
+      );
+      return;
+    }
+    try {
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        quality: 0.7,
+        videoMaxDuration: 60,
+      });
+      if (picked.canceled) return;
+      setIsUploadingVideo(true);
+      const asset = picked.assets[0];
+      const { url, error: uploadError } = await uploadTestVideo(currentUser.id, asset);
+      if (uploadError || !url) {
+        showAlert('Upload failed', uploadError ?? 'Failed to upload video');
+        return;
+      }
+      setVideoUrl(url);
+    } catch (e: any) {
+      showAlert('Error', e?.message ?? 'Failed to upload video');
+    } finally {
+      setIsUploadingVideo(false);
+    }
+  }, [currentUser]);
 
   // Coach, trainer, AND scout can all verify. Athletes choose deliberately —
   // a scout who watches the video is a different trust signal from a coach
@@ -80,6 +132,21 @@ export default function RequestVerificationModal({
     if (!selectedCoach) return;
     setIsSubmitting(true);
     setError(null);
+
+    // 1. If a video was uploaded for this request, attach it to the result row
+    //    BEFORE creating the verification request — so the coach sees it linked
+    //    on first view. Video failure is non-blocking; we still send the request
+    //    so the coach can verify in-person.
+    if (videoUrl) {
+      const videoResult = await updateResultVideo(testResultId, videoUrl);
+      if (videoResult.error && __DEV__) {
+        console.log(
+          'RequestVerificationModal: video attach failed (non-blocking)',
+          videoResult.error,
+        );
+      }
+    }
+
     const result = await requestCoachVerification(
       testResultId,
       selectedCoach.id,
@@ -95,7 +162,16 @@ export default function RequestVerificationModal({
     setSelectedCoachId(null);
     setQuery('');
     setAthleteNotes('');
-  }, [selectedCoach, requestCoachVerification, testResultId, onSubmitted, athleteNotes]);
+    setVideoUrl(null);
+  }, [
+    selectedCoach,
+    requestCoachVerification,
+    testResultId,
+    onSubmitted,
+    athleteNotes,
+    videoUrl,
+    updateResultVideo,
+  ]);
 
   const renderCoach = useCallback(
     ({ item }: { item: User }) => {
@@ -147,10 +223,16 @@ export default function RequestVerificationModal({
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Request Coach Verification</Text>
+            <Text style={styles.title}>Request Verification</Text>
             <Text style={styles.subtitle}>{testTypeLabel}</Text>
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={8}>
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.closeButton}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Close verification request"
+          >
             <X size={22} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
@@ -201,6 +283,40 @@ export default function RequestVerificationModal({
         )}
 
         <View style={styles.footer}>
+          {/* Optional video upload — only when enabled by the caller and a
+              coach is selected. Video is uploaded immediately; URL is held
+              until submit. Athletes can skip and request without video. */}
+          {enableVideoUpload && selectedCoach && (
+            <View style={styles.videoField}>
+              <Text style={styles.notesLabel}>Attach a video (optional)</Text>
+              <TouchableOpacity
+                style={[styles.videoButton, videoUrl && styles.videoButtonDone]}
+                onPress={handlePickVideo}
+                disabled={isUploadingVideo}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  videoUrl ? 'Video attached, tap to replace' : 'Pick a video to upload'
+                }
+              >
+                {isUploadingVideo ? (
+                  <ActivityIndicator color={theme.colors.text} />
+                ) : videoUrl ? (
+                  <>
+                    <Check size={16} color={theme.colors.primary} />
+                    <Text style={[styles.videoButtonText, { color: theme.colors.primary }]}>
+                      Video uploaded — tap to replace
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <VideoIcon size={16} color={theme.colors.text} />
+                    <Text style={styles.videoButtonText}>Pick a video (max 60s)</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
           {/* Optional context note — only shown after a verifier is selected,
               so the user is committed enough to bother adding context. */}
           {selectedCoach && (
@@ -242,7 +358,7 @@ export default function RequestVerificationModal({
             )}
           </TouchableOpacity>
           <Text style={styles.footerHint}>
-            Coach-verified results earn 1.0× scout trust vs 0.85× for app-tested.
+            Verified results earn full 1.0× scout trust — the highest tier a coach can grant.
           </Text>
         </View>
       </SafeAreaView>
@@ -274,9 +390,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.cardBg,
@@ -410,5 +526,30 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     textAlignVertical: 'top',
     ...theme.dashBorder,
+  },
+  videoField: {
+    gap: 6,
+    marginBottom: theme.spacing.sm,
+  },
+  videoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.cardBg,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.sm + 2,
+    paddingHorizontal: theme.spacing.md,
+    minHeight: 44,
+    ...theme.dashBorder,
+  },
+  videoButtonDone: {
+    borderColor: theme.colors.primary,
+    borderStyle: 'solid' as const,
+  },
+  videoButtonText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
   },
 });

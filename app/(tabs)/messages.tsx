@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, MessageCircle, Users, Plus } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { useMessages, Conversation } from '@/hooks/messages-context';
 import { useGroups, Group } from '@/hooks/group-messages-context';
@@ -82,7 +83,7 @@ export default function MessagesScreen() {
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     if (days < 7) return `${days}d`;
-    return date.toLocaleDateString();
+    return formatDate(date);
   }, []);
 
   const renderConversation = useCallback(
@@ -192,7 +193,7 @@ export default function MessagesScreen() {
       <BackgroundGradient>
         <SafeAreaView style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Messages</Text>
+            <Text style={styles.headerTitle}>Chats</Text>
             <TouchableOpacity style={styles.createGroupButton} onPress={handleCreateGroup}>
               <Plus size={22} color="#000" />
             </TouchableOpacity>
@@ -207,7 +208,7 @@ export default function MessagesScreen() {
     <BackgroundGradient>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Messages</Text>
+          <Text style={styles.headerTitle}>Chats</Text>
           <TouchableOpacity style={styles.createGroupButton} onPress={handleCreateGroup}>
             <Plus size={22} color="#000" />
           </TouchableOpacity>
@@ -516,7 +517,7 @@ const styles = StyleSheet.create({
   },
   lastMessage: {
     fontSize: theme.fontSize.sm,
-    color: '#666',
+    color: theme.colors.textMuted,
   },
   unreadMessage: {
     color: '#f0f0f0',

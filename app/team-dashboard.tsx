@@ -23,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import CachedImage from '@/components/CachedImage';
 import { useAuth } from '@/hooks/auth-context';
 import { useOpportunities } from '@/hooks/opportunities-context';
@@ -401,9 +402,7 @@ export default function TeamDashboardScreen() {
                       </View>
                     </View>
                     <View style={styles.oppDetails}>
-                      <Text style={styles.oppDetailText}>
-                        Deadline: {new Date(opp.deadline).toLocaleDateString()}
-                      </Text>
+                      <Text style={styles.oppDetailText}>Deadline: {formatDate(opp.deadline)}</Text>
                       <View style={styles.oppAppsCount}>
                         <FileText size={12} color={theme.colors.textMuted} />
                         <Text style={styles.oppDetailText}>

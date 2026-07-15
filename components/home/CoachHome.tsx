@@ -78,7 +78,9 @@ export default function CoachHome() {
     [handleUserPress, likePost, track],
   );
 
-  const ListHeader = () => (
+  // Element, not a component type — avoids full header remount on every feed
+  // update (see AthleteHome for the detailed rationale).
+  const ListHeader = (
     <View>
       <CoachQuickActions
         onPostTrial={() => router.push('/opportunities/create' as any)}

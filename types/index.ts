@@ -378,6 +378,7 @@ export interface FitnessTestResult {
 
   // Verification
   verification_tier?: VerificationTier;
+  verification_mode?: 'remote_video' | 'in_person' | 'sensor_only';
   video_url?: string;
   verified_by?: string;
   verified_at?: string;

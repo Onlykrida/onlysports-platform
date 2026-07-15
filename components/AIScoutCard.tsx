@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.bold,
   },
   scoreLabel: {
-    fontSize: 8,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
     marginTop: -2,
   },
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   verifiedText: {
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.background,
     fontWeight: theme.fontWeight.bold,
   },

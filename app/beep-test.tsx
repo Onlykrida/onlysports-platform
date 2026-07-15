@@ -72,8 +72,8 @@ const SPEED_POWER_TESTS: SpeedTestCard[] = [
     title: 'VERTICAL JUMP',
     description: 'Measure your lower-body explosive power.',
     testType: 'vertical_jump',
-    icon: <ArrowUp size={22} color="#BF5AF2" />,
-    accentColor: '#BF5AF2',
+    icon: <ArrowUp size={22} color={theme.colors.purple} />,
+    accentColor: theme.colors.purple,
   },
 ];
 
@@ -145,7 +145,7 @@ export default function FitnessTestScreen() {
         <Stack.Screen
           options={{
             title: 'Fitness Testing',
-            headerStyle: { backgroundColor: 'transparent' },
+            headerStyle: { backgroundColor: theme.colors.background },
             headerTintColor: theme.colors.text,
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
@@ -241,18 +241,13 @@ export default function FitnessTestScreen() {
           </View>
 
           {SPEED_POWER_TESTS.map((test) => (
-            <TouchableOpacity
-              key={test.testType}
-              style={styles.testCard}
-              onPress={() => router.push(`/beep-test-manual?testType=${test.testType}` as any)}
-              activeOpacity={0.85}
-            >
-              <View style={styles.testCardLeft}>
+            <View key={test.testType} style={styles.dualCard}>
+              <View style={styles.dualCardTop}>
                 <View style={[styles.iconBadge, { backgroundColor: test.accentColor + '20' }]}>
                   {test.icon}
                 </View>
                 <View style={styles.testCardText}>
-                  <Text style={styles.testCardTitle} numberOfLines={1} ellipsizeMode="tail">
+                  <Text style={styles.testCardTitle} numberOfLines={2} ellipsizeMode="tail">
                     {test.title}
                   </Text>
                   <Text style={styles.testCardDescription} numberOfLines={2} ellipsizeMode="tail">
@@ -260,8 +255,31 @@ export default function FitnessTestScreen() {
                   </Text>
                 </View>
               </View>
-              <ChevronRight size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
+              {/* Honest labels: for Speed & Power the "guided" flow is a
+                  setup guide that ends in manual entry — both paths save as
+                  Self-Reported (0.7×). "Start Guided" implied App-Tested and
+                  leaked trust at the tier system's core (design audit W1). */}
+              <View style={styles.dualCtaRow}>
+                <TouchableOpacity
+                  style={[styles.dualCtaPrimary, { backgroundColor: test.accentColor }]}
+                  onPress={() => router.push(`/guided-test?testType=${test.testType}` as any)}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${test.title} test guide`}
+                >
+                  <Text style={styles.dualCtaPrimaryText}>Test Guide</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dualCtaSecondary}
+                  onPress={() => router.push(`/beep-test-manual?testType=${test.testType}` as any)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Enter ${test.title} result manually`}
+                >
+                  <Text style={styles.dualCtaSecondaryText}>Enter Result →</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           ))}
 
           {/* Section: Sport-Specific (Coming Soon) — camera/CV + GPS pipelines */}
@@ -351,7 +369,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
   pageTitle: {
-    fontSize: 28,
+    fontSize: theme.fontSize.xxl,
     fontWeight: theme.fontWeight.black,
     color: theme.colors.text,
     textTransform: 'uppercase',
@@ -382,7 +400,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   optionCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 2,
@@ -434,7 +452,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   testCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 1,
@@ -442,6 +460,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  // Dual-CTA Speed/Power card: vertical layout with Start Guided + Enter Manually
+  dualCard: {
+    backgroundColor: theme.colors.cardBg,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    gap: theme.spacing.md,
+  },
+  dualCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  dualCtaRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    alignItems: 'center',
+  },
+  dualCtaPrimary: {
+    flex: 1,
+    paddingVertical: theme.spacing.sm + 2,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  dualCtaPrimaryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.black,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  dualCtaSecondary: {
+    paddingVertical: theme.spacing.sm + 2,
+    paddingHorizontal: theme.spacing.md,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  dualCtaSecondaryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textSecondary,
   },
   testCardLeft: {
     flexDirection: 'row',
@@ -507,7 +571,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xs,
   },
   infoSection: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 2,
@@ -537,11 +601,11 @@ const styles = StyleSheet.create({
     marginTop: 24,
     padding: 16,
     backgroundColor: theme.colors.cardBg,
-    borderRadius: 12,
+    borderRadius: theme.borderRadius.md,
     gap: 8,
   },
   tiersSectionTitle: {
-    fontSize: 15,
+    fontSize: theme.fontSize.md,
     color: theme.colors.text,
     fontWeight: '700',
   },
@@ -558,7 +622,7 @@ const styles = StyleSheet.create({
   },
   tierRowDesc: {
     flex: 1,
-    fontSize: 11,
+    fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
   },
 });

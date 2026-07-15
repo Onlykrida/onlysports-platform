@@ -18,8 +18,9 @@ const ScoutStatsBar: React.FC<ScoutStatsBarProps> = ({
       <Text style={styles.statValue} numberOfLines={1}>
         {matchedCount}
       </Text>
+      {/* One word per label — "ATHLETES MATCHED" truncates at 375px */}
       <Text style={styles.statLabel} numberOfLines={1}>
-        ATHLETES MATCHED
+        MATCHED
       </Text>
     </View>
     <View style={styles.statDivider} />

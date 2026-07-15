@@ -40,6 +40,7 @@ import { useFitnessTest } from '@/hooks/fitness-test-context';
 import { FitnessTestCard } from '@/components/BeepTestCard';
 import { getAgeGroup } from '@/constants/fitness-test-data';
 import CachedImage from '@/components/CachedImage';
+import EmptyState from '@/components/EmptyState';
 import AIProfileCoach from '@/components/AIProfileCoach';
 import ProfileCompletion from '@/components/ProfileCompletion';
 import ProfileViewers from '@/components/ProfileViewers';
@@ -319,7 +320,7 @@ export default function ProfileScreen() {
               <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
                 {user.name}
               </Text>
-              {user.verified && <Text style={styles.verified}>✓</Text>}
+              {user.verified && <BadgeCheck size={16} color={theme.colors.primary} />}
             </View>
             <Text style={styles.role} numberOfLines={1} ellipsizeMode="tail">
               {formatRoleName(user.role)}
@@ -412,8 +413,10 @@ export default function ProfileScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <BadgeCheck size={20} color={theme.colors.success} />
+                {/* Keep short: uppercased+letterspaced section titles truncate
+                    at 375px ("ORGANIZATIONS INTERESTED IN Y…") */}
                 <Text style={styles.sectionTitle} numberOfLines={1}>
-                  Organizations Interested in You
+                  Interested in You
                 </Text>
               </View>
               {interestedOrganizations.length > 0 ? (
@@ -562,15 +565,12 @@ export default function ProfileScreen() {
                   </View>
                 ))
               ) : (
-                <TouchableOpacity
-                  style={styles.emptyState}
-                  onPress={() => router.push('/player-stats' as any)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Add your stats"
-                >
-                  <Text style={styles.emptyStateText}>No stats available</Text>
-                  <Text style={styles.emptyStateSubtext}>Tap to add your stats</Text>
-                </TouchableOpacity>
+                <EmptyState
+                  preset="stats"
+                  subtitle="Add your stats to show scouts what you're made of."
+                  ctaLabel="Add My Stats"
+                  onCTA={() => router.push('/player-stats' as any)}
+                />
               )}
             </View>
           </View>

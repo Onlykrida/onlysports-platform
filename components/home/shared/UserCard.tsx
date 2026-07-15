@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   compactMeta: {
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
     letterSpacing: 0.5,
   },
@@ -100,14 +100,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   fullRole: {
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.black,
     color: theme.colors.warning,
     letterSpacing: 1,
     marginBottom: 2,
   },
   fullSport: {
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
     marginBottom: theme.spacing.sm,
   },
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   viewProfileText: {
-    fontSize: 8,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.black,
     color: theme.colors.primary,
     letterSpacing: 0.5,

@@ -23,6 +23,7 @@ import {
   Bell,
   MessageCircle,
   X,
+  BadgeCheck,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { theme, formatRoleName } from '@/constants/theme';
@@ -31,9 +32,8 @@ import { SearchResult, User } from '@/types';
 import { useSearch } from '@/hooks/search-context';
 import { useFollow } from '@/hooks/follow-context';
 import { useNotifications } from '@/hooks/notifications-context';
-import { isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from '@/hooks/auth-context';
-import { useUsers } from '@/hooks/users-context';
+import { useUsers, type ProfileCursor } from '@/hooks/users-context';
 import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 import { DiscoverSkeleton } from '@/components/SkeletonScreens';
@@ -298,54 +298,104 @@ export default function DiscoverScreen() {
     }
   }, []);
 
-  const { users: cachedUsers, isLoading: usersIsLoading, refreshUsers } = useUsers();
+  const { isLoading: usersIsLoading, searchProfiles } = useUsers();
 
-  const loadUsers = useCallback(async () => {
-    if (__DEV__)
-      if (__DEV__) {
-        console.log('Discover: loadUsers start', {
-          isSupabaseConfigured,
-          currentUserId: currentUser?.id,
-        });
-      }
-    dispatch({ type: 'LOAD_USERS_START' });
+  // ── Server-side, keyset-paginated discovery ────────────────────────────────
+  // Previously Discover filtered client-side over an unordered LIMIT 200 cache,
+  // so at scale a scout only ever saw 0.02% of athletes (the kid from Hyderabad
+  // was never in the 200 rows). Now role/sport/location/verified are pushed into
+  // the SQL query and results are paged with a keyset cursor. Zone/tier stay as
+  // a client refinement (they need per-athlete fitness data) applied in the
+  // `filteredUsers` memo on top of the returned page.
+  const serverAccumRef = useRef<User[]>([]);
+  const serverCursorRef = useRef<ProfileCursor | null>(null);
+  const serverHasMoreRef = useRef<boolean>(true);
+  const serverLoadingRef = useRef<boolean>(false);
+  // A filter-change reset that races an in-flight page fetch must not be
+  // dropped — remember it and re-run once the current request settles.
+  const pendingResetRef = useRef<boolean>(false);
+  // Cap for the auto-fill loop below: client refinements (zone/tier/region)
+  // can empty out a whole server page; without a cap the loop could scan the
+  // entire table on one gesture.
+  const autoFillPagesRef = useRef<number>(0);
+  const [isPaging, setIsPaging] = useState<boolean>(false);
 
-    try {
-      if (!isSupabaseConfigured) {
-        if (__DEV__) console.log('Discover: using cached users only');
-        dispatch({ type: 'SET_USERS', users: cachedUsers });
+  const currentFilters = useMemo(
+    () => ({
+      role: selectedRole,
+      sport: selectedSport,
+      location: locationFilter,
+      verifiedOnly,
+    }),
+    [selectedRole, selectedSport, locationFilter, verifiedOnly],
+  );
+
+  const loadServer = useCallback(
+    async (reset: boolean) => {
+      if (serverLoadingRef.current) {
+        if (reset) pendingResetRef.current = true;
         return;
       }
-
-      await refreshUsers();
-      if (__DEV__) console.log('Discover: refreshUsers requested');
-    } catch (error) {
-      const msg = getErrorMessage(error);
-      if (__DEV__) console.error('Failed to load users:', msg, error);
-      dispatch({ type: 'LOAD_USERS_ERROR', error: msg });
-    } finally {
-      dispatch({ type: 'SET_LOADING', loading: false });
-    }
-  }, [currentUser?.id, getErrorMessage, cachedUsers, refreshUsers]);
-
-  const didLoadRef = useRef<boolean>(false);
-
-  useEffect(() => {
-    if (didLoadRef.current) return;
-    didLoadRef.current = true;
-    if (__DEV__) console.log('Discover: trigger initial loadUsers');
-    loadUsers();
-  }, [loadUsers]);
-
-  useEffect(() => {
-    if (__DEV__)
-      if (__DEV__) {
-        console.log('Discover: sync local users with cachedUsers', {
-          cachedCount: cachedUsers.length,
-        });
+      if (!reset && !serverHasMoreRef.current) return;
+      serverLoadingRef.current = true;
+      if (reset) {
+        dispatch({ type: 'LOAD_USERS_START' });
+        serverCursorRef.current = null;
+        serverHasMoreRef.current = true;
+        autoFillPagesRef.current = 0;
+      } else {
+        setIsPaging(true);
       }
-    dispatch({ type: 'SET_USERS', users: cachedUsers });
-  }, [cachedUsers]);
+      try {
+        const {
+          users: page,
+          nextCursor,
+          error,
+        } = await searchProfiles(currentFilters, reset ? null : serverCursorRef.current, 20);
+        if (error) {
+          dispatch({ type: 'LOAD_USERS_ERROR', error });
+          return;
+        }
+        const merged = reset ? page : [...serverAccumRef.current, ...page];
+        // Dedupe by id (keyset ties / realtime overlap can repeat a row).
+        const seen = new Set<string>();
+        const deduped = merged.filter((u) => (seen.has(u.id) ? false : (seen.add(u.id), true)));
+        serverAccumRef.current = deduped;
+        serverCursorRef.current = nextCursor;
+        serverHasMoreRef.current = !!nextCursor;
+        dispatch({ type: 'SET_USERS', users: deduped });
+      } catch (error) {
+        dispatch({ type: 'LOAD_USERS_ERROR', error: getErrorMessage(error) });
+      } finally {
+        serverLoadingRef.current = false;
+        setIsPaging(false);
+        dispatch({ type: 'SET_LOADING', loading: false });
+        if (pendingResetRef.current) {
+          pendingResetRef.current = false;
+          setTimeout(() => loadServerRef.current?.(true), 0);
+        }
+      }
+    },
+    [currentFilters, searchProfiles, getErrorMessage],
+  );
+  // Self-reference for the deferred re-reset above (useCallback can't call
+  // itself directly).
+  const loadServerRef = useRef<typeof loadServer | null>(null);
+  loadServerRef.current = loadServer;
+
+  // Retry/refresh buttons and pull-to-refresh reset to page 1.
+  const loadUsers = useCallback(() => {
+    void loadServer(true);
+  }, [loadServer]);
+
+  // Reload page 1 whenever the server-pushable filters change (and once filters
+  // are initialized from the user's profile). currentFilters is memoized, so
+  // this fires only on an actual filter change, not every render.
+  useEffect(() => {
+    if (!hasInitializedFilters) return;
+    void loadServer(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasInitializedFilters, currentFilters]);
 
   const filteredUsers = useMemo(() => {
     // First deduplicate users by ID and exclude current user
@@ -444,14 +494,46 @@ export default function DiscoverScreen() {
     athleteTiers,
   ]);
 
+  // Auto-fill: client refinements (zone/tier/region/query) can empty out every
+  // row fetched so far even though matching athletes exist on later pages.
+  // With zero visible rows the FlatList never mounts, so onEndReached can't
+  // fire and pagination dead-ends on a false "no matches". Keep fetching
+  // (capped at 5 extra pages per reset) while the server has more.
   useEffect(() => {
-    const athleteIds = filteredUsers
-      .filter((u) => u.role === 'athlete')
-      .map((u) => u.id)
-      .slice(0, 50);
+    if (filteredUsers.length > 0) {
+      autoFillPagesRef.current = 0;
+      return;
+    }
+    if (isLoadingUsers || serverLoadingRef.current) return;
+    if (!serverHasMoreRef.current) return;
+    if (autoFillPagesRef.current >= 5) return;
+    autoFillPagesRef.current += 1;
+    void loadServer(false);
+  }, [filteredUsers.length, isLoadingUsers, loadServer]);
+
+  // Stable key of athlete IDs derived from `users` (NOT `filteredUsers`).
+  // Deriving from filteredUsers created an infinite loop: the effect below
+  // sets athleteZones/athleteTiers, filteredUsers' memo depends on those, so
+  // a new array identity re-fired the effect on every fetch completion. Keying
+  // on the raw athlete-id list breaks that cycle — zone/tier state no longer
+  // feeds back into what the effect depends on.
+  const athleteIdsKey = useMemo(
+    () =>
+      users
+        .filter((u) => u.role === 'athlete' && u.id !== currentUser?.id)
+        .map((u) => u.id)
+        .slice(0, 50)
+        .join(','),
+    [users, currentUser?.id],
+  );
+
+  useEffect(() => {
+    const athleteIds = athleteIdsKey ? athleteIdsKey.split(',') : [];
     if (athleteIds.length === 0) return;
+    let cancelled = false;
     fetchLatestBatch(athleteIds, 'yoyo')
       .then((batchMap) => {
+        if (cancelled) return;
         const zones: Record<string, string> = {};
         const tiers: Record<string, string> = {};
         batchMap.forEach((result, id) => {
@@ -462,7 +544,10 @@ export default function DiscoverScreen() {
         setAthleteTiers(tiers);
       })
       .catch(() => {});
-  }, [filteredUsers]);
+    return () => {
+      cancelled = true;
+    };
+  }, [athleteIdsKey, fetchLatestBatch]);
 
   const isInitialLoading = useMemo(() => {
     return (isLoadingUsers || usersIsLoading) && users.length === 0 && !usersError;
@@ -520,7 +605,7 @@ export default function DiscoverScreen() {
             <Text style={styles.userName} numberOfLines={1} ellipsizeMode="tail">
               {item.name}
             </Text>
-            {item.verified && <Text style={styles.verified}>✓</Text>}
+            {item.verified && <BadgeCheck size={13} color={theme.colors.primary} />}
           </View>
           <Text style={styles.userRole} numberOfLines={1} ellipsizeMode="tail">
             {formatRoleName(item.role)}
@@ -653,7 +738,7 @@ export default function DiscoverScreen() {
             <Text style={styles.searchResultName} numberOfLines={1} ellipsizeMode="tail">
               {item.name}
             </Text>
-            {item.verified && <Text style={styles.verified}>✓</Text>}
+            {item.verified && <BadgeCheck size={13} color={theme.colors.primary} />}
           </View>
           {item.subtitle && (
             <Text style={styles.searchResultSubtitle} numberOfLines={1} ellipsizeMode="tail">
@@ -867,7 +952,7 @@ export default function DiscoverScreen() {
             <Search size={20} color={theme.colors.textSecondary} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search people, sports..."
+              placeholder="Search people, sports…"
               value={localSearchQuery}
               onChangeText={(text) => dispatch({ type: 'SET_SEARCH', query: text })}
               onSubmitEditing={handleSearchSubmit}
@@ -923,8 +1008,10 @@ export default function DiscoverScreen() {
             ) : localSearchQuery.length > 0 ? (
               <View style={styles.noResultsContainer}>
                 <Search size={48} color={theme.colors.textSecondary} />
-                <Text style={styles.noResultsTitle}>No results found</Text>
-                <Text style={styles.noResultsMessage}>Try searching for different keywords</Text>
+                <Text style={styles.noResultsTitle}>Nothing matches yet</Text>
+                <Text style={styles.noResultsMessage}>
+                  Try a different name, sport, or location
+                </Text>
               </View>
             ) : (
               <View style={styles.recentSearchesContainer}>
@@ -1079,20 +1166,27 @@ export default function DiscoverScreen() {
                 ItemSeparatorComponent={ItemSeparator}
                 refreshing={filteredUsers.length > 0 ? isLoadingUsers || usersIsLoading : false}
                 onRefresh={loadUsers}
+                onEndReached={() => loadServer(false)}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={
+                  isPaging ? (
+                    <ActivityIndicator style={styles.pagingSpinner} color={theme.colors.primary} />
+                  ) : null
+                }
                 {...FLATLIST_PERF_PROPS}
               />
             ) : (
               <View style={styles.noUsersContainer}>
                 <Search size={48} color={theme.colors.textSecondary} />
-                <Text style={styles.noUsersTitle}>No users found</Text>
+                <Text style={styles.noUsersTitle}>No one matches those filters yet</Text>
                 <Text style={styles.noUsersMessage}>
                   {selectedSport && selectedRole
-                    ? `No ${selectedRole}s found for ${selectedSport}`
+                    ? `Widen your search — new ${selectedRole}s in ${selectedSport} join every day`
                     : selectedSport
-                      ? `No users found for ${selectedSport}`
+                      ? `Widen your search — new ${selectedSport} talent joins every day`
                       : selectedRole
-                        ? `No ${selectedRole}s found`
-                        : 'No users available at the moment'}
+                        ? `Widen your search — new ${selectedRole}s join every day`
+                        : 'New athletes and scouts join every day — check back soon'}
                 </Text>
                 {(selectedSport || selectedRole) && (
                   <TouchableOpacity
@@ -1244,7 +1338,7 @@ export default function DiscoverScreen() {
                   <Text style={styles.filterSectionTitle}>Location</Text>
                   <TextInput
                     style={styles.filterInput}
-                    placeholder="Filter by location..."
+                    placeholder="Filter by location…"
                     value={tempLocation}
                     onChangeText={(text) => dispatch({ type: 'SET_TEMP_LOCATION', location: text })}
                     placeholderTextColor={theme.colors.textSecondary}
@@ -1408,6 +1502,9 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: theme.spacing.md,
+  },
+  pagingSpinner: {
+    paddingVertical: theme.spacing.lg,
   },
   loadingContainer: {
     flex: 1,

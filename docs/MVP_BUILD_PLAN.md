@@ -97,6 +97,21 @@ A wave of fixes that kept the app running across web + Android. Documented as pa
 
 ---
 
+## Wave 2.10 — Speed & Power guided wrapper (shipped 2026-05-20)
+
+Closed the UX asymmetry between Yo-Yo IR1 (two cards: guided audio + manual entry) and the six Speed/Power tests (manual entry only). Sprint 10/20/30/40m, Agility T-Test, and Vertical Jump now each show **Start Guided** + **Enter Manually** CTAs on the hub. The guided path walks athletes through what to bring, how to set up cones/wall, how to perform, and what to watch out for — then drops into the existing manual-entry form. Save tier stays `self_reported` (0.7×). Anyone can enter anything; the wrapper is instructional polish, not measurement.
+
+- `constants/guided-test-instructions.ts` — protocol-correct copy for all 6 tests (needs / setup / how-to / common mistakes / attempts), seeded from `docs/RESEARCH_ATHLETE_TESTS_BY_SPORT.md` and standard sports-science test protocols
+- `app/guided-test.tsx` — parameterized instructions screen, reads `testType` query param, redirects to `/beep-test` on unknown type
+- `app/beep-test.tsx` — SPEED_POWER section refactored to single dual-CTA card per test (preferred over 12-card mirror of Yo-Yo's pattern, to avoid hub scroll bloat)
+- `app/_layout.tsx` — `guided-test` route registered alongside other `beep-test*` routes
+
+**Why light, not full sensor capture**: the v1.5 wedge (below) is the canonical sensor-based path that lifts these tests to `app_measured` (0.85×). Light wrapper buys a discoverable, scout-visible self-reported path during the multi-week v1.5 build window. Sprint and Vertical Jump entries should rise materially even at 0.7× confidence — more data, even discounted, beats no data. Direct measurement upgrade comes with v1.5's CMJ flight-time + sprint photo-finish work.
+
+**Note on `app/beep-test-live.tsx`**: per Wave 2.5 above, this screen is described as "accelerometer-driven Yo-Yo IR1, sprint, agility, vertical jump" but the hub currently only routes Yo-Yo to it. Hooking sprint/agility/vertical jump into the live screen is part of v1.5 (sport-specific battery wedge), not this wave.
+
+---
+
 ## Wave 3 — Supabase + AI polish (mostly DONE, was originally "Future")
 
 ### 3A. Supabase Sync — DONE

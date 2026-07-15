@@ -22,6 +22,7 @@ import {
   Flame,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import CachedImage from '@/components/CachedImage';
 import { Post } from '@/types';
 import { usePosts } from '@/hooks/posts-context';
@@ -171,9 +172,7 @@ export default function PostScreen() {
                     {post.userRole.toUpperCase()}
                   </Text>
                   <View style={styles.timestampDot} />
-                  <Text style={styles.postTime}>
-                    {new Date(post.createdAt).toLocaleDateString()}
-                  </Text>
+                  <Text style={styles.postTime}>{formatDate(post.createdAt)}</Text>
                 </View>
               </View>
             </TouchableOpacity>

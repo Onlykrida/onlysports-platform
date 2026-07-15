@@ -31,11 +31,13 @@ import {
   Settings2,
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { formatDate } from '@/constants/format-date';
 import { BackgroundGradient } from '@/components/BackgroundGradient';
 import { useOpportunities, Opportunity } from '@/hooks/opportunities-context';
 import { useAuth } from '@/hooks/auth-context';
 import { Stack, router } from 'expo-router';
 import CreateOpportunityModal from '@/components/CreateOpportunityModal';
+import EmptyState from '@/components/EmptyState';
 import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 import { OpportunitySkeletonList } from '@/components/SkeletonScreens';
 import { FLATLIST_PERF_PROPS } from '@/constants/performance';
@@ -201,8 +203,14 @@ export default function OpportunitiesScreen() {
           onPress={() => track(EVENTS.OPPORTUNITY_VIEWED, { opportunityId: item.id })}
         >
           <View style={styles.cardHeader}>
-            <View style={styles.typeTag}>
-              <Text style={styles.typeText} numberOfLines={1} ellipsizeMode="tail">
+            {/* getTypeColor existed but the tag hardcoded green — every
+                category looked identical (design audit: dead code, wired) */}
+            <View style={[styles.typeTag, { borderColor: getTypeColor(item.type) }]}>
+              <Text
+                style={[styles.typeText, { color: getTypeColor(item.type) }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {item.type.toUpperCase()}
               </Text>
             </View>
@@ -234,7 +242,7 @@ export default function OpportunitiesScreen() {
             <View style={styles.detailItem}>
               <Calendar size={14} color={theme.colors.cyan} style={styles.detailIcon} />
               <Text style={styles.detailText} numberOfLines={1} ellipsizeMode="tail">
-                Deadline: {new Date(item.deadline).toLocaleDateString()}
+                Deadline: {formatDate(item.deadline)}
               </Text>
             </View>
             <View style={styles.detailItem}>
@@ -716,12 +724,10 @@ export default function OpportunitiesScreen() {
           onRefresh={refreshOpportunities}
           refreshing={isLoading}
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No opportunities found</Text>
-              <Text style={styles.emptySubtext}>
-                Try adjusting your filters or check back later
-              </Text>
-            </View>
+            <EmptyState
+              preset="opportunities"
+              subtitle="New tryouts, scholarships, and tournaments are posted daily — try widening your filters or check back soon."
+            />
           }
         />
 
@@ -1392,26 +1398,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: theme.fontSize.md,
     color: theme.colors.textMuted,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.xl * 2,
-    gap: theme.spacing.sm,
-  },
-  emptyText: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.black,
-    color: theme.colors.text,
-    letterSpacing: theme.letterSpacing.wider,
-    textTransform: 'uppercase',
-  },
-  emptySubtext: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    letterSpacing: theme.letterSpacing.wide,
   },
   navButtonsRow: {
     flexDirection: 'column',

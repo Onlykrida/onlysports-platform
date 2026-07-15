@@ -20,21 +20,33 @@ import { useNotifications } from '@/hooks/notifications-context';
 import { UserRole } from '@/types';
 
 // Role-specific tab labels
+// Keep labels ≤8 chars: 7 tabs at 375px leave ~44px of label width each,
+// so "DASHBOARD" ellipsized ("DASHB…"). The dashboard screens keep their
+// in-page titles; the tab is just the way home.
 const HOME_LABELS: Partial<Record<UserRole, string>> = {
   athlete: 'Feed',
-  scout: 'Dashboard',
+  scout: 'Home',
   coach: 'Coach HQ',
-  team: 'Dashboard',
-  academy: 'Dashboard',
+  team: 'Home',
+  academy: 'Home',
   fan: 'Feed',
   brand: 'Talent',
   trainer: 'Hub',
-  gym: 'Dashboard',
+  gym: 'Home',
 };
 
 const DISCOVER_LABELS: Partial<Record<UserRole, string>> = {
   scout: 'Search',
   fan: 'Explore',
+  // 'Discover' (8 chars) ellipsizes in the 7-tab bar at 375px; the
+  // magnifier icon + 'Search' is the stronger convention anyway.
+  athlete: 'Search',
+  coach: 'Search',
+  team: 'Search',
+  academy: 'Search',
+  brand: 'Search',
+  trainer: 'Search',
+  gym: 'Search',
 };
 
 export default function TabLayout() {
@@ -69,17 +81,29 @@ export default function TabLayout() {
           backgroundColor: '#0a0a0a',
           borderTopWidth: 1,
           borderTopColor: 'rgba(255,255,255,0.06)',
-          paddingBottom: 4,
+          paddingBottom: 6,
           paddingTop: 6,
-          height: 56,
+          // 56 clipped the 40px Create circle + label; labels lost their
+          // descenders and read as cut off at the viewport bottom.
+          height: 64,
           shadowOpacity: 0,
           elevation: 0,
         },
+        // 7 tabs at 375px leave ~54px per slot; the default ~10px label
+        // margin ellipsized 8-char labels ("DISCO…", "MESSA…")
+        tabBarItemStyle: {
+          padding: 0,
+          paddingHorizontal: 0,
+        },
         tabBarLabelStyle: {
-          fontSize: 9,
-          fontWeight: '800',
+          // 8px (not 9) + no letterSpacing: react-navigation reserves ~10px
+          // of the ~54px slot, and 8-char labels ellipsized at 9px
+          // ("DISCO…", "MESSA…")
+          fontSize: 8,
+          fontWeight: '700',
           textTransform: 'uppercase',
-          letterSpacing: 0.5,
+          letterSpacing: 0,
+          marginHorizontal: 0,
         },
         tabBarBadgeStyle: {
           backgroundColor: theme.colors.orange,
@@ -162,7 +186,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="messages"
         options={{
-          title: 'Messages',
+          // 'Messages' ellipsizes at 375px; page header matches 'Chats'
+          title: 'Chats',
           tabBarIcon: ({ color, size }) => <MessageCircle size={size} color={color} />,
           tabBarBadge: getTabBarBadge(unreadMessagesCount),
         }}

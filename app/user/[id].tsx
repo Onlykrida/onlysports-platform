@@ -27,6 +27,7 @@ import {
   Edit,
   CheckCircle,
   Zap,
+  BadgeCheck,
 } from 'lucide-react-native';
 import { theme, formatRoleName } from '@/constants/theme';
 import { User } from '@/types';
@@ -145,7 +146,7 @@ export default function UserProfileScreen() {
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select(
-          'id, email, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at',
+          'id, name, role, avatar, bio, location, verified, sport, position, achievements, stats, role_specific_data, created_at',
         )
         .eq('id', id)
         .maybeSingle();
@@ -166,7 +167,7 @@ export default function UserProfileScreen() {
       if (userData) {
         const user: User = {
           id: userData.id,
-          email: userData.email,
+          email: '',
           name: userData.name,
           role: userData.role,
           avatar: userData.avatar,
@@ -609,7 +610,7 @@ export default function UserProfileScreen() {
         <View style={styles.infoSection}>
           <View style={styles.nameSection}>
             <Text style={styles.name}>{profileUser.name}</Text>
-            {profileUser.verified && <Text style={styles.verified}>✓</Text>}
+            {profileUser.verified && <BadgeCheck size={16} color={theme.colors.primary} />}
           </View>
           <Text style={styles.role}>
             {profileUser.sport || 'Sport'} • {formatRoleName(profileUser.role)}
@@ -664,7 +665,9 @@ export default function UserProfileScreen() {
                                 <View style={styles.interestedOrgDetailInfo}>
                                   <View style={styles.interestedOrgDetailNameRow}>
                                     <Text style={styles.interestedOrgDetailName}>{scout.name}</Text>
-                                    {scout.verified && <Text style={styles.verified}>✓</Text>}
+                                    {scout.verified && (
+                                      <BadgeCheck size={12} color={theme.colors.primary} />
+                                    )}
                                   </View>
                                   <View style={styles.interestedOrgDetailMeta}>
                                     <View
@@ -736,7 +739,9 @@ export default function UserProfileScreen() {
                                 <View style={styles.interestedOrgDetailInfo}>
                                   <View style={styles.interestedOrgDetailNameRow}>
                                     <Text style={styles.interestedOrgDetailName}>{org.name}</Text>
-                                    {org.verified && <Text style={styles.verified}>✓</Text>}
+                                    {org.verified && (
+                                      <BadgeCheck size={12} color={theme.colors.primary} />
+                                    )}
                                   </View>
                                   <View style={styles.interestedOrgDetailMeta}>
                                     <View
@@ -1012,7 +1017,7 @@ export default function UserProfileScreen() {
                     <View style={styles.recommendedAthleteInfo}>
                       <View style={styles.recommendedAthleteNameRow}>
                         <Text style={styles.recommendedAthleteName}>{athlete.name}</Text>
-                        {athlete.verified && <Text style={styles.verified}>✓</Text>}
+                        {athlete.verified && <BadgeCheck size={12} color={theme.colors.primary} />}
                       </View>
                       <View style={styles.recommendedAthleteMeta}>
                         {athlete.sport && (

@@ -123,7 +123,7 @@ Tables, by domain:
 
 RLS is enabled. Real-time subscriptions for messages, notifications, feed.
 
-**Schema source of truth**: `supabase-canonical-schema.sql` at the repo root. Other migration `.sql` files exist in the root but are scattered — when adding/altering tables, update the canonical file first. There is no `supabase/migrations/` directory.
+**Schema source of truth**: `supabase-canonical-schema.sql` at the repo root. Other migration `.sql` files exist in the root but are scattered — when adding/altering tables, update the canonical file first. Incremental changes now live in `supabase/migrations/` (dated files, applied via the Supabase dashboard/MCP — record whether each has been applied in its header comment); keep the canonical file in sync when you add one.
 
 ### AI Integration (Claude API)
 

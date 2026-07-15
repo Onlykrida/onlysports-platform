@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +16,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
 import VerificationBadge from '@/components/VerificationBadge';
+import RequestVerificationModal from '@/components/RequestVerificationModal';
 import {
   getMaxShuttlesForLevel,
   getSpeedForLevel,
@@ -111,6 +111,26 @@ export default function FitnessTestManualScreen() {
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // ── Verification request modal state ────────────────
+  // After a successful save, athletes get an opt-in path to ask a coach to
+  // verify the result. Approval lifts tier self_reported (0.7×) →
+  // coach_verified (1.0×). Modal is the existing component used by
+  // beep-test-results.tsx after sensor-driven Yo-Yo; here we surface it for
+  // every manual entry path (Yo-Yo + Speed/Power).
+  const [verificationModalVisible, setVerificationModalVisible] = useState(false);
+  const [lastSavedResultId, setLastSavedResultId] = useState<string | null>(null);
+
+  // ── Save outcome state ───────────────────────────────
+  // Feedback must be inline UI, not Alert.alert: RN-web silently drops
+  // Alert callbacks, which made saves invisible and allowed duplicate
+  // submissions (the form stayed live after each successful save).
+  const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [verificationSentTo, setVerificationSentTo] = useState<string | null>(null);
+  // Snapshot at save time: inputs stay editable behind the success panel,
+  // so live currentZone could drift from what was actually saved.
+  const [savedZoneLabel, setSavedZoneLabel] = useState<string | null>(null);
+
   // ── Yo-Yo derived ───────────────────────────────────
   const maxShuttles = useMemo(() => getMaxShuttlesForLevel(level), [level]);
   const safeShuttle = useMemo(() => Math.min(shuttle, maxShuttles), [shuttle, maxShuttles]);
@@ -201,17 +221,18 @@ export default function FitnessTestManualScreen() {
 
   const handleSave = async () => {
     if (!currentUser) {
-      Alert.alert('Error', 'You must be logged in to save results.');
+      setSaveError('You must be logged in to save results.');
       return;
     }
     if (!hasValidInput) {
-      Alert.alert('Missing Input', 'Please enter a valid value before saving.');
+      setSaveError('Please enter a valid value before saving.');
       return;
     }
 
+    setSaveError(null);
     setIsSaving(true);
     try {
-      let result: { error?: string } = {};
+      let result: { error?: string; id?: string } = {};
 
       if (testType === 'yoyo') {
         result = await saveYoYoResult({
@@ -261,17 +282,20 @@ export default function FitnessTestManualScreen() {
       }
 
       if (result.error) {
-        Alert.alert('Error', result.error);
+        setSaveError(result.error);
         return;
       }
 
-      const zoneName = currentZone?.label ?? 'Unknown';
-      Alert.alert('Saved!', `${meta.shortTitle} result recorded — ${zoneName} zone.`, [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      // Swap the save button for an inline success panel. The panel owns the
+      // next steps (Ask a coach / Done), so the form can't be re-submitted.
+      // result.id may be absent (mock client / unconfigured env) — the panel
+      // then simply omits the coach-verification action.
+      if (result.id) setLastSavedResultId(result.id);
+      setSavedZoneLabel(currentZone?.label ?? null);
+      setSaveState('saved');
     } catch (e) {
       if (__DEV__) console.log('FitnessTestManual: save exception', e);
-      Alert.alert('Error', 'An unexpected error occurred.');
+      setSaveError('An unexpected error occurred.');
     } finally {
       setIsSaving(false);
     }
@@ -295,26 +319,31 @@ export default function FitnessTestManualScreen() {
         <Stack.Screen
           options={{
             title: `Enter ${meta.shortTitle} Result`,
-            headerStyle: { backgroundColor: 'transparent' },
+            headerStyle: { backgroundColor: theme.colors.background },
             headerTintColor: theme.colors.text,
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
                 <X size={24} color={theme.colors.text} />
               </TouchableOpacity>
             ),
-            headerRight: () => (
-              <TouchableOpacity
-                onPress={handleSave}
-                style={styles.headerButton}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <ActivityIndicator size="small" color={theme.colors.primary} />
-                ) : (
-                  <Check size={24} color={theme.colors.primary} />
-                )}
-              </TouchableOpacity>
-            ),
+            // Hidden once saved — the success panel owns post-save actions;
+            // leaving this live re-ran handleSave and inserted duplicates.
+            headerRight: () =>
+              saveState === 'saved' ? null : (
+                <TouchableOpacity
+                  onPress={handleSave}
+                  style={styles.headerButton}
+                  disabled={isSaving}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save result"
+                >
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                  ) : (
+                    <Check size={24} color={theme.colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ),
           }}
         />
 
@@ -465,7 +494,9 @@ export default function FitnessTestManualScreen() {
                   </Text>
                 </View>
                 <Text style={styles.zoneTagline} numberOfLines={1} ellipsizeMode="tail">
-                  "{currentZone.tagline}"
+                  {'\u201C'}
+                  {currentZone.tagline}
+                  {'\u201D'}
                 </Text>
 
                 <View style={styles.resultsDivider} />
@@ -582,7 +613,7 @@ export default function FitnessTestManualScreen() {
                   {yoyoResults.nextTarget.distanceNeeded}m) to go
                 </Text>
                 <Text style={styles.goalMotivation} numberOfLines={1} ellipsizeMode="tail">
-                  "You're closer than you think"
+                  {'\u201C'}You&apos;re closer than you think{'\u201D'}
                 </Text>
               </View>
             </View>
@@ -624,7 +655,7 @@ export default function FitnessTestManualScreen() {
               style={styles.notesInput}
               value={notes}
               onChangeText={setNotes}
-              placeholder="Optional notes about this test..."
+              placeholder="Optional notes about this test…"
               placeholderTextColor={theme.colors.textMuted}
               multiline
               numberOfLines={3}
@@ -647,27 +678,97 @@ export default function FitnessTestManualScreen() {
             }}
           >
             <VerificationBadge tier="self_reported" size="sm" showLabel />
-            <Text style={{ flex: 1, fontSize: 11, color: theme.colors.textSecondary }}>
+            <Text
+              style={{ flex: 1, fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}
+            >
               Manual entries are Self-Reported. Take the guided test for higher trust.
             </Text>
           </View>
 
-          {/* ═══ SAVE BUTTON ═══ */}
-          <View style={styles.saveSection}>
-            <TouchableOpacity
-              style={[styles.saveButton, (isSaving || !hasValidInput) && styles.saveButtonDisabled]}
-              onPress={handleSave}
-              disabled={isSaving || !hasValidInput}
-              activeOpacity={0.85}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color={theme.colors.black} />
-              ) : (
-                <Text style={styles.saveButtonText}>SAVE RESULT</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+          {/* ═══ SAVE BUTTON / SUCCESS PANEL ═══ */}
+          {saveState === 'saved' ? (
+            <View style={styles.successCard}>
+              <View style={styles.successHeader}>
+                <Check size={22} color={theme.colors.primary} />
+                <Text style={styles.successTitle}>
+                  Saved! {meta.shortTitle} — {savedZoneLabel ?? ''} zone
+                </Text>
+              </View>
+              {verificationSentTo ? (
+                <Text style={styles.successSub}>
+                  Verification request sent to {verificationSentTo}. They&apos;ll get a
+                  notification.
+                </Text>
+              ) : lastSavedResultId ? (
+                <Text style={styles.successSub}>
+                  Want a coach to verify it? You can attach a video and pick a coach to review.
+                </Text>
+              ) : null}
+              <View style={styles.successActions}>
+                {lastSavedResultId && !verificationSentTo && (
+                  <TouchableOpacity
+                    style={styles.successPrimaryBtn}
+                    onPress={() => setVerificationModalVisible(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Ask a coach to verify this result"
+                  >
+                    <Text style={styles.successPrimaryText}>ASK A COACH</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={styles.successSecondaryBtn}
+                  onPress={() => router.back()}
+                  accessibilityRole="button"
+                  accessibilityLabel="Done, go back"
+                >
+                  <Text style={styles.successSecondaryText}>DONE</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.saveSection}>
+              {saveError && <Text style={styles.saveErrorText}>{saveError}</Text>}
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  (isSaving || !hasValidInput) && styles.saveButtonDisabled,
+                ]}
+                onPress={handleSave}
+                disabled={isSaving || !hasValidInput}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Save result"
+                accessibilityState={{ disabled: isSaving || !hasValidInput }}
+              >
+                {isSaving ? (
+                  <ActivityIndicator size="small" color={theme.colors.black} />
+                ) : (
+                  <Text style={styles.saveButtonText}>SAVE RESULT</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
+
+        {/* Coach-verification request modal — opened after a successful save
+            when the athlete taps "Ask a coach". Video upload is enabled so
+            athletes can attach a clip for the coach to review remotely. */}
+        {lastSavedResultId && (
+          <RequestVerificationModal
+            visible={verificationModalVisible}
+            testResultId={lastSavedResultId}
+            testTypeLabel={meta.shortTitle}
+            enableVideoUpload
+            onClose={() => {
+              setVerificationModalVisible(false);
+              router.back();
+            }}
+            onSubmitted={(coachName) => {
+              setVerificationModalVisible(false);
+              setVerificationSentTo(coachName);
+            }}
+          />
+        )}
       </SafeAreaView>
     </BackgroundGradient>
   );
@@ -789,7 +890,7 @@ const styles = StyleSheet.create({
 
   // Results Card
   resultsCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 2,
@@ -847,7 +948,7 @@ const styles = StyleSheet.create({
 
   // Goal Card
   goalCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 2,
@@ -874,7 +975,7 @@ const styles = StyleSheet.create({
 
   // Tips Card
   tipsCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.cardBg,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 2,
@@ -890,7 +991,7 @@ const styles = StyleSheet.create({
   tipBullet: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: theme.borderRadius.xs,
     backgroundColor: theme.colors.primary,
     marginTop: 7,
     flexShrink: 0,
@@ -919,7 +1020,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
   },
   saveButton: {
-    backgroundColor: '#30D158',
+    backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.lg,
     paddingVertical: theme.spacing.lg,
     alignItems: 'center',
@@ -935,5 +1036,73 @@ const styles = StyleSheet.create({
     color: theme.colors.black,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
+  },
+  saveErrorText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.danger,
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+
+  // Post-save success panel (replaces the save button)
+  successCard: {
+    margin: theme.spacing.md,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.cardBg,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  successHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  successTitle: {
+    flex: 1,
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  successSub: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.sm,
+  },
+  successActions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.md,
+  },
+  successPrimaryBtn: {
+    flex: 1,
+    minHeight: 44,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.sm,
+  },
+  successPrimaryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.black,
+    color: theme.colors.black,
+    letterSpacing: 1,
+  },
+  successSecondaryBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.sm,
+  },
+  successSecondaryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+    letterSpacing: 1,
   },
 });

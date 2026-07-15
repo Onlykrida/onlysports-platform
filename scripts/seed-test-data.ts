@@ -45,6 +45,30 @@ const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.SUPABAS
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SEED_TAG = 'onlykrida-seed-v2';
 
+// Hardcoded demo emails from scripts/nuke-and-seed.ts. These accounts don't
+// carry user_metadata.seed_tag, so cleanup matches them by exact email.
+const NUKE_SEED_EMAILS = new Set<string>([
+  'demo@onlykrida.com',
+  'arjun@onlykrida.com',
+  'priya@onlykrida.com',
+  'fatima@onlykrida.com',
+  'rahul@onlykrida.com',
+  'sneha@onlykrida.com',
+  'omar@onlykrida.com',
+  'ananya@onlykrida.com',
+  'vikram@onlykrida.com',
+  'aisha@onlykrida.com',
+  'dev@onlykrida.com',
+  'scout.ravi@onlykrida.com',
+  'scout.james@onlykrida.com',
+  'scout.meera@onlykrida.com',
+  'coach.kabir@onlykrida.com',
+  'coach.sarah@onlykrida.com',
+  'team.thunderbolts@onlykrida.com',
+  'team.falcons@onlykrida.com',
+  'trainer.raj@onlykrida.com',
+]);
+
 // ---------------------------------------------------------------------------
 // HELPERS
 // ---------------------------------------------------------------------------
@@ -1876,12 +1900,14 @@ async function cleanup() {
     if (error) throw error;
     const batch = (data?.users ?? []).filter((u: any) => {
       const md: any = u.user_metadata ?? {};
+      const email = (u.email ?? '').toLowerCase();
       return (
         md.seed_tag === SEED_TAG ||
         md.seed_tag === 'onlykrida-seed' || // old v1 tag
         md.seed === true ||
-        (u.email ?? '').endsWith('@onlykrida.test') ||
-        (u.email ?? '').endsWith('@example.test') // old v1 domain
+        email.endsWith('@onlykrida.test') ||
+        email.endsWith('@example.test') || // old v1 domain
+        NUKE_SEED_EMAILS.has(email) // hardcoded demo accounts from nuke-and-seed.ts
       );
     });
     batch.forEach((u: any) => {

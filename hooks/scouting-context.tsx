@@ -205,6 +205,12 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
   // Shortlist state
   const [shortlist, setShortlist] = useState<ShortlistEntry[]>([]);
   const shortlistRef = useRef<ShortlistEntry[]>([]);
+  // computeForScout is memoized on stable callbacks only (so it isn't recreated
+  // every time the user cache changes). It still needs the *current* users list
+  // and signed-in user for the same-city/same-state location boost, so mirror
+  // them into refs rather than adding them to the dep array.
+  const usersRef = useRef(users);
+  const currentUserRef = useRef(currentUser);
 
   // Dashboard state
   const [dashboardData, setDashboardData] = useState<ScoutDashboardData | null>(null);
@@ -220,6 +226,12 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
   useEffect(() => {
     shortlistRef.current = shortlist;
   }, [shortlist]);
+  useEffect(() => {
+    usersRef.current = users;
+  }, [users]);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
 
   // ──────────────────────────────────────────────────────────
   // Cache helpers
@@ -479,8 +491,10 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
           }
         }
 
-        // Get scout location for soft boost
-        const scoutUser = users.find((u) => u.id === scoutId) ?? currentUser;
+        // Get scout location for soft boost (read live values via refs — see
+        // usersRef/currentUserRef above)
+        const usersList = usersRef.current;
+        const scoutUser = usersList.find((u) => u.id === scoutId) ?? currentUserRef.current;
         const scoutState = scoutUser?.location?.split(',').pop()?.trim().toLowerCase() || '';
         const scoutCity = scoutUser?.location?.split(',')[0]?.trim().toLowerCase() || '';
 
@@ -491,7 +505,7 @@ const [ScoutingProvider, _useScouting] = createContextHook<ScoutingState>(() => 
             : 50; // neutral default
 
           // Location soft boost
-          const athlete = users.find((u) => u.id === s.player_id);
+          const athlete = usersList.find((u) => u.id === s.player_id);
           const athleteState = athlete?.location?.split(',').pop()?.trim().toLowerCase() || '';
           const athleteCity = athlete?.location?.split(',')[0]?.trim().toLowerCase() || '';
           let locationMatch: 'same_city' | 'same_state' | 'same_country' | undefined;

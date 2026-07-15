@@ -66,6 +66,48 @@ const ALLOWED_MODELS = new Set([
 
 // Per-user rate limit. Tunable.
 const REQUESTS_PER_HOUR = 30;
+
+// CORS allow-list. Configure via Supabase function secret:
+//   supabase secrets set ALLOWED_ORIGINS="https://onlykrida.com,https://app.onlykrida.com"
+// Native mobile clients send no Origin header; those are passed through (the
+// JWT validation below is the actual gate). When ALLOWED_ORIGINS is unset, we
+// allow only localhost dev origins so a stray production deploy without
+// configured secrets cannot expose the proxy to arbitrary cross-origin callers.
+const DEV_FALLBACK_ORIGINS = [
+  'http://localhost:8081',
+  'http://localhost:19006',
+  'http://localhost:3000',
+];
+
+function pickAllowedOrigin(req: Request): string | null {
+  const origin = req.headers.get('origin');
+  if (!origin) return null; // native mobile — no Origin header
+  const envList = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (envList.length === 0) {
+    // Loud on purpose: fail-closed is correct, but a production web deploy
+    // missing this secret silently CORS-blocks every AI feature otherwise.
+    console.error(
+      'claude-proxy: ALLOWED_ORIGINS not set — falling back to localhost dev origins; web clients on other origins will be blocked',
+    );
+  }
+  const allowList = envList.length > 0 ? envList : DEV_FALLBACK_ORIGINS;
+  return allowList.includes(origin) ? origin : null;
+}
+
+function corsHeaders(req: Request): Record<string, string> {
+  const allowed = pickAllowedOrigin(req);
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    Vary: 'Origin',
+  };
+  if (allowed) headers['Access-Control-Allow-Origin'] = allowed;
+  return headers;
+}
+
 // Short-window in-memory fallback. Used when the DB-backed limiter can't run
 // (table missing, PostgREST hiccup). Bites at 5 req/min/user.
 const FALLBACK_REQUESTS_PER_WINDOW = 5;
@@ -173,33 +215,45 @@ async function logUsage(
     });
 }
 
+// JSON response helper that ALWAYS includes CORS headers. Previously the error
+// paths (405/401/500/429/400/413/502) omitted corsHeaders(req), so on web the
+// browser blocked the body for lack of Access-Control-Allow-Origin and the
+// client's structured 401/429 handling became dead code — every failure class
+// surfaced as a generic error.
+function jsonResponse(
+  req: Request,
+  obj: unknown,
+  status: number,
+  extraHeaders: Record<string, string> = {},
+): Response {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { ...corsHeaders(req), 'content-type': 'application/json', ...extraHeaders },
+  });
+}
+
+// Max combined system+messages payload. The rate limiter counts requests, not
+// tokens, so without this a single authenticated caller could send ~200K-token
+// prompts to a 1M-context model and run up the Anthropic bill 30×/hr.
+const MAX_PROMPT_BYTES = 64 * 1024;
+
 Deno.serve(async (req) => {
   // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      },
+      headers: corsHeaders(req),
     });
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'method_not_allowed' }), {
-      status: 405,
-      headers: { 'content-type': 'application/json' },
-    });
+    return jsonResponse(req, { error: 'method_not_allowed' }, 405);
   }
 
   // Validate the auth header
   const authHeader = req.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
-    return new Response(JSON.stringify({ error: 'missing_auth' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' },
-    });
+    return jsonResponse(req, { error: 'missing_auth' }, 401);
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -209,10 +263,7 @@ Deno.serve(async (req) => {
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey || !anthropicKey) {
     console.error('claude-proxy: missing required env vars');
-    return new Response(JSON.stringify({ error: 'function_misconfigured' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    return jsonResponse(req, { error: 'function_misconfigured' }, 500);
   }
 
   // Verify the user's JWT
@@ -225,10 +276,7 @@ Deno.serve(async (req) => {
     error: authError,
   } = await supabaseUser.auth.getUser();
   if (authError || !user) {
-    return new Response(JSON.stringify({ error: 'invalid_auth' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' },
-    });
+    return jsonResponse(req, { error: 'invalid_auth' }, 401);
   }
 
   // Rate-limit + usage logging client (service role)
@@ -237,20 +285,11 @@ Deno.serve(async (req) => {
   // Check rate limit before forwarding
   const limit = await checkRateLimit(supabaseAdmin, user.id);
   if (!limit.ok) {
-    return new Response(
-      JSON.stringify({
-        error: 'rate_limited',
-        remaining: limit.remaining,
-        reset_at: limit.resetAt,
-      }),
-      {
-        status: 429,
-        headers: {
-          'content-type': 'application/json',
-          'x-ratelimit-remaining': '0',
-          'x-ratelimit-reset': String(limit.resetAt),
-        },
-      },
+    return jsonResponse(
+      req,
+      { error: 'rate_limited', remaining: limit.remaining, reset_at: limit.resetAt },
+      429,
+      { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': String(limit.resetAt) },
     );
   }
 
@@ -259,10 +298,7 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'invalid_json' }), {
-      status: 400,
-      headers: { 'content-type': 'application/json' },
-    });
+    return jsonResponse(req, { error: 'invalid_json' }, 400);
   }
 
   // Drop any field not in the allow-list. Prevents prompt smuggling via
@@ -277,10 +313,15 @@ Deno.serve(async (req) => {
   // Validate model is in allow-list
   const model = cleanedBody.model as string | undefined;
   if (!model || !ALLOWED_MODELS.has(model)) {
-    return new Response(
-      JSON.stringify({ error: 'invalid_model', allowed: Array.from(ALLOWED_MODELS) }),
-      { status: 400, headers: { 'content-type': 'application/json' } },
-    );
+    return jsonResponse(req, { error: 'invalid_model', allowed: Array.from(ALLOWED_MODELS) }, 400);
+  }
+
+  // Reject oversized prompts (token-cost DoS guard — see MAX_PROMPT_BYTES).
+  const promptBytes =
+    JSON.stringify(cleanedBody.system ?? '').length +
+    JSON.stringify(cleanedBody.messages ?? '').length;
+  if (promptBytes > MAX_PROMPT_BYTES) {
+    return jsonResponse(req, { error: 'prompt_too_large', max_bytes: MAX_PROMPT_BYTES }, 413);
   }
 
   // Cap max_tokens to prevent runaway costs
@@ -302,10 +343,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error('claude-proxy: anthropic fetch failed', err);
-    return new Response(JSON.stringify({ error: 'upstream_unreachable' }), {
-      status: 502,
-      headers: { 'content-type': 'application/json' },
-    });
+    return jsonResponse(req, { error: 'upstream_unreachable' }, 502);
   }
 
   const responseBody = await anthropicResponse.text();
@@ -327,8 +365,8 @@ Deno.serve(async (req) => {
   return new Response(responseBody, {
     status: anthropicResponse.status,
     headers: {
+      ...corsHeaders(req),
       'content-type': anthropicResponse.headers.get('content-type') ?? 'application/json',
-      'access-control-allow-origin': '*',
       'x-ratelimit-remaining': String(limit.remaining - 1),
     },
   });
