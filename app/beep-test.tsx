@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import {
@@ -222,7 +222,83 @@ function MyCombineCard() {
   );
 }
 
+// Bottom sheet: capture methods for a Speed/Power test, each row showing the
+// verification tier it earns. The picker makes the video/coach path
+// discoverable BEFORE the athlete does the work.
+function CaptureMethodSheet({
+  test,
+  onClose,
+}: {
+  test: SpeedTestCard | null;
+  onClose: () => void;
+}) {
+  if (!test) return null;
+  const go = (href: string) => {
+    onClose();
+    router.push(href as any);
+  };
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity activeOpacity={1} style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+          <Text style={styles.sheetTitle}>{test.title}</Text>
+          <Text style={styles.sheetSubtitle}>How will you prove it?</Text>
+
+          <TouchableOpacity
+            style={styles.sheetRow}
+            onPress={() => go(`/beep-test-manual?testType=${test.testType}&verify=1`)}
+            accessibilityRole="button"
+            accessibilityLabel="Enter result with video proof for coach review"
+          >
+            <View style={styles.sheetRowText}>
+              <Text style={styles.sheetRowTitle}>Enter + video proof</Text>
+              <Text style={styles.sheetRowDesc}>
+                Attach a clip, a coach reviews it — up to full 1.0× trust
+              </Text>
+            </View>
+            <VerificationBadge
+              tier="coach_verified"
+              size="sm"
+              showLabel
+              mode="remote_video"
+              testType={test.testType}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sheetRow}
+            onPress={() => go(`/beep-test-manual?testType=${test.testType}`)}
+            accessibilityRole="button"
+            accessibilityLabel="Enter result without video"
+          >
+            <View style={styles.sheetRowText}>
+              <Text style={styles.sheetRowTitle}>Enter result</Text>
+              <Text style={styles.sheetRowDesc}>Type in your time or height</Text>
+            </View>
+            <VerificationBadge tier="self_reported" size="sm" showLabel />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sheetRow}
+            onPress={() => go(`/guided-test?testType=${test.testType}`)}
+            accessibilityRole="button"
+            accessibilityLabel="Read the test guide first"
+          >
+            <View style={styles.sheetRowText}>
+              <Text style={styles.sheetRowTitle}>Read the test guide</Text>
+              <Text style={styles.sheetRowDesc}>Setup, protocol, and common mistakes</Text>
+            </View>
+            <ChevronRight size={18} color={theme.colors.textMuted} />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
 export default function FitnessTestScreen() {
+  const [pickerTest, setPickerTest] = useState<SpeedTestCard | null>(null);
   return (
     <BackgroundGradient style={styles.container}>
       <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
@@ -325,28 +401,27 @@ export default function FitnessTestScreen() {
                   </Text>
                 </View>
               </View>
-              {/* Honest labels: for Speed & Power the "guided" flow is a
-                  setup guide that ends in manual entry — both paths save as
-                  Self-Reported (0.7×). "Start Guided" implied App-Tested and
-                  leaked trust at the tier system's core (design audit W1). */}
+              {/* Capture-method picker (design audit 1a): every test leads
+                  with HOW you'll prove it, each method labeled with the tier
+                  it earns. */}
               <View style={styles.dualCtaRow}>
                 <TouchableOpacity
                   style={[styles.dualCtaPrimary, { backgroundColor: test.accentColor }]}
-                  onPress={() => router.push(`/guided-test?testType=${test.testType}` as any)}
+                  onPress={() => setPickerTest(test)}
                   activeOpacity={0.85}
                   accessibilityRole="button"
-                  accessibilityLabel={`Open ${test.title} test guide`}
+                  accessibilityLabel={`Choose how to prove your ${test.title} result`}
                 >
-                  <Text style={styles.dualCtaPrimaryText}>Test Guide</Text>
+                  <Text style={styles.dualCtaPrimaryText}>Prove It</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.dualCtaSecondary}
-                  onPress={() => router.push(`/beep-test-manual?testType=${test.testType}` as any)}
+                  onPress={() => router.push(`/guided-test?testType=${test.testType}` as any)}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel={`Enter ${test.title} result manually`}
+                  accessibilityLabel={`Open ${test.title} test guide`}
                 >
-                  <Text style={styles.dualCtaSecondaryText}>Enter Result →</Text>
+                  <Text style={styles.dualCtaSecondaryText}>Test Guide →</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -441,6 +516,8 @@ export default function FitnessTestScreen() {
             </Text>
           </View>
         </ScrollView>
+
+        <CaptureMethodSheet test={pickerTest} onClose={() => setPickerTest(null)} />
       </SafeAreaView>
     </BackgroundGradient>
   );
@@ -539,6 +616,62 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     lineHeight: 18,
+  },
+
+  // ── Capture-method sheet ──
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderTopRightRadius: theme.borderRadius.xl,
+    padding: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
+    gap: theme.spacing.sm,
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: theme.colors.border,
+    marginBottom: theme.spacing.sm,
+  },
+  sheetTitle: {
+    fontSize: theme.fontSize.lg,
+    fontFamily: theme.fontFamily.displayBlack,
+    color: theme.colors.text,
+    letterSpacing: 1.5,
+  },
+  sheetSubtitle: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  sheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.cardBg,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.cardBorder,
+    padding: theme.spacing.md,
+    minHeight: 64,
+  },
+  sheetRowText: { flex: 1 },
+  sheetRowTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+  },
+  sheetRowDesc: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    marginTop: 2,
   },
   headerButton: {
     padding: theme.spacing.sm,

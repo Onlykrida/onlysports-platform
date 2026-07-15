@@ -66,7 +66,7 @@ const TEST_META: Record<TestType, { title: string; shortTitle: string }> = {
 };
 
 export default function FitnessTestManualScreen() {
-  const params = useLocalSearchParams<{ testType?: string }>();
+  const params = useLocalSearchParams<{ testType?: string; verify?: string }>();
   const testType: TestType = [
     'yoyo',
     'sprint_10m',
@@ -293,6 +293,12 @@ export default function FitnessTestManualScreen() {
       if (result.id) setLastSavedResultId(result.id);
       setSavedZoneLabel(currentZone?.label ?? null);
       setSaveState('saved');
+      // Capture-method picker's "Enter + video proof" path (?verify=1):
+      // the athlete already chose coach verification — open the request
+      // modal immediately instead of waiting for the panel tap.
+      if (result.id && params.verify === '1') {
+        setVerificationModalVisible(true);
+      }
     } catch (e) {
       if (__DEV__) console.log('FitnessTestManual: save exception', e);
       setSaveError('An unexpected error occurred.');
