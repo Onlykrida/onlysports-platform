@@ -20,6 +20,7 @@ import {
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { TestType, getZoneMeta } from '@/constants/fitness-test-data';
+import { COMBINE_TESTS, TIER_RANK } from '@/constants/combine-tests';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
 import BackgroundGradient from '@/components/BackgroundGradient';
 import VerificationBadge from '@/components/VerificationBadge';
@@ -142,45 +143,8 @@ const COMING_SOON_TESTS: ComingSoonCard[] = [
 // ─── My Combine ────────────────────────────────────────────────────────────
 // The four core tests as one scout-facing scorecard (design audit direction
 // 1b). The hub opens with the athlete's own progress — the tier ladder as a
-// personal status, not a glossary.
-const COMBINE_TESTS: {
-  testType: TestType;
-  label: string;
-  emptyHref: string;
-  format: (r: any) => string;
-}[] = [
-  {
-    testType: 'yoyo',
-    label: 'YO-YO IR1',
-    emptyHref: '/beep-test-live',
-    format: (r) => `L${r.level ?? '?'}.${r.shuttle ?? '?'}`,
-  },
-  {
-    testType: 'sprint_20m',
-    label: 'SPRINT 20M',
-    emptyHref: '/guided-test?testType=sprint_20m',
-    format: (r) => (r.sprint_time != null ? `${r.sprint_time.toFixed(2)}s` : '—'),
-  },
-  {
-    testType: 'agility_ttest',
-    label: 'AGILITY',
-    emptyHref: '/guided-test?testType=agility_ttest',
-    format: (r) => (r.agility_time != null ? `${r.agility_time.toFixed(2)}s` : '—'),
-  },
-  {
-    testType: 'vertical_jump',
-    label: 'V. JUMP',
-    emptyHref: '/guided-test?testType=vertical_jump',
-    format: (r) => (r.jump_height != null ? `${r.jump_height}cm` : '—'),
-  },
-];
-
-const TIER_RANK = {
-  self_reported: 0,
-  app_measured: 1,
-  coach_verified: 2,
-  center_tested: 3,
-} as const;
+// personal status, not a glossary. Test defs shared with the public
+// portfolio strip via constants/combine-tests.ts.
 
 function combineStatusLine(filled: number, bestTier: keyof typeof TIER_RANK | null): string {
   if (filled === 0) return 'Your first test takes about 2 minutes. Scouts filter by full combines.';

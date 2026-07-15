@@ -42,9 +42,11 @@ import { useAnalytics, EVENTS } from '@/hooks/useAnalytics';
 import VideoPlayer from '@/components/VideoPlayer';
 import { useFitnessTest } from '@/hooks/fitness-test-context';
 import { FitnessTestCard } from '@/components/BeepTestCard';
-import { getAgeGroup } from '@/constants/fitness-test-data';
+import { getAgeGroup, getZoneMeta } from '@/constants/fitness-test-data';
+import { COMBINE_TESTS } from '@/constants/combine-tests';
 import { FitnessTestResult, FitnessTestType } from '@/types';
 import CachedImage from '@/components/CachedImage';
+import VerificationBadge from '@/components/VerificationBadge';
 import { UserProfileSkeleton } from '@/components/SkeletonScreens';
 
 const getRoleIcon = (role: string) => {
@@ -118,6 +120,26 @@ export default function UserProfileScreen() {
   // Only meaningful for coach/trainer/scout. Loaded on demand in
   // loadUserProfile when the role qualifies.
   const [verifiedCount, setVerifiedCount] = useState<number>(0);
+
+  // Portfolio v2: the Combine results that exist for this athlete, in the
+  // shared canonical order — powers the hero headline stat and the
+  // verified-results strip.
+  const combineResults = useMemo(
+    () =>
+      COMBINE_TESTS.map((def) => ({ def, result: fitnessLatestByType[def.testType] })).filter(
+        (x): x is { def: (typeof COMBINE_TESTS)[number]; result: FitnessTestResult } => !!x.result,
+      ),
+    [fitnessLatestByType],
+  );
+  const headlineResult = useMemo(() => {
+    const first = combineResults[0];
+    if (!first) return null;
+    return {
+      value: first.def.format(first.result),
+      label: first.def.label,
+      zoneMeta: getZoneMeta((first.result.zone ?? 'starter') as any),
+    };
+  }, [combineResults]);
 
   useEffect(() => {
     if (id) {
@@ -617,7 +639,58 @@ export default function UserProfileScreen() {
           </Text>
           <Text style={styles.bio}>{profileUser.bio || 'No bio available'}</Text>
           <Text style={styles.location}>{profileUser.location || 'Location not set'}</Text>
+          {/* The scout's 10-second read: current zone + one headline number
+              in the hero (portfolio v2, design vision §5.2) */}
+          {profileUser.role === 'athlete' && headlineResult && (
+            <View style={styles.heroStatRow}>
+              <View
+                style={[styles.heroZoneChip, { borderColor: headlineResult.zoneMeta.color + '66' }]}
+              >
+                <Text style={[styles.heroZoneText, { color: headlineResult.zoneMeta.color }]}>
+                  {headlineResult.zoneMeta.label}
+                </Text>
+              </View>
+              <Text style={styles.heroStatValue}>{headlineResult.value}</Text>
+              <Text style={styles.heroStatLabel}>{headlineResult.label}</Text>
+            </View>
+          )}
         </View>
+
+        {/* Verified results strip — evidence outranks posts on the page
+            scouts judge athletes by (portfolio v2) */}
+        {profileUser.role === 'athlete' && combineResults.length > 0 && (
+          <View style={styles.verifiedStripSection}>
+            <Text style={styles.verifiedStripTitle}>VERIFIED RESULTS</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.verifiedStrip}>
+                {combineResults.map(({ def, result }) => (
+                  <TouchableOpacity
+                    key={def.testType}
+                    style={styles.verifiedTile}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/beep-test-history' as any,
+                        params: { athleteId: profileUser.id, athleteName: profileUser.name },
+                      })
+                    }
+                    accessibilityRole="button"
+                    accessibilityLabel={`${def.label}: ${def.format(result)}. View test history`}
+                  >
+                    <Text style={styles.verifiedTileLabel}>{def.label}</Text>
+                    <Text style={styles.verifiedTileValue}>{def.format(result)}</Text>
+                    <VerificationBadge
+                      tier={result.verification_tier ?? 'self_reported'}
+                      size="sm"
+                      showLabel
+                      mode={(result as any).verification_mode}
+                      testType={result.test_type}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        )}
 
         {/* Interest Signal Section - Visible to everyone on athlete profiles */}
         {profileUser.role === 'athlete' &&
@@ -1253,6 +1326,77 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: theme.spacing.md,
   },
+
+  // Portfolio v2 — hero zone + headline stat
+  heroStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
+  },
+  heroZoneChip: {
+    paddingHorizontal: theme.spacing.sm + 2,
+    paddingVertical: 3,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1,
+  },
+  heroZoneText: {
+    fontSize: theme.fontSize.xs,
+    fontFamily: theme.fontFamily.display,
+    letterSpacing: 1.5,
+  },
+  heroStatValue: {
+    fontSize: theme.fontSize.xl,
+    fontFamily: theme.fontFamily.displayBlack,
+    color: theme.colors.text,
+    fontVariant: ['tabular-nums'],
+  },
+  heroStatLabel: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    letterSpacing: 1,
+  },
+
+  // Portfolio v2 — verified results strip
+  verifiedStripSection: {
+    paddingBottom: theme.spacing.md,
+  },
+  verifiedStripTitle: {
+    fontSize: theme.fontSize.xs,
+    fontFamily: theme.fontFamily.display,
+    color: theme.colors.textSecondary,
+    letterSpacing: 2,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  verifiedStrip: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+  },
+  verifiedTile: {
+    minWidth: 120,
+    backgroundColor: theme.colors.cardBg,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.cardBorder,
+    padding: theme.spacing.sm + 2,
+    gap: 4,
+    alignItems: 'flex-start',
+  },
+  verifiedTileLabel: {
+    fontSize: 10,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.textMuted,
+    letterSpacing: 1,
+  },
+  verifiedTileValue: {
+    fontSize: theme.fontSize.xl,
+    fontFamily: theme.fontFamily.displayBlack,
+    color: theme.colors.text,
+    fontVariant: ['tabular-nums'],
+  },
+
   nameSection: {
     flexDirection: 'row',
     alignItems: 'center',
