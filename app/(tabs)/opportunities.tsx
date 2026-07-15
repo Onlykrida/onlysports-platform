@@ -45,11 +45,7 @@ import { FLATLIST_PERF_PROPS } from '@/constants/performance';
 const ItemSeparator = () => <View style={{ height: 2 }} />;
 
 type OpportunityCategory =
-  | 'tryouts'
-  | 'tournaments'
-  | 'sponsorships'
-  | 'scholarships'
-  | 'contracts';
+  'tryouts' | 'tournaments' | 'sponsorships' | 'scholarships' | 'contracts';
 type OpportunityType = 'paid' | 'unpaid' | 'local' | 'national' | 'short-term' | 'long-term';
 
 interface OpportunityData {
@@ -70,11 +66,10 @@ interface OpportunityData {
 
 export default function OpportunitiesScreen() {
   const { user } = useAuth();
-  const { opportunities, isLoading, applyToOpportunity, refreshOpportunities } = useOpportunities();
+  const { opportunities, isLoading, refreshOpportunities } = useOpportunities();
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
-  const [applyingTo, setApplyingTo] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { track } = useAnalytics();
 
@@ -143,38 +138,8 @@ export default function OpportunitiesScreen() {
     return uniqueSports.map((sport) => ({ id: sport.toLowerCase(), label: sport }));
   }, [opportunities]);
 
-  const handleApply = useCallback(
-    async (opportunityId: string) => {
-      if (!user) {
-        Alert.alert('Error', 'You must be logged in to apply');
-        return;
-      }
-
-      if (user.role !== 'athlete') {
-        Alert.alert('Error', 'Only athletes can apply to opportunities');
-        return;
-      }
-
-      setApplyingTo(opportunityId);
-
-      try {
-        const { error } = await applyToOpportunity(opportunityId);
-
-        if (error) {
-          Alert.alert('Error', error);
-        } else {
-          track(EVENTS.OPPORTUNITY_APPLIED, { opportunityId });
-          Alert.alert('Success', 'Your application has been submitted!');
-        }
-      } catch (error) {
-        Alert.alert('Error', 'Failed to submit application');
-      } finally {
-        setApplyingTo(null);
-      }
-    },
-    [user, applyToOpportunity, track],
-  );
-
+  // Applying now happens on the detail screen behind an explicit confirm
+  // step (app/opportunity/[id].tsx) — the card never submits directly.
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'tryouts':
@@ -194,13 +159,17 @@ export default function OpportunitiesScreen() {
 
   const renderOpportunity = useCallback(
     ({ item }: { item: Opportunity }) => {
-      const isApplying = applyingTo === item.id;
       const canApply = user?.role === 'athlete' && !item.hasApplied;
 
       return (
         <TouchableOpacity
           style={styles.opportunityCard}
-          onPress={() => track(EVENTS.OPPORTUNITY_VIEWED, { opportunityId: item.id })}
+          onPress={() => {
+            track(EVENTS.OPPORTUNITY_VIEWED, { opportunityId: item.id });
+            router.push(`/opportunity/${item.id}` as any);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`View ${item.title} details`}
         >
           <View style={styles.cardHeader}>
             {/* getTypeColor existed but the tag hardcoded green — every
@@ -290,19 +259,22 @@ export default function OpportunitiesScreen() {
               </Text>
             </View>
 
+            {/* One blind tap used to submit the application from the card.
+                Now the CTA routes to the detail screen: requirements +
+                what's-shared + explicit confirm (design audit, Wave A). */}
             {canApply && (
               <TouchableOpacity
-                style={[styles.applyButton, isApplying && styles.applyButtonDisabled]}
-                onPress={() => handleApply(item.id)}
-                disabled={isApplying}
+                style={styles.applyButton}
+                onPress={() => {
+                  track(EVENTS.OPPORTUNITY_VIEWED, { opportunityId: item.id });
+                  router.push(`/opportunity/${item.id}` as any);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`View and apply to ${item.title}`}
               >
-                {isApplying ? (
-                  <ActivityIndicator size="small" color={theme.colors.white} />
-                ) : (
-                  <Text style={styles.applyButtonText} numberOfLines={1} ellipsizeMode="tail">
-                    Apply Now
-                  </Text>
-                )}
+                <Text style={styles.applyButtonText} numberOfLines={1} ellipsizeMode="tail">
+                  View & Apply
+                </Text>
               </TouchableOpacity>
             )}
 
@@ -325,7 +297,7 @@ export default function OpportunitiesScreen() {
         </TouchableOpacity>
       );
     },
-    [applyingTo, user, handleApply, getTypeColor],
+    [user, track, getTypeColor],
   );
 
   const types = [
@@ -1062,7 +1034,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     letterSpacing: theme.letterSpacing.wide,
   },
@@ -1111,7 +1083,7 @@ const styles = StyleSheet.create({
   },
   filterTextActive: {
     color: theme.colors.black,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
   },
   listContent: {
     padding: theme.spacing.md,
@@ -1163,7 +1135,7 @@ const styles = StyleSheet.create({
   },
   opportunityTitle: {
     fontSize: 15,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
     letterSpacing: 0.5,
@@ -1253,7 +1225,7 @@ const styles = StyleSheet.create({
   },
   applyButtonText: {
     fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.black,
     letterSpacing: 1,
   },
@@ -1285,7 +1257,7 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: theme.colors.black,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
   },
   headerContent: {
     flexDirection: 'row',
@@ -1315,7 +1287,7 @@ const styles = StyleSheet.create({
   filterBadgeText: {
     color: theme.colors.black,
     fontSize: 12,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
   },
   activeFiltersBar: {
     flexDirection: 'row',
@@ -1371,7 +1343,7 @@ const styles = StyleSheet.create({
   },
   appliedButtonText: {
     fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.primary,
   },
   viewButton: {
@@ -1448,7 +1420,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     letterSpacing: 0.5,
   },
@@ -1480,7 +1452,7 @@ const styles = StyleSheet.create({
   },
   categoryTitle: {
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
@@ -1514,7 +1486,7 @@ const styles = StyleSheet.create({
   selectedCategoryText: {
     flex: 1,
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
   },
   formSection: {
@@ -1522,7 +1494,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
     letterSpacing: 0.5,
@@ -1553,7 +1525,7 @@ const styles = StyleSheet.create({
   },
   typeChipTextSelected: {
     color: theme.colors.black,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
   },
   input: {
     backgroundColor: '#111',
@@ -1587,7 +1559,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.black,
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.black,
     letterSpacing: 1,
   },

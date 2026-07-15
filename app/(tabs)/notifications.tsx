@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: theme.fontSize.xl,
-    fontWeight: '900',
+    fontFamily: theme.fontFamily.displayBlack,
     color: theme.colors.text,
     letterSpacing: 2,
     textTransform: 'uppercase',

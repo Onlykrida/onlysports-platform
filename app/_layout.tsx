@@ -19,6 +19,12 @@ import { FitnessTestProvider } from '@/hooks/fitness-test-context';
 import { AIProvider } from '@/hooks/ai-context';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { BackgroundGradient } from '@/components/BackgroundGradient';
+import {
+  useFonts,
+  Archivo_700Bold,
+  Archivo_800ExtraBold,
+  Archivo_900Black,
+} from '@expo-google-fonts/archivo';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -183,6 +189,10 @@ function RootLayoutNav() {
                           route table is complete and we get a default title
                           before the in-component override kicks in (avoids the
                           "verify-result" route name flashing on push). */}
+                      <Stack.Screen
+                        name="opportunity/[id]"
+                        options={{ title: 'Opportunity', headerShown: true }}
+                      />
                       <Stack.Screen name="verify-result" options={{ title: 'Verify Result' }} />
                       <Stack.Screen name="player-stats" options={{ title: 'Player Stats' }} />
                       <Stack.Screen
@@ -207,6 +217,15 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  // Display typeface (theme.fontFamily.*). Deliberately NOT gated on the
+  // splash: hiding the splash instantly is a hard-won fix (4d456c3) — a
+  // brief system-font swap on first frames beats re-freezing cold starts.
+  useFonts({
+    Archivo_700Bold,
+    Archivo_800ExtraBold,
+    Archivo_900Black,
+  });
+
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>

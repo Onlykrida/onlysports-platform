@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: theme.fontSize.md,
     color: theme.colors.white,
-    fontWeight: theme.fontWeight.black as any,
+    fontFamily: theme.fontFamily.displayBlack,
     letterSpacing: 1,
     textTransform: 'uppercase' as const,
   },
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   ctaText: {
     color: theme.colors.white,
     fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.black as any,
+    fontFamily: theme.fontFamily.displayBlack,
     letterSpacing: 3,
   },
   loginWrapper: {

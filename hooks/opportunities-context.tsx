@@ -4,6 +4,28 @@ import { supabase, isSupabaseConfigured } from '@/constants/supabase';
 import { useAuth } from './auth-context';
 import { useNotifications } from './notifications-context';
 
+// The DB column is `text` while the app type is string[] — arrays written by
+// the create modal land as a JSON string ('["..."]'), and hand-entered rows
+// may be plain prose. Normalize at the read boundary so every consumer can
+// trust Opportunity.requirements (a raw string here crashed the detail
+// screen's .map()).
+function normalizeRequirements(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.filter((r) => typeof r === 'string' && r.trim());
+  if (typeof raw !== 'string' || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((r) => typeof r === 'string' && r.trim());
+    }
+  } catch {
+    // not JSON — treat as prose, one requirement per line/semicolon
+  }
+  return raw
+    .split(/\r?\n|;/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 export interface Opportunity {
   id: string;
   teamId: string;
@@ -114,7 +136,7 @@ const [OpportunitiesProvider, _useOpportunities] = createContextHook<Opportuniti
           sport: opp.sport,
           location: opp.location,
           deadline: opp.deadline,
-          requirements: opp.requirements,
+          requirements: normalizeRequirements(opp.requirements),
           paid: opp.paid || false,
           createdAt: new Date(opp.created_at),
           updatedAt: new Date(opp.updated_at),
