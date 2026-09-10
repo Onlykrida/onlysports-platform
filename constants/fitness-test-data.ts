@@ -5,10 +5,12 @@
 // ── Types ──────────────────────────────────────────────────
 // TestType re-exports FitnessTestType from types/index.ts as the single source
 // of truth. Schema CHECK constraint in supabase-v15-prereq.sql must match.
-import type { FitnessTestType, Gender } from '@/types';
+import type { FitnessTestType } from '@/types';
 export type TestType = FitnessTestType;
 export type ZoneName = 'starter' | 'building' | 'rising' | 'strong' | 'elite' | 'unstoppable';
-export type { Gender };
+// Defined here, not imported: types/index.ts does not export Gender. An earlier
+// edit changed this to `import type { ..., Gender }` and broke `tsc` on main.
+export type Gender = 'male' | 'female';
 export type AgeGroup = 'u16' | 'u18' | 'u21' | 'senior';
 
 export interface ZoneDefinition {
