@@ -5,10 +5,10 @@
 // ── Types ──────────────────────────────────────────────────
 // TestType re-exports FitnessTestType from types/index.ts as the single source
 // of truth. Schema CHECK constraint in supabase-v15-prereq.sql must match.
-import type { FitnessTestType } from '@/types';
+import type { FitnessTestType, Gender } from '@/types';
 export type TestType = FitnessTestType;
 export type ZoneName = 'starter' | 'building' | 'rising' | 'strong' | 'elite' | 'unstoppable';
-export type Gender = 'male' | 'female';
+export type { Gender };
 export type AgeGroup = 'u16' | 'u18' | 'u21' | 'senior';
 
 export interface ZoneDefinition {
@@ -565,3 +565,74 @@ export const JUMP_TIPS: Record<ZoneName, string[]> = {
     'Your vertical is elite — focus on game application',
   ],
 };
+
+// ── Plausibility bounds for manually-entered results ────────────────────────
+// Manual entry previously accepted anything that parsed and was > 0, so a 10m
+// sprint of 0.5s or a 300cm vertical jump saved happily as UNSTOPPABLE and fed
+// straight into scout rankings. These are deliberately GENEROUS — wider than any
+// real junior-athlete result, including well beyond world-record pace — so they
+// reject typos and joke entries without ever telling a genuinely fast athlete
+// their number is wrong. Yo-Yo needs no bounds: level and shuttle are already
+// constrained by VALID_YOYO_LEVELS and getMaxShuttlesForLevel.
+export interface PlausibleRange {
+  min: number;
+  max: number;
+  /** Shown when the value falls outside the range. Never implies the athlete is bad. */
+  message: string;
+}
+
+const SPRINT_RANGES: Record<number, PlausibleRange> = {
+  // Floors sit just under the fastest human splits ever recorded from a standing
+  // start (10m ≈ 1.6s), so a genuine elite junior is never refused — but a typo
+  // like 1.2s, which saved as UNSTOPPABLE in production and fed scout rankings,
+  // is now rejected. Verified 2026-09-10: a 1.2s 10m row exists in the live
+  // fitness_test_results table because the previous 1.0s floor admitted it.
+  10: { min: 1.4, max: 6.0, message: 'A 10m sprint is usually between 1.4 and 6 seconds' },
+  20: { min: 2.4, max: 10.0, message: 'A 20m sprint is usually between 2.4 and 10 seconds' },
+  30: { min: 3.5, max: 14.0, message: 'A 30m sprint is usually between 3.5 and 14 seconds' },
+  40: { min: 4.5, max: 18.0, message: 'A 40m sprint is usually between 4.5 and 18 seconds' },
+};
+
+const AGILITY_RANGE: PlausibleRange = {
+  min: 6.0,
+  max: 30.0,
+  message: 'An agility T-test is usually between 6 and 30 seconds',
+};
+
+const JUMP_RANGE: PlausibleRange = {
+  min: 5,
+  max: 150,
+  message: 'A vertical jump is usually between 5 and 150 cm',
+};
+
+/** The accepted range for a test's manual input, or null if it has none. */
+export function getPlausibleRange(
+  testType: TestType,
+  sprintDistance?: number | null,
+): PlausibleRange | null {
+  if (testType.startsWith('sprint_')) {
+    const d = sprintDistance ?? 20;
+    return SPRINT_RANGES[d] ?? SPRINT_RANGES[20];
+  }
+  if (testType === 'agility_ttest') return AGILITY_RANGE;
+  if (testType === 'vertical_jump') return JUMP_RANGE;
+  return null;
+}
+
+/**
+ * Validate a manually-entered value. Returns null when it is acceptable, or a
+ * growth-oriented message explaining the expected range.
+ */
+export function validateManualEntry(
+  raw: string,
+  testType: TestType,
+  sprintDistance?: number | null,
+): string | null {
+  if (!raw.trim()) return null;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) return 'Enter a number greater than zero';
+  const range = getPlausibleRange(testType, sprintDistance);
+  if (!range) return null;
+  if (value < range.min || value > range.max) return `${range.message}. Double-check your entry.`;
+  return null;
+}
