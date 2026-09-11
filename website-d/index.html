@@ -494,16 +494,98 @@
         opacity: 0.6;
       }
       @media (max-width: 768px) {
+        /* The strip stays absolutely positioned at the panel bottom (it is a
+           sibling of .panel-content, not a child — putting it in normal flow
+           reorders the hero and breaks the centred layout). Instead keep the
+           three columns side by side so its height stays ~one row, and pull
+           .panel-content up so the copy clears it. Stacking to one column
+           tripled the strip to ~342px and it grew upward into the headline:
+           51px of measured overlap on 390x844. */
         .stats-strip {
-          grid-template-columns: 1fr;
+          grid-template-columns: repeat(3, 1fr);
         }
         .stats-strip-item {
-          padding: 16px 24px;
-          border-right: none;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 12px 8px;
+          border-right: 1px solid rgba(255, 255, 255, 0.06);
+          border-bottom: none;
+          text-align: center;
         }
         .stats-strip-item:last-child {
-          border-bottom: none;
+          border-right: none;
+        }
+        .stats-strip-label {
+          font-size: 8px;
+          letter-spacing: 0.06em;
+          line-height: 1.25;
+        }
+        .stats-strip-num {
+          font-size: 9px;
+          margin-bottom: 2px;
+        }
+        .stats-strip-value {
+          font-size: 22px;
+        }
+        /* Lift the hero copy clear of the strip. */
+        #sceneHero .panel-content {
+          padding-bottom: 150px;
+        }
+      }
+
+
+      /* ── Features on mobile: vertical stack, no pin ──────────────────────
+         Desktop pins .features-sticky and scrolls the track sideways. On a
+         phone that was 4220px of scroll-jacking for seven slides and fought
+         the browser's native gestures. Here the track simply wraps and each
+         slide becomes a normal full-width card. The JS skips the pin on the
+         same breakpoint. */
+      @media (max-width: 768px) {
+        .features-wrap {
+          height: auto !important;
+        }
+        .features-sticky {
+          position: static !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+        .features-track {
+          display: block !important;
+          width: 100% !important;
+          transform: none !important;
+        }
+        .f-slide {
+          width: 100% !important;
+          flex: none !important;
+          /* align-items:flex-end on the desktop rule pushes content to the
+             bottom; with a shorter mobile card the copy was clipped at the
+             top edge of the next card. Let each card size to its content. */
+          height: auto;
+          min-height: 0;
+          align-items: stretch;
+          padding: 36px 24px 44px;
+        }
+        .f-slide-bg {
+          inset: 0;
+        }
+        .f-slide-content {
+          max-width: 100%;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+        .f-slide-content p {
+          /* Body copy sits directly over a photo on mobile; the desktop dim
+             grey fails contrast there. */
+          color: #e8e8e8;
+        }
+        .f-slide-overlay {
+          background: linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.92) 0%,
+            rgba(0, 0, 0, 0.62) 60%,
+            rgba(0, 0, 0, 0.55) 100%
+          );
+        }
+        .f-counter {
+          display: none;
         }
       }
 
@@ -2475,7 +2557,13 @@
 
         const fTrack = document.getElementById('fTrack');
         const fSlideCount = fTrack.querySelectorAll('.f-slide').length;
-        const fTl = gsap.to(fTrack, {
+        // On phones the horizontal carousel was 5 viewports of pinned
+        // scroll-jacking (4220px on a 390x844 screen) for seven slides, and
+        // pinned horizontal scroll fights the browser's own gestures. Mobile
+        // gets a normal vertical stack instead — see the .features-* rules in
+        // the max-width:768px block. Skip the pin entirely there.
+        const isMobile = window.matchMedia('(max-width: 768px)').matches;
+        const fTl = isMobile ? null : gsap.to(fTrack, {
           x: () => -(fTrack.scrollWidth - window.innerWidth),
           ease: 'none',
           scrollTrigger: {
