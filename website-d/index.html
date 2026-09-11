@@ -6,7 +6,7 @@
     <title>OnlyKrida — Where Athletes Get Discovered</title>
     <meta
       name="description"
-      content="India's first AI-powered sports talent discovery platform. 99% of athletes never get scouted. We're changing that."
+      content="Sports talent discovery for India. Standardised fitness testing, coach-verified results, and a profile scouts can actually filter for."
     />
     <meta property="og:title" content="OnlyKrida — Where Athletes Get Discovered" />
     <meta
@@ -493,6 +493,12 @@
         font-size: 0.5em;
         opacity: 0.6;
       }
+      /* The strip is position:absolute at the panel bottom, so hero copy must
+         reserve room for it or the two overlap (measured -23px on desktop). */
+      #sceneHero .panel-content {
+        padding-bottom: 200px;
+      }
+
       @media (max-width: 768px) {
         /* The strip stays absolutely positioned at the panel bottom (it is a
            sibling of .panel-content, not a child — putting it in normal flow
@@ -1545,36 +1551,38 @@
       <div class="panel-overlay"></div>
       <div class="panel-content">
         <div class="mega-text" id="heroText">
-          <span class="word"><span class="word-inner">99%</span></span>
-          <span class="word"><span class="word-inner">of</span></span>
+          <span class="word"><span class="word-inner">Most</span></span>
           <span class="word"><span class="word-inner">Athletes</span></span
           ><br />
           <span class="word"><span class="word-inner">Never</span></span>
           <span class="word"><span class="word-inner">Get</span></span>
-          <span class="word"><span class="word-inner green">Scouted</span></span>
+          <span class="word"><span class="word-inner green">Seen</span></span>
         </div>
         <div class="sub-text" id="heroSub">
           Not because they lack talent. Because the system doesn't look.
         </div>
       </div>
-      <!-- Stats strip at bottom -->
+      <!-- Strip at bottom. Previously three invented statistics: "99% athletes
+           invisible", "50L+ training unnoticed", and "0 platforms for
+           grassroots" — the last plainly false, and none sourceable. Replaced
+           with three short product facts. Values are kept to one short token so
+           the strip stays a single row; longer strings wrapped to three lines
+           and collided with the hero subtitle. -->
       <div class="stats-strip" id="heroStats">
         <div class="stats-strip-item">
           <div class="stats-strip-num">01</div>
-          <div class="stats-strip-label">ATHLETES INVISIBLE</div>
-          <div class="stats-strip-value"><span id="sv1">99</span><span class="suffix">%</span></div>
+          <div class="stats-strip-label">STANDARDISED TESTS</div>
+          <div class="stats-strip-value">4<span class="suffix"> types</span></div>
         </div>
         <div class="stats-strip-item">
           <div class="stats-strip-num">02</div>
-          <div class="stats-strip-label">TRAINING UNNOTICED</div>
-          <div class="stats-strip-value">
-            <span id="sv2">50</span><span class="suffix">L+</span>
-          </div>
+          <div class="stats-strip-label">SCORED BY AGE BAND</div>
+          <div class="stats-strip-value">U16<span class="suffix">+</span></div>
         </div>
         <div class="stats-strip-item">
           <div class="stats-strip-num">03</div>
-          <div class="stats-strip-label">PLATFORMS FOR GRASSROOTS</div>
-          <div class="stats-strip-value"><span id="sv3">0</span></div>
+          <div class="stats-strip-label">COACH-VERIFIED TRUST</div>
+          <div class="stats-strip-value">1.0<span class="suffix">&times;</span></div>
         </div>
       </div>
     </section>
@@ -2539,36 +2547,10 @@
           },
         });
 
-        // STATS — counter animation
-        (function () {
-          const counters = { sv1: 99, sv2: 50 };
-          let statsDone = false;
-          ScrollTrigger.create({
-            trigger: '#heroStats',
-            start: 'top 90%',
-            onEnter: () => {
-              if (statsDone) return;
-              statsDone = true;
-              Object.keys(counters).forEach((id) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                const target = counters[id];
-                gsap.fromTo(
-                  { val: 0 },
-                  { val: target },
-                  {
-                    val: target,
-                    duration: 1.6,
-                    ease: 'power2.out',
-                    onUpdate: function () {
-                      el.textContent = Math.round(this.targets()[0].val);
-                    },
-                  },
-                );
-              });
-            },
-          });
-        })();
+        // STATS — the counter animation that lived here counted #sv1 to 99 and
+        // #sv2 to 50. Both spans were removed along with the invented
+        // statistics; the strip now shows static product facts, so there is
+        // nothing to count.
 
         // SPHERE appears
         gsap.to('#sphere', { opacity: 0.12, duration: 1, delay: 1.5 });
