@@ -733,6 +733,58 @@
         .founder-photo { max-width: 320px; }
         .founder-quote { font-size: 1.25rem; }
       }
+
+      /* Vision grid — replaces the dated roadmap timeline. */
+      .vision-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        max-width: 1100px;
+        margin: 64px auto 0;
+      }
+      .vision-card {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 14px;
+        padding: 32px 28px;
+        background: #141414;
+      }
+      .vision-num {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.5rem;
+        color: #30d158;
+        letter-spacing: 0.08em;
+        margin-bottom: 14px;
+      }
+      .vision-card h3 {
+        margin: 0 0 12px;
+        font-size: 1.3rem;
+        color: #f0f0f0;
+        line-height: 1.25;
+      }
+      .vision-card p {
+        margin: 0;
+        color: #9a9aa0;
+        line-height: 1.7;
+        font-size: 0.97rem;
+      }
+      .vision-note {
+        max-width: 720px;
+        margin: 48px auto 0;
+        text-align: center;
+        color: #9a9aa0;
+        line-height: 1.7;
+        font-size: 0.95rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 28px;
+      }
+      @media (max-width: 768px) {
+        .vision-grid {
+          grid-template-columns: 1fr;
+          gap: 16px;
+          margin-top: 40px;
+        }
+        .vision-card { padding: 26px 22px; }
+      }
 </style>
   </head>
   <body>
@@ -847,54 +899,82 @@
       </div>
     </section>
 
-    <!-- ROADMAP -->
+    <!-- VISION -->
     <section class="section">
       <div style="text-align: center">
-        <div class="section-label">THE ROADMAP</div>
+        <div class="section-label">THE VISION</div>
         <div class="section-title">Where We're Going</div>
+        <p class="section-sub" style="margin-left: auto; margin-right: auto">
+          Not a list of dates. A description of what has to become true.
+        </p>
       </div>
-      <div class="timeline" id="timeline">
-        <div class="timeline-item">
-          <div class="timeline-side">
-            <div class="timeline-year">2026</div>
-            <div class="timeline-text">
-              Launch in Bengaluru. First 1,000 athletes. 7 sports. AI scouting beta.
-            </div>
-          </div>
-          <div class="timeline-dot"></div>
-          <div class="timeline-side"></div>
+
+      <div class="vision-grid">
+        <div class="vision-card">
+          <div class="vision-num">01</div>
+          <h3>Every athlete has a number</h3>
+          <p>
+            Talent is invisible until it is measured. A standardised, comparable result &mdash;
+            recorded the same way in a district town as in a city academy &mdash; is the thing
+            that turns "he's quick" into something a scout can act on.
+          </p>
         </div>
-        <div class="timeline-item">
-          <div class="timeline-side"></div>
-          <div class="timeline-dot"></div>
-          <div class="timeline-side">
-            <div class="timeline-year">2026 Q3</div>
-            <div class="timeline-text">
-              10,000 athletes. Mumbai + Delhi. Scout premium launch. Fitness testing nationwide.
-            </div>
-          </div>
+
+        <div class="vision-card">
+          <div class="vision-num">02</div>
+          <h3>Verification people trust</h3>
+          <p>
+            Anyone can type a number into an app. The difference between a self-entered result
+            and one a coach witnessed has to be visible, honest, and worth earning &mdash;
+            otherwise the whole record is noise.
+          </p>
         </div>
-        <div class="timeline-item">
-          <div class="timeline-side">
-            <div class="timeline-year">2027</div>
-            <div class="timeline-text">
-              AI matching engine v2. Team recruitment tools. 50,000 athletes. Pan-India coverage.
-            </div>
-          </div>
-          <div class="timeline-dot"></div>
-          <div class="timeline-side"></div>
+
+        <div class="vision-card">
+          <div class="vision-num">03</div>
+          <h3>Scouting stops depending on who you know</h3>
+          <p>
+            Today it runs on personal networks and proximity to a handful of cities. When
+            scouts can filter by sport, position, city and verified results, the pipeline
+            reaches players it structurally never could before.
+          </p>
         </div>
-        <div class="timeline-item">
-          <div class="timeline-side"></div>
-          <div class="timeline-dot"></div>
-          <div class="timeline-side">
-            <div class="timeline-year">2028</div>
-            <div class="timeline-text">
-              Dubai + Southeast Asia expansion. Video AI analysis. Brand sponsorship marketplace.
-            </div>
-          </div>
+
+        <div class="vision-card">
+          <div class="vision-num">04</div>
+          <h3>Coaches and academies at the centre</h3>
+          <p>
+            Not disintermediated &mdash; equipped. The people already running sessions are
+            the ones who can verify results at scale, and they should get the credit and the
+            tools for it.
+          </p>
+        </div>
+
+        <div class="vision-card">
+          <div class="vision-num">05</div>
+          <h3>Built for how sport actually works here</h3>
+          <p>
+            Indian grounds, Indian age groups, Indian constraints. One phone, one ground, no
+            equipment budget. Tools designed elsewhere assume conditions that do not exist
+            for most players in this country.
+          </p>
+        </div>
+
+        <div class="vision-card">
+          <div class="vision-num">06</div>
+          <h3>Safe for the people using it</h3>
+          <p>
+            A large share of the athletes who need this most are under eighteen. Consent,
+            privacy and safety are not features to add later &mdash; they decide whether this
+            deserves to exist at all.
+          </p>
         </div>
       </div>
+
+      <p class="vision-note">
+        We are in early access, starting with athletes in Hyderabad and the coaches who
+        train them. Everything above is the direction, not a promise of dates.
+      </p>
     </section>
 
     <!-- MADE IN INDIA -->
@@ -1066,16 +1146,18 @@
         },
       });
 
-      // TIMELINE
+      // VISION — fade the cards in. The old timeline ScrollTrigger targeted
+      // #timeline / .timeline-item, which no longer exist; it was replaced
+      // along with the dated roadmap.
       ScrollTrigger.create({
-        trigger: '#timeline',
-        start: 'top 70%',
+        trigger: '.vision-grid',
+        start: 'top 75%',
         onEnter: () => {
-          gsap.to('.timeline-item', {
+          gsap.to('.vision-card', {
             opacity: 1,
             y: 0,
-            duration: 0.7,
-            stagger: 0.2,
+            duration: 0.6,
+            stagger: 0.08,
             ease: 'power3.out',
           });
         },
