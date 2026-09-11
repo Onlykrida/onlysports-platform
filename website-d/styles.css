@@ -2700,3 +2700,23 @@ input {
 .cta__app-btn:hover::before {
   transform: translateX(0);
 }
+
+/* Early-access form states. The form was previously inert (onsubmit="return
+   false;") so no confirmation or error state existed to style. */
+.cta-confirmation {
+  display: none;
+  margin-top: 24px;
+  color: #30d158;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: 1.05rem;
+}
+.cta-confirmation.show { display: block; }
+.cta-error {
+  margin-top: 16px;
+  color: #ff5a5a;
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+}
+.cta-form button[disabled] { opacity: 0.6; cursor: wait; }

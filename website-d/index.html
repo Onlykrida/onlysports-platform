@@ -528,7 +528,14 @@
         will-change: transform;
       }
       .f-slide {
-        width: 100vw;
+        /* Width must equal window.innerWidth, because the GSAP tween below
+           travels by `scrollWidth - window.innerWidth`. Using 100vw broke this:
+           100vw includes the scrollbar gutter while innerWidth excludes it, so
+           each slide settled a scrollbar-width short and the previous slide
+           bled through the gap down the left edge. --vw is set from
+           window.innerWidth in JS and kept in sync on resize. */
+        width: var(--vw, 100%);
+        flex: 0 0 var(--vw, 100%);
         height: 100%;
         position: relative;
         display: flex;
@@ -602,6 +609,46 @@
       /* ============================================================
        AUDIENCE CARDS (crossfade)
        ============================================================ */
+
+      /* Audience strip — replaces the three pinned full-screen fading cards. */
+      .who-section {
+        background: var(--bg-black, #0a0a0a);
+        padding: 120px 48px;
+      }
+      .who-inner { max-width: 1200px; margin: 0 auto; }
+      .who-kicker {
+        color: #30D158;
+        font-size: 0.8rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin: 0 0 32px;
+      }
+      .who-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 24px;
+      }
+      .who-card {
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 14px;
+        padding: 32px 28px;
+        background: #141414;
+      }
+      .who-card h3 {
+        margin: 0 0 12px;
+        font-size: 1.6rem;
+        letter-spacing: 0.02em;
+        color: #f0f0f0;
+      }
+      .who-card p {
+        margin: 0;
+        color: #9A9AA0;
+        line-height: 1.65;
+        font-size: 0.98rem;
+      }
+      @media (max-width: 640px) {
+        .who-section { padding: 80px 24px; }
+      }
       .audience-wrap {
         height: 400vh;
         position: relative;
@@ -678,7 +725,7 @@
       }
 
       /* ============================================================
-       BEEP TEST SECTION
+       FITNESS TESTING SECTION
        ============================================================ */
       .beep-section {
         padding: 140px 48px;
@@ -1331,7 +1378,7 @@
       <div class="nav-logo hoverable">ONLYKRIDA</div>
       <div class="nav-center">
         <a href="#sceneFeatures" class="hoverable">FEATURES</a>
-        <a href="beep-test.html" class="hoverable">BEEP TEST</a>
+        <a href="fitness-testing.html" class="hoverable">FITNESS TESTING</a>
         <a href="about.html" class="hoverable">ABOUT</a>
         <a href="#sceneCta" class="hoverable">CONTACT</a>
       </div>
@@ -1773,7 +1820,7 @@
               <div class="f-num">02</div>
               <div class="f-title">FITNESS TESTING</div>
               <div class="f-desc">
-                Built-in Yo-Yo IR1 beep test. Real VO2max data. Growth-oriented zones scouts trust.
+                Built-in Yo-Yo IR1, sprint, agility and vertical jump tests. Real VO2max data. Growth-oriented zones scouts trust.
               </div>
             </div>
           </div>
@@ -1868,55 +1915,33 @@
     <!-- ============================================================
        SCENE 6: AUDIENCE — Crossfade cards
        ============================================================ -->
-    <section class="audience-wrap" id="sceneAudience">
-      <div class="audience-sticky">
-        <div class="a-card" id="aAthletes">
-          <div
-            class="a-card-bg"
-            style="
-              background-image: url('https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=5120&q=90');
-            "
-          ></div>
-          <div class="a-card-gradient"></div>
-          <div class="a-card-content">
-            <div class="a-tag green">FREE TO JOIN</div>
+    <!-- Audience strip. Previously three full-viewport scroll-jacked cards
+         (Athletes / Scouts / Coaches) that faded between each other; at most
+         scroll positions all three sat part-faded on top of one another and
+         read as overlapping. Collapsed to one compact section: same content,
+         no scroll hijack, nothing stacked. -->
+    <section class="who-section" id="sceneAudience">
+      <div class="who-inner">
+        <p class="who-kicker">Who it is for</p>
+        <div class="who-grid">
+          <div class="who-card">
             <h3>Athletes</h3>
-            <p>Upload highlights, build your profile, get discovered. Always free.</p>
+            <p>Get tested, build a profile scouts can actually filter for, and apply to trials. Free to join.</p>
           </div>
-        </div>
-        <div class="a-card" id="aScouts">
-          <div
-            class="a-card-bg"
-            style="
-              background-image: url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=5120&q=90');
-            "
-          ></div>
-          <div class="a-card-gradient"></div>
-          <div class="a-card-content">
-            <div class="a-tag orange">EARLY ACCESS</div>
+          <div class="who-card">
             <h3>Scouts</h3>
-            <p>AI-powered talent discovery across 50+ sports. Find diamonds in the rough.</p>
+            <p>Search by sport, position and city. See which results were coach-verified and which were self-reported.</p>
           </div>
-        </div>
-        <div class="a-card" id="aCoaches">
-          <div
-            class="a-card-bg"
-            style="
-              background-image: url('https://images.unsplash.com/photo-1526232761682-d26e03ac148e?w=5120&q=90');
-            "
-          ></div>
-          <div class="a-card-gradient"></div>
-          <div class="a-card-content">
-            <div class="a-tag cyan">EARLY ACCESS</div>
-            <h3>Coaches</h3>
-            <p>Build your team. Post trials. Message athletes directly. Track performance.</p>
+          <div class="who-card">
+            <h3>Coaches &amp; academies</h3>
+            <p>Run verified testing sessions, post trials, and track your squad's results over time.</p>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ============================================================
-       SCENE 7: BEEP TEST
+       SCENE 7: FITNESS TESTING
        ============================================================ -->
     <section class="beep-section" id="sceneBeep">
       <div class="section-num">FITNESS TESTING</div>
@@ -1924,14 +1949,14 @@
         Get Tested. <span class="green">Get Discovered.</span>
       </div>
       <div class="sub-text" style="opacity: 1">
-        India's first in-app Yo-Yo IR1 Beep Test. Your phone. Your ground. Real data scouts trust.
+        Standardised Yo-Yo IR1, sprint, agility and vertical jump testing. Your phone. Your ground. Real data scouts trust.
       </div>
 
       <div class="beep-steps" id="bSteps">
         <div class="b-step">
           <div class="b-step-num">01</div>
           <h4>OPEN & TAP</h4>
-          <p>Open OnlyKrida, hit Beep Test. Place phone at start line.</p>
+          <p>Open OnlyKrida, hit Fitness Testing. Place phone at start line.</p>
         </div>
         <div class="b-step">
           <div class="b-step-num">02</div>
@@ -2080,7 +2105,7 @@
           <div class="tl-side">
             <div class="tl-year">Q3 2026</div>
             <div class="tl-text">
-              10K athletes. Mumbai + Delhi. Scout premium. Beep test nationwide.
+              10K athletes. Mumbai + Delhi. Scout premium. Fitness testing nationwide.
             </div>
           </div>
         </div>
@@ -2140,10 +2165,20 @@
           <span class="word"><span class="word-inner green">Start</span></span>
           <span class="word"><span class="word-inner green">Playing.</span></span>
         </div>
-        <form class="cta-form" onsubmit="return false;">
-          <input type="email" placeholder="your@email.com" aria-label="Email" class="hoverable" />
+        <form class="cta-form" id="ctaForm">
+          <input
+            type="email"
+            placeholder="your@email.com"
+            aria-label="Email"
+            class="hoverable"
+            required
+          />
           <button type="submit" class="hoverable">GET EARLY ACCESS</button>
         </form>
+        <div class="cta-error" id="ctaError" role="alert" aria-live="polite" style="display: none"></div>
+        <div class="cta-confirmation" id="ctaConfirmation">
+          &#10003; YOU'RE IN. WE'LL BE IN TOUCH.
+        </div>
         <div class="cta-trust">
           <span>No spam, ever</span><span>Early access perks</span><span>Be first</span>
         </div>
@@ -2427,16 +2462,44 @@
         });
 
         // FEATURES — horizontal scroll
+        // Keep --vw equal to window.innerWidth so .f-slide width matches the
+        // distance the tween travels. 100vw would include the scrollbar gutter
+        // and leave a gap that reveals the previous slide.
+        const setVw = () =>
+          document.documentElement.style.setProperty('--vw', window.innerWidth + 'px');
+        setVw();
+        window.addEventListener('resize', () => {
+          setVw();
+          if (window.ScrollTrigger) ScrollTrigger.refresh();
+        });
+
         const fTrack = document.getElementById('fTrack');
+        const fSlideCount = fTrack.querySelectorAll('.f-slide').length;
         const fTl = gsap.to(fTrack, {
           x: () => -(fTrack.scrollWidth - window.innerWidth),
           ease: 'none',
           scrollTrigger: {
             trigger: '#sceneFeatures',
             start: 'top top',
-            end: 'bottom top',
+            // 'bottom bottom', not 'bottom top'. GSAP's pin-spacer is
+            // stickyHeight + pinDuration. With 'bottom top' the pin ran for the
+            // wrapper's full 500vh, making the spacer 600vh inside a wrapper
+            // fixed at 500vh — it overflowed by exactly one viewport (577px
+            // measured) and sat on top of the following section.
+            // 'bottom bottom' ends the pin one viewport earlier, so
+            // spacer == wrapper height and nothing overlaps.
+            end: 'bottom bottom',
             pin: '.features-sticky',
             scrub: 1,
+            // Snap to slide boundaries. Without this the scrub can rest at any
+            // fractional position, leaving two slides split across the screen —
+            // which reads as one image overlapping another.
+            snap: {
+              snapTo: 1 / (fSlideCount - 1),
+              duration: { min: 0.15, max: 0.4 },
+              delay: 0.05,
+              ease: 'power1.inOut',
+            },
             invalidateOnRefresh: true,
             onUpdate: (self) => {
               const idx = Math.min(7, Math.floor(self.progress * 7) + 1);
@@ -2456,24 +2519,11 @@
           },
         });
 
-        // AUDIENCE — crossfade
-        const aTl = gsap.timeline({
-          scrollTrigger: {
-            trigger: '#sceneAudience',
-            start: 'top top',
-            end: 'bottom top',
-            pin: '.audience-sticky',
-            scrub: 1,
-          },
-        });
-        // Athletes: 0 - 0.3
-        aTl.to('#aAthletes', { opacity: 1, duration: 0.03 }, 0);
-        aTl.to('#aAthletes', { opacity: 0, duration: 0.05 }, 0.25);
-        // Scouts: 0.3 - 0.6
-        aTl.to('#aScouts', { opacity: 1, duration: 0.03 }, 0.3);
-        aTl.to('#aScouts', { opacity: 0, duration: 0.05 }, 0.55);
-        // Coaches: 0.6 - 1.0 (holds until end)
-        aTl.to('#aCoaches', { opacity: 1, duration: 0.03 }, 0.6);
+        // AUDIENCE — no scroll animation. The crossfade timeline that used to
+        // live here pinned .audience-sticky and cycled three full-viewport
+        // cards through opacity; between steps all three were part-visible and
+        // stacked, which is what read as overlapping. The section is now a
+        // static three-column grid, so nothing needs animating.
 
         // BEEP — steps stagger
         ScrollTrigger.create({
@@ -2589,5 +2639,85 @@
         });
       });
     </script>
-  </body>
+  
+    <!-- Early-access waitlist. website-d/script.js is NOT loaded by this page
+         (it targets the older single-page build and its inline scripts would
+         conflict), so the handler lives here. Behaviour matches the verified
+         production handler: never confirm a request that did not persist. -->
+    <script>
+      (function () {
+        var SUPABASE_URL = 'https://dcixlerneuuyhsftnifm.supabase.co';
+        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaXhsZXJuZXV1eWhzZnRuaWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3MDc4NTIsImV4cCI6MjA3MTI4Mzg1Mn0.VN7zdfRWHIhTSWQ0HMEhuBKZ49J7Ks4PHtOB140Yn-c';
+
+        var form = document.getElementById('ctaForm');
+        var confirmEl = document.getElementById('ctaConfirmation');
+        var errorEl = document.getElementById('ctaError');
+        if (!form) return;
+
+        function showError(msg) {
+          if (errorEl) {
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+          } else {
+            alert(msg);
+          }
+        }
+
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var input = form.querySelector('input[type="email"]');
+          var email = input ? input.value.trim() : '';
+          if (!email) return;
+
+          var btn = form.querySelector('button[type="submit"], button');
+          var label = btn ? btn.querySelector('span') || btn : null;
+          var original = label ? label.textContent : '';
+          if (errorEl) errorEl.style.display = 'none';
+          if (btn) {
+            btn.disabled = true;
+            label.textContent = 'JOINING...';
+          }
+          function restore() {
+            if (btn) {
+              btn.disabled = false;
+              label.textContent = original;
+            }
+          }
+          function succeed() {
+            form.style.display = 'none';
+            if (confirmEl) confirmEl.classList.add('show');
+          }
+
+          fetch(SUPABASE_URL + '/rest/v1/waitlist', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+              Prefer: 'return=minimal',
+            },
+            body: JSON.stringify({ email: email, source: 'website' }),
+          })
+            .then(function (res) {
+              // 409 = unique violation on lower(email): already subscribed.
+              // That is success from the visitor's point of view.
+              if (res.status === 409) return succeed();
+              if (!res.ok) {
+                return res.text().catch(function () { return ''; }).then(function (detail) {
+                  console.error('Waitlist save failed:', res.status, detail);
+                  restore();
+                  showError('Something went wrong on our side. Please try again.');
+                });
+              }
+              succeed();
+            })
+            .catch(function (err) {
+              console.error('Waitlist save failed:', err);
+              restore();
+              showError('Could not reach the server. Check your connection and try again.');
+            });
+        });
+      })();
+    </script>
+</body>
 </html>

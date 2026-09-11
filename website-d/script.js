@@ -285,27 +285,71 @@
       e.preventDefault();
       const emailInput = ctaForm.querySelector('input[type="email"]');
       const email = emailInput ? emailInput.value.trim() : '';
+      if (!email) return;
 
-      if (email) {
-        // Save to Supabase waitlist table
-        try {
-          await fetch(SUPABASE_URL + '/rest/v1/waitlist', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-              Prefer: 'return=minimal',
-            },
-            body: JSON.stringify({ email }),
-          });
-        } catch (err) {
-          console.log('Waitlist save (non-blocking):', err);
+      const submitBtn = ctaForm.querySelector('button[type="submit"], button');
+      const btnLabel = submitBtn ? submitBtn.querySelector('span') || submitBtn : null;
+      const errorEl = document.getElementById('ctaError');
+      const showError = (msg) => {
+        if (errorEl) {
+          errorEl.textContent = msg;
+          errorEl.style.display = 'block';
+        } else {
+          alert(msg);
         }
-      }
+      };
 
-      ctaForm.style.display = 'none';
-      ctaConfirmation.classList.add('show');
+      if (errorEl) errorEl.style.display = 'none';
+      const originalLabel = btnLabel ? btnLabel.textContent : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        btnLabel.textContent = 'JOINING...';
+      }
+      const restore = () => {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          btnLabel.textContent = originalLabel;
+        }
+      };
+
+      try {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/waitlist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({ email, source: 'website-d' }),
+        });
+
+        // 409 = unique violation on lower(email): already on the list. From the
+        // visitor's point of view that is success, not an error.
+        if (res.status === 409) {
+          ctaForm.style.display = 'none';
+          ctaConfirmation.classList.add('show');
+          return;
+        }
+
+        // Never show confirmation for a request that did not persist. The
+        // previous version ignored the response entirely and displayed
+        // "YOU'RE IN" even when the insert failed.
+        if (!res.ok) {
+          const detail = await res.text().catch(() => '');
+          console.error('Waitlist save failed:', res.status, detail);
+          restore();
+          showError('Something went wrong on our side. Please try again.');
+          return;
+        }
+
+        ctaForm.style.display = 'none';
+        ctaConfirmation.classList.add('show');
+      } catch (err) {
+        console.error('Waitlist save failed:', err);
+        restore();
+        showError('Could not reach the server. Check your connection and try again.');
+      }
     });
   }
 

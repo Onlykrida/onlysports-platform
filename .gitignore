@@ -57,3 +57,8 @@ core
 node_modules
 .expo
 .gstack/
+
+# Rendered brand output — regenerate with brand/logo.py and brand/carousels.py
+brand/carousels/
+brand/logo/
+brand/preview-*.png
