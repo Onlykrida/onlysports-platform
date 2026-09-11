@@ -2315,10 +2315,19 @@
           easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
           orientation: 'vertical',
           smoothWheel: true,
+          // smoothWheel only covers mouse wheels. Without syncTouch the phone
+          // falls back to raw native scrolling, so the momentum and the
+          // scroll-linked GSAP animations feel different from desktop.
+          syncTouch: true,
+          syncTouchLerp: 0.075,
+          touchInertiaMultiplier: 12,
         });
         lenis.on('scroll', ScrollTrigger.update);
         gsap.ticker.add((time) => lenis.raf(time * 1000));
         gsap.ticker.lagSmoothing(0);
+        // `let lenis` is module-scoped, so mobile-nav.js cannot reach it.
+        // Expose it so the menu can stop/start scrolling when it opens.
+        window.lenis = lenis;
       }
 
       // ============================================================
@@ -2703,16 +2712,53 @@
         const audio = new Audio('bg-music.mp3');
         audio.loop = true;
         audio.volume = 0;
-        let playing = false;
+        audio.preload = 'auto';
+
+        // Default is ON. Browsers block audible autoplay until the user has
+        // interacted with the page (Chrome/Safari autoplay policy), so we try
+        // immediately and, if the promise rejects, arm one-shot listeners that
+        // start playback on the first tap, scroll or key press. The button
+        // therefore shows "on" from the start and the sound follows as soon as
+        // the browser permits it.
+        let playing = true;
+        let armed = false;
+        btn.classList.add('active');
+
+        function fadeIn() {
+          gsap.to(audio, { volume: 0.1, duration: 1 });
+        }
+
+        function tryPlay() {
+          const p = audio.play();
+          if (p && typeof p.then === 'function') {
+            p.then(fadeIn).catch(arm);
+          }
+        }
+
+        // One-shot: the first real gesture unlocks audio, then we detach.
+        function arm() {
+          if (armed) return;
+          armed = true;
+          const events = ['pointerdown', 'touchstart', 'keydown', 'wheel', 'scroll'];
+          const unlock = () => {
+            events.forEach((e) => window.removeEventListener(e, unlock));
+            // The user may have pressed the toggle off while we were waiting.
+            if (!playing) return;
+            const p = audio.play();
+            if (p && typeof p.then === 'function') p.then(fadeIn).catch(() => {});
+          };
+          events.forEach((e) => window.addEventListener(e, unlock, { once: true, passive: true }));
+        }
+
+        tryPlay();
+
         btn.addEventListener('click', () => {
           if (playing) {
             gsap.to(audio, { volume: 0, duration: 0.5, onComplete: () => audio.pause() });
             btn.classList.remove('active');
           } else {
-            audio
-              .play()
-              .then(() => gsap.to(audio, { volume: 0.1, duration: 1 }))
-              .catch(() => {});
+            const p = audio.play();
+            if (p && typeof p.then === 'function') p.then(fadeIn).catch(() => {});
             btn.classList.add('active');
           }
           playing = !playing;

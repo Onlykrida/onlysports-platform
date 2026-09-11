@@ -104,4 +104,24 @@
     mix-blend-mode: normal !important;
     opacity: 1 !important;
   }
+  /* index.html keeps a sound toggle in .nav-right. It sat at right:20px and
+     the hamburger at right:16px — a measured 40x18px collision, with the two
+     controls drawn on top of each other. Shift the sound pill left of the
+     hamburger and shrink it so both stay tappable. */
+  .nav-right .sound-toggle {
+    position: fixed;
+    top: 19px;
+    right: 68px;
+    z-index: 10001;
+    padding: 6px 14px;
+    height: 14px;
+    background: rgba(10, 10, 10, 0.55);
+    backdrop-filter: blur(6px);
+  }
+  /* Hide it while the menu is open so the panel stays clean. */
+  .mnav-panel.is-open ~ nav.nav .sound-toggle,
+  body:has(.mnav-panel.is-open) .nav-right .sound-toggle {
+    opacity: 0;
+    pointer-events: none;
+  }
 }

@@ -89,6 +89,13 @@
       // Lock the page behind the panel without losing scroll position.
       document.documentElement.style.overflow = open ? 'hidden' : '';
       document.body.style.overflow = open ? 'hidden' : '';
+      // Lenis runs with syncTouch on mobile and drives scroll itself, so
+      // overflow:hidden alone does not stop it — the page would keep moving
+      // behind the open panel. Stop/start the instance explicitly.
+      var l = window.lenis;
+      if (l && typeof l.stop === 'function') {
+        open ? l.stop() : l.start();
+      }
     }
 
     toggle.addEventListener('click', function (e) {
