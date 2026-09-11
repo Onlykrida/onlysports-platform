@@ -2165,10 +2165,20 @@
           <span class="word"><span class="word-inner green">Start</span></span>
           <span class="word"><span class="word-inner green">Playing.</span></span>
         </div>
-        <form class="cta-form" onsubmit="return false;">
-          <input type="email" placeholder="your@email.com" aria-label="Email" class="hoverable" />
+        <form class="cta-form" id="ctaForm">
+          <input
+            type="email"
+            placeholder="your@email.com"
+            aria-label="Email"
+            class="hoverable"
+            required
+          />
           <button type="submit" class="hoverable">GET EARLY ACCESS</button>
         </form>
+        <div class="cta-error" id="ctaError" role="alert" aria-live="polite" style="display: none"></div>
+        <div class="cta-confirmation" id="ctaConfirmation">
+          &#10003; YOU'RE IN. WE'LL BE IN TOUCH.
+        </div>
         <div class="cta-trust">
           <span>No spam, ever</span><span>Early access perks</span><span>Be first</span>
         </div>
@@ -2471,7 +2481,14 @@
           scrollTrigger: {
             trigger: '#sceneFeatures',
             start: 'top top',
-            end: 'bottom top',
+            // 'bottom bottom', not 'bottom top'. GSAP's pin-spacer is
+            // stickyHeight + pinDuration. With 'bottom top' the pin ran for the
+            // wrapper's full 500vh, making the spacer 600vh inside a wrapper
+            // fixed at 500vh — it overflowed by exactly one viewport (577px
+            // measured) and sat on top of the following section.
+            // 'bottom bottom' ends the pin one viewport earlier, so
+            // spacer == wrapper height and nothing overlaps.
+            end: 'bottom bottom',
             pin: '.features-sticky',
             scrub: 1,
             // Snap to slide boundaries. Without this the scrub can rest at any
@@ -2622,5 +2639,85 @@
         });
       });
     </script>
-  </body>
+  
+    <!-- Early-access waitlist. website-d/script.js is NOT loaded by this page
+         (it targets the older single-page build and its inline scripts would
+         conflict), so the handler lives here. Behaviour matches the verified
+         production handler: never confirm a request that did not persist. -->
+    <script>
+      (function () {
+        var SUPABASE_URL = 'https://dcixlerneuuyhsftnifm.supabase.co';
+        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaXhsZXJuZXV1eWhzZnRuaWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3MDc4NTIsImV4cCI6MjA3MTI4Mzg1Mn0.VN7zdfRWHIhTSWQ0HMEhuBKZ49J7Ks4PHtOB140Yn-c';
+
+        var form = document.getElementById('ctaForm');
+        var confirmEl = document.getElementById('ctaConfirmation');
+        var errorEl = document.getElementById('ctaError');
+        if (!form) return;
+
+        function showError(msg) {
+          if (errorEl) {
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+          } else {
+            alert(msg);
+          }
+        }
+
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var input = form.querySelector('input[type="email"]');
+          var email = input ? input.value.trim() : '';
+          if (!email) return;
+
+          var btn = form.querySelector('button[type="submit"], button');
+          var label = btn ? btn.querySelector('span') || btn : null;
+          var original = label ? label.textContent : '';
+          if (errorEl) errorEl.style.display = 'none';
+          if (btn) {
+            btn.disabled = true;
+            label.textContent = 'JOINING...';
+          }
+          function restore() {
+            if (btn) {
+              btn.disabled = false;
+              label.textContent = original;
+            }
+          }
+          function succeed() {
+            form.style.display = 'none';
+            if (confirmEl) confirmEl.classList.add('show');
+          }
+
+          fetch(SUPABASE_URL + '/rest/v1/waitlist', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+              Prefer: 'return=minimal',
+            },
+            body: JSON.stringify({ email: email, source: 'website' }),
+          })
+            .then(function (res) {
+              // 409 = unique violation on lower(email): already subscribed.
+              // That is success from the visitor's point of view.
+              if (res.status === 409) return succeed();
+              if (!res.ok) {
+                return res.text().catch(function () { return ''; }).then(function (detail) {
+                  console.error('Waitlist save failed:', res.status, detail);
+                  restore();
+                  showError('Something went wrong on our side. Please try again.');
+                });
+              }
+              succeed();
+            })
+            .catch(function (err) {
+              console.error('Waitlist save failed:', err);
+              restore();
+              showError('Could not reach the server. Check your connection and try again.');
+            });
+        });
+      })();
+    </script>
+</body>
 </html>
