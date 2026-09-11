@@ -1,0 +1,107 @@
+/*
+ * Mobile navigation styles. Pairs with mobile-nav.js.
+ * Hidden above 768px — desktop keeps its existing inline nav.
+ */
+
+.mnav-toggle {
+  display: none;
+  /* Fixed, not relative: the toggle lives inside nav.nav, which creates its own
+     stacking context at z-index 9000. A child can never paint above the panel
+     at 10000 from inside it, so the close button disappeared once the menu
+     opened and the user was trapped. Taking it out of that context fixes it. */
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 10001;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.mnav-toggle span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: #f0f0f0;
+  transition: transform 0.3s ease, opacity 0.2s ease;
+}
+.mnav-toggle.is-open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.mnav-toggle.is-open span:nth-child(2) {
+  opacity: 0;
+}
+.mnav-toggle.is-open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+.mnav-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 96px 32px 48px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
+}
+.mnav-panel.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.mnav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mnav-list a {
+  display: block;
+  padding: 18px 0;
+  color: #f0f0f0;
+  text-decoration: none;
+  font-family: 'Bebas Neue', 'Archivo', system-ui, sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.mnav-list a.active {
+  color: #30d158;
+}
+
+.mnav-cta {
+  margin-top: 36px;
+  display: block;
+  text-align: center;
+  padding: 18px 24px;
+  background: #30d158;
+  color: #0a0a0a;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-size: 0.9rem;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+  .mnav-toggle {
+    display: flex;
+  }
+  /* The nav uses mix-blend-mode: difference on index.html, which makes the
+     fixed panel behind it render incorrectly. Neutralise it on mobile. */
+  nav.nav {
+    mix-blend-mode: normal !important;
+    opacity: 1 !important;
+  }
+}
