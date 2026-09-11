@@ -1,0 +1,42 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+
+  "//": [
+    "cleanUrls serves /about instead of /about.html and 308-redirects the .html",
+    "form to the clean path, so old links and anything already indexed keep",
+    "working. Without this /about returned 404 and only /about.html resolved.",
+    "trailingSlash:false keeps /about canonical rather than /about/."
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false,
+
+  "redirects": [
+    {
+      "//": "beep-test.html was renamed to fitness-testing.html. Anything already shared or indexed would otherwise 404.",
+      "source": "/beep-test",
+      "destination": "/fitness-testing",
+      "permanent": true
+    },
+    {
+      "source": "/beep-test.html",
+      "destination": "/fitness-testing",
+      "permanent": true
+    }
+  ],
+
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "//": "Hashed-content assets can cache hard; HTML must not, or a deploy will not reach returning visitors.",
+      "source": "/images/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}
