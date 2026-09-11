@@ -824,24 +824,23 @@
         <div class="section-label">THE PROBLEM</div>
         <div class="section-title">Nobody's Watching</div>
         <p class="section-sub" style="margin-left: auto; margin-right: auto">
-          India has 50 lakh+ athletes training every day. Most will never be seen by a single scout.
-          Not because they lack talent — because the system doesn't look.
+          Scouting in India runs on personal networks and proximity to a handful of cities. Most
+          athletes will never be seen by a scout &mdash; not because they lack talent, but because
+          there is no record of their ability anyone can search.
         </p>
       </div>
       <div class="stats-row" id="statsRow">
         <div class="stat-item">
-          <div class="stat-number"><span id="stat1">0</span><span class="stat-suffix">%</span></div>
-          <div class="stat-label">of athletes never get scouted</div>
+          <div class="stat-number">4</div>
+          <div class="stat-label">standardised tests: Yo-Yo, sprint, agility, vertical jump</div>
         </div>
         <div class="stat-item">
-          <div class="stat-number">
-            <span id="stat2">0</span><span class="stat-suffix">L+</span>
-          </div>
-          <div class="stat-label">athletes train with zero visibility</div>
+          <div class="stat-number">6</div>
+          <div class="stat-label">zones, from Starter to Unstoppable</div>
         </div>
         <div class="stat-item">
-          <div class="stat-number"><span id="stat3">0</span></div>
-          <div class="stat-label">platforms for Indian grassroots sports</div>
+          <div class="stat-number">1.0<span class="stat-suffix">&times;</span></div>
+          <div class="stat-label">trust weight for coach-verified results</div>
         </div>
       </div>
     </section>
@@ -980,29 +979,7 @@
 
     <!-- MADE IN INDIA -->
     <section class="section india-section" style="background: var(--bg-deep)">
-      <div class="section-label">PROUDLY INDIAN</div>
-      <div class="section-title">Made in India. For India. And Beyond.</div>
-      <div class="india-flag">
-        <span class="saffron"></span>
-        <span class="white"></span>
-        <span class="green-flag"></span>
-      </div>
-      <p class="section-sub" style="margin-left: auto; margin-right: auto; text-align: center">
-        Serving 50+ sports across India and Dubai. Cricket, Football, Kabaddi, Hockey, Athletics,
-        Badminton, Basketball, Boxing, Wrestling, and every sport that deserves a stage.
-      </p>
-      <div class="sports-marquee">
-        <div class="sports-marquee-inner">
-          CRICKET &middot; FOOTBALL &middot; KABADDI &middot; HOCKEY &middot; ATHLETICS &middot;
-          BADMINTON &middot; BASKETBALL &middot; BOXING &middot; WRESTLING &middot; SWIMMING
-          &middot; TENNIS &middot; VOLLEYBALL &middot; TABLE TENNIS &middot; ARCHERY &middot; JUDO
-          &middot; CYCLING &middot; ROWING &middot; WEIGHTLIFTING &middot; GYMNASTICS &middot;
-          CRICKET &middot; FOOTBALL &middot; KABADDI &middot; HOCKEY &middot; ATHLETICS &middot;
-          BADMINTON &middot; BASKETBALL &middot; BOXING &middot; WRESTLING &middot; SWIMMING
-          &middot; TENNIS &middot; VOLLEYBALL &middot; TABLE TENNIS &middot; ARCHERY &middot; JUDO
-          &middot; CYCLING &middot; ROWING &middot; WEIGHTLIFTING &middot; GYMNASTICS &middot;
-        </div>
-      </div>
+      <div class="section-title" style="text-align: center">Made in India.</div>
     </section>
 
     <!-- CTA -->
@@ -1038,16 +1015,11 @@
           NO AGENTS. NO MIDDLEMEN.<br />JUST TALENT MEETING OPPORTUNITY.
         </div>
         <div class="footer-social">
-          <a href="https://instagram.com/onlykrida" target="_blank" rel="noopener" class="hoverable"
+          <a href="https://www.instagram.com/its_onlykrida/" target="_blank" rel="noopener" class="hoverable"
             >INSTAGRAM</a
           >
-          <a href="https://twitter.com/onlykrida" target="_blank" rel="noopener" class="hoverable"
-            >TWITTER</a
-          >
-          <a href="https://discord.gg/onlykrida" target="_blank" rel="noopener" class="hoverable"
-            >DISCORD</a
-          >
-        </div>
+          
+          </div>
       </div>
       <div class="footer-bottom">
         <div class="footer-copy">&copy; 2026 ONLYKRIDA. ALL RIGHTS RESERVED.</div>
@@ -1120,30 +1092,10 @@
             stagger: 0.15,
             ease: 'power3.out',
           });
-          gsap.to(
-            { val: 0 },
-            {
-              val: 99,
-              duration: 2,
-              ease: 'power2.out',
-              onUpdate: function () {
-                document.getElementById('stat1').textContent = Math.round(this.targets()[0].val);
-              },
-            },
-          );
-          gsap.to(
-            { val: 0 },
-            {
-              val: 50,
-              duration: 2,
-              ease: 'power2.out',
-              delay: 0.2,
-              onUpdate: function () {
-                document.getElementById('stat2').textContent = Math.round(this.targets()[0].val);
-              },
-            },
-          );
-          // stat3 stays 0
+          // The counters that ran here animated #stat1 to 99 and #stat2 to 50.
+          // Both were unsourceable, and #stat3 asserted there are zero
+          // platforms for Indian grassroots sports, which is false. The stat
+          // items now carry product facts, so there is nothing to count.
         },
       });
 
