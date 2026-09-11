@@ -1045,6 +1045,63 @@
       /* ============================================================
        ROADMAP
        ============================================================ */
+
+      /* Vision grid — replaces the dated roadmap timeline (Bengaluru launch,
+         10K athletes by Q3, Dubai by 2028). None of it was committed to, the
+         city was wrong, and dated targets become public misses when they slip. */
+      .vision-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        max-width: 1100px;
+        margin: 64px auto 0;
+      }
+      .vision-card {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 14px;
+        padding: 32px 28px;
+        background: #141414;
+      }
+      .vision-num {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.5rem;
+        color: #30d158;
+        letter-spacing: 0.08em;
+        margin-bottom: 14px;
+      }
+      .vision-card h3 {
+        margin: 0 0 12px;
+        font-size: 1.3rem;
+        color: #f0f0f0;
+        line-height: 1.25;
+        font-weight: 700;
+      }
+      .vision-card p {
+        margin: 0;
+        color: #9a9aa0;
+        line-height: 1.7;
+        font-size: 0.97rem;
+      }
+      .vision-note {
+        max-width: 720px;
+        margin: 48px auto 0;
+        text-align: center;
+        color: #9a9aa0;
+        line-height: 1.7;
+        font-size: 0.95rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 28px;
+      }
+      @media (max-width: 768px) {
+        .vision-grid {
+          grid-template-columns: 1fr;
+          gap: 16px;
+          margin-top: 40px;
+        }
+        .vision-card {
+          padding: 26px 22px;
+        }
+      }
       .roadmap-section {
         padding: 140px 48px;
         background: var(--bg-deep);
@@ -2168,47 +2225,82 @@
        ============================================================ -->
     <section class="roadmap-section" id="sceneRoadmap">
       <div style="text-align: center">
-        <div class="section-num" style="justify-content: center">THE ROADMAP</div>
+        <div class="section-num" style="justify-content: center">THE VISION</div>
         <div class="mega-text" style="font-size: clamp(28px, 3.5vw, 48px); text-align: center">
           Where We're Going
         </div>
+        <p
+          style="
+            max-width: 620px;
+            margin: 20px auto 0;
+            text-align: center;
+            color: #9a9aa0;
+            line-height: 1.7;
+          "
+        >
+          Not a list of dates. A description of what has to become true.
+        </p>
       </div>
-      <div class="tl" id="timeline">
-        <div class="tl-item">
-          <div class="tl-side">
-            <div class="tl-year">2026</div>
-            <div class="tl-text">Bengaluru launch. 1K athletes. 7 sports. AI scouting beta.</div>
-          </div>
-          <div class="tl-dot"></div>
-          <div class="tl-side"></div>
+      <div class="vision-grid" id="visionGrid">
+        <div class="vision-card">
+          <div class="vision-num">01</div>
+          <h3>Every athlete has a number</h3>
+          <p>
+            Talent is invisible until it is measured. A standardised result, recorded the same
+            way in a district town as in a city academy, turns &ldquo;he&rsquo;s quick&rdquo;
+            into something a scout can act on.
+          </p>
         </div>
-        <div class="tl-item">
-          <div class="tl-side"></div>
-          <div class="tl-dot"></div>
-          <div class="tl-side">
-            <div class="tl-year">Q3 2026</div>
-            <div class="tl-text">
-              10K athletes. Mumbai + Delhi. Scout premium. Fitness testing nationwide.
-            </div>
-          </div>
+        <div class="vision-card">
+          <div class="vision-num">02</div>
+          <h3>Verification people trust</h3>
+          <p>
+            Anyone can type a number into an app. The difference between a self-entered result
+            and one a coach witnessed has to be visible and worth earning &mdash; otherwise the
+            whole record is noise.
+          </p>
         </div>
-        <div class="tl-item">
-          <div class="tl-side">
-            <div class="tl-year">2027</div>
-            <div class="tl-text">AI matching v2. 50K athletes. Pan-India coverage.</div>
-          </div>
-          <div class="tl-dot"></div>
-          <div class="tl-side"></div>
+        <div class="vision-card">
+          <div class="vision-num">03</div>
+          <h3>Scouting stops depending on who you know</h3>
+          <p>
+            Today it runs on personal networks and proximity to a few cities. When scouts can
+            filter by sport, position, city and verified results, the pipeline reaches players
+            it structurally never could before.
+          </p>
         </div>
-        <div class="tl-item">
-          <div class="tl-side"></div>
-          <div class="tl-dot"></div>
-          <div class="tl-side">
-            <div class="tl-year">2028</div>
-            <div class="tl-text">Dubai + SEA expansion. Video AI. Brand marketplace.</div>
-          </div>
+        <div class="vision-card">
+          <div class="vision-num">04</div>
+          <h3>Coaches and academies at the centre</h3>
+          <p>
+            Not disintermediated &mdash; equipped. The people already running sessions are the
+            ones who can verify results at scale, and they should get the tools and the credit
+            for it.
+          </p>
+        </div>
+        <div class="vision-card">
+          <div class="vision-num">05</div>
+          <h3>Built for how sport actually works here</h3>
+          <p>
+            Indian grounds, Indian age groups, Indian constraints. One phone, one ground, no
+            equipment budget. Tools designed elsewhere assume conditions most players here do
+            not have.
+          </p>
+        </div>
+        <div class="vision-card">
+          <div class="vision-num">06</div>
+          <h3>Safe for the people using it</h3>
+          <p>
+            A large share of the athletes who need this most are under eighteen. Consent,
+            privacy and safety are not features to add later &mdash; they decide whether this
+            deserves to exist at all.
+          </p>
         </div>
       </div>
+      <p class="vision-note">
+        We are in early access, starting with athletes in Hyderabad and the coaches who train
+        them. Everything above is the direction, not a promise of dates.
+      </p>
       <div style="text-align: center; margin-top: 80px">
         <div class="section-num" style="justify-content: center">PROUDLY INDIAN</div>
         <div class="mega-text" style="font-size: clamp(24px, 3vw, 40px); text-align: center">
@@ -2673,16 +2765,18 @@
           },
         });
 
-        // TIMELINE
+        // VISION — fade the cards in. The old timeline ScrollTrigger targeted
+        // #timeline / .tl-item, which no longer exist; they were replaced along
+        // with the dated roadmap.
         ScrollTrigger.create({
-          trigger: '#timeline',
-          start: 'top 70%',
+          trigger: '#visionGrid',
+          start: 'top 78%',
           onEnter: () => {
-            gsap.to('.tl-item', {
+            gsap.to('.vision-card', {
               opacity: 1,
               y: 0,
-              duration: 0.6,
-              stagger: 0.12,
+              duration: 0.55,
+              stagger: 0.07,
               ease: 'power3.out',
             });
           },
